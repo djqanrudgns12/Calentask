@@ -10,7 +10,7 @@ export async function login(formData: FormData) {
   // 우회 로직: 아이디 -> 가짜 이메일 변환
   const username = formData.get('username') as string
   const password = formData.get('password') as string
-  const email = `${username}@calentask.local`
+  const email = `${username}@calentask.com`
 
   const { error } = await supabase.auth.signInWithPassword({
     email,
@@ -47,7 +47,7 @@ export async function signup(formData: FormData) {
   }
 
   // 우회 로직: 아이디 -> 가짜 이메일 변환
-  const email = `${username}@calentask.local`
+  const email = `${username}@calentask.com`
 
   const { error } = await supabase.auth.signUp({
     email,
