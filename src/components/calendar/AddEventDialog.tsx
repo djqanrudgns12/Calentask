@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -8,9 +8,10 @@ import { Label } from '@/components/ui/label'
 import { Plus } from 'lucide-react'
 import { useCategories, useCreateActivity } from '@/hooks/useCalendarQueries'
 import { format, startOfMonth, endOfMonth } from 'date-fns'
+import { useCalendarStore } from '@/store/useCalendarStore'
 
-export function AddEventDialog({ children }: { children: React.ReactNode }) {
-  const [open, setOpen] = useState(false)
+export function AddEventDialog({ children }: { children?: React.ReactNode }) {
+  const { isAddEventOpen, closeAddEvent, addEventDate, openAddEvent } = useCalendarStore()
   const [title, setTitle] = useState('')
   const [date, setDate] = useState(format(new Date(), 'yyyy-MM-dd'))
   const [selectedCategories, setSelectedCategories] = useState<string[]>([])
@@ -21,6 +22,16 @@ export function AddEventDialog({ children }: { children: React.ReactNode }) {
 
   const { data: categories = [] } = useCategories()
   const { mutate: createActivity, isPending } = useCreateActivity(currentMonthStart, currentMonthEnd)
+
+  useEffect(() => {
+    if (isAddEventOpen) {
+      if (addEventDate) {
+        setDate(format(addEventDate, 'yyyy-MM-dd'))
+      } else {
+        setDate(format(new Date(), 'yyyy-MM-dd'))
+      }
+    }
+  }, [isAddEventOpen, addEventDate])
 
   const toggleCategory = (id: string) => {
     setSelectedCategories(prev => 
@@ -49,7 +60,7 @@ export function AddEventDialog({ children }: { children: React.ReactNode }) {
       },
       {
         onSuccess: () => {
-          setOpen(false)
+          closeAddEvent()
           setTitle('')
           setSelectedCategories([])
         }
@@ -57,12 +68,23 @@ export function AddEventDialog({ children }: { children: React.ReactNode }) {
     )
   }
 
+  const handleOpenChange = (open: boolean) => {
+    if (!open) {
+      closeAddEvent()
+      setTitle('')
+      setSelectedCategories([])
+    } else {
+      openAddEvent()
+    }
+  }
+
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      {/* @ts-expect-error DialogTrigger asChild typing issue */}
-      <DialogTrigger asChild>
-        {children}
-      </DialogTrigger>
+    <Dialog open={isAddEventOpen} onOpenChange={handleOpenChange}>
+      {children && (
+        <DialogTrigger asChild>
+          <div onClick={() => openAddEvent()}>{children}</div>
+        </DialogTrigger>
+      )}
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>새 일정 추가</DialogTitle>
