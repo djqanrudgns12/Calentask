@@ -81,9 +81,7 @@ export function AddEventDialog({ children }: { children?: React.ReactNode }) {
   return (
     <Dialog open={isAddEventOpen} onOpenChange={handleOpenChange}>
       {children && (
-        <DialogTrigger asChild>
-          <div onClick={() => openAddEvent()}>{children}</div>
-        </DialogTrigger>
+        <div onClick={() => openAddEvent()}>{children}</div>
       )}
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
