@@ -1,26 +1,41 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import { useCalendarStore } from '@/store/useCalendarStore'
 import { Button } from '@/components/ui/button'
 import { Menu, ChevronLeft, ChevronRight, Plus } from 'lucide-react'
 
-import { format, addMonths, subMonths, startOfWeek, endOfWeek, eachDayOfInterval, isSameMonth, isSameDay } from 'date-fns'
+import { format, addMonths, subMonths, startOfWeek, endOfWeek, eachDayOfInterval, isSameMonth, isSameDay, addDays } from 'date-fns'
 import { useActivities, useCategories } from '@/hooks/useCalendarQueries'
 import { AddEventDialog } from '@/components/calendar/AddEventDialog'
 import { MonthlyView } from '@/components/calendar/MonthlyView'
 import { WeeklyView } from '@/components/calendar/WeeklyView'
 import { ListView } from '@/components/calendar/ListView'
+import { SemesterView } from '@/components/calendar/SemesterView'
 import { CsvUploader } from '@/components/calendar/CsvUploader'
 import { TrashDialog } from '@/components/calendar/TrashDialog'
 
 export default function CalendarPage() {
+  const [mounted, setMounted] = useState(false)
   const { currentDate, viewMode, activeFilter, setCurrentDate, setViewMode, setActiveFilter } = useCalendarStore()
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  if (!mounted) {
+    return <div className="flex h-screen w-full items-center justify-center bg-[#f7f9fb]"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div></div>
+  }
 
   // 현재 달 기준 날짜 계산 (전체 일정 패치를 위해)
   const monthStart = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1)
   const monthEnd = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0)
   const startDate = startOfWeek(monthStart)
-  const endDate = endOfWeek(monthEnd)
+  
+  // 학기 뷰일 경우 16주 분량의 데이터를 패치, 그 외에는 현재 달 분량 패치
+  const endDate = viewMode === 'semester' 
+    ? addDays(startDate, 16 * 7 - 1) 
+    : endOfWeek(monthEnd)
   
   // React Query Fetching
   const { data: activitiesData } = useActivities(startDate.toISOString(), endDate.toISOString())
@@ -104,7 +119,8 @@ export default function CalendarPage() {
         {/* Dynamic Views */}
         {viewMode === 'monthly' && <MonthlyView currentDate={currentDate} events={events} />}
         {viewMode === 'weekly' && <WeeklyView currentDate={currentDate} events={events} />}
-        {(viewMode === 'list' || viewMode === 'semester') && <ListView currentDate={currentDate} events={events} />}
+        {viewMode === 'list' && <ListView currentDate={currentDate} events={events} />}
+        {viewMode === 'semester' && <SemesterView currentDate={currentDate} events={events} />}
       </main>
 
       {/* Floating Action Button */}
