@@ -19,14 +19,6 @@ export default function CalendarPage() {
   const [mounted, setMounted] = useState(false)
   const { currentDate, viewMode, activeFilter, setCurrentDate, setViewMode, setActiveFilter } = useCalendarStore()
 
-  useEffect(() => {
-    setMounted(true)
-  }, [])
-
-  if (!mounted) {
-    return <div className="flex h-screen w-full items-center justify-center bg-[#f7f9fb]"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div></div>
-  }
-
   // 현재 달 기준 날짜 계산 (전체 일정 패치를 위해)
   const monthStart = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1)
   const monthEnd = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0)
@@ -37,9 +29,17 @@ export default function CalendarPage() {
     ? addDays(startDate, 16 * 7 - 1) 
     : endOfWeek(monthEnd)
   
-  // React Query Fetching
+  // React Query Fetching (반드시 조건문/Early Return 이전에 호출되어야 함)
   const { data: activitiesData } = useActivities(startDate.toISOString(), endDate.toISOString())
   const events = activitiesData || [] // 임시 데이터 대신 API 데이터 활용
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  if (!mounted) {
+    return <div className="flex h-screen w-full items-center justify-center bg-[#f7f9fb]"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div></div>
+  }
   
   const handlePrevMonth = () => setCurrentDate(subMonths(currentDate, 1))
   const handleNextMonth = () => setCurrentDate(addMonths(currentDate, 1))
