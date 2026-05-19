@@ -62,7 +62,7 @@ export async function resetUserPassword(prevState: any, formData: FormData) {
 
   const parsedPassword = passwordSchema.safeParse(newPassword)
   if (!parsedPassword.success) {
-    return { error: parsedPassword.error.errors[0].message, success: false }
+    return { error: '비밀번호는 최소 8자 이상이어야 합니다.', success: false }
   }
 
   try {
