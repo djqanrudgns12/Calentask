@@ -16,7 +16,7 @@ export default async function LoginPage(
             Calentask
           </h2>
           <p className="text-sm text-gray-500">
-            다시 오신 것을 환영합니다. 일정을 관리해보세요.
+            당신을 위한 Calentask입니다. 일정을 체계적으로 기록해보세요.
           </p>
         </div>
         
@@ -66,11 +66,17 @@ export default async function LoginPage(
             </Button>
           </div>
           
-          <div className="text-center mt-6">
+          <div className="text-center mt-6 space-y-3">
             <p className="text-sm text-gray-500">
               계정이 없으신가요?{' '}
               <Link href="/signup" className="font-semibold text-[#2563eb] hover:text-[#1d4ed8] transition-colors">
                 회원가입하기
+              </Link>
+            </p>
+            <p className="text-sm text-gray-500">
+              로그인 정보를 잊으셨나요?{' '}
+              <Link href="/recovery" className="font-semibold text-[#2563eb] hover:text-[#1d4ed8] transition-colors">
+                아이디 / 비밀번호 찾기
               </Link>
             </p>
           </div>
