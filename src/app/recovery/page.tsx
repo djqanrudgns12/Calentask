@@ -49,24 +49,24 @@ export default function RecoveryPage() {
   }
 
   return (
-    <div className="flex min-h-screen w-full items-center justify-center bg-[#f7f9fb] p-4">
-      <div className="w-full max-w-md rounded-[16px] bg-white/80 p-8 backdrop-blur-xl shadow-[0_4px_15px_rgba(0,0,0,0.04)] border border-white/50">
-        <div className="text-center space-y-2 mb-8">
-          <h2 className="text-3xl font-bold tracking-tight text-[#0f172a]">
+    <div className="flex min-h-screen w-full items-center justify-center bg-slate-50 p-6">
+      <div className="w-full max-w-[420px] rounded-3xl bg-white p-10 shadow-apple-float border border-slate-100">
+        <div className="text-center space-y-3 mb-8">
+          <h2 className="text-3xl font-bold tracking-tight text-slate-900">
             계정 복구
           </h2>
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-slate-500 font-medium">
             가입 시 등록한 정보를 입력해주세요.
           </p>
         </div>
         
         {/* 탭 네비게이션 */}
-        <div className="flex border-b border-gray-200 mb-6">
+        <div className="flex border-b border-slate-200 mb-8">
           <button
             className={`flex-1 py-3 text-sm font-semibold transition-colors border-b-2 ${
               activeTab === 'id' 
-                ? 'border-[#2563eb] text-[#2563eb]' 
-                : 'border-transparent text-gray-500 hover:text-gray-700'
+                ? 'border-blue-600 text-blue-600' 
+                : 'border-transparent text-slate-500 hover:text-slate-700'
             }`}
             onClick={() => setActiveTab('id')}
           >
@@ -75,8 +75,8 @@ export default function RecoveryPage() {
           <button
             className={`flex-1 py-3 text-sm font-semibold transition-colors border-b-2 ${
               activeTab === 'password' 
-                ? 'border-[#2563eb] text-[#2563eb]' 
-                : 'border-transparent text-gray-500 hover:text-gray-700'
+                ? 'border-blue-600 text-blue-600' 
+                : 'border-transparent text-slate-500 hover:text-slate-700'
             }`}
             onClick={() => setActiveTab('password')}
           >
@@ -88,8 +88,8 @@ export default function RecoveryPage() {
         {activeTab === 'id' && (
           <form className="space-y-6" onSubmit={handleFindId}>
             <div className="space-y-4">
-              <div className="space-y-1">
-                <label htmlFor="fullName" className="text-xs font-semibold uppercase tracking-wider text-gray-500">
+              <div className="space-y-1.5">
+                <label htmlFor="fullName" className="text-xs font-semibold text-slate-500 pl-1">
                   이름
                 </label>
                 <input
@@ -97,13 +97,13 @@ export default function RecoveryPage() {
                   name="fullName"
                   type="text"
                   required
-                  className="block w-full rounded-[12px] bg-[#f2f4f6] border border-transparent px-4 py-3 text-[#191c1e] placeholder-gray-400 focus:bg-white focus:border-[#0f172a] focus:ring-1 focus:ring-[#0f172a] focus:outline-none transition-all sm:text-sm"
+                  className="block w-full rounded-2xl bg-slate-100 border-none px-4 py-3.5 text-slate-900 placeholder-slate-400 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all sm:text-sm shadow-inner"
                   placeholder="가입 시 입력한 이름"
                 />
               </div>
               
-              <div className="space-y-1">
-                <label htmlFor="recoveryEmail" className="text-xs font-semibold uppercase tracking-wider text-gray-500">
+              <div className="space-y-1.5">
+                <label htmlFor="recoveryEmail" className="text-xs font-semibold text-slate-500 pl-1">
                   복구 이메일
                 </label>
                 <input
@@ -111,28 +111,28 @@ export default function RecoveryPage() {
                   name="recoveryEmail"
                   type="email"
                   required
-                  className="block w-full rounded-[12px] bg-[#f2f4f6] border border-transparent px-4 py-3 text-[#191c1e] placeholder-gray-400 focus:bg-white focus:border-[#0f172a] focus:ring-1 focus:ring-[#0f172a] focus:outline-none transition-all sm:text-sm"
+                  className="block w-full rounded-2xl bg-slate-100 border-none px-4 py-3.5 text-slate-900 placeholder-slate-400 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all sm:text-sm shadow-inner"
                   placeholder="user@example.com"
                 />
               </div>
             </div>
 
             {idError && (
-              <div className="rounded-md bg-[#ffdad6] p-3 text-sm text-[#93000a] text-center font-medium">
+              <div className="rounded-2xl bg-red-50 p-4 text-sm text-red-600 text-center font-medium">
                 {idError}
               </div>
             )}
             {idResult && (
-              <div className="rounded-md bg-[#d3e3fd] p-3 text-sm text-[#041e49] text-center font-medium">
+              <div className="rounded-2xl bg-blue-50 p-4 text-sm text-blue-800 text-center font-medium">
                 {idResult}
               </div>
             )}
 
-            <div>
+            <div className="pt-2">
               <Button 
                 type="submit" 
                 disabled={isIdLoading}
-                className="w-full rounded-[12px] bg-[#2563eb] py-6 text-[15px] font-semibold text-white hover:bg-[#1d4ed8] disabled:opacity-50 transition-colors shadow-sm"
+                className="w-full rounded-full bg-blue-600 py-6 text-[15px] font-semibold text-white hover:bg-blue-700 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:hover:scale-100 transition-all shadow-md"
               >
                 {isIdLoading ? '확인 중...' : '아이디 찾기'}
               </Button>
@@ -144,8 +144,8 @@ export default function RecoveryPage() {
         {activeTab === 'password' && (
           <form className="space-y-6" onSubmit={handleResetPw}>
             <div className="space-y-4">
-              <div className="space-y-1">
-                <label htmlFor="pwUsername" className="text-xs font-semibold uppercase tracking-wider text-gray-500">
+              <div className="space-y-1.5">
+                <label htmlFor="pwUsername" className="text-xs font-semibold text-slate-500 pl-1">
                   아이디
                 </label>
                 <input
@@ -153,13 +153,13 @@ export default function RecoveryPage() {
                   name="username"
                   type="text"
                   required
-                  className="block w-full rounded-[12px] bg-[#f2f4f6] border border-transparent px-4 py-3 text-[#191c1e] placeholder-gray-400 focus:bg-white focus:border-[#0f172a] focus:ring-1 focus:ring-[#0f172a] focus:outline-none transition-all sm:text-sm"
+                  className="block w-full rounded-2xl bg-slate-100 border-none px-4 py-3.5 text-slate-900 placeholder-slate-400 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all sm:text-sm shadow-inner"
                   placeholder="가입 시 입력한 아이디"
                 />
               </div>
 
-              <div className="space-y-1">
-                <label htmlFor="pwFullName" className="text-xs font-semibold uppercase tracking-wider text-gray-500">
+              <div className="space-y-1.5">
+                <label htmlFor="pwFullName" className="text-xs font-semibold text-slate-500 pl-1">
                   이름
                 </label>
                 <input
@@ -167,13 +167,13 @@ export default function RecoveryPage() {
                   name="fullName"
                   type="text"
                   required
-                  className="block w-full rounded-[12px] bg-[#f2f4f6] border border-transparent px-4 py-3 text-[#191c1e] placeholder-gray-400 focus:bg-white focus:border-[#0f172a] focus:ring-1 focus:ring-[#0f172a] focus:outline-none transition-all sm:text-sm"
+                  className="block w-full rounded-2xl bg-slate-100 border-none px-4 py-3.5 text-slate-900 placeholder-slate-400 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all sm:text-sm shadow-inner"
                   placeholder="가입 시 입력한 이름"
                 />
               </div>
               
-              <div className="space-y-1">
-                <label htmlFor="pwRecoveryEmail" className="text-xs font-semibold uppercase tracking-wider text-gray-500">
+              <div className="space-y-1.5">
+                <label htmlFor="pwRecoveryEmail" className="text-xs font-semibold text-slate-500 pl-1">
                   복구 이메일
                 </label>
                 <input
@@ -181,15 +181,15 @@ export default function RecoveryPage() {
                   name="recoveryEmail"
                   type="email"
                   required
-                  className="block w-full rounded-[12px] bg-[#f2f4f6] border border-transparent px-4 py-3 text-[#191c1e] placeholder-gray-400 focus:bg-white focus:border-[#0f172a] focus:ring-1 focus:ring-[#0f172a] focus:outline-none transition-all sm:text-sm"
+                  className="block w-full rounded-2xl bg-slate-100 border-none px-4 py-3.5 text-slate-900 placeholder-slate-400 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all sm:text-sm shadow-inner"
                   placeholder="user@example.com"
                 />
               </div>
 
-              <div className="pt-2 border-t border-gray-100"></div>
+              <div className="pt-4 pb-2 border-t border-slate-100"></div>
 
-              <div className="space-y-1">
-                <label htmlFor="newPassword" className="text-xs font-semibold uppercase tracking-wider text-gray-500">
+              <div className="space-y-1.5">
+                <label htmlFor="newPassword" className="text-xs font-semibold text-slate-500 pl-1">
                   새 비밀번호
                 </label>
                 <input
@@ -198,13 +198,13 @@ export default function RecoveryPage() {
                   type="password"
                   required
                   minLength={8}
-                  className="block w-full rounded-[12px] bg-[#f2f4f6] border border-transparent px-4 py-3 text-[#191c1e] placeholder-gray-400 focus:bg-white focus:border-[#0f172a] focus:ring-1 focus:ring-[#0f172a] focus:outline-none transition-all sm:text-sm"
+                  className="block w-full rounded-2xl bg-slate-100 border-none px-4 py-3.5 text-slate-900 placeholder-slate-400 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all sm:text-sm shadow-inner"
                   placeholder="새로운 비밀번호 (8자 이상)"
                 />
               </div>
 
-              <div className="space-y-1">
-                <label htmlFor="newPasswordConfirm" className="text-xs font-semibold uppercase tracking-wider text-gray-500">
+              <div className="space-y-1.5">
+                <label htmlFor="newPasswordConfirm" className="text-xs font-semibold text-slate-500 pl-1">
                   새 비밀번호 확인
                 </label>
                 <input
@@ -213,28 +213,28 @@ export default function RecoveryPage() {
                   type="password"
                   required
                   minLength={8}
-                  className="block w-full rounded-[12px] bg-[#f2f4f6] border border-transparent px-4 py-3 text-[#191c1e] placeholder-gray-400 focus:bg-white focus:border-[#0f172a] focus:ring-1 focus:ring-[#0f172a] focus:outline-none transition-all sm:text-sm"
+                  className="block w-full rounded-2xl bg-slate-100 border-none px-4 py-3.5 text-slate-900 placeholder-slate-400 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all sm:text-sm shadow-inner"
                   placeholder="새로운 비밀번호 재입력"
                 />
               </div>
             </div>
 
             {pwError && (
-              <div className="rounded-md bg-[#ffdad6] p-3 text-sm text-[#93000a] text-center font-medium">
+              <div className="rounded-2xl bg-red-50 p-4 text-sm text-red-600 text-center font-medium">
                 {pwError}
               </div>
             )}
             {pwResult && (
-              <div className="rounded-md bg-[#d3e3fd] p-3 text-sm text-[#041e49] text-center font-medium">
+              <div className="rounded-2xl bg-blue-50 p-4 text-sm text-blue-800 text-center font-medium">
                 {pwResult}
               </div>
             )}
 
-            <div>
+            <div className="pt-2">
               <Button 
                 type="submit" 
                 disabled={isPwLoading}
-                className="w-full rounded-[12px] bg-[#2563eb] py-6 text-[15px] font-semibold text-white hover:bg-[#1d4ed8] disabled:opacity-50 transition-colors shadow-sm"
+                className="w-full rounded-full bg-blue-600 py-6 text-[15px] font-semibold text-white hover:bg-blue-700 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:hover:scale-100 transition-all shadow-md"
               >
                 {isPwLoading ? '처리 중...' : '비밀번호 재설정'}
               </Button>
@@ -242,8 +242,8 @@ export default function RecoveryPage() {
           </form>
         )}
         
-        <div className="text-center mt-6 pt-4 border-t border-gray-100">
-          <Link href="/login" className="text-sm font-semibold text-[#2563eb] hover:text-[#1d4ed8] transition-colors">
+        <div className="text-center mt-6 pt-6 border-t border-slate-100">
+          <Link href="/login" className="text-sm font-semibold text-blue-600 hover:text-blue-700 transition-colors">
             로그인 화면으로 돌아가기
           </Link>
         </div>
