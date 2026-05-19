@@ -3,6 +3,7 @@
 import { format, eachDayOfInterval, isSameMonth, isSameDay, startOfWeek, endOfWeek } from 'date-fns'
 import { Activity } from '@/app/actions/calendar'
 import { getHolidayName } from '@/lib/holidays'
+import { useCalendarStore } from '@/store/useCalendarStore'
 
 interface MonthlyViewProps {
   currentDate: Date
@@ -10,6 +11,8 @@ interface MonthlyViewProps {
 }
 
 export function MonthlyView({ currentDate, events }: MonthlyViewProps) {
+  const { openAddEvent } = useCalendarStore()
+  
   const monthStart = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1)
   const monthEnd = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0)
   const startDate = startOfWeek(monthStart)
@@ -40,6 +43,7 @@ export function MonthlyView({ currentDate, events }: MonthlyViewProps) {
           return (
             <div 
               key={idx} 
+              onClick={() => openAddEvent(day)}
               className={`bg-white rounded-2xl p-3 shadow-apple-soft hover:shadow-apple-float transition-all cursor-pointer flex flex-col ${
                 !isCurrentMonth ? 'opacity-50' : ''
               }`}
@@ -62,6 +66,7 @@ export function MonthlyView({ currentDate, events }: MonthlyViewProps) {
                   return (
                     <div 
                       key={event.id}
+                      onClick={(e) => e.stopPropagation()}
                       className="group relative flex flex-col px-2.5 py-1.5 rounded-xl text-xs transition-all hover:scale-[1.02]"
                       style={{ backgroundColor: `${primaryColor}15` }}
                     >
