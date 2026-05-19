@@ -50,6 +50,11 @@
   --color-vibrant-blue: #2563eb;
   --color-sage-green: #7da188;
   --color-neutral-bg: #f8fafc;
+  --color-system-bg: #f2f2f7;
+  --color-system-blue: #007aff;
+  --color-system-red: #ff3b30;
+  --shadow-apple-soft: 0 4px 24px rgba(0,0,0,0.06);
+  --shadow-apple-float: 0 10px 40px rgba(0,0,0,0.1);
 }
 
 :root {

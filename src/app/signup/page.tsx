@@ -9,50 +9,51 @@ export default async function SignupPage(
 ) {
   const searchParams = await props.searchParams
   return (
-    <div className="flex min-h-screen w-full items-center justify-center bg-[#f7f9fb] p-4">
-      <div className="w-full max-w-md rounded-[16px] bg-white/80 p-8 backdrop-blur-xl shadow-[0_4px_15px_rgba(0,0,0,0.04)] border border-white/50">
-        <div className="text-center space-y-2">
-          <h2 className="text-3xl font-bold tracking-tight text-[#0f172a]">
+    <div className="flex min-h-screen w-full items-center justify-center bg-slate-50 p-6">
+      <div className="w-full max-w-[420px] rounded-3xl bg-white p-10 shadow-apple-float border border-slate-100">
+        <div className="text-center space-y-3 mb-10">
+          <h2 className="text-3xl font-bold tracking-tight text-slate-900">
             회원가입
           </h2>
-          <p className="text-sm text-gray-500">
-            Calentask을 시작하기 위한 아이디를 생성합니다.
+          <p className="text-sm text-slate-500 font-medium">
+            Calentask을 시작하기 위한 계정을 생성합니다.
           </p>
         </div>
         
-        <form className="mt-8 space-y-6" action={signup}>
+        <form className="space-y-6" action={signup}>
           <div className="space-y-4">
-            <div className="space-y-1">
-              <label htmlFor="fullName" className="text-xs font-semibold uppercase tracking-wider text-gray-500">
-                이름 (필수)
+            <div className="space-y-1.5">
+              <label htmlFor="fullName" className="text-xs font-semibold text-slate-500 pl-1">
+                이름 <span className="text-blue-500">*</span>
               </label>
               <input
                 id="fullName"
                 name="fullName"
                 type="text"
                 required
-                className="block w-full rounded-[12px] bg-[#f2f4f6] border border-transparent px-4 py-3 text-[#191c1e] placeholder-gray-400 focus:bg-white focus:border-[#0f172a] focus:ring-1 focus:ring-[#0f172a] focus:outline-none transition-all sm:text-sm"
+                className="block w-full rounded-2xl bg-slate-100 border-none px-4 py-3.5 text-slate-900 placeholder-slate-400 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all sm:text-sm shadow-inner"
                 placeholder="홍길동"
               />
             </div>
 
-            <div className="space-y-1">
-              <label htmlFor="username" className="text-xs font-semibold uppercase tracking-wider text-gray-500">
-                아이디 (필수)
+            <div className="space-y-1.5">
+              <label htmlFor="username" className="text-xs font-semibold text-slate-500 pl-1">
+                아이디 <span className="text-blue-500">*</span>
               </label>
               <input
                 id="username"
                 name="username"
                 type="text"
                 required
-                className="block w-full rounded-[12px] bg-[#f2f4f6] border border-transparent px-4 py-3 text-[#191c1e] placeholder-gray-400 focus:bg-white focus:border-[#0f172a] focus:ring-1 focus:ring-[#0f172a] focus:outline-none transition-all sm:text-sm"
+                className="block w-full rounded-2xl bg-slate-100 border-none px-4 py-3.5 text-slate-900 placeholder-slate-400 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all sm:text-sm shadow-inner"
                 placeholder="아이디를 입력하세요"
               />
             </div>
             
-            <div className="space-y-1">
-              <label htmlFor="password" className="text-xs font-semibold uppercase tracking-wider text-gray-500">
-                비밀번호 (필수, 8자 이상)
+            <div className="space-y-1.5">
+              <label htmlFor="password" className="text-xs font-semibold text-slate-500 pl-1">
+                비밀번호 <span className="text-blue-500">*</span>
+                <span className="font-normal text-slate-400 ml-1">(8자 이상)</span>
               </label>
               <input
                 id="password"
@@ -60,14 +61,14 @@ export default async function SignupPage(
                 type="password"
                 required
                 minLength={8}
-                className="block w-full rounded-[12px] bg-[#f2f4f6] border border-transparent px-4 py-3 text-[#191c1e] placeholder-gray-400 focus:bg-white focus:border-[#0f172a] focus:ring-1 focus:ring-[#0f172a] focus:outline-none transition-all sm:text-sm"
+                className="block w-full rounded-2xl bg-slate-100 border-none px-4 py-3.5 text-slate-900 placeholder-slate-400 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all sm:text-sm shadow-inner"
                 placeholder="비밀번호를 입력하세요"
               />
             </div>
 
-            <div className="space-y-1">
-              <label htmlFor="passwordConfirm" className="text-xs font-semibold uppercase tracking-wider text-gray-500">
-                비밀번호 확인 (필수)
+            <div className="space-y-1.5">
+              <label htmlFor="passwordConfirm" className="text-xs font-semibold text-slate-500 pl-1">
+                비밀번호 확인 <span className="text-blue-500">*</span>
               </label>
               <input
                 id="passwordConfirm"
@@ -75,46 +76,46 @@ export default async function SignupPage(
                 type="password"
                 required
                 minLength={8}
-                className="block w-full rounded-[12px] bg-[#f2f4f6] border border-transparent px-4 py-3 text-[#191c1e] placeholder-gray-400 focus:bg-white focus:border-[#0f172a] focus:ring-1 focus:ring-[#0f172a] focus:outline-none transition-all sm:text-sm"
+                className="block w-full rounded-2xl bg-slate-100 border-none px-4 py-3.5 text-slate-900 placeholder-slate-400 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all sm:text-sm shadow-inner"
                 placeholder="비밀번호를 다시 입력하세요"
               />
             </div>
 
-            <div className="space-y-1">
-              <label htmlFor="recoveryEmail" className="text-xs font-semibold uppercase tracking-wider text-gray-500">
-                복구 이메일 (선택)
+            <div className="space-y-1.5 pt-2">
+              <label htmlFor="recoveryEmail" className="text-xs font-semibold text-slate-500 pl-1">
+                복구 이메일 <span className="font-normal text-slate-400">(선택)</span>
               </label>
               <input
                 id="recoveryEmail"
                 name="recoveryEmail"
                 type="email"
-                className="block w-full rounded-[12px] bg-[#f2f4f6] border border-transparent px-4 py-3 text-[#191c1e] placeholder-gray-400 focus:bg-white focus:border-[#0f172a] focus:ring-1 focus:ring-[#0f172a] focus:outline-none transition-all sm:text-sm"
-                placeholder="password-recovery@example.com"
+                className="block w-full rounded-2xl bg-slate-100 border-none px-4 py-3.5 text-slate-900 placeholder-slate-400 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all sm:text-sm shadow-inner"
+                placeholder="recovery@example.com"
               />
-              <p className="text-[11px] text-gray-500 pt-1">비밀번호 분실 시 계정을 찾기 위해 사용됩니다.</p>
+              <p className="text-[11px] text-slate-400 pt-1 pl-1">비밀번호 분실 시 계정을 찾기 위해 사용됩니다.</p>
             </div>
           </div>
 
           {searchParams?.error && (
-            <div className="rounded-md bg-[#ffdad6] p-3 text-sm text-[#93000a] text-center font-medium">
+            <div className="rounded-2xl bg-red-50 p-4 text-sm text-red-600 text-center font-medium">
               {searchParams.error}
             </div>
           )}
 
-          <div>
+          <div className="pt-2">
             <Button 
               type="submit" 
-              className="w-full rounded-[12px] bg-[#2563eb] py-6 text-[15px] font-semibold text-white hover:bg-[#1d4ed8] transition-colors shadow-sm"
+              className="w-full rounded-full bg-blue-600 py-6 text-[15px] font-semibold text-white hover:bg-blue-700 hover:scale-[1.02] active:scale-[0.98] transition-all shadow-md"
             >
               회원가입 완료
             </Button>
           </div>
           
-          <div className="text-center mt-6">
-            <p className="text-sm text-gray-500">
+          <div className="text-center pt-6">
+            <p className="text-sm text-slate-500">
               이미 계정이 있으신가요?{' '}
-              <Link href="/login" className="font-semibold text-[#2563eb] hover:text-[#1d4ed8] transition-colors">
-                로그인하기
+              <Link href="/login" className="font-semibold text-blue-600 hover:text-blue-700 transition-colors">
+                로그인
               </Link>
             </p>
           </div>

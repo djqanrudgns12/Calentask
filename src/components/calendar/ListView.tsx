@@ -25,11 +25,11 @@ export function ListView({ currentDate, events }: ListViewProps) {
 
   return (
     <div className="flex-1 overflow-auto p-8 max-w-4xl mx-auto w-full">
-      <h3 className="text-xl font-bold text-slate-800 mb-6">
+      <h3 className="text-2xl font-bold text-slate-900 mb-8 px-2">
         {format(currentDate, 'yyyy년 M월')} 일정 목록
       </h3>
       
-      <div className="space-y-4">
+      <div className="space-y-5">
         {monthEvents.map((event) => {
           const startDate = new Date(event.start_time)
           const primaryColor = event.categories?.[0]?.hex_color || '#cbd5e1'
@@ -37,24 +37,24 @@ export function ListView({ currentDate, events }: ListViewProps) {
           return (
             <div 
               key={event.id}
-              className="flex items-start p-4 bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow"
+              className="group flex items-start p-5 bg-white rounded-[1.5rem] shadow-apple-soft hover:shadow-apple-float hover:scale-[1.01] transition-all cursor-pointer"
             >
-              <div className="flex flex-col items-center justify-center w-16 flex-shrink-0 border-r border-gray-100 pr-4 mr-4">
-                <span className="text-sm font-semibold text-gray-500 uppercase">
+              <div className="flex flex-col items-center justify-center w-20 flex-shrink-0 pr-5 mr-5 border-r border-gray-100">
+                <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">
                   {format(startDate, 'EEE')}
                 </span>
-                <span className="text-2xl font-bold text-slate-800">
+                <span className="text-3xl font-bold text-slate-800 group-hover:text-blue-600 transition-colors">
                   {format(startDate, 'd')}
                 </span>
               </div>
               
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center space-x-2 mb-1">
-                  <div className="flex space-x-1">
+              <div className="flex-1 min-w-0 py-1">
+                <div className="flex items-center space-x-2 mb-2">
+                  <div className="flex space-x-1.5">
                     {event.categories?.map(tag => (
                       <span 
                         key={tag.id} 
-                        className="px-2 py-0.5 rounded-full text-[10px] font-bold text-white shadow-sm"
+                        className="px-2.5 py-0.5 rounded-full text-[10px] font-bold text-white shadow-sm"
                         style={{ backgroundColor: tag.hex_color }}
                       >
                         {tag.name}
@@ -62,15 +62,16 @@ export function ListView({ currentDate, events }: ListViewProps) {
                     ))}
                   </div>
                 </div>
-                <h4 className="text-lg font-semibold text-slate-900 truncate">
+                <h4 className="text-xl font-bold text-slate-900 truncate">
                   {event.title}
                 </h4>
                 {event.memo && (
-                  <p className="text-sm text-gray-600 mt-1 line-clamp-2">
+                  <p className="text-sm text-gray-500 mt-1.5 line-clamp-2 leading-relaxed">
                     {event.memo}
                   </p>
                 )}
-                <div className="text-xs font-medium text-gray-500 mt-2">
+                <div className="text-xs font-semibold text-gray-400 mt-3 flex items-center">
+                  <span className="inline-block w-2 h-2 rounded-full mr-2" style={{ backgroundColor: primaryColor }}></span>
                   {format(startDate, 'a h:mm')} ~ {format(new Date(event.end_time), 'a h:mm')}
                 </div>
               </div>
