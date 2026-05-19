@@ -1,7 +1,8 @@
 -- Create users table (public profile)
 CREATE TABLE public.users (
   id uuid references auth.users on delete cascade not null primary key,
-  display_name text,
+  full_name text,
+  username text,
   recovery_email text,
   created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
@@ -97,10 +98,11 @@ CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS trigger AS $$
 BEGIN
   -- 1. Insert into public.users
-  INSERT INTO public.users (id, display_name, recovery_email)
+  INSERT INTO public.users (id, full_name, username, recovery_email)
   VALUES (
     NEW.id,
-    COALESCE(NEW.raw_user_meta_data->>'display_name', split_part(NEW.email, '@', 1)),
+    NEW.raw_user_meta_data->>'full_name',
+    COALESCE(NEW.raw_user_meta_data->>'username', split_part(NEW.email, '@', 1)),
     NEW.raw_user_meta_data->>'recovery_email'
   );
 

@@ -23,6 +23,20 @@ export default async function SignupPage(
         <form className="mt-8 space-y-6" action={signup}>
           <div className="space-y-4">
             <div className="space-y-1">
+              <label htmlFor="fullName" className="text-xs font-semibold uppercase tracking-wider text-gray-500">
+                이름 (필수)
+              </label>
+              <input
+                id="fullName"
+                name="fullName"
+                type="text"
+                required
+                className="block w-full rounded-[12px] bg-[#f2f4f6] border border-transparent px-4 py-3 text-[#191c1e] placeholder-gray-400 focus:bg-white focus:border-[#0f172a] focus:ring-1 focus:ring-[#0f172a] focus:outline-none transition-all sm:text-sm"
+                placeholder="홍길동"
+              />
+            </div>
+
+            <div className="space-y-1">
               <label htmlFor="username" className="text-xs font-semibold uppercase tracking-wider text-gray-500">
                 아이디 (필수)
               </label>
@@ -38,15 +52,31 @@ export default async function SignupPage(
             
             <div className="space-y-1">
               <label htmlFor="password" className="text-xs font-semibold uppercase tracking-wider text-gray-500">
-                비밀번호 (필수)
+                비밀번호 (필수, 8자 이상)
               </label>
               <input
                 id="password"
                 name="password"
                 type="password"
                 required
+                minLength={8}
                 className="block w-full rounded-[12px] bg-[#f2f4f6] border border-transparent px-4 py-3 text-[#191c1e] placeholder-gray-400 focus:bg-white focus:border-[#0f172a] focus:ring-1 focus:ring-[#0f172a] focus:outline-none transition-all sm:text-sm"
                 placeholder="비밀번호를 입력하세요"
+              />
+            </div>
+
+            <div className="space-y-1">
+              <label htmlFor="passwordConfirm" className="text-xs font-semibold uppercase tracking-wider text-gray-500">
+                비밀번호 확인 (필수)
+              </label>
+              <input
+                id="passwordConfirm"
+                name="passwordConfirm"
+                type="password"
+                required
+                minLength={8}
+                className="block w-full rounded-[12px] bg-[#f2f4f6] border border-transparent px-4 py-3 text-[#191c1e] placeholder-gray-400 focus:bg-white focus:border-[#0f172a] focus:ring-1 focus:ring-[#0f172a] focus:outline-none transition-all sm:text-sm"
+                placeholder="비밀번호를 다시 입력하세요"
               />
             </div>
 
