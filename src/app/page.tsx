@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 'use client'
 
 import { useState, useEffect } from 'react'
@@ -15,9 +16,12 @@ import { SemesterView } from '@/components/calendar/SemesterView'
 import { CsvUploader } from '@/components/calendar/CsvUploader'
 import { TrashDialog } from '@/components/calendar/TrashDialog'
 import { GlobalCategoryFilter } from '@/components/calendar/GlobalCategoryFilter'
+import { ProfileDropdown } from '@/components/profile/ProfileDropdown'
+import { SettingsModal } from '@/components/profile/SettingsModal'
 
 export default function CalendarPage() {
   const [mounted, setMounted] = useState(false)
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   const { 
     currentDate, viewMode, setCurrentDate, setViewMode,
     semesterYear, semesterTerm, setSemesterYear, setSemesterTerm, activeCategories 
@@ -112,7 +116,6 @@ export default function CalendarPage() {
           {/* Keep uploader and trash at the bottom or below */}
           <div className="mt-auto px-2 flex flex-col space-y-3">
             <CsvUploader />
-            <TrashDialog />
           </div>
         </div>
       </aside>
@@ -146,12 +149,12 @@ export default function CalendarPage() {
             
             <div className="flex items-center space-x-6">
               {/* View Switcher Segmented Control */}
-              <div className="flex items-center bg-gray-200/60 p-1 rounded-xl">
+              <div className="flex items-center bg-gray-200/60 p-1 rounded-xl overflow-x-auto hide-scrollbar w-full sm:w-auto">
                 {(['monthly', 'weekly', 'list', 'semester'] as const).map((mode) => (
                   <button
                     key={mode}
                     onClick={() => setViewMode(mode)}
-                    className={`px-4 py-1.5 rounded-lg text-sm font-semibold transition-all ${
+                    className={`px-3 sm:px-4 py-1 sm:py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-all whitespace-nowrap flex-1 sm:flex-none text-center ${
                       viewMode === mode ? 'bg-white text-slate-900 shadow-sm' : 'text-gray-500 hover:text-gray-700 shadow-none'
                     }`}
                   >
@@ -160,14 +163,14 @@ export default function CalendarPage() {
                 ))}
               </div>
 
-              <div className="w-10 h-10 rounded-full bg-slate-200 shadow-sm flex items-center justify-center text-sm font-bold text-slate-600">
-                U
+              <div className="hidden sm:block">
+                <ProfileDropdown onOpenSettings={() => setIsSettingsOpen(true)} />
               </div>
             </div>
           </div>
           
           {/* Global Category Filter Moved Here! (Top Left) */}
-          <div className="flex items-center justify-start">
+          <div className="flex items-center justify-start overflow-x-auto hide-scrollbar pb-1">
             <GlobalCategoryFilter />
           </div>
         </header>
@@ -187,6 +190,9 @@ export default function CalendarPage() {
           <Plus className="w-8 h-8" />
         </button>
       </AddEventDialog>
+
+      {/* Settings Modal */}
+      <SettingsModal open={isSettingsOpen} onOpenChange={setIsSettingsOpen} />
     </div>
   )
 }

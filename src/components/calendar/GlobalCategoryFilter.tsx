@@ -39,7 +39,7 @@ export function GlobalCategoryFilter() {
   }
 
   return (
-    <div className="flex flex-wrap items-center gap-1.5 ml-4">
+    <div className="flex items-center gap-1.5 w-max px-1 py-1">
       <button
         type="button"
         onClick={() => setActiveCategories([])}

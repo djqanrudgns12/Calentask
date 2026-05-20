@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { getActivities, getCategories, createActivity, deleteActivity, createCategory, deleteCategory, getDeletedActivities, restoreActivity, type Activity, type Category } from '@/app/actions/calendar'
+import { getActivities, getCategories, createActivity, deleteActivity, createCategory, deleteCategory, getDeletedActivities, restoreActivity, hardDeleteActivity, emptyTrash, type Activity, type Category } from '@/app/actions/calendar'
+import { getUserProfile, updateUserProfile } from '@/app/actions/profile'
 
 export function useCategories() {
   return useQuery({
@@ -43,13 +44,11 @@ export function useCreateActivity(startDate: string, endDate: string) {
     mutationFn: ({ payload, categoryIds }: { payload: Omit<Activity, 'id' | 'user_id' | 'deleted_at' | 'categories'>, categoryIds: string[] }) => 
       createActivity(payload, categoryIds),
     onMutate: async (newActivityData) => {
-      // 낙관적 업데이트 로직 (Optimistic UI)
       await queryClient.cancelQueries({ queryKey: ['activities', startDate, endDate] })
       
       const previousActivities = queryClient.getQueryData<Activity[]>(['activities', startDate, endDate])
       
       if (previousActivities) {
-        // 임시 ID 부여 및 프론트엔드 카테고리 매핑 (빠른 렌더링용)
         const optimisticActivity: Activity = {
           id: `temp-${Date.now()}`,
           user_id: 'temp',
@@ -61,7 +60,7 @@ export function useCreateActivity(startDate: string, endDate: string) {
           type: newActivityData.payload.type,
           hex_color: newActivityData.payload.hex_color || null,
           deleted_at: null,
-          categories: [] // 임시 처리
+          categories: []
         }
         
         queryClient.setQueryData(['activities', startDate, endDate], [...previousActivities, optimisticActivity])
@@ -69,7 +68,6 @@ export function useCreateActivity(startDate: string, endDate: string) {
       return { previousActivities }
     },
     onError: (err, newActivityData, context) => {
-      // 에러 발생 시 롤백
       if (context?.previousActivities) {
         queryClient.setQueryData(['activities', startDate, endDate], context.previousActivities)
       }
@@ -80,7 +78,6 @@ export function useCreateActivity(startDate: string, endDate: string) {
   })
 }
 
-// 소프트 삭제(휴지통으로 이동)
 export function useDeleteActivity() {
   const queryClient = useQueryClient()
   return useMutation({
@@ -92,7 +89,6 @@ export function useDeleteActivity() {
   })
 }
 
-// 휴지통 조회
 export function useDeletedActivities() {
   return useQuery({
     queryKey: ['deleted_activities'],
@@ -100,7 +96,6 @@ export function useDeletedActivities() {
   })
 }
 
-// 휴지통에서 복구
 export function useRestoreActivity() {
   const queryClient = useQueryClient()
   return useMutation({
@@ -108,6 +103,43 @@ export function useRestoreActivity() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['activities'] })
       queryClient.invalidateQueries({ queryKey: ['deleted_activities'] })
+    }
+  })
+}
+
+export function useHardDeleteActivity() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (id: string) => hardDeleteActivity(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['deleted_activities'] })
+    }
+  })
+}
+
+export function useEmptyTrash() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: () => emptyTrash(),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['deleted_activities'] })
+    }
+  })
+}
+
+export function useUserProfile() {
+  return useQuery({
+    queryKey: ['userProfile'],
+    queryFn: () => getUserProfile(),
+  })
+}
+
+export function useUpdateProfile() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (payload: { full_name?: string; username?: string; avatar_url?: string }) => updateUserProfile(payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['userProfile'] })
     }
   })
 }

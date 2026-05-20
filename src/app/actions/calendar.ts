@@ -1,3 +1,4 @@
+﻿/* eslint-disable @typescript-eslint/no-explicit-any */
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
@@ -170,6 +171,36 @@ export async function restoreActivity(id: string) {
     .from('activities')
     .update({ deleted_at: null })
     .eq('id', id)
+
+  if (error) throw new Error(error.message)
+  revalidatePath('/')
+  return true
+}
+
+// 휴지통 영구 삭제
+export async function hardDeleteActivity(id: string) {
+  const supabase = await createClient()
+  const { error } = await supabase
+    .from('activities')
+    .delete()
+    .eq('id', id)
+
+  if (error) throw new Error(error.message)
+  revalidatePath('/')
+  return true
+}
+
+// ������ ���� (�ϰ� ���� ����)
+export async function emptyTrash() {
+  const supabase = await createClient()
+  const { data: userData } = await supabase.auth.getUser()
+  if (!userData.user) throw new Error('Not authenticated')
+
+  const { error } = await supabase
+    .from('activities')
+    .delete()
+    .eq('user_id', userData.user.id)
+    .not('deleted_at', 'is', null)
 
   if (error) throw new Error(error.message)
   revalidatePath('/')

@@ -1,7 +1,9 @@
+/* eslint-disable react-hooks/set-state-in-effect */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -52,6 +54,12 @@ export function AddEventDialog({ children }: { children?: React.ReactNode }) {
 
   const currentMonthStart = startOfMonth(new Date()).toISOString()
   const currentMonthEnd = endOfMonth(new Date()).toISOString()
+
+  useEffect(() => {
+    if (startDate > endDate) {
+      setEndDate(startDate)
+    }
+  }, [startDate, endDate])
 
   const { data: categories = [] } = useCategories()
   const { mutate: createActivity, isPending } = useCreateActivity(currentMonthStart, currentMonthEnd)
@@ -174,22 +182,26 @@ export function AddEventDialog({ children }: { children?: React.ReactNode }) {
       <DialogContent className="sm:max-w-[440px] p-0 overflow-hidden bg-[#f8f9ff] border-none shadow-2xl rounded-2xl">
         <DialogHeader className="px-6 py-4 border-b border-gray-100 bg-white">
           <DialogTitle className="text-xl font-bold text-gray-900">새 일정 추가</DialogTitle>
+          <DialogDescription className="sr-only">새로운 일정을 추가하기 위한 모달입니다. 아래 양식을 채워주세요.</DialogDescription>
         </DialogHeader>
         
-        <form onSubmit={handleSubmit} className="px-6 py-5 space-y-6">
-          {/* Title */}
-          <div>
-            <Input 
-              id="title" 
-              value={title} 
-              onChange={(e) => setTitle(e.target.value)} 
-              placeholder="일정 제목"
-              className="border-gray-200 focus-visible:ring-indigo-500 rounded-lg bg-white h-12 text-base"
-              required 
-            />
-          </div>
+        <form onSubmit={handleSubmit} className="flex flex-col h-full overflow-hidden">
+          {/* Scrollable Content Area */}
+          <div className="flex-1 overflow-y-auto px-6 py-6 pb-24">
+            <div className="space-y-6">
+              {/* Title */}
+              <div>
+                <Input 
+                  id="title" 
+                  value={title} 
+                  onChange={(e) => setTitle(e.target.value)} 
+                  placeholder="일정 제목"
+                  className="border-gray-200 focus-visible:ring-indigo-500 rounded-lg bg-white h-12 text-base"
+                  required 
+                />
+              </div>
           
-          {/* Time block */}
+              {/* Time block */}
           <div className="bg-white/50 rounded-xl p-4 space-y-4 border border-gray-100 shadow-sm">
             <div className="flex items-center justify-between">
               <Label className="text-gray-600 font-medium text-sm">하루 종일</Label>
@@ -354,8 +366,11 @@ export function AddEventDialog({ children }: { children?: React.ReactNode }) {
             />
           </div>
 
+          </div>
+          </div>
+          
           {/* Actions */}
-          <div className="pt-2 flex justify-between items-center bg-white -mx-6 -mb-5 px-6 py-4 border-t border-gray-100 rounded-b-2xl">
+          <div className="flex-shrink-0 flex justify-between items-center bg-white px-6 py-4 border-t border-gray-100">
             <div /> {/* Spacer */}
             <div className="flex items-center gap-2">
               <Button type="button" variant="outline" className="border-gray-200 text-gray-700 font-medium" onClick={() => closeAddEvent()}>

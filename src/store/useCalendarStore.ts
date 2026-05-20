@@ -11,6 +11,7 @@ interface CalendarState {
   semesterTerm: 1 | 2
   isAddEventOpen: boolean
   addEventDate: Date | null
+  showHolidays: boolean
   setCurrentDate: (date: Date) => void
   setViewMode: (mode: ViewMode) => void
   setActiveCategories: (categories: string[]) => void
@@ -18,6 +19,8 @@ interface CalendarState {
   setSemesterTerm: (term: 1 | 2) => void
   openAddEvent: (date?: Date) => void
   closeAddEvent: () => void
+  setShowHolidays: (show: boolean) => void
+  resetStore: () => void
 }
 
 export const useCalendarStore = create<CalendarState>()(
@@ -30,6 +33,7 @@ export const useCalendarStore = create<CalendarState>()(
       semesterTerm: new Date().getMonth() >= 2 && new Date().getMonth() <= 7 ? 1 : 2,
       isAddEventOpen: false,
       addEventDate: null,
+      showHolidays: true,
       setCurrentDate: (date) => set({ currentDate: date }),
       setViewMode: (mode) => set({ viewMode: mode }),
       setActiveCategories: (categories) => set({ activeCategories: categories }),
@@ -37,6 +41,17 @@ export const useCalendarStore = create<CalendarState>()(
       setSemesterTerm: (term) => set({ semesterTerm: term }),
       openAddEvent: (date) => set({ isAddEventOpen: true, addEventDate: date || null }),
       closeAddEvent: () => set({ isAddEventOpen: false, addEventDate: null }),
+      setShowHolidays: (show) => set({ showHolidays: show }),
+      resetStore: () => set({
+        currentDate: new Date(),
+        viewMode: 'monthly',
+        activeCategories: [],
+        semesterYear: new Date().getFullYear(),
+        semesterTerm: new Date().getMonth() >= 2 && new Date().getMonth() <= 7 ? 1 : 2,
+        isAddEventOpen: false,
+        addEventDate: null,
+        showHolidays: true,
+      }),
     }),
     {
       name: 'calendar-storage',
@@ -46,14 +61,18 @@ export const useCalendarStore = create<CalendarState>()(
         activeCategories: state.activeCategories,
         semesterYear: state.semesterYear,
         semesterTerm: state.semesterTerm,
+        showHolidays: state.showHolidays,
       }),
-      merge: (persistedState: any, currentState) => ({
-        ...currentState,
-        ...persistedState,
-        currentDate: persistedState.currentDate 
-          ? new Date(persistedState.currentDate) 
-          : currentState.currentDate,
-      }),
+      merge: (persistedState: unknown, currentState) => {
+        const state = persistedState as Partial<CalendarState>
+        return {
+          ...currentState,
+          ...state,
+          currentDate: state.currentDate 
+            ? new Date(state.currentDate) 
+            : currentState.currentDate,
+        }
+      },
     }
   )
 )

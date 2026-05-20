@@ -11,7 +11,7 @@ interface SemesterViewProps {
 }
 
 export function SemesterView({ events }: SemesterViewProps) {
-  const { semesterYear, semesterTerm, openAddEvent } = useCalendarStore()
+  const { semesterYear, semesterTerm, openAddEvent, showHolidays } = useCalendarStore()
 
   // 1학기: 3월 1일 ~ 8월 31일, 2학기: 9월 1일 ~ 익년 2월 28일
   const semesterStartDate = new Date(semesterYear, semesterTerm === 1 ? 2 : 8, 1)
@@ -58,7 +58,7 @@ export function SemesterView({ events }: SemesterViewProps) {
                     const isCurrentMonth = isSameMonth(day, monthDate)
                     const isToday = isSameDay(day, new Date())
                     const dayEvents = events.filter(e => isSameDay(new Date(e.start_time), day))
-                    const holidayName = getHolidayName(day)
+                    const holidayName = showHolidays ? getHolidayName(day) : null
 
                     return (
                       <div 
