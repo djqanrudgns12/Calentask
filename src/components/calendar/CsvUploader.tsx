@@ -49,7 +49,8 @@ export function CsvUploader() {
                 end_time: endStr,
                 is_all_day: true,
                 type: 'EVENT',
-                memo
+                memo,
+                hex_color: '#4A90E2' // 기본 이벤트 색상 지정
               },
               categoryIds: [] // 임시: 업로드 전용 NEIS 카테고리로 묶을 수도 있음
             })
