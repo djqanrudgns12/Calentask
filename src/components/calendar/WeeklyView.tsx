@@ -26,19 +26,19 @@ export function WeeklyView({ currentDate, events }: WeeklyViewProps) {
           return (
             <div 
               key={idx} 
-              className="flex flex-col bg-white rounded-[2rem] shadow-apple-soft hover:shadow-apple-float transition-all overflow-hidden min-h-[400px]"
+              className="flex flex-col bg-white/70 backdrop-blur-xl border border-white/40 rounded-[2rem] shadow-apple-soft hover:shadow-lg transition-all overflow-hidden min-h-[400px]"
             >
-              <div className="flex flex-col items-center justify-center pt-6 pb-4 bg-white">
-                <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">
+              <div className="flex flex-col items-center justify-center pt-6 pb-4 bg-transparent">
+                <span className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">
                   {format(day, 'EEE')}
                 </span>
                 <div className={`w-10 h-10 flex items-center justify-center rounded-full text-lg font-bold ${
-                  isToday ? 'bg-blue-600 text-white shadow-md' : holidayName || day.getDay() === 0 ? 'text-red-500' : 'text-slate-800'
+                  isToday ? 'bg-indigo-600 text-white shadow-md shadow-indigo-200' : holidayName || day.getDay() === 0 ? 'text-red-500' : 'text-slate-700'
                 }`}>
                   {format(day, 'd')}
                 </div>
                 {holidayName && (
-                  <span className="mt-2 text-[10px] font-semibold text-red-500 truncate px-2 text-center w-full">
+                  <span className="mt-2 text-[10px] font-bold text-red-400 truncate px-2 text-center w-full">
                     {holidayName}
                   </span>
                 )}
@@ -66,7 +66,7 @@ export function WeeklyView({ currentDate, events }: WeeklyViewProps) {
                           ))}
                         </div>
                       </div>
-                      <span className="text-sm font-semibold text-slate-800 line-clamp-2" style={{ color: primaryColor }}>
+                      <span className="text-sm font-semibold text-slate-700 line-clamp-2" style={{ color: primaryColor }}>
                         {event.title}
                       </span>
                     </div>

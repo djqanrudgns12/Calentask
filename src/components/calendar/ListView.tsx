@@ -37,7 +37,7 @@ export function ListView({ currentDate, events }: ListViewProps) {
           return (
             <div 
               key={event.id}
-              className="group flex items-start p-5 bg-white rounded-[1.5rem] shadow-apple-soft hover:shadow-apple-float hover:scale-[1.01] transition-all cursor-pointer"
+              className="group flex items-start p-5 bg-white/70 backdrop-blur-xl border border-white/40 rounded-[1.5rem] shadow-apple-soft hover:shadow-lg hover:scale-[1.01] transition-all cursor-pointer"
             >
               <div className="flex flex-col items-center justify-center w-20 flex-shrink-0 pr-5 mr-5 border-r border-gray-100">
                 <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">

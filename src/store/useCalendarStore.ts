@@ -6,12 +6,16 @@ export type ViewMode = 'monthly' | 'weekly' | 'list' | 'semester'
 interface CalendarState {
   currentDate: Date
   viewMode: ViewMode
-  activeFilter: 'all' | 'work' | 'personal'
+  activeCategories: string[]
+  semesterYear: number
+  semesterTerm: 1 | 2
   isAddEventOpen: boolean
   addEventDate: Date | null
   setCurrentDate: (date: Date) => void
   setViewMode: (mode: ViewMode) => void
-  setActiveFilter: (filter: 'all' | 'work' | 'personal') => void
+  setActiveCategories: (categories: string[]) => void
+  setSemesterYear: (year: number) => void
+  setSemesterTerm: (term: 1 | 2) => void
   openAddEvent: (date?: Date) => void
   closeAddEvent: () => void
 }
@@ -21,12 +25,16 @@ export const useCalendarStore = create<CalendarState>()(
     (set) => ({
       currentDate: new Date(),
       viewMode: 'monthly',
-      activeFilter: 'all',
+      activeCategories: [], // Empty means all categories
+      semesterYear: new Date().getFullYear(),
+      semesterTerm: new Date().getMonth() >= 2 && new Date().getMonth() <= 7 ? 1 : 2,
       isAddEventOpen: false,
       addEventDate: null,
       setCurrentDate: (date) => set({ currentDate: date }),
       setViewMode: (mode) => set({ viewMode: mode }),
-      setActiveFilter: (filter) => set({ activeFilter: filter }),
+      setActiveCategories: (categories) => set({ activeCategories: categories }),
+      setSemesterYear: (year) => set({ semesterYear: year }),
+      setSemesterTerm: (term) => set({ semesterTerm: term }),
       openAddEvent: (date) => set({ isAddEventOpen: true, addEventDate: date || null }),
       closeAddEvent: () => set({ isAddEventOpen: false, addEventDate: null }),
     }),
@@ -35,7 +43,9 @@ export const useCalendarStore = create<CalendarState>()(
       partialize: (state) => ({
         currentDate: state.currentDate,
         viewMode: state.viewMode,
-        activeFilter: state.activeFilter,
+        activeCategories: state.activeCategories,
+        semesterYear: state.semesterYear,
+        semesterTerm: state.semesterTerm,
       }),
       merge: (persistedState: any, currentState) => ({
         ...currentState,
