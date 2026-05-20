@@ -2,7 +2,9 @@
 
 import { useState } from 'react'
 import { format, isSameMonth, parseISO } from 'date-fns'
+import { useCalendarStore } from '@/store/useCalendarStore'
 import { Activity } from '@/app/actions/calendar'
+import { Pencil, Trash2 } from 'lucide-react'
 
 interface ListViewProps {
   currentDate: Date
@@ -10,6 +12,7 @@ interface ListViewProps {
 }
 
 export function ListView({ currentDate, events }: ListViewProps) {
+  const { openEditEvent, openDeleteConfirm } = useCalendarStore()
   const [selectedEvent, setSelectedEvent] = useState<Activity | null>(null)
 
   const monthEvents = events
@@ -62,7 +65,7 @@ export function ListView({ currentDate, events }: ListViewProps) {
                     <div 
                       key={event.id}
                       onClick={() => setSelectedEvent(event)}
-                      className="group/card flex flex-col p-4 rounded-xl cursor-pointer transition-all hover:bg-white hover:shadow-sm border border-transparent hover:border-[#EEEEEE]"
+                      className="group/card relative flex flex-col p-4 rounded-xl cursor-pointer transition-all hover:bg-white hover:shadow-sm border border-transparent hover:border-[#EEEEEE]"
                     >
                       <div className="flex items-center justify-between mb-1">
                         <span className="text-xs font-semibold text-slate-400 flex items-center">
@@ -81,9 +84,25 @@ export function ListView({ currentDate, events }: ListViewProps) {
                           ))}
                         </div>
                       </div>
-                      <h4 className="text-lg font-bold text-slate-800 group-hover/card:text-[#312E81] transition-colors">
+                      <h4 className="text-lg font-bold text-slate-800 group-hover/card:text-[#312E81] transition-colors pr-12">
                         {event.title}
                       </h4>
+
+                      {/* Hover Actions */}
+                      <div className="absolute right-4 top-1/2 -translate-y-1/2 hidden group-hover/card:flex items-center gap-1 bg-white/90 px-1 py-0.5 rounded shadow-sm">
+                        <button 
+                          onClick={(e) => { e.stopPropagation(); openEditEvent(event); }}
+                          className="p-1 hover:bg-gray-100 rounded text-gray-500 hover:text-indigo-600 transition-colors"
+                        >
+                          <Pencil className="w-4 h-4" />
+                        </button>
+                        <button 
+                          onClick={(e) => { e.stopPropagation(); openDeleteConfirm(event.id); }}
+                          className="p-1 hover:bg-gray-100 rounded text-gray-500 hover:text-red-600 transition-colors"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
                     </div>
                   )
                 })}

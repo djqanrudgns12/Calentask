@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { getActivities, getCategories, createActivity, deleteActivity, createCategory, deleteCategory, getDeletedActivities, restoreActivity, hardDeleteActivity, emptyTrash, type Activity, type Category } from '@/app/actions/calendar'
+import { getActivities, getCategories, createActivity, updateActivity, deleteActivity, createCategory, updateCategory, deleteCategory, getDeletedActivities, restoreActivity, hardDeleteActivity, emptyTrash, type Activity, type Category } from '@/app/actions/calendar'
 import { getUserProfile, updateUserProfile } from '@/app/actions/profile'
 
 export function useCategories() {
@@ -13,7 +13,51 @@ export function useCreateCategory() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: ({ name, hexColor }: { name: string, hexColor: string }) => createCategory(name, hexColor),
-    onSuccess: () => {
+    onMutate: async (newCategory) => {
+      await queryClient.cancelQueries({ queryKey: ['categories'] })
+      const previousCategories = queryClient.getQueryData<Category[]>(['categories'])
+      
+      const optimisticCategory: Category = {
+        id: `temp-${Date.now()}`,
+        name: newCategory.name,
+        hex_color: newCategory.hexColor,
+        is_default: false,
+        user_id: 'temp-user'
+      }
+      
+      queryClient.setQueryData<Category[]>(['categories'], (old) => old ? [...old, optimisticCategory] : [optimisticCategory])
+      return { previousCategories }
+    },
+    onError: (err, newCategory, context) => {
+      if (context?.previousCategories) {
+        queryClient.setQueryData(['categories'], context.previousCategories)
+      }
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['categories'] })
+    }
+  })
+}
+
+export function useUpdateCategory() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, name, hexColor }: { id: string, name: string, hexColor: string }) => updateCategory(id, name, hexColor),
+    onMutate: async (updatedCat) => {
+      await queryClient.cancelQueries({ queryKey: ['categories'] })
+      const previousCategories = queryClient.getQueryData<Category[]>(['categories'])
+      
+      queryClient.setQueryData<Category[]>(['categories'], (old) => 
+        old?.map(cat => cat.id === updatedCat.id ? { ...cat, name: updatedCat.name, hex_color: updatedCat.hexColor } : cat)
+      )
+      return { previousCategories }
+    },
+    onError: (err, newCategory, context) => {
+      if (context?.previousCategories) {
+        queryClient.setQueryData(['categories'], context.previousCategories)
+      }
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['categories'] })
     }
   })
@@ -23,7 +67,21 @@ export function useDeleteCategory() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: (id: string) => deleteCategory(id),
-    onSuccess: () => {
+    onMutate: async (id) => {
+      await queryClient.cancelQueries({ queryKey: ['categories'] })
+      const previousCategories = queryClient.getQueryData<Category[]>(['categories'])
+      
+      queryClient.setQueryData<Category[]>(['categories'], (old) => 
+        old?.filter(cat => cat.id !== id)
+      )
+      return { previousCategories }
+    },
+    onError: (err, id, context) => {
+      if (context?.previousCategories) {
+        queryClient.setQueryData(['categories'], context.previousCategories)
+      }
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['categories'] })
     }
   })
@@ -64,6 +122,39 @@ export function useCreateActivity(startDate: string, endDate: string) {
         }
         
         queryClient.setQueryData(['activities', startDate, endDate], [...previousActivities, optimisticActivity])
+      }
+      return { previousActivities }
+    },
+    onError: (err, newActivityData, context) => {
+      if (context?.previousActivities) {
+        queryClient.setQueryData(['activities', startDate, endDate], context.previousActivities)
+      }
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['activities'] })
+    }
+  })
+}
+
+export function useUpdateActivity(startDate: string, endDate: string) {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ id, payload, categoryIds }: { id: string, payload: Partial<Omit<Activity, 'id' | 'user_id' | 'deleted_at' | 'categories'>>, categoryIds: string[] }) => 
+      updateActivity(id, payload, categoryIds),
+    onMutate: async (newActivityData) => {
+      await queryClient.cancelQueries({ queryKey: ['activities', startDate, endDate] })
+      
+      const previousActivities = queryClient.getQueryData<Activity[]>(['activities', startDate, endDate])
+      
+      if (previousActivities) {
+        queryClient.setQueryData(['activities', startDate, endDate], 
+          previousActivities.map(activity => 
+            activity.id === newActivityData.id 
+              ? { ...activity, ...newActivityData.payload, categories: [] } // 카테고리는 낙관적 업데이트에 포함 생략(단순화)
+              : activity
+          )
+        )
       }
       return { previousActivities }
     },

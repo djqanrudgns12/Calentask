@@ -1,8 +1,9 @@
 'use client'
 
-import { format, eachDayOfInterval, isSameMonth, isSameDay, startOfWeek, endOfWeek, addMonths, startOfMonth, endOfMonth } from 'date-fns'
+import { format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, eachDayOfInterval, isSameMonth, isSameDay, addMonths } from 'date-fns'
 import { Activity } from '@/app/actions/calendar'
 import { getHolidayName } from '@/lib/holidays'
+import { Pencil, Trash2 } from 'lucide-react'
 import { useCalendarStore } from '@/store/useCalendarStore'
 
 interface SemesterViewProps {
@@ -11,7 +12,7 @@ interface SemesterViewProps {
 }
 
 export function SemesterView({ events }: SemesterViewProps) {
-  const { semesterYear, semesterTerm, openAddEvent, showHolidays } = useCalendarStore()
+  const { semesterYear, semesterTerm, openAddEvent, showHolidays, openEditEvent, openDeleteConfirm } = useCalendarStore()
 
   // 1학기: 3월 1일 ~ 8월 31일, 2학기: 9월 1일 ~ 익년 2월 28일
   const semesterStartDate = new Date(semesterYear, semesterTerm === 1 ? 2 : 8, 1)
@@ -93,9 +94,25 @@ export function SemesterView({ events }: SemesterViewProps) {
                                   borderLeftColor: primaryColor
                                 }}
                               >
-                                <span className="font-semibold text-slate-700 truncate leading-tight">
+                                <span className="font-semibold text-slate-700 truncate leading-tight pr-8">
                                   {event.title}
                                 </span>
+
+                                {/* Hover Actions */}
+                                <div className="absolute right-0.5 top-1/2 -translate-y-1/2 hidden group-hover:flex items-center gap-0.5 bg-white/90 px-0.5 py-0.5 rounded shadow-sm">
+                                  <button 
+                                    onClick={(e) => { e.stopPropagation(); openEditEvent(event); }}
+                                    className="p-0.5 hover:bg-gray-100 rounded text-gray-500 hover:text-indigo-600 transition-colors"
+                                  >
+                                    <Pencil className="w-2.5 h-2.5" />
+                                  </button>
+                                  <button 
+                                    onClick={(e) => { e.stopPropagation(); openDeleteConfirm(event.id); }}
+                                    className="p-0.5 hover:bg-gray-100 rounded text-gray-500 hover:text-red-600 transition-colors"
+                                  >
+                                    <Trash2 className="w-2.5 h-2.5" />
+                                  </button>
+                                </div>
                               </div>
                             )
                           })}

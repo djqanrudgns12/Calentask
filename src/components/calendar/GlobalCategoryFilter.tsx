@@ -3,12 +3,12 @@
 import { useState } from 'react'
 import { useCalendarStore } from '@/store/useCalendarStore'
 import { useCategories, useCreateCategory, useDeleteCategory } from '@/hooks/useCalendarQueries'
-import { Plus, X } from 'lucide-react'
+import { Plus, X, Pencil } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 
 export function GlobalCategoryFilter() {
-  const { activeCategories, setActiveCategories } = useCalendarStore()
+  const { activeCategories, setActiveCategories, openEditCategory } = useCalendarStore()
   const { data: categories = [] } = useCategories()
   const { mutate: createCategory } = useCreateCategory()
   const { mutate: deleteCategory } = useDeleteCategory()
@@ -55,30 +55,36 @@ export function GlobalCategoryFilter() {
       {categories.map(cat => {
         const isSelected = activeCategories.includes(cat.id)
         return (
-          <button
-            key={cat.id}
-            type="button"
-            onClick={() => toggleCategory(cat.id)}
-            className={`px-3 py-1.5 text-sm font-semibold rounded-lg transition-all flex items-center gap-1.5 shadow-sm
-              ${isSelected 
-                ? 'bg-[#4f46e5] text-white' 
-                : 'bg-white/60 text-slate-600 hover:bg-white'
-              }`}
-          >
-            {cat.name}
-            {isSelected ? (
-              <X className="w-3.5 h-3.5" />
-            ) : (
-              !cat.is_default && (
+          <div key={cat.id} className="relative group/cat flex items-center">
+            <button
+              type="button"
+              onClick={() => toggleCategory(cat.id)}
+              className={`px-3 py-1.5 text-sm font-semibold rounded-lg transition-all flex items-center gap-1.5 shadow-sm text-white border-2 
+                ${isSelected ? 'border-white ring-2 ring-indigo-300' : 'border-transparent opacity-85 hover:opacity-100'}`}
+              style={{ backgroundColor: cat.hex_color || '#4f46e5', textShadow: '0 1px 2px rgba(0,0,0,0.5)' }}
+            >
+              {cat.name}
+              {isSelected && <X className="w-3.5 h-3.5" />}
+            </button>
+            
+            {/* Hover Actions */}
+            <div className="absolute -top-2 -right-2 hidden group-hover/cat:flex items-center gap-0.5 bg-white shadow-md rounded-full px-1 py-0.5 z-10 border border-gray-100">
+              <div
+                className="cursor-pointer hover:bg-gray-100 p-0.5 rounded-full text-indigo-500 transition-colors"
+                onClick={(e) => { e.stopPropagation(); openEditCategory(cat); }}
+              >
+                <Pencil className="w-3 h-3" />
+              </div>
+              {!cat.is_default && (
                 <div
-                  className="hover:bg-red-200 p-0.5 rounded-full text-red-500 transition-colors"
+                  className="cursor-pointer hover:bg-red-100 p-0.5 rounded-full text-red-500 transition-colors"
                   onClick={(e) => handleDeleteCategory(e, cat.id)}
                 >
                   <X className="w-3 h-3" />
                 </div>
-              )
-            )}
-          </button>
+              )}
+            </div>
+          </div>
         )
       })}
       

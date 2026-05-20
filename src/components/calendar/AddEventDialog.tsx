@@ -7,8 +7,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { X, Plus, Calendar as CalendarIcon, Clock } from 'lucide-react'
-import { useCategories, useCreateActivity, useCreateCategory, useDeleteCategory } from '@/hooks/useCalendarQueries'
+import { X, Plus, Calendar as CalendarIcon, Clock, Pencil } from 'lucide-react'
+import { useCategories, useCreateActivity, useUpdateActivity, useCreateCategory, useDeleteCategory } from '@/hooks/useCalendarQueries'
 import { format, startOfMonth, endOfMonth, parseISO } from 'date-fns'
 import { useCalendarStore } from '@/store/useCalendarStore'
 
@@ -36,7 +36,7 @@ const COLOR_SWATCHES = [
 ]
 
 export function AddEventDialog({ children }: { children?: React.ReactNode }) {
-  const { isAddEventOpen, closeAddEvent, addEventDate, openAddEvent } = useCalendarStore()
+  const { isAddEventOpen, closeAddEvent, addEventDate, openAddEvent, editingEvent, openEditCategory } = useCalendarStore()
   
   const [title, setTitle] = useState('')
   const [isAllDay, setIsAllDay] = useState(false)
@@ -62,36 +62,55 @@ export function AddEventDialog({ children }: { children?: React.ReactNode }) {
   }, [startDate, endDate])
 
   const { data: categories = [] } = useCategories()
-  const { mutate: createActivity, isPending } = useCreateActivity(currentMonthStart, currentMonthEnd)
+  const { mutate: createActivity, isPending: isCreating } = useCreateActivity(currentMonthStart, currentMonthEnd)
+  const { mutate: updateActivity, isPending: isUpdating } = useUpdateActivity(currentMonthStart, currentMonthEnd)
   const { mutate: createCategory } = useCreateCategory()
   const { mutate: deleteCategory } = useDeleteCategory()
 
   useEffect(() => {
     if (isAddEventOpen) {
-      if (addEventDate) {
-        setStartDate(format(addEventDate, 'yyyy-MM-dd'))
-        setEndDate(format(addEventDate, 'yyyy-MM-dd'))
+      if (editingEvent) {
+        // 수정 모드 초기화
+        const startObj = parseISO(editingEvent.start_time)
+        const endObj = parseISO(editingEvent.end_time)
+        setStartDate(format(startObj, 'yyyy-MM-dd'))
+        setStartTime(format(startObj, 'HH:mm'))
+        setEndDate(format(endObj, 'yyyy-MM-dd'))
+        setEndTime(format(endObj, 'HH:mm'))
+        setTitle(editingEvent.title)
+        setIsAllDay(editingEvent.is_all_day)
+        setSelectedCategories(editingEvent.categories?.map(c => c.id) || [])
+        setCustomColor(editingEvent.hex_color)
+        setMemo(editingEvent.memo || '')
+        setIsAddingCategory(false)
+        setNewCategoryName('')
       } else {
-        const now = new Date()
-        setStartDate(format(now, 'yyyy-MM-dd'))
-        setEndDate(format(now, 'yyyy-MM-dd'))
+        // 생성 모드 초기화
+        if (addEventDate) {
+          setStartDate(format(addEventDate, 'yyyy-MM-dd'))
+          setEndDate(format(addEventDate, 'yyyy-MM-dd'))
+        } else {
+          const now = new Date()
+          setStartDate(format(now, 'yyyy-MM-dd'))
+          setEndDate(format(now, 'yyyy-MM-dd'))
+        }
+        // Set to next hour for default times
+        const nextHour = new Date()
+        nextHour.setHours(nextHour.getHours() + 1, 0, 0, 0)
+        setStartTime(format(nextHour, 'HH:mm'))
+        nextHour.setHours(nextHour.getHours() + 1)
+        setEndTime(format(nextHour, 'HH:mm'))
+        
+        setTitle('')
+        setIsAllDay(false)
+        setSelectedCategories([])
+        setCustomColor(null)
+        setMemo('')
+        setIsAddingCategory(false)
+        setNewCategoryName('')
       }
-      // Set to next hour for default times
-      const nextHour = new Date()
-      nextHour.setHours(nextHour.getHours() + 1, 0, 0, 0)
-      setStartTime(format(nextHour, 'HH:mm'))
-      nextHour.setHours(nextHour.getHours() + 1)
-      setEndTime(format(nextHour, 'HH:mm'))
-      
-      setTitle('')
-      setIsAllDay(false)
-      setSelectedCategories([])
-      setCustomColor(null)
-      setMemo('')
-      setIsAddingCategory(false)
-      setNewCategoryName('')
     }
-  }, [isAddEventOpen, addEventDate])
+  }, [isAddEventOpen, addEventDate, editingEvent])
 
   const toggleCategory = (id: string) => {
     setSelectedCategories(prev => {
@@ -145,25 +164,42 @@ export function AddEventDialog({ children }: { children?: React.ReactNode }) {
       finalHex = categories.find(c => c.id === selectedCategories[0])?.hex_color || null
     }
 
-    createActivity(
-      {
-        payload: {
-          title,
-          start_time: startObj.toISOString(),
-          end_time: endObj.toISOString(),
-          is_all_day: isAllDay,
-          type: 'EVENT',
-          memo,
-          hex_color: finalHex
+    const payloadData = {
+      title,
+      start_time: startObj.toISOString(),
+      end_time: endObj.toISOString(),
+      is_all_day: isAllDay,
+      type: 'EVENT' as const,
+      memo,
+      hex_color: finalHex
+    }
+
+    if (editingEvent) {
+      updateActivity(
+        {
+          id: editingEvent.id,
+          payload: payloadData,
+          categoryIds: selectedCategories
         },
-        categoryIds: selectedCategories
-      },
-      {
-        onSuccess: () => {
-          closeAddEvent()
+        {
+          onSuccess: () => {
+            closeAddEvent()
+          }
         }
-      }
-    )
+      )
+    } else {
+      createActivity(
+        {
+          payload: payloadData,
+          categoryIds: selectedCategories
+        },
+        {
+          onSuccess: () => {
+            closeAddEvent()
+          }
+        }
+      )
+    }
   }
 
   const handleOpenChange = (open: boolean) => {
@@ -181,8 +217,8 @@ export function AddEventDialog({ children }: { children?: React.ReactNode }) {
       )}
       <DialogContent className="sm:max-w-[440px] p-0 overflow-hidden bg-[#f8f9ff] border-none shadow-2xl rounded-2xl">
         <DialogHeader className="px-6 py-4 border-b border-gray-100 bg-white">
-          <DialogTitle className="text-xl font-bold text-gray-900">새 일정 추가</DialogTitle>
-          <DialogDescription className="sr-only">새로운 일정을 추가하기 위한 모달입니다. 아래 양식을 채워주세요.</DialogDescription>
+          <DialogTitle className="text-xl font-bold text-gray-900">{editingEvent ? '일정 수정' : '새 일정 추가'}</DialogTitle>
+          <DialogDescription className="sr-only">{editingEvent ? '일정을 수정합니다.' : '새로운 일정을 추가하기 위한 모달입니다. 아래 양식을 채워주세요.'}</DialogDescription>
         </DialogHeader>
         
         <form onSubmit={handleSubmit} className="flex flex-col h-full overflow-hidden">
@@ -281,30 +317,36 @@ export function AddEventDialog({ children }: { children?: React.ReactNode }) {
               {categories.map(cat => {
                 const isSelected = selectedCategories.includes(cat.id)
                 return (
-                  <button
-                    key={cat.id}
-                    type="button"
-                    onClick={() => toggleCategory(cat.id)}
-                    className={`px-3.5 py-1.5 text-sm font-medium rounded-full transition-all flex items-center gap-1.5 shadow-sm
-                      ${isSelected 
-                        ? 'bg-[#4f46e5] text-white border-transparent' 
-                        : 'bg-[#dae2fd] text-[#5c647a] border-transparent hover:bg-indigo-100'
-                      }`}
-                  >
-                    {cat.name}
-                    {isSelected ? (
-                      <X className="w-3.5 h-3.5" />
-                    ) : (
-                      !cat.is_default && (
+                  <div key={cat.id} className="relative group/cat flex items-center">
+                    <button
+                      type="button"
+                      onClick={() => toggleCategory(cat.id)}
+                      className={`px-3.5 py-1.5 text-sm font-medium rounded-full transition-all flex items-center gap-1.5 shadow-sm text-white border-2
+                        ${isSelected ? 'border-white ring-2 ring-indigo-300' : 'border-transparent opacity-85 hover:opacity-100'}`}
+                      style={{ backgroundColor: cat.hex_color || '#4f46e5', textShadow: '0 1px 2px rgba(0,0,0,0.5)' }}
+                    >
+                      {cat.name}
+                      {isSelected && <X className="w-3.5 h-3.5" />}
+                    </button>
+                    
+                    {/* Hover Actions */}
+                    <div className="absolute -top-2 -right-2 hidden group-hover/cat:flex items-center gap-0.5 bg-white shadow-md rounded-full px-1 py-0.5 z-10 border border-gray-100">
+                      <div
+                        className="cursor-pointer hover:bg-gray-100 p-0.5 rounded-full text-indigo-500 transition-colors"
+                        onClick={(e) => { e.stopPropagation(); openEditCategory(cat); }}
+                      >
+                        <Pencil className="w-3 h-3" />
+                      </div>
+                      {!cat.is_default && (
                         <div
-                          className="hover:bg-red-200 p-0.5 rounded-full text-red-500 transition-colors"
+                          className="cursor-pointer hover:bg-red-100 p-0.5 rounded-full text-red-500 transition-colors"
                           onClick={(e) => handleDeleteCategory(e, cat.id)}
                         >
                           <X className="w-3 h-3" />
                         </div>
-                      )
-                    )}
-                  </button>
+                      )}
+                    </div>
+                  </div>
                 )
               })}
               
@@ -339,8 +381,8 @@ export function AddEventDialog({ children }: { children?: React.ReactNode }) {
               className="h-2.5 w-full rounded-full" 
               style={{ background: getGradient() }} 
             />
-            <div className="flex items-center gap-4">
-              <span className="text-xs text-gray-500 font-medium">색상 지정:</span>
+            <div className="flex items-center gap-3">
+              <span className="text-xs text-gray-500 font-medium text-center shrink-0 leading-tight">색상<br/>지정:</span>
               <div className="flex flex-wrap items-center gap-2 mt-1">
                 {COLOR_SWATCHES.map(color => (
                   <button
@@ -372,12 +414,12 @@ export function AddEventDialog({ children }: { children?: React.ReactNode }) {
           {/* Actions */}
           <div className="flex-shrink-0 flex justify-between items-center bg-white px-6 py-4 border-t border-gray-100">
             <div /> {/* Spacer */}
-            <div className="flex items-center gap-2">
-              <Button type="button" variant="outline" className="border-gray-200 text-gray-700 font-medium" onClick={() => closeAddEvent()}>
+            <div className="flex gap-3">
+              <Button type="button" variant="ghost" onClick={closeAddEvent} className="text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-full px-5">
                 취소
               </Button>
-              <Button type="submit" className="bg-[#4f46e5] hover:bg-indigo-700 text-white font-medium" disabled={isPending || !title}>
-                {isPending ? '저장 중...' : '일정 저장'}
+              <Button type="submit" disabled={isCreating || isUpdating} className="bg-indigo-400 hover:bg-indigo-500 text-white rounded-full px-6 shadow-sm shadow-indigo-200 transition-all active:scale-95">
+                {isCreating || isUpdating ? '저장 중...' : (editingEvent ? '수정 완료' : '일정 저장')}
               </Button>
             </div>
           </div>

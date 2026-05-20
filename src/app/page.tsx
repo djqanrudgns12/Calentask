@@ -15,6 +15,8 @@ import { ListView } from '@/components/calendar/ListView'
 import { SemesterView } from '@/components/calendar/SemesterView'
 import { CsvUploader } from '@/components/calendar/CsvUploader'
 import { GlobalCategoryFilter } from '@/components/calendar/GlobalCategoryFilter'
+import { DeleteConfirmDialog } from '@/components/calendar/DeleteConfirmDialog'
+import { EditCategoryDialog } from '@/components/calendar/EditCategoryDialog'
 import { ProfileDropdown } from '@/components/profile/ProfileDropdown'
 import { SettingsModal } from '@/components/profile/SettingsModal'
 
@@ -192,6 +194,12 @@ export default function CalendarPage() {
 
       {/* Settings Modal */}
       <SettingsModal open={isSettingsOpen} onOpenChange={setIsSettingsOpen} />
+
+      {/* Delete Confirmation Dialog */}
+      <DeleteConfirmDialog />
+      
+      {/* Edit Category Dialog */}
+      <EditCategoryDialog />
     </div>
   )
 }

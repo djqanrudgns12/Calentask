@@ -4,6 +4,7 @@ import { format, eachDayOfInterval, isSameMonth, isSameDay, startOfWeek, endOfWe
 import { Activity } from '@/app/actions/calendar'
 import { getHolidayName } from '@/lib/holidays'
 import { useCalendarStore } from '@/store/useCalendarStore'
+import { Pencil, Trash2 } from 'lucide-react'
 
 interface MonthlyViewProps {
   currentDate: Date
@@ -11,7 +12,7 @@ interface MonthlyViewProps {
 }
 
 export function MonthlyView({ currentDate, events }: MonthlyViewProps) {
-  const { openAddEvent, showHolidays } = useCalendarStore()
+  const { openAddEvent, showHolidays, openEditEvent, openDeleteConfirm } = useCalendarStore()
   
   const monthStart = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1)
   const monthEnd = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0)
@@ -74,9 +75,25 @@ export function MonthlyView({ currentDate, events }: MonthlyViewProps) {
                       }}
                     >
                       {/* 태그 색상 점(Dot)들을 표시할 수도 있으나, 이미 좌측 Accent Bar가 색상을 대변하므로 생략하거나 우측에 작게 표시 가능 */}
-                      <span className="font-medium text-slate-700 truncate">
+                      <span className="font-medium text-slate-700 truncate pr-10">
                         {event.title}
                       </span>
+                      
+                      {/* Hover Actions */}
+                      <div className="absolute right-1 top-1/2 -translate-y-1/2 hidden group-hover:flex items-center gap-1 bg-white/90 px-1 py-0.5 rounded shadow-sm">
+                        <button 
+                          onClick={(e) => { e.stopPropagation(); openEditEvent(event); }}
+                          className="p-1 hover:bg-gray-100 rounded text-gray-500 hover:text-indigo-600 transition-colors"
+                        >
+                          <Pencil className="w-3 h-3" />
+                        </button>
+                        <button 
+                          onClick={(e) => { e.stopPropagation(); openDeleteConfirm(event.id); }}
+                          className="p-1 hover:bg-gray-100 rounded text-gray-500 hover:text-red-600 transition-colors"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </button>
+                      </div>
                     </div>
                   )
                 })}
