@@ -28,8 +28,7 @@ export function CsvUploader() {
       skipEmptyLines: true,
       complete: async (results) => {
         try {
-          // NEIS CSV 구조 가정: 제목(일정명), 시작일자, 종료일자, 내용 등
-          const rows = results.data as any[]
+          const rows = results.data as Record<string, string>[]
           
           for (const row of rows) {
             // CSV 헤더 이름에 따라 매핑 수정 필요 (예: row['일정명'], row['시작일'])
@@ -60,7 +59,7 @@ export function CsvUploader() {
             setOpen(false)
             setStatus('idle')
           }, 2000)
-        } catch (err) {
+        } catch {
           setStatus('error')
         }
       },

@@ -15,7 +15,7 @@ const HOURS = Array.from({ length: 24 }, (_, i) => i)
 const PIXELS_PER_HOUR = 60 // 1 minute = 1 pixel
 
 export function WeeklyView({ currentDate, events }: WeeklyViewProps) {
-  const { openAddEvent } = useCalendarStore()
+  const { openAddEvent, showHolidays } = useCalendarStore()
   const startDate = startOfWeek(currentDate)
   const endDate = endOfWeek(currentDate)
   const days = eachDayOfInterval({ start: startDate, end: endDate })
@@ -35,7 +35,7 @@ export function WeeklyView({ currentDate, events }: WeeklyViewProps) {
         <div className="flex-1 grid grid-cols-7">
           {days.map((day, idx) => {
             const isToday = isSameDay(day, now)
-            const holidayName = getHolidayName(day)
+            const holidayName = showHolidays ? getHolidayName(day) : null
             
             // All day events for this day
             const allDayEvents = events.filter(e => isSameDay(new Date(e.start_time), day) && e.is_all_day)

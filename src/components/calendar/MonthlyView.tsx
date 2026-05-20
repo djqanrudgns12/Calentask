@@ -11,7 +11,7 @@ interface MonthlyViewProps {
 }
 
 export function MonthlyView({ currentDate, events }: MonthlyViewProps) {
-  const { openAddEvent } = useCalendarStore()
+  const { openAddEvent, showHolidays } = useCalendarStore()
   
   const monthStart = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1)
   const monthEnd = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0)
@@ -38,7 +38,7 @@ export function MonthlyView({ currentDate, events }: MonthlyViewProps) {
           const isToday = isSameDay(day, new Date())
           
           const dayEvents = events.filter(e => isSameDay(new Date(e.start_time), day))
-          const holidayName = getHolidayName(day)
+          const holidayName = showHolidays ? getHolidayName(day) : null
 
           return (
             <div 
