@@ -36,9 +36,9 @@ export function SettingsModal({ open, onOpenChange }: SettingsModalProps) {
           </button>
         </DialogHeader>
         
-        <div className="flex-1 flex flex-col sm:flex-row overflow-hidden">
+        <div className="flex-1 flex flex-col md:flex-row overflow-hidden min-w-0">
           {/* Sidebar Tabs */}
-          <div className="w-full sm:w-64 bg-white border-b sm:border-b-0 sm:border-r border-slate-100 p-2 sm:p-4 flex flex-row sm:flex-col gap-2 shadow-sm z-0 overflow-x-auto sm:overflow-visible flex-shrink-0 hide-scrollbar">
+          <div className="w-full md:w-56 bg-white border-b md:border-b-0 md:border-r border-slate-100 p-2 md:p-4 flex flex-row md:flex-col gap-2 shadow-sm z-0 overflow-x-auto md:overflow-visible flex-shrink-0 hide-scrollbar">
             {TABS.map((tab) => {
               const Icon = tab.icon
               const isActive = activeTab === tab.id
@@ -46,7 +46,7 @@ export function SettingsModal({ open, onOpenChange }: SettingsModalProps) {
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id as TabKey)}
-                  className={`flex items-center gap-2 sm:gap-3 px-3 py-2 sm:px-4 sm:py-3 rounded-xl text-xs sm:text-sm font-semibold transition-all whitespace-nowrap flex-shrink-0 ${
+                  className={`flex items-center gap-2 md:gap-3 px-3 py-2 md:px-4 md:py-3 rounded-xl text-sm font-semibold transition-all whitespace-nowrap flex-shrink-0 ${
                     isActive 
                       ? 'bg-indigo-50 text-indigo-600 shadow-sm shadow-indigo-100/50' 
                       : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
@@ -60,7 +60,7 @@ export function SettingsModal({ open, onOpenChange }: SettingsModalProps) {
           </div>
 
           {/* Main Content Area */}
-          <div className="flex-1 overflow-y-auto p-8">
+          <div className="flex-1 overflow-y-auto p-4 sm:p-6 md:p-8 min-w-0">
             <div className="max-w-3xl mx-auto">
               {activeTab === 'profile' && <ProfileTab />}
               {activeTab === 'display' && <DisplayTab />}

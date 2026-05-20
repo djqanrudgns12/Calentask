@@ -48,9 +48,9 @@ export function ProfileTab() {
       
       {/* 아바타 선택 섹션 */}
       <section className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h3 className="text-lg font-bold text-slate-800">아바타 캐릭터</h3>
-          <span className="text-sm text-slate-500 font-medium">프리미엄 3D 아바타를 선택하세요</span>
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <h3 className="text-lg font-bold text-slate-800 whitespace-nowrap">아바타 캐릭터</h3>
+          <span className="text-sm text-slate-500 font-medium whitespace-nowrap">프리미엄 3D 아바타를 선택하세요</span>
         </div>
         
         <div className="grid grid-cols-5 sm:grid-cols-10 gap-3">

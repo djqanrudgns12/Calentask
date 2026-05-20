@@ -48,7 +48,7 @@ export function ListView({ currentDate, events }: ListViewProps) {
                   {format(date, 'dd')}
                 </span>
                 <span className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">
-                  {format(date, 'MMM EEE')}
+                  {format(date, 'M월')} {['일', '월', '화', '수', '목', '금', '토'][date.getDay()]}요일
                 </span>
                 {/* Timeline node */}
                 <div className="hidden md:block absolute right-[-5px] top-3 w-2 h-2 rounded-full bg-slate-300 ring-4 ring-[#FAFAFA] transition-colors group-hover:bg-[#312E81]" />
