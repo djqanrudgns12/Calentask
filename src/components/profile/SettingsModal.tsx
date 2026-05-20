@@ -27,7 +27,7 @@ export function SettingsModal({ open, onOpenChange }: SettingsModalProps) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-[95vw] max-w-[900px] h-[90vh] max-h-[700px] p-0 overflow-hidden bg-[#f8f9ff] border-none shadow-2xl rounded-2xl flex flex-col">
+      <DialogContent className="w-[95vw] sm:max-w-[900px] md:max-w-[1000px] h-[90vh] max-h-[800px] p-0 overflow-hidden bg-[#f8f9ff] border-none shadow-2xl rounded-2xl flex flex-col">
         <DialogHeader className="px-6 py-4 border-b border-slate-100 bg-white flex flex-row items-center justify-between z-10 shadow-sm relative">
           <DialogTitle className="text-xl font-bold text-slate-800 tracking-tight">환경설정</DialogTitle>
           <DialogDescription className="sr-only">사용자 프로필, 디스플레이, 카테고리, 데이터를 설정하는 모달입니다.</DialogDescription>
