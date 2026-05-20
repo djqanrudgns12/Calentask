@@ -1,8 +1,9 @@
 'use client'
 
-import { format, eachDayOfInterval, isSameDay, startOfWeek, endOfWeek, differenceInMinutes } from 'date-fns'
+import { format, startOfWeek, endOfWeek, eachDayOfInterval, isSameDay, differenceInMinutes, parseISO } from 'date-fns'
 import { Activity } from '@/app/actions/calendar'
 import { getHolidayName } from '@/lib/holidays'
+import { Pencil, Trash2 } from 'lucide-react'
 import { useCalendarStore } from '@/store/useCalendarStore'
 import { useEffect, useState } from 'react'
 
@@ -15,7 +16,7 @@ const HOURS = Array.from({ length: 24 }, (_, i) => i)
 const PIXELS_PER_HOUR = 60 // 1 minute = 1 pixel
 
 export function WeeklyView({ currentDate, events }: WeeklyViewProps) {
-  const { openAddEvent, showHolidays } = useCalendarStore()
+  const { openAddEvent, showHolidays, openEditEvent, openDeleteConfirm } = useCalendarStore()
   const startDate = startOfWeek(currentDate)
   const endDate = endOfWeek(currentDate)
   const days = eachDayOfInterval({ start: startDate, end: endDate })
@@ -118,7 +119,7 @@ export function WeeklyView({ currentDate, events }: WeeklyViewProps) {
                       <div
                         key={event.id}
                         onClick={(e) => e.stopPropagation()}
-                        className="absolute left-1 right-1 rounded-md px-2 py-1 overflow-hidden transition-transform hover:scale-[1.02] shadow-sm backdrop-blur-md cursor-pointer"
+                        className="group absolute left-1 right-1 rounded-md px-2 py-1 overflow-hidden transition-transform hover:scale-[1.02] shadow-sm backdrop-blur-md cursor-pointer"
                         style={{
                           top: `${top}px`,
                           height: `${height}px`,
@@ -132,8 +133,24 @@ export function WeeklyView({ currentDate, events }: WeeklyViewProps) {
                         <div className="text-[10px] font-bold opacity-80 mb-0.5" style={{ color: primaryColor }}>
                           {format(startDate, 'HH:mm')} - {format(endDate, 'HH:mm')}
                         </div>
-                        <div className="text-xs font-semibold leading-tight truncate" style={{ color: primaryColor }}>
+                        <div className="text-xs font-semibold leading-tight truncate pr-10" style={{ color: primaryColor }}>
                           {event.title}
+                        </div>
+
+                        {/* Hover Actions */}
+                        <div className="absolute right-1 top-1 hidden group-hover:flex items-center gap-1 bg-white/90 px-1 py-0.5 rounded shadow-sm">
+                          <button 
+                            onClick={(e) => { e.stopPropagation(); openEditEvent(event); }}
+                            className="p-1 hover:bg-gray-100 rounded text-gray-500 hover:text-indigo-600 transition-colors"
+                          >
+                            <Pencil className="w-3 h-3" />
+                          </button>
+                          <button 
+                            onClick={(e) => { e.stopPropagation(); openDeleteConfirm(event.id); }}
+                            className="p-1 hover:bg-gray-100 rounded text-gray-500 hover:text-red-600 transition-colors"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </button>
                         </div>
                       </div>
                     )

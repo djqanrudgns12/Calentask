@@ -1,4 +1,4 @@
-﻿/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
@@ -73,6 +73,24 @@ export async function deleteCategory(id: string) {
   return true
 }
 
+// 카테고리 수정
+export async function updateCategory(id: string, name: string, hexColor: string) {
+  const supabase = await createClient()
+  const { data: userData } = await supabase.auth.getUser()
+  if (!userData.user) throw new Error('Not authenticated')
+
+  const { data, error } = await supabase
+    .from('categories')
+    .update({ name, hex_color: hexColor })
+    .eq('id', id)
+    .eq('user_id', userData.user.id) // 본인 것만 수정 가능 (기본 카테고리도 포함)
+    .select()
+    .single()
+
+  if (error) throw new Error(error.message)
+  return data as Category
+}
+
 // 일정 가져오기 (해당 월 기준 필터링을 위해 start, end 파라미터 사용)
 export async function getActivities(startDate: string, endDate: string) {
   const supabase = await createClient()
@@ -124,6 +142,52 @@ export async function createActivity(
   if (categoryIds.length > 0) {
     const mappings = categoryIds.map(categoryId => ({
       activity_id: activity.id,
+      category_id: categoryId
+    }))
+    const { error: mappingError } = await supabase
+      .from('activity_category_map')
+      .insert(mappings)
+
+    if (mappingError) throw new Error(mappingError.message)
+  }
+
+  revalidatePath('/')
+  return activity
+}
+
+// 일정 수정
+export async function updateActivity(
+  id: string,
+  payload: Partial<Omit<Activity, 'id' | 'user_id' | 'deleted_at' | 'categories'>>,
+  categoryIds: string[]
+) {
+  const supabase = await createClient()
+  const { data: userData } = await supabase.auth.getUser()
+  if (!userData.user) throw new Error('Not authenticated')
+
+  // 1. 일정(Activity) 업데이트
+  const { data: activity, error: activityError } = await supabase
+    .from('activities')
+    .update(payload)
+    .eq('id', id)
+    .eq('user_id', userData.user.id)
+    .select()
+    .single()
+
+  if (activityError) throw new Error(activityError.message)
+
+  // 2. 기존 카테고리 매핑 삭제
+  const { error: deleteError } = await supabase
+    .from('activity_category_map')
+    .delete()
+    .eq('activity_id', id)
+
+  if (deleteError) throw new Error(deleteError.message)
+
+  // 3. 새로운 카테고리 매핑 생성
+  if (categoryIds.length > 0) {
+    const mappings = categoryIds.map(categoryId => ({
+      activity_id: id,
       category_id: categoryId
     }))
     const { error: mappingError } = await supabase
