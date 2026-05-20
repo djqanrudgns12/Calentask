@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { getActivities, getCategories, createActivity, deleteActivity, createCategory, getDeletedActivities, restoreActivity, type Activity, type Category } from '@/app/actions/calendar'
+import { getActivities, getCategories, createActivity, deleteActivity, createCategory, deleteCategory, getDeletedActivities, restoreActivity, type Activity, type Category } from '@/app/actions/calendar'
 
 export function useCategories() {
   return useQuery({
@@ -18,6 +18,16 @@ export function useCreateCategory() {
   })
 }
 
+export function useDeleteCategory() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (id: string) => deleteCategory(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['categories'] })
+    }
+  })
+}
+
 export function useActivities(startDate: string, endDate: string) {
   return useQuery({
     queryKey: ['activities', startDate, endDate],
@@ -30,7 +40,7 @@ export function useCreateActivity(startDate: string, endDate: string) {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: ({ payload, categoryIds }: { payload: any, categoryIds: string[] }) => 
+    mutationFn: ({ payload, categoryIds }: { payload: Omit<Activity, 'id' | 'user_id' | 'deleted_at' | 'categories'>, categoryIds: string[] }) => 
       createActivity(payload, categoryIds),
     onMutate: async (newActivityData) => {
       // 낙관적 업데이트 로직 (Optimistic UI)
@@ -49,6 +59,7 @@ export function useCreateActivity(startDate: string, endDate: string) {
           is_all_day: newActivityData.payload.is_all_day,
           memo: newActivityData.payload.memo || null,
           type: newActivityData.payload.type,
+          hex_color: newActivityData.payload.hex_color || null,
           deleted_at: null,
           categories: [] // 임시 처리
         }
