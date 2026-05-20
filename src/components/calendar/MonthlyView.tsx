@@ -44,16 +44,16 @@ export function MonthlyView({ currentDate, events }: MonthlyViewProps) {
             <div 
               key={idx} 
               onClick={() => openAddEvent(day)}
-              className={`rounded-2xl p-3 transition-all cursor-pointer flex flex-col border border-white/40 shadow-apple-soft hover:shadow-lg backdrop-blur-xl ${
-                isCurrentMonth ? 'bg-white/70' : 'bg-gray-100/40 opacity-50'
+              className={`rounded-2xl p-4 transition-all cursor-pointer flex flex-col border border-[#EEEEEE] shadow-sm hover:shadow-md bg-white ${
+                isCurrentMonth ? 'opacity-100' : 'opacity-40'
               }`}
             >
-              <div className="flex justify-between items-start mb-2">
-                <span className="text-xs font-bold text-red-400 truncate w-16">
+              <div className="flex justify-between items-start mb-3">
+                <span className="text-xs font-semibold text-red-400 truncate w-16">
                   {holidayName && holidayName}
                 </span>
                 <span className={`text-sm font-bold w-8 h-8 flex items-center justify-center rounded-full ${
-                  isToday ? 'bg-indigo-600 text-white shadow-md shadow-indigo-200' : holidayName || day.getDay() === 0 ? 'text-red-500' : 'text-slate-700'
+                  isToday ? 'bg-[#312E81] text-white shadow-lg shadow-[#4338CA]/40' : holidayName || day.getDay() === 0 ? 'text-red-500' : 'text-slate-700'
                 }`}>
                   {format(day, 'd')}
                 </span>
@@ -61,23 +61,20 @@ export function MonthlyView({ currentDate, events }: MonthlyViewProps) {
               
               <div className="space-y-1.5 overflow-y-auto flex-1 no-scrollbar">
                 {dayEvents.map(event => {
-                  const primaryColor = event.categories?.[0]?.hex_color || '#cbd5e1' 
+                  const primaryColor = event.categories?.[0]?.hex_color || '#94a3b8' 
                   
                   return (
                     <div 
                       key={event.id}
                       onClick={(e) => e.stopPropagation()}
-                      className="group relative flex flex-col px-2.5 py-1.5 rounded-xl text-xs transition-all hover:scale-[1.02]"
-                      style={{ backgroundColor: `${primaryColor}15` }}
+                      className="group relative flex flex-col px-2.5 py-1.5 rounded-r-lg text-xs transition-all hover:scale-[1.02] border-l-[3px]"
+                      style={{ 
+                        backgroundColor: `${primaryColor}1A`, // 10% opacity
+                        borderLeftColor: primaryColor
+                      }}
                     >
-                      <div className="flex items-center space-x-1 mb-0.5">
-                        <div className="flex space-x-0.5">
-                          {event.categories?.map(tag => (
-                            <div key={tag.id} className="w-1.5 h-1.5 rounded-full shadow-sm" style={{ backgroundColor: tag.hex_color }} />
-                          ))}
-                        </div>
-                      </div>
-                      <span className="font-semibold text-slate-700 truncate" style={{ color: primaryColor }}>
+                      {/* 태그 색상 점(Dot)들을 표시할 수도 있으나, 이미 좌측 Accent Bar가 색상을 대변하므로 생략하거나 우측에 작게 표시 가능 */}
+                      <span className="font-medium text-slate-700 truncate">
                         {event.title}
                       </span>
                     </div>

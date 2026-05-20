@@ -1,6 +1,6 @@
 'use client'
 
-import { format, eachDayOfInterval, isSameMonth, isSameDay, startOfWeek, endOfWeek, addDays } from 'date-fns'
+import { format, eachDayOfInterval, isSameMonth, isSameDay, startOfWeek, endOfWeek, addMonths, startOfMonth, endOfMonth } from 'date-fns'
 import { Activity } from '@/app/actions/calendar'
 import { getHolidayName } from '@/lib/holidays'
 import { useCalendarStore } from '@/store/useCalendarStore'
@@ -11,88 +11,103 @@ interface SemesterViewProps {
 }
 
 export function SemesterView({ events }: SemesterViewProps) {
-  const { semesterYear, semesterTerm } = useCalendarStore()
+  const { semesterYear, semesterTerm, openAddEvent } = useCalendarStore()
 
   // 1학기: 3월 1일 ~ 8월 31일, 2학기: 9월 1일 ~ 익년 2월 28일
   const semesterStartDate = new Date(semesterYear, semesterTerm === 1 ? 2 : 8, 1)
-  const semesterEndDate = new Date(
-    semesterTerm === 1 ? semesterYear : semesterYear + 1, 
-    semesterTerm === 1 ? 7 : 1, 
-    semesterTerm === 1 ? 31 : 28
-  )
   
-  const gridStartDate = startOfWeek(semesterStartDate)
-  const gridEndDate = endOfWeek(semesterEndDate)
-  
-  const days = eachDayOfInterval({ start: gridStartDate, end: gridEndDate })
+  // Create an array of the 6 months in the semester
+  const months = Array.from({ length: 6 }, (_, i) => addMonths(semesterStartDate, i))
 
   return (
-    <div className="flex-1 flex flex-col min-h-0 h-full">
-      {/* Day Headers */}
-      <div className="grid grid-cols-7 gap-3 mb-2">
-        {['일', '월', '화', '수', '목', '금', '토'].map((day) => (
-          <div key={day} className="text-center text-xs font-bold text-gray-500 uppercase tracking-wider sticky top-0 z-10 bg-[#f2f2f7] py-2">
-            {day}
-          </div>
-        ))}
-      </div>
-      
-      {/* Calendar Grid - Dense but clean glassmorphism */}
-      <div className="grid grid-cols-7 gap-2 flex-1 pb-4">
-        {days.map((day, idx) => {
-          const isFirstDayOfMonth = day.getDate() === 1 || idx === 0
-          const isToday = isSameDay(day, new Date())
-          const isCurrentSemester = day >= semesterStartDate && day <= semesterEndDate
-          
-          const dayEvents = events.filter(e => isSameDay(new Date(e.start_time), day))
-          const holidayName = getHolidayName(day)
+    <div className="flex-1 overflow-y-auto bg-[#FAFAFA] p-6 no-scrollbar">
+      <div className="max-w-[1400px] mx-auto w-full">
+        {/* 2x3 Grid for the 6 months */}
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 pb-12">
+          {months.map((monthDate, monthIdx) => {
+            const mStart = startOfMonth(monthDate)
+            const mEnd = endOfMonth(monthDate)
+            const gridStart = startOfWeek(mStart)
+            const gridEnd = endOfWeek(mEnd)
+            const days = eachDayOfInterval({ start: gridStart, end: gridEnd })
 
-          return (
-            <div 
-              key={idx} 
-              className={`min-h-[80px] rounded-xl p-2 transition-all flex flex-col border border-white/40 shadow-apple-soft hover:shadow-lg backdrop-blur-xl ${
-                isCurrentSemester ? 'bg-white/70' : 'bg-gray-100/40 opacity-50'
-              }`}
-            >
-              <div className="flex justify-between items-start mb-1">
-                <span className="text-[9px] font-bold text-red-400 truncate w-10">
-                  {holidayName && holidayName}
-                </span>
-                <div className="flex items-center gap-1">
-                  {isFirstDayOfMonth && (
-                    <span className="text-[10px] font-bold text-slate-400">
-                      {format(day, 'M월')}
-                    </span>
-                  )}
-                  <span className={`text-[11px] font-bold w-5 h-5 flex items-center justify-center rounded-full ${
-                    isToday ? 'bg-indigo-600 text-white shadow-md shadow-indigo-200' : holidayName || day.getDay() === 0 ? 'text-red-500' : 'text-slate-700'
-                  }`}>
-                    {format(day, 'd')}
+            return (
+              <div key={monthIdx} className="bg-white rounded-[1.5rem] shadow-sm border border-[#EEEEEE] flex flex-col overflow-hidden hover:shadow-md transition-shadow">
+                {/* Month Header */}
+                <div className="px-6 py-5 border-b border-[#EEEEEE] flex items-center justify-between bg-white">
+                  <h3 className="text-xl font-bold text-slate-800 tracking-tight">
+                    {format(monthDate, 'MMMM yyyy')}
+                  </h3>
+                  <span className="text-xs font-semibold text-slate-400 bg-slate-100 px-3 py-1 rounded-full">
+                    Month {monthIdx + 1}
                   </span>
                 </div>
-              </div>
-              
-              <div className="space-y-0.5 overflow-y-auto flex-1 no-scrollbar pt-1">
-                {dayEvents.map(event => {
-                  const primaryColor = event.categories?.[0]?.hex_color || '#cbd5e1' 
-                  
-                  return (
-                    <div 
-                      key={event.id}
-                      className="group relative flex items-center px-1.5 py-0.5 rounded-md text-[9px] transition-all hover:scale-[1.02]"
-                      style={{ backgroundColor: `${primaryColor}15` }}
-                    >
-                      <div className="w-1.5 h-1.5 rounded-full mr-1.5 shrink-0 shadow-sm" style={{ backgroundColor: primaryColor }} />
-                      <span className="font-semibold text-slate-700 truncate">
-                        {event.title}
-                      </span>
+
+                {/* Day Headers */}
+                <div className="grid grid-cols-7 border-b border-[#F1F5F9] bg-[#FAFAFA]">
+                  {['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'].map((day, idx) => (
+                    <div key={idx} className="text-center text-[9px] font-bold text-slate-400 uppercase py-2.5 tracking-widest">
+                      {day}
                     </div>
-                  )
-                })}
+                  ))}
+                </div>
+
+                {/* Calendar Grid */}
+                <div className="grid grid-cols-7 auto-rows-fr flex-1 bg-[#F8FAFC]">
+                  {days.map((day, dayIdx) => {
+                    const isCurrentMonth = isSameMonth(day, monthDate)
+                    const isToday = isSameDay(day, new Date())
+                    const dayEvents = events.filter(e => isSameDay(new Date(e.start_time), day))
+                    const holidayName = getHolidayName(day)
+
+                    return (
+                      <div 
+                        key={dayIdx} 
+                        onClick={() => openAddEvent(day)}
+                        className={`min-h-[110px] border-b border-r border-[#F1F5F9] p-2 flex flex-col cursor-pointer transition-colors hover:bg-[#FAFAFA] ${
+                          isCurrentMonth ? 'bg-white' : 'bg-[#F8FAFC] opacity-40'
+                        }`}
+                      >
+                        <div className="flex justify-between items-start mb-2">
+                          <span className="text-[8px] font-bold text-red-400 truncate max-w-[60%]">
+                            {holidayName && holidayName}
+                          </span>
+                          <span className={`text-[11px] font-bold w-6 h-6 flex items-center justify-center rounded-full ${
+                            isToday ? 'bg-[#312E81] text-white shadow-md shadow-[#4338CA]/40' : holidayName || day.getDay() === 0 ? 'text-red-500' : 'text-slate-700'
+                          }`}>
+                            {format(day, 'd')}
+                          </span>
+                        </div>
+                        
+                        <div className="space-y-1.5 overflow-y-auto no-scrollbar flex-1">
+                          {dayEvents.map(event => {
+                            const primaryColor = event.categories?.[0]?.hex_color || '#94a3b8'
+                            
+                            return (
+                              <div 
+                                key={event.id}
+                                onClick={(e) => e.stopPropagation()}
+                                className="group relative flex flex-col px-1.5 py-1 rounded-r-md text-[10px] border-l-[3px] transition-transform hover:scale-[1.02]"
+                                style={{ 
+                                  backgroundColor: `${primaryColor}1A`,
+                                  borderLeftColor: primaryColor
+                                }}
+                              >
+                                <span className="font-semibold text-slate-700 truncate leading-tight">
+                                  {event.title}
+                                </span>
+                              </div>
+                            )
+                          })}
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
               </div>
-            </div>
-          )
-        })}
+            )
+          })}
+        </div>
       </div>
     </div>
   )
