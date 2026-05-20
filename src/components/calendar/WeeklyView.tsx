@@ -43,7 +43,7 @@ export function WeeklyView({ currentDate, events }: WeeklyViewProps) {
             return (
               <div key={idx} className="flex flex-col items-center py-3 border-r border-[#EEEEEE] last:border-r-0 relative">
                 <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">
-                  {format(day, 'EEE')}
+                  {['일', '월', '화', '수', '목', '금', '토'][day.getDay()]}
                 </span>
                 <div className={`w-8 h-8 flex items-center justify-center rounded-full text-sm font-bold ${
                   isToday ? 'bg-[#312E81] text-white shadow-md shadow-[#4338CA]/40' : holidayName || day.getDay() === 0 ? 'text-red-500' : 'text-slate-700'

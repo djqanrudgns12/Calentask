@@ -36,16 +36,16 @@ export function SemesterView({ events }: SemesterViewProps) {
                 {/* Month Header */}
                 <div className="px-6 py-5 border-b border-[#EEEEEE] flex items-center justify-between bg-white">
                   <h3 className="text-xl font-bold text-slate-800 tracking-tight">
-                    {format(monthDate, 'MMMM yyyy')}
+                    {format(monthDate, 'yyyy년 M월')}
                   </h3>
                   <span className="text-xs font-semibold text-slate-400 bg-slate-100 px-3 py-1 rounded-full">
-                    Month {monthIdx + 1}
+                    {monthIdx + 1}개월차
                   </span>
                 </div>
 
                 {/* Day Headers */}
                 <div className="grid grid-cols-7 border-b border-[#F1F5F9] bg-[#FAFAFA]">
-                  {['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'].map((day, idx) => (
+                  {['일', '월', '화', '수', '목', '금', '토'].map((day, idx) => (
                     <div key={idx} className="text-center text-[9px] font-bold text-slate-400 uppercase py-2.5 tracking-widest">
                       {day}
                     </div>
