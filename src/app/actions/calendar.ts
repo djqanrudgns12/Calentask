@@ -12,6 +12,7 @@ export type Activity = {
   is_all_day: boolean
   memo: string | null
   type: 'EVENT' | 'TASK'
+  hex_color: string | null
   deleted_at: string | null
   categories: Category[]
 }
@@ -52,6 +53,23 @@ export async function createCategory(name: string, hexColor: string) {
 
   if (error) throw new Error(error.message)
   return data as Category
+}
+
+// 카테고리 삭제
+export async function deleteCategory(id: string) {
+  const supabase = await createClient()
+  const { data: userData } = await supabase.auth.getUser()
+  if (!userData.user) throw new Error('Not authenticated')
+
+  const { error } = await supabase
+    .from('categories')
+    .delete()
+    .eq('id', id)
+    .eq('user_id', userData.user.id) // 본인 것만 삭제 가능
+    .eq('is_default', false) // 기본은 삭제 불가
+
+  if (error) throw new Error(error.message)
+  return true
 }
 
 // 일정 가져오기 (해당 월 기준 필터링을 위해 start, end 파라미터 사용)
