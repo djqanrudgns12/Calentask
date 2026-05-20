@@ -25,14 +25,14 @@ export function MonthlyView({ currentDate, events }: MonthlyViewProps) {
       {/* Day Headers */}
       <div className="grid grid-cols-7 gap-3 mb-2">
         {['일', '월', '화', '수', '목', '금', '토'].map((day) => (
-          <div key={day} className="text-center text-sm font-semibold text-gray-400">
+          <div key={day} className="text-center text-xs font-bold text-gray-500 uppercase tracking-wider bg-[#f2f2f7] py-2">
             {day}
           </div>
         ))}
       </div>
       
       {/* Calendar Grid */}
-      <div className="grid grid-cols-7 gap-3 flex-1 auto-rows-fr">
+      <div className="grid grid-cols-7 gap-3 flex-1 auto-rows-fr pb-4">
         {days.map((day, idx) => {
           const isCurrentMonth = isSameMonth(day, currentDate)
           const isToday = isSameDay(day, new Date())
@@ -44,16 +44,16 @@ export function MonthlyView({ currentDate, events }: MonthlyViewProps) {
             <div 
               key={idx} 
               onClick={() => openAddEvent(day)}
-              className={`bg-white rounded-2xl p-3 shadow-apple-soft hover:shadow-apple-float transition-all cursor-pointer flex flex-col ${
-                !isCurrentMonth ? 'opacity-50' : ''
+              className={`rounded-2xl p-3 transition-all cursor-pointer flex flex-col border border-white/40 shadow-apple-soft hover:shadow-lg backdrop-blur-xl ${
+                isCurrentMonth ? 'bg-white/70' : 'bg-gray-100/40 opacity-50'
               }`}
             >
               <div className="flex justify-between items-start mb-2">
-                <span className="text-xs font-semibold text-red-500 truncate w-16">
+                <span className="text-xs font-bold text-red-400 truncate w-16">
                   {holidayName && holidayName}
                 </span>
                 <span className={`text-sm font-bold w-8 h-8 flex items-center justify-center rounded-full ${
-                  isToday ? 'bg-blue-600 text-white shadow-md' : holidayName || day.getDay() === 0 ? 'text-red-500' : 'text-slate-700'
+                  isToday ? 'bg-indigo-600 text-white shadow-md shadow-indigo-200' : holidayName || day.getDay() === 0 ? 'text-red-500' : 'text-slate-700'
                 }`}>
                   {format(day, 'd')}
                 </span>
@@ -77,7 +77,7 @@ export function MonthlyView({ currentDate, events }: MonthlyViewProps) {
                           ))}
                         </div>
                       </div>
-                      <span className="font-semibold text-slate-800 truncate" style={{ color: primaryColor }}>
+                      <span className="font-semibold text-slate-700 truncate" style={{ color: primaryColor }}>
                         {event.title}
                       </span>
                     </div>

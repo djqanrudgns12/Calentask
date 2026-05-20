@@ -11,11 +11,26 @@ import { format, startOfMonth, endOfMonth, parseISO } from 'date-fns'
 import { useCalendarStore } from '@/store/useCalendarStore'
 
 const COLOR_SWATCHES = [
+  '#ef4444', // red
+  '#f97316', // orange
+  '#eab308', // yellow
+  '#22c55e', // green
+  '#14b8a6', // mint
+  '#0ea5e9', // light blue
+  '#3b82f6', // blue
+  '#6366f1', // indigo
+  '#a855f7', // purple
   '#ec4899', // pink
-  '#2dd4bf', // mint
-  '#4f46e5', // indigo/blue
-  '#facc15', // yellow
-  '#fb923c'  // orange
+  '#f43f5e', // rose
+  '#84cc16', // lime
+  '#10b981', // emerald
+  '#06b6d4', // cyan
+  '#8b5cf6', // violet
+  '#d946ef', // fuchsia
+  '#64748b', // slate
+  '#78716c', // stone
+  '#000000', // black
+  '#475569'  // dark slate
 ]
 
 export function AddEventDialog({ children }: { children?: React.ReactNode }) {
@@ -114,7 +129,7 @@ export function AddEventDialog({ children }: { children?: React.ReactNode }) {
     e.preventDefault()
     
     const startObj = isAllDay ? new Date(`${startDate}T00:00:00`) : new Date(`${startDate}T${startTime}:00`)
-    const endObj = isAllDay ? new Date(`${endDate}T23:59:59`) : new Date(`${endDate}T${endTime}:00`)
+    const endObj = isAllDay ? new Date(`${startDate}T23:59:59`) : new Date(`${endDate}T${endTime}:00`)
 
     // Extract final color logic
     let finalHex = customColor
@@ -216,7 +231,7 @@ export function AddEventDialog({ children }: { children?: React.ReactNode }) {
                 </div>
               </div>
 
-              <div className="flex flex-col gap-1.5">
+              <div className={`flex flex-col gap-1.5 transition-all duration-200 ${isAllDay ? 'opacity-40 grayscale pointer-events-none' : ''}`}>
                 <Label className="text-gray-500 text-xs pl-1">종료</Label>
                 <div className="flex gap-2">
                   <div className="relative flex-1">
@@ -225,8 +240,9 @@ export function AddEventDialog({ children }: { children?: React.ReactNode }) {
                       type="date" 
                       value={endDate} 
                       onChange={e => setEndDate(e.target.value)}
-                      className="pl-9 bg-white border-gray-200 focus-visible:ring-indigo-500"
-                      required
+                      className={`pl-9 border-gray-200 focus-visible:ring-indigo-500 ${isAllDay ? 'bg-gray-100 text-gray-500 border-gray-300' : 'bg-white'}`}
+                      required={!isAllDay}
+                      disabled={isAllDay}
                     />
                   </div>
                   {!isAllDay && (
@@ -313,7 +329,7 @@ export function AddEventDialog({ children }: { children?: React.ReactNode }) {
             />
             <div className="flex items-center gap-4">
               <span className="text-xs text-gray-500 font-medium">색상 지정:</span>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2 mt-1">
                 {COLOR_SWATCHES.map(color => (
                   <button
                     key={color}

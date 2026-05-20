@@ -14,24 +14,37 @@ import { ListView } from '@/components/calendar/ListView'
 import { SemesterView } from '@/components/calendar/SemesterView'
 import { CsvUploader } from '@/components/calendar/CsvUploader'
 import { TrashDialog } from '@/components/calendar/TrashDialog'
+import { GlobalCategoryFilter } from '@/components/calendar/GlobalCategoryFilter'
 
 export default function CalendarPage() {
   const [mounted, setMounted] = useState(false)
-  const { currentDate, viewMode, activeFilter, setCurrentDate, setViewMode, setActiveFilter } = useCalendarStore()
+  const { 
+    currentDate, viewMode, setCurrentDate, setViewMode,
+    semesterYear, semesterTerm, setSemesterYear, setSemesterTerm, activeCategories 
+  } = useCalendarStore()
 
   // 현재 달 기준 날짜 계산 (전체 일정 패치를 위해)
   const monthStart = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1)
   const monthEnd = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0)
   const startDate = startOfWeek(monthStart)
   
-  // 학기 뷰일 경우 16주 분량의 데이터를 패치, 그 외에는 현재 달 분량 패치
-  const endDate = viewMode === 'semester' 
-    ? addDays(startDate, 16 * 7 - 1) 
-    : endOfWeek(monthEnd)
+  // 학기 뷰일 경우 해당 학기 분량의 데이터를 패치 (1학기: 3.1~8.31, 2학기: 9.1~익년 2.28)
+  const semesterStartDate = new Date(semesterYear, semesterTerm === 1 ? 2 : 8, 1) // 3월 또는 9월
+  const semesterEndDate = new Date(semesterTerm === 1 ? semesterYear : semesterYear + 1, semesterTerm === 1 ? 7 : 1, semesterTerm === 1 ? 31 : 28)
   
-  // React Query Fetching (반드시 조건문/Early Return 이전에 호출되어야 함)
-  const { data: activitiesData } = useActivities(startDate.toISOString(), endDate.toISOString())
-  const events = activitiesData || [] // 임시 데이터 대신 API 데이터 활용
+  const queryStartDate = viewMode === 'semester' ? startOfWeek(semesterStartDate) : startDate
+  const queryEndDate = viewMode === 'semester' ? endOfWeek(semesterEndDate) : endOfWeek(monthEnd)
+  
+  // React Query Fetching
+  const { data: activitiesData } = useActivities(queryStartDate.toISOString(), queryEndDate.toISOString())
+  let events = activitiesData || []
+
+  // 글로벌 카테고리 필터 적용
+  if (activeCategories.length > 0) {
+    events = events.filter(event => 
+      event.categories?.some(cat => activeCategories.includes(cat.id))
+    )
+  }
 
   useEffect(() => {
     setMounted(true)
@@ -41,9 +54,40 @@ export default function CalendarPage() {
     return <div className="flex h-screen w-full items-center justify-center bg-[#f7f9fb]"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div></div>
   }
   
-  const handlePrevMonth = () => setCurrentDate(subMonths(currentDate, 1))
-  const handleNextMonth = () => setCurrentDate(addMonths(currentDate, 1))
-  const handleToday = () => setCurrentDate(new Date())
+  const handlePrev = () => {
+    if (viewMode === 'semester') {
+      if (semesterTerm === 1) {
+        setSemesterTerm(2)
+        setSemesterYear(semesterYear - 1)
+      } else {
+        setSemesterTerm(1)
+      }
+    } else {
+      setCurrentDate(subMonths(currentDate, 1))
+    }
+  }
+
+  const handleNext = () => {
+    if (viewMode === 'semester') {
+      if (semesterTerm === 2) {
+        setSemesterTerm(1)
+        setSemesterYear(semesterYear + 1)
+      } else {
+        setSemesterTerm(2)
+      }
+    } else {
+      setCurrentDate(addMonths(currentDate, 1))
+    }
+  }
+
+  const handleToday = () => {
+    if (viewMode === 'semester') {
+      setSemesterYear(new Date().getFullYear())
+      setSemesterTerm(new Date().getMonth() >= 2 && new Date().getMonth() <= 7 ? 1 : 2)
+    } else {
+      setCurrentDate(new Date())
+    }
+  }
 
   return (
     <div className="flex h-screen w-full overflow-hidden bg-[#f2f2f7] text-slate-900 font-sans">
@@ -76,61 +120,55 @@ export default function CalendarPage() {
       {/* Main Content */}
       <main className="flex-1 flex flex-col min-w-0">
         {/* Header - Glassmorphic / clean white */}
-        <header className="h-24 flex items-center justify-between px-8 bg-transparent">
-          <div className="flex items-center space-x-4">
-            <button className="md:hidden p-2 text-gray-600"><Menu className="w-5 h-5" /></button>
-            <h2 className="text-3xl font-bold tracking-tight text-slate-900 min-w-[180px]">
-              {format(currentDate, 'yyyy년 M월')}
-            </h2>
+        <header className="flex flex-col justify-center px-8 py-6 bg-transparent gap-4">
+          <div className="flex items-center justify-between w-full">
+            <div className="flex items-center space-x-4">
+              <button className="md:hidden p-2 text-gray-600"><Menu className="w-5 h-5" /></button>
+              <h2 className="text-3xl font-bold tracking-tight text-slate-900 min-w-[150px]">
+                {viewMode === 'semester' 
+                  ? `${semesterYear}년 ${semesterTerm}학기` 
+                  : format(currentDate, 'yyyy년 M월')}
+              </h2>
+              
+              {/* Date Nav - Segmented Control Style */}
+              <div className="flex items-center bg-gray-200/60 rounded-xl p-1 space-x-1">
+                <button onClick={handlePrev} className="p-1.5 rounded-lg hover:bg-white/50 text-gray-600 transition-colors">
+                  <ChevronLeft className="w-5 h-5" />
+                </button>
+                <button onClick={handleToday} className="px-3 py-1.5 rounded-lg hover:bg-white/50 text-sm font-semibold text-gray-700 transition-colors">
+                  오늘
+                </button>
+                <button onClick={handleNext} className="p-1.5 rounded-lg hover:bg-white/50 text-gray-600 transition-colors">
+                  <ChevronRight className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
             
-            {/* Date Nav - Segmented Control Style */}
-            <div className="flex items-center bg-gray-200/60 rounded-xl p-1 space-x-1">
-              <button onClick={handlePrevMonth} className="p-1.5 rounded-lg hover:bg-white/50 text-gray-600 transition-colors">
-                <ChevronLeft className="w-5 h-5" />
-              </button>
-              <button onClick={handleToday} className="px-3 py-1.5 rounded-lg hover:bg-white/50 text-sm font-semibold text-gray-700 transition-colors">
-                오늘
-              </button>
-              <button onClick={handleNextMonth} className="p-1.5 rounded-lg hover:bg-white/50 text-gray-600 transition-colors">
-                <ChevronRight className="w-5 h-5" />
-              </button>
+            <div className="flex items-center space-x-6">
+              {/* View Switcher Segmented Control */}
+              <div className="flex items-center bg-gray-200/60 p-1 rounded-xl">
+                {(['monthly', 'weekly', 'list', 'semester'] as const).map((mode) => (
+                  <button
+                    key={mode}
+                    onClick={() => setViewMode(mode)}
+                    className={`px-4 py-1.5 rounded-lg text-sm font-semibold transition-all ${
+                      viewMode === mode ? 'bg-white text-slate-900 shadow-sm' : 'text-gray-500 hover:text-gray-700 shadow-none'
+                    }`}
+                  >
+                    {mode === 'monthly' ? '월' : mode === 'weekly' ? '주' : mode === 'list' ? '목록' : '학기'}
+                  </button>
+                ))}
+              </div>
+
+              <div className="w-10 h-10 rounded-full bg-slate-200 shadow-sm flex items-center justify-center text-sm font-bold text-slate-600">
+                U
+              </div>
             </div>
           </div>
           
-          <div className="flex items-center space-x-6">
-            {/* View Switcher Segmented Control */}
-            <div className="flex items-center bg-gray-200/60 p-1 rounded-xl">
-              {(['monthly', 'weekly', 'list', 'semester'] as const).map((mode) => (
-                <button
-                  key={mode}
-                  onClick={() => setViewMode(mode)}
-                  className={`px-4 py-1.5 rounded-lg text-sm font-semibold transition-all ${
-                    viewMode === mode ? 'bg-white text-slate-900 shadow-sm' : 'text-gray-500 hover:text-gray-700 shadow-none'
-                  }`}
-                >
-                  {mode === 'monthly' ? '월' : mode === 'weekly' ? '주' : mode === 'list' ? '목록' : '학기'}
-                </button>
-              ))}
-            </div>
-
-            {/* Category Filter Segmented Control */}
-            <div className="flex items-center bg-gray-200/60 p-1 rounded-xl">
-              {(['all', 'work', 'personal'] as const).map((filter) => (
-                <button
-                  key={filter}
-                  onClick={() => setActiveFilter(filter)}
-                  className={`px-3 py-1.5 rounded-lg text-sm font-semibold transition-all ${
-                    activeFilter === filter ? 'bg-white text-slate-900 shadow-sm' : 'text-gray-500 hover:text-gray-700 shadow-none'
-                  }`}
-                >
-                  {filter === 'all' ? '전체' : filter === 'work' ? '업무' : '개인'}
-                </button>
-              ))}
-            </div>
-
-            <div className="w-10 h-10 rounded-full bg-slate-200 shadow-sm flex items-center justify-center text-sm font-bold text-slate-600">
-              U
-            </div>
+          {/* Global Category Filter Moved Here! (Top Left) */}
+          <div className="flex items-center justify-start">
+            <GlobalCategoryFilter />
           </div>
         </header>
 
