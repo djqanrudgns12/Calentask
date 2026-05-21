@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { format, isSameMonth, parseISO } from 'date-fns'
 import { useCalendarStore } from '@/store/useCalendarStore'
 import { Activity } from '@/app/actions/calendar'
+import { getEventPrimaryColor } from '@/lib/eventColor'
 import { Pencil, Trash2 } from 'lucide-react'
 
 interface ListViewProps {
@@ -60,7 +61,7 @@ export function ListView({ currentDate, events }: ListViewProps) {
               {/* Right: Events List */}
               <div className="flex-1 md:pl-8 space-y-4">
                 {dayEvents.map(event => {
-                  const primaryColor = event.categories?.[0]?.hex_color || '#94a3b8'
+                  const primaryColor = getEventPrimaryColor(event)
                   return (
                     <div 
                       key={event.id}

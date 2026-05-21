@@ -2,10 +2,11 @@
 
 import { format, startOfWeek, endOfWeek, eachDayOfInterval, isSameDay, differenceInMinutes, parseISO } from 'date-fns'
 import { Activity } from '@/app/actions/calendar'
+import { getEventPrimaryColor, getEventBarGradient, getEventBgColor } from '@/lib/eventColor'
 import { getHolidayName } from '@/lib/holidays'
 import { Pencil, Trash2 } from 'lucide-react'
 import { useCalendarStore } from '@/store/useCalendarStore'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 interface WeeklyViewProps {
   currentDate: Date
@@ -13,7 +14,7 @@ interface WeeklyViewProps {
 }
 
 const HOURS = Array.from({ length: 24 }, (_, i) => i)
-const PIXELS_PER_HOUR = 60 // 1 minute = 1 pixel
+const PIXELS_PER_HOUR = 40 // 시간당 40px로 축소하여 전체 높이 33% 감소 (1440px → 960px)
 
 export function WeeklyView({ currentDate, events }: WeeklyViewProps) {
   const { openAddEvent, showHolidays, openEditEvent, openDeleteConfirm } = useCalendarStore()
@@ -22,10 +23,22 @@ export function WeeklyView({ currentDate, events }: WeeklyViewProps) {
   const days = eachDayOfInterval({ start: startDate, end: endDate })
   
   const [now, setNow] = useState(new Date())
+  const scrollContainerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const timer = setInterval(() => setNow(new Date()), 60000)
     return () => clearInterval(timer)
+  }, [])
+
+  // 주간 뷰 로드 시 현재 시간 - 2시간 위치로 자동 스크롤
+  // 왜 -2시간? 현재 시간이 화면 상단이 아닌 약간 아래에 위치하도록 하여 맥락 확보
+  useEffect(() => {
+    if (scrollContainerRef.current) {
+      const currentHour = new Date().getHours()
+      const scrollToHour = Math.max(0, currentHour - 2)
+      const scrollPosition = scrollToHour * PIXELS_PER_HOUR
+      scrollContainerRef.current.scrollTo({ top: scrollPosition, behavior: 'instant' as ScrollBehavior })
+    }
   }, [])
 
   return (
@@ -59,7 +72,7 @@ export function WeeklyView({ currentDate, events }: WeeklyViewProps) {
                 {/* All day events */}
                 <div className="w-full px-1 mt-1 space-y-1">
                    {allDayEvents.map(event => {
-                     const primaryColor = event.categories?.[0]?.hex_color || '#94a3b8'
+                     const primaryColor = getEventPrimaryColor(event)
                      return (
                         <div key={event.id} className="text-[10px] font-semibold truncate px-1.5 py-0.5 rounded" style={{ backgroundColor: `${primaryColor}20`, color: primaryColor }}>
                            {event.title}
@@ -74,7 +87,7 @@ export function WeeklyView({ currentDate, events }: WeeklyViewProps) {
       </div>
 
       {/* Body: Time Grid */}
-      <div className="flex-1 overflow-y-auto relative bg-white no-scrollbar">
+      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto relative bg-white no-scrollbar">
         <div className="flex">
           {/* Time Axis */}
           <div className="w-16 shrink-0 flex flex-col border-r border-[#EEEEEE] bg-[#FAFAFA]">
@@ -102,7 +115,8 @@ export function WeeklyView({ currentDate, events }: WeeklyViewProps) {
               return (
                 <div 
                   key={dayIdx} 
-                  className="relative border-r border-[#F1F5F9] last:border-r-0 min-h-[1440px]"
+                  className="relative border-r border-[#F1F5F9] last:border-r-0"
+                  style={{ minHeight: PIXELS_PER_HOUR * 24 }}
                   onClick={() => openAddEvent(day)}
                 >
                   {/* Events */}
@@ -113,28 +127,34 @@ export function WeeklyView({ currentDate, events }: WeeklyViewProps) {
                     const durationMins = differenceInMinutes(endDate, startDate) || 30 // Fallback to 30 mins
                     const top = startMins * (PIXELS_PER_HOUR / 60)
                     const height = durationMins * (PIXELS_PER_HOUR / 60)
-                    const primaryColor = event.categories?.[0]?.hex_color || '#94a3b8'
+                    const primaryColor = getEventPrimaryColor(event)
 
                     return (
                       <div
                         key={event.id}
                         onClick={(e) => e.stopPropagation()}
-                        className="group absolute left-1 right-1 rounded-md px-2 py-1 overflow-hidden transition-transform hover:scale-[1.02] shadow-sm backdrop-blur-md cursor-pointer"
+                        className="group absolute left-1 right-1 rounded-md overflow-hidden flex items-stretch transition-transform hover:scale-[1.02] shadow-sm backdrop-blur-md cursor-pointer"
                         style={{
                           top: `${top}px`,
                           height: `${height}px`,
-                          backgroundColor: `${primaryColor}1A`,
+                          backgroundColor: getEventBgColor(event),
                           borderTop: `1px solid ${primaryColor}30`,
                           borderRight: `1px solid ${primaryColor}30`,
                           borderBottom: `1px solid ${primaryColor}30`,
-                          borderLeft: `3px solid ${primaryColor}`,
                         }}
                       >
-                        <div className="text-[10px] font-bold opacity-80 mb-0.5" style={{ color: primaryColor }}>
-                          {format(startDate, 'HH:mm')} - {format(endDate, 'HH:mm')}
-                        </div>
-                        <div className="text-xs font-semibold leading-tight truncate pr-10" style={{ color: primaryColor }}>
-                          {event.title}
+                        {/* 좌측 accent bar: 멀티 카테고리일 경우 그라데이션으로 표시 */}
+                        <div
+                          className="w-[3px] shrink-0"
+                          style={{ background: getEventBarGradient(event) }}
+                        />
+                        <div className="flex-1 flex flex-col px-2 py-1 min-w-0 overflow-hidden">
+                          <div className="text-[10px] font-bold opacity-80 mb-0.5" style={{ color: primaryColor }}>
+                            {format(startDate, 'HH:mm')} - {format(endDate, 'HH:mm')}
+                          </div>
+                          <div className="text-xs font-semibold leading-tight truncate pr-10" style={{ color: primaryColor }}>
+                            {event.title}
+                          </div>
                         </div>
 
                         {/* Hover Actions */}
