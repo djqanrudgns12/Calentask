@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { X, User, MonitorPlay, Tags, Database } from 'lucide-react'
 import { ProfileTab } from './ProfileTab'
@@ -11,15 +11,24 @@ import { DataTab } from './DataTab'
 interface SettingsModalProps {
   open: boolean
   onOpenChange: (open: boolean) => void
+  initialTab?: TabKey
 }
 
 type TabKey = 'profile' | 'display' | 'tags' | 'data'
 
-export function SettingsModal({ open, onOpenChange }: SettingsModalProps) {
-  const [activeTab, setActiveTab] = useState<TabKey>('profile')
+export function SettingsModal({ open, onOpenChange, initialTab = 'profile' }: SettingsModalProps) {
+  const [activeTab, setActiveTab] = useState<TabKey>(initialTab)
+
+  // 모달이 열리거나 initialTab이 변경될 때 상태 동기화
+  useEffect(() => {
+    if (open && initialTab) {
+      setActiveTab(initialTab)
+    }
+  }, [open, initialTab])
+
 
   const TABS = [
-    { id: 'profile', label: '프로필 및 아바타', icon: User },
+    { id: 'profile', label: '프로필', icon: User },
     { id: 'display', label: '디스플레이 및 테마', icon: MonitorPlay },
     { id: 'tags', label: '태그 관리소', icon: Tags },
     { id: 'data', label: '데이터 허브', icon: Database },

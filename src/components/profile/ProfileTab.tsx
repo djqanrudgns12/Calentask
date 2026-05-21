@@ -2,82 +2,62 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useUserProfile, useUpdateProfile } from '@/hooks/useCalendarQueries'
+import { useUserProfile, useUpdateProfile, useUpdatePassword } from '@/hooks/useCalendarQueries'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Check, Loader2 } from 'lucide-react'
-
-const ALL_AVATARS = [
-  'avatar_male_1_1779290951731.png', 'avatar_male_2_1779290967498.png', 'avatar_male_3_1779290981042.png',
-  'avatar_male_4_1779290995269.png', 'avatar_male_5_1779291014314.png', 'avatar_male_6_1779291041148.png',
-  'avatar_male_7_1779291057912.png', 'avatar_male_8_1779291072168.png', 'avatar_male_9_1779291086972.png',
-  'avatar_male_10_1779291105075.png',
-  'avatar_female_1_1779291118673.png', 'avatar_female_2_1779291133895.png', 'avatar_female_3_1779291145962.png',
-  'avatar_female_4_1779291161389.png', 'avatar_female_5_1779291177610.png', 'avatar_female_6_1779291200395.png',
-  'avatar_female_7_1779291214849.png', 'avatar_female_8_1779291227630.png', 'avatar_female_9_1779291242436.png',
-  'avatar_female_10_1779291258960.png'
-]
+import { Loader2, KeyRound } from 'lucide-react'
 
 export function ProfileTab() {
   const { data: profile } = useUserProfile()
-  const { mutate: updateProfile, isPending } = useUpdateProfile()
+  const { mutate: updateProfile, isPending: isUpdatingProfile } = useUpdateProfile()
+  const { mutateAsync: updatePassword, isPending: isUpdatingPassword } = useUpdatePassword()
   
   const [fullName, setFullName] = useState('')
   const [username, setUsername] = useState('')
-  const [selectedAvatar, setSelectedAvatar] = useState('')
+  const [recoveryEmail, setRecoveryEmail] = useState('')
+  
+  // 비밀번호 변경 관련 상태
+  const [isChangingPassword, setIsChangingPassword] = useState(false)
+  const [newPassword, setNewPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
 
   useEffect(() => {
     if (profile) {
       setFullName(profile.full_name || '')
       setUsername(profile.username || '')
-      setSelectedAvatar(profile.avatar_url || '')
+      setRecoveryEmail(profile.recovery_email || '')
     }
   }, [profile])
 
-  const handleSave = () => {
+  const handleSaveProfile = () => {
     updateProfile({
       full_name: fullName,
       username: username,
-      avatar_url: selectedAvatar
+      recovery_email: recoveryEmail
     })
+  }
+
+  const handleSavePassword = async () => {
+    if (!newPassword || newPassword !== confirmPassword) {
+      alert('비밀번호가 일치하지 않거나 입력되지 않았습니다.')
+      return
+    }
+    try {
+      await updatePassword(newPassword)
+      alert('비밀번호가 성공적으로 변경되었습니다.')
+      setIsChangingPassword(false)
+      setNewPassword('')
+      setConfirmPassword('')
+    } catch (err) {
+      console.error(err)
+      alert('비밀번호 변경에 실패했습니다.')
+    }
   }
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
       
-      {/* 아바타 선택 섹션 */}
-      <section className="space-y-4">
-        <div className="flex items-center justify-between flex-wrap gap-2">
-          <h3 className="text-lg font-bold text-slate-800 whitespace-nowrap">아바타 캐릭터</h3>
-          <span className="text-sm text-slate-500 font-medium whitespace-nowrap">프리미엄 3D 아바타를 선택하세요</span>
-        </div>
-        
-        <div className="grid grid-cols-5 sm:grid-cols-10 gap-3">
-          {ALL_AVATARS.map((avatar) => {
-            const isSelected = selectedAvatar === avatar
-            return (
-              <button
-                key={avatar}
-                type="button"
-                onClick={() => setSelectedAvatar(avatar)}
-                className={`relative aspect-square rounded-xl overflow-hidden transition-all duration-200 group ${
-                  isSelected ? 'ring-2 ring-indigo-500 ring-offset-2 scale-105 shadow-md z-10' : 'hover:scale-105 hover:shadow-sm ring-1 ring-slate-200'
-                }`}
-              >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={`/avatars/${avatar}`} alt="Avatar" className="w-full h-full object-cover" />
-                {isSelected && (
-                  <div className="absolute inset-0 bg-indigo-500/20 flex items-center justify-center">
-                    <Check className="w-6 h-6 text-white drop-shadow-md" />
-                  </div>
-                )}
-              </button>
-            )
-          })}
-        </div>
-      </section>
-
       {/* 기본 정보 섹션 */}
       <section className="space-y-4">
         <h3 className="text-lg font-bold text-slate-800">기본 정보</h3>
@@ -102,24 +82,105 @@ export function ProfileTab() {
               className="bg-white border-slate-200 focus-visible:ring-indigo-500 rounded-xl"
             />
           </div>
+          <div className="space-y-2 sm:col-span-2">
+            <Label htmlFor="recoveryEmail" className="text-slate-600 font-medium">복구 이메일</Label>
+            <Input 
+              id="recoveryEmail" 
+              type="email"
+              value={recoveryEmail}
+              onChange={e => setRecoveryEmail(e.target.value)}
+              placeholder="비밀번호 복구용 이메일을 입력하세요"
+              className="bg-white border-slate-200 focus-visible:ring-indigo-500 rounded-xl"
+            />
+          </div>
+        </div>
+
+        {/* 프로필 저장 버튼 */}
+        <div className="pt-4 flex justify-end">
+          <Button 
+            onClick={handleSaveProfile}
+            disabled={isUpdatingProfile}
+            className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-8 py-5 rounded-xl shadow-lg shadow-indigo-200 transition-all hover:scale-105"
+          >
+            {isUpdatingProfile ? (
+              <>
+                <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                저장 중...
+              </>
+            ) : '변경사항 저장'}
+          </Button>
         </div>
       </section>
 
-      {/* 저장 버튼 */}
-      <div className="pt-4 flex justify-end border-t border-slate-100">
-        <Button 
-          onClick={handleSave}
-          disabled={isPending}
-          className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-8 py-5 rounded-xl shadow-lg shadow-indigo-200 transition-all hover:scale-105"
-        >
-          {isPending ? (
-            <>
-              <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-              저장 중...
-            </>
-          ) : '변경사항 저장'}
-        </Button>
-      </div>
+      {/* 보안 섹션 (비밀번호 변경) */}
+      <section className="space-y-4 pt-6 border-t border-slate-100">
+        <div className="flex items-center justify-between">
+          <h3 className="text-lg font-bold text-slate-800">보안</h3>
+          {!isChangingPassword && (
+            <Button 
+              variant="outline" 
+              onClick={() => setIsChangingPassword(true)}
+              className="text-slate-600 border-slate-300 hover:bg-slate-50"
+            >
+              <KeyRound className="w-4 h-4 mr-2 text-slate-400" />
+              비밀번호 변경
+            </Button>
+          )}
+        </div>
+
+        {isChangingPassword && (
+          <div className="bg-slate-50 p-5 rounded-2xl border border-slate-100 space-y-4">
+            <div className="grid sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="newPassword">새 비밀번호</Label>
+                <Input 
+                  id="newPassword" 
+                  type="password"
+                  value={newPassword}
+                  onChange={e => setNewPassword(e.target.value)}
+                  placeholder="새로운 비밀번호"
+                  className="bg-white border-slate-200"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="confirmPassword">비밀번호 확인</Label>
+                <Input 
+                  id="confirmPassword" 
+                  type="password"
+                  value={confirmPassword}
+                  onChange={e => setConfirmPassword(e.target.value)}
+                  placeholder="새로운 비밀번호 확인"
+                  className="bg-white border-slate-200"
+                />
+              </div>
+            </div>
+            
+            <div className="flex justify-end gap-2 pt-2">
+              <Button 
+                variant="ghost" 
+                onClick={() => {
+                  setIsChangingPassword(false)
+                  setNewPassword('')
+                  setConfirmPassword('')
+                }}
+                className="text-slate-500 hover:text-slate-700 hover:bg-slate-200"
+              >
+                취소
+              </Button>
+              <Button 
+                onClick={handleSavePassword}
+                disabled={isUpdatingPassword || !newPassword || newPassword !== confirmPassword}
+                className="bg-slate-800 hover:bg-slate-900 text-white"
+              >
+                {isUpdatingPassword ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+                비밀번호 업데이트
+              </Button>
+            </div>
+          </div>
+        )}
+      </section>
+
     </div>
   )
 }
+
