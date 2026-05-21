@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -11,6 +11,67 @@ import { X, Plus, Calendar as CalendarIcon, Clock, Pencil } from 'lucide-react'
 import { useCategories, useCreateActivity, useUpdateActivity, useCreateCategory, useDeleteCategory } from '@/hooks/useCalendarQueries'
 import { format, startOfMonth, endOfMonth, parseISO } from 'date-fns'
 import { useCalendarStore } from '@/store/useCalendarStore'
+
+/**
+ * 모바일 키보드가 올라올 때 visualViewport를 감지하여
+ * 다이얼로그의 최대 높이를 동적으로 조정하는 커스텀 훅.
+ * iOS Safari는 dvh 단위가 키보드를 고려하지 않으므로 JS로 보완해야 함.
+ */
+function useKeyboardAwareDialog(isOpen: boolean) {
+  const dialogRef = useRef<HTMLDivElement>(null)
+  const scrollRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!isOpen) return
+
+    const vv = window.visualViewport
+    if (!vv) return
+
+    const handleResize = () => {
+      const el = dialogRef.current
+      if (!el) return
+
+      // visualViewport.height는 키보드가 올라오면 줄어든 실제 보이는 영역 높이
+      const viewportHeight = vv.height
+      // 모달의 최대 높이를 보이는 영역의 90%로 제한
+      const maxH = viewportHeight * 0.9
+      el.style.maxHeight = `${maxH}px`
+      // 키보드가 올라오면 모달을 뷰포트 중앙으로 재배치
+      // visualViewport.offsetTop은 주소표시줄 등으로 인한 오프셋
+      const centerY = vv.offsetTop + viewportHeight / 2
+      el.style.top = `${centerY}px`
+    }
+
+    // 초기 한번 실행 + resize 이벤트 구독
+    handleResize()
+    vv.addEventListener('resize', handleResize)
+    vv.addEventListener('scroll', handleResize)
+
+    return () => {
+      vv.removeEventListener('resize', handleResize)
+      vv.removeEventListener('scroll', handleResize)
+      // 정리: 스타일 초기화
+      const el = dialogRef.current
+      if (el) {
+        el.style.maxHeight = ''
+        el.style.top = ''
+      }
+    }
+  }, [isOpen])
+
+  // 포커스된 input이 스크롤 영역 내에서 보이도록 스크롤
+  const handleFocusScroll = useCallback((e: React.FocusEvent) => {
+    const target = e.target as HTMLElement
+    if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') {
+      // 약간의 딜레이를 줘야 키보드가 올라온 후 정확한 위치로 스크롤됨
+      setTimeout(() => {
+        target.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      }, 300)
+    }
+  }, [])
+
+  return { dialogRef, scrollRef, handleFocusScroll }
+}
 
 const COLOR_SWATCHES = [
   '#ef4444', // red
@@ -37,6 +98,7 @@ const COLOR_SWATCHES = [
 
 export function AddEventDialog({ children }: { children?: React.ReactNode }) {
   const { isAddEventOpen, closeAddEvent, addEventDate, openAddEvent, editingEvent, openEditCategory } = useCalendarStore()
+  const { dialogRef, scrollRef, handleFocusScroll } = useKeyboardAwareDialog(isAddEventOpen)
   
   const [title, setTitle] = useState('')
   const [isAllDay, setIsAllDay] = useState(false)
@@ -215,15 +277,15 @@ export function AddEventDialog({ children }: { children?: React.ReactNode }) {
       {children && (
         <div onClick={() => openAddEvent()}>{children}</div>
       )}
-      <DialogContent className="sm:max-w-[440px] p-0 overflow-hidden bg-[#f8f9ff] border-none shadow-2xl rounded-2xl">
+      <DialogContent ref={dialogRef} className="sm:max-w-[440px] p-0 overflow-hidden bg-[#f8f9ff] border-none shadow-2xl rounded-2xl flex flex-col">
         <DialogHeader className="px-6 py-4 border-b border-gray-100 bg-white">
           <DialogTitle className="text-xl font-bold text-gray-900">{editingEvent ? '일정 수정' : '새 일정 추가'}</DialogTitle>
           <DialogDescription className="sr-only">{editingEvent ? '일정을 수정합니다.' : '새로운 일정을 추가하기 위한 모달입니다. 아래 양식을 채워주세요.'}</DialogDescription>
         </DialogHeader>
         
-        <form onSubmit={handleSubmit} className="flex flex-col h-full overflow-hidden">
-          {/* Scrollable Content Area */}
-          <div className="flex-1 overflow-y-auto px-6 py-6 pb-24">
+        <form onSubmit={handleSubmit} className="flex flex-col min-h-0 flex-1 overflow-hidden">
+          {/* 스크롤 가능한 콘텐츠 영역 - min-h-0이 flex 자식의 overflow 활성화에 필수 */}
+          <div ref={scrollRef} onFocusCapture={handleFocusScroll} className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-6 py-6 pb-6 -webkit-overflow-scrolling-touch">
             <div className="space-y-6">
               {/* Title */}
               <div>
@@ -412,7 +474,8 @@ export function AddEventDialog({ children }: { children?: React.ReactNode }) {
           </div>
           
           {/* Actions */}
-          <div className="flex-shrink-0 flex justify-between items-center bg-white px-6 py-4 border-t border-gray-100">
+          {/* 하단 버튼 - 항상 보이도록 shrink 방지 */}
+          <div className="flex-shrink-0 flex justify-between items-center bg-white px-6 py-3 border-t border-gray-100">
             <div /> {/* Spacer */}
             <div className="flex gap-3">
               <Button type="button" variant="ghost" onClick={closeAddEvent} className="text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-full px-5">

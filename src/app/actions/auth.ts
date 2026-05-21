@@ -18,7 +18,7 @@ export async function login(formData: FormData) {
   })
 
   if (error) {
-    return redirect('/login?error=Invalid login credentials')
+    return redirect('/login?error=아이디가 존재하지 않거나 비밀번호가 일치하지 않습니다.')
   }
 
   revalidatePath('/', 'layout')
