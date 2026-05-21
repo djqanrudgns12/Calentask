@@ -22,7 +22,7 @@ export async function getUserProfile() {
   return profile
 }
 
-export async function updateUserProfile(payload: { full_name?: string; username?: string; avatar_url?: string }) {
+export async function updateUserProfile(payload: { full_name?: string; username?: string; avatar_url?: string; recovery_email?: string }) {
   const supabase = await createClient()
   const { data: userData } = await supabase.auth.getUser()
   if (!userData.user) throw new Error('Not logged in')
@@ -34,6 +34,15 @@ export async function updateUserProfile(payload: { full_name?: string; username?
 
   if (error) {
     console.error('Error updating profile:', error)
+    throw error
+  }
+  return true
+}
+
+export async function updateUserPassword(password: string) {
+  const supabase = await createClient()
+  const { error } = await supabase.auth.updateUser({ password })
+  if (error) {
     throw error
   }
   return true

@@ -30,9 +30,9 @@ export function ProfileDropdown({ onOpenSettings }: { onOpenSettings: () => void
   return (
     <Popover open={isOpen} onOpenChange={setIsOpen}>
       <PopoverTrigger className="flex items-center gap-2 px-1.5 py-1.5 rounded-full hover:bg-slate-100 transition-colors focus:outline-none">
-        <div className="w-10 h-10 rounded-full bg-slate-200 shadow-sm flex items-center justify-center text-sm font-bold text-slate-600 overflow-hidden ring-2 ring-transparent hover:ring-indigo-100 transition-all">
+        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 shadow-md flex items-center justify-center text-sm font-bold text-white overflow-hidden ring-2 ring-transparent hover:ring-indigo-200 hover:scale-105 transition-all">
             {isLoading ? (
-              <div className="w-full h-full animate-pulse bg-slate-300" />
+              <div className="w-full h-full animate-pulse bg-indigo-400/50" />
             ) : avatarUrl ? (
               <>
                 {/* eslint-disable-next-line @next/next/no-img-element */}

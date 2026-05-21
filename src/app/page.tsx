@@ -4,7 +4,7 @@
 import { useState, useEffect } from 'react'
 import { useCalendarStore } from '@/store/useCalendarStore'
 import { Button } from '@/components/ui/button'
-import { Menu, ChevronLeft, ChevronRight, Plus } from 'lucide-react'
+import { Menu, ChevronLeft, ChevronRight, Plus, Tags, Database } from 'lucide-react'
 
 import { format, addMonths, subMonths, startOfWeek, endOfWeek, eachDayOfInterval, isSameMonth, isSameDay, addDays } from 'date-fns'
 import { useActivities, useCategories } from '@/hooks/useCalendarQueries'
@@ -23,6 +23,7 @@ import { SettingsModal } from '@/components/profile/SettingsModal'
 export default function CalendarPage() {
   const [mounted, setMounted] = useState(false)
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
+  const [settingsTab, setSettingsTab] = useState<'profile' | 'display' | 'tags' | 'data'>('profile')
   const { 
     currentDate, viewMode, setCurrentDate, setViewMode,
     semesterYear, semesterTerm, setSemesterYear, setSemesterTerm, activeCategories 
@@ -117,9 +118,32 @@ export default function CalendarPage() {
           {/* Keep uploader and trash at the bottom or below */}
           <div className="mt-auto px-2 flex flex-col space-y-3">
             <CsvUploader />
+            <Button
+              variant="outline"
+              className="w-full text-sm font-medium border-gray-300 flex items-center justify-center text-slate-700 hover:bg-slate-50"
+              onClick={() => {
+                setSettingsTab('tags')
+                setIsSettingsOpen(true)
+              }}
+            >
+              <Tags className="w-4 h-4 mr-2" />
+              태그 관리소
+            </Button>
+            <Button
+              variant="outline"
+              className="w-full text-sm font-medium border-gray-300 flex items-center justify-center text-slate-700 hover:bg-slate-50"
+              onClick={() => {
+                setSettingsTab('data')
+                setIsSettingsOpen(true)
+              }}
+            >
+              <Database className="w-4 h-4 mr-2" />
+              데이터 허브
+            </Button>
           </div>
         </div>
       </aside>
+
 
       {/* Main Content */}
       <main className="flex-1 flex flex-col min-w-0">
@@ -165,7 +189,10 @@ export default function CalendarPage() {
               </div>
 
               <div className="hidden sm:block">
-                <ProfileDropdown onOpenSettings={() => setIsSettingsOpen(true)} />
+                <ProfileDropdown onOpenSettings={() => {
+                  setSettingsTab('profile')
+                  setIsSettingsOpen(true)
+                }} />
               </div>
             </div>
           </div>
@@ -193,7 +220,11 @@ export default function CalendarPage() {
       </AddEventDialog>
 
       {/* Settings Modal */}
-      <SettingsModal open={isSettingsOpen} onOpenChange={setIsSettingsOpen} />
+      <SettingsModal 
+        open={isSettingsOpen} 
+        onOpenChange={setIsSettingsOpen} 
+        initialTab={settingsTab} 
+      />
 
       {/* Delete Confirmation Dialog */}
       <DeleteConfirmDialog />

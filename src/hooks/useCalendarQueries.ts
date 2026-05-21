@@ -228,9 +228,17 @@ export function useUserProfile() {
 export function useUpdateProfile() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: (payload: { full_name?: string; username?: string; avatar_url?: string }) => updateUserProfile(payload),
+    mutationFn: (payload: { full_name?: string; username?: string; avatar_url?: string; recovery_email?: string }) => updateUserProfile(payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['userProfile'] })
     }
+  })
+}
+
+import { updateUserPassword } from '@/app/actions/profile'
+
+export function useUpdatePassword() {
+  return useMutation({
+    mutationFn: (password: string) => updateUserPassword(password),
   })
 }

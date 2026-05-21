@@ -73,7 +73,7 @@ export function CsvUploader() {
     <Dialog open={open} onOpenChange={setOpen}>
       {/* @ts-expect-error DialogTrigger asChild typing issue */}
       <DialogTrigger asChild>
-        <Button variant="outline" className="text-sm font-medium border-gray-300">
+        <Button variant="outline" className="w-full text-sm font-medium border-gray-300 flex items-center justify-center">
           <UploadCloud className="w-4 h-4 mr-2" />
           CSV 가져오기
         </Button>
