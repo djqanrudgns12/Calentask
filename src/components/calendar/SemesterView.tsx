@@ -2,6 +2,7 @@
 
 import { format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, eachDayOfInterval, isSameMonth, isSameDay, addMonths } from 'date-fns'
 import { Activity } from '@/app/actions/calendar'
+import { getEventPrimaryColor, getEventBarGradient, getEventBgColor } from '@/lib/eventColor'
 import { getHolidayName } from '@/lib/holidays'
 import { Pencil, Trash2 } from 'lucide-react'
 import { useCalendarStore } from '@/store/useCalendarStore'
@@ -82,21 +83,25 @@ export function SemesterView({ events }: SemesterViewProps) {
                         
                         <div className="space-y-1.5 overflow-y-auto no-scrollbar flex-1">
                           {dayEvents.map(event => {
-                            const primaryColor = event.categories?.[0]?.hex_color || '#94a3b8'
+                            const primaryColor = getEventPrimaryColor(event)
                             
                             return (
                               <div 
                                 key={event.id}
                                 onClick={(e) => e.stopPropagation()}
-                                className="group relative flex flex-col px-1.5 py-1 rounded-r-md text-[10px] border-l-[3px] transition-transform hover:scale-[1.02]"
-                                style={{ 
-                                  backgroundColor: `${primaryColor}1A`,
-                                  borderLeftColor: primaryColor
-                                }}
+                                className="group relative flex items-stretch rounded-r-md text-[10px] transition-transform hover:scale-[1.02] overflow-hidden"
+                                style={{ backgroundColor: getEventBgColor(event) }}
                               >
-                                <span className="font-semibold text-slate-700 truncate leading-tight pr-8">
-                                  {event.title}
-                                </span>
+                                {/* 좌측 accent bar: 멀티 카테고리일 경우 그라데이션으로 표시 */}
+                                <div
+                                  className="w-[3px] shrink-0"
+                                  style={{ background: getEventBarGradient(event) }}
+                                />
+                                <div className="flex-1 flex flex-col px-1.5 py-1 min-w-0">
+                                  <span className="font-semibold text-slate-700 truncate leading-tight pr-8">
+                                    {event.title}
+                                  </span>
+                                </div>
 
                                 {/* Hover Actions */}
                                 <div className="absolute right-0.5 top-1/2 -translate-y-1/2 hidden group-hover:flex items-center gap-0.5 bg-white/90 px-0.5 py-0.5 rounded shadow-sm">

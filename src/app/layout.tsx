@@ -1,9 +1,13 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 import { QueryProvider } from "@/providers/QueryProvider";
 
-const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
+const customFont = localFont({
+  src: "./fonts/RIDIBatang.otf",
+  variable: "--font-sans",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: "Calentask",
@@ -16,7 +20,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="ko" className={inter.variable}>
+    <html lang="ko" className={customFont.variable}>
       <body className={`antialiased font-sans bg-[#f7f9fb]`}>
         <QueryProvider>
           {children}

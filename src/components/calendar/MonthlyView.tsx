@@ -2,6 +2,7 @@
 
 import { format, eachDayOfInterval, isSameMonth, isSameDay, startOfWeek, endOfWeek } from 'date-fns'
 import { Activity } from '@/app/actions/calendar'
+import { getEventPrimaryColor, getEventBarGradient, getEventBgColor } from '@/lib/eventColor'
 import { getHolidayName } from '@/lib/holidays'
 import { useCalendarStore } from '@/store/useCalendarStore'
 import { Pencil, Trash2 } from 'lucide-react'
@@ -62,22 +63,25 @@ export function MonthlyView({ currentDate, events }: MonthlyViewProps) {
               
               <div className="space-y-1.5 overflow-y-auto flex-1 no-scrollbar">
                 {dayEvents.map(event => {
-                  const primaryColor = event.categories?.[0]?.hex_color || '#94a3b8' 
+                  const primaryColor = getEventPrimaryColor(event)
                   
                   return (
                     <div 
                       key={event.id}
                       onClick={(e) => e.stopPropagation()}
-                      className="group relative flex flex-col px-2.5 py-1.5 rounded-r-lg text-xs transition-all hover:scale-[1.02] border-l-[3px]"
-                      style={{ 
-                        backgroundColor: `${primaryColor}1A`, // 10% opacity
-                        borderLeftColor: primaryColor
-                      }}
+                      className="group relative flex items-stretch rounded-r-lg text-xs transition-all hover:scale-[1.02] overflow-hidden"
+                      style={{ backgroundColor: getEventBgColor(event) }}
                     >
-                      {/* 태그 색상 점(Dot)들을 표시할 수도 있으나, 이미 좌측 Accent Bar가 색상을 대변하므로 생략하거나 우측에 작게 표시 가능 */}
-                      <span className="font-medium text-slate-700 truncate pr-10">
-                        {event.title}
-                      </span>
+                      {/* 좌측 accent bar: 멀티 카테고리일 경우 그라데이션으로 표시 */}
+                      <div
+                        className="w-[3px] shrink-0 rounded-l-lg"
+                        style={{ background: getEventBarGradient(event) }}
+                      />
+                      <div className="flex-1 flex flex-col px-2.5 py-1.5 min-w-0">
+                        <span className="font-medium text-slate-700 truncate pr-10">
+                          {event.title}
+                        </span>
+                      </div>
                       
                       {/* Hover Actions */}
                       <div className="absolute right-1 top-1/2 -translate-y-1/2 hidden group-hover:flex items-center gap-1 bg-white/90 px-1 py-0.5 rounded shadow-sm">
