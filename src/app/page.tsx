@@ -19,11 +19,15 @@ import { DeleteConfirmDialog } from '@/components/calendar/DeleteConfirmDialog'
 import { EditCategoryDialog } from '@/components/calendar/EditCategoryDialog'
 import { ProfileDropdown } from '@/components/profile/ProfileDropdown'
 import { SettingsModal } from '@/components/profile/SettingsModal'
+import { TagsModal } from '@/components/profile/TagsModal'
+import { DataHubModal } from '@/components/profile/DataHubModal'
 
 export default function CalendarPage() {
   const [mounted, setMounted] = useState(false)
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
-  const [settingsTab, setSettingsTab] = useState<'profile' | 'display' | 'tags' | 'data'>('profile')
+  const [settingsTab, setSettingsTab] = useState<'profile' | 'display'>('profile')
+  const [isTagsModalOpen, setIsTagsModalOpen] = useState(false)
+  const [isDataHubModalOpen, setIsDataHubModalOpen] = useState(false)
   const { 
     currentDate, viewMode, setCurrentDate, setViewMode,
     semesterYear, semesterTerm, setSemesterYear, setSemesterTerm, activeCategories 
@@ -121,10 +125,7 @@ export default function CalendarPage() {
             <Button
               variant="outline"
               className="w-full text-sm font-medium border-gray-300 flex items-center justify-center text-slate-700 hover:bg-slate-50"
-              onClick={() => {
-                setSettingsTab('tags')
-                setIsSettingsOpen(true)
-              }}
+              onClick={() => setIsTagsModalOpen(true)}
             >
               <Tags className="w-4 h-4 mr-2" />
               태그 관리소
@@ -132,10 +133,7 @@ export default function CalendarPage() {
             <Button
               variant="outline"
               className="w-full text-sm font-medium border-gray-300 flex items-center justify-center text-slate-700 hover:bg-slate-50"
-              onClick={() => {
-                setSettingsTab('data')
-                setIsSettingsOpen(true)
-              }}
+              onClick={() => setIsDataHubModalOpen(true)}
             >
               <Database className="w-4 h-4 mr-2" />
               데이터 허브
@@ -224,6 +222,18 @@ export default function CalendarPage() {
         open={isSettingsOpen} 
         onOpenChange={setIsSettingsOpen} 
         initialTab={settingsTab} 
+      />
+
+      {/* Tags Modal */}
+      <TagsModal
+        open={isTagsModalOpen}
+        onOpenChange={setIsTagsModalOpen}
+      />
+
+      {/* Data Hub Modal */}
+      <DataHubModal
+        open={isDataHubModalOpen}
+        onOpenChange={setIsDataHubModalOpen}
       />
 
       {/* Delete Confirmation Dialog */}

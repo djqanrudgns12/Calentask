@@ -33,7 +33,6 @@ export function ProfileTab() {
   const handleSaveProfile = () => {
     updateProfile({
       full_name: fullName,
-      username: username,
       recovery_email: recoveryEmail
     })
   }
@@ -77,9 +76,8 @@ export function ProfileTab() {
             <Input 
               id="username" 
               value={username}
-              onChange={e => setUsername(e.target.value)}
-              placeholder="아이디를 입력하세요"
-              className="bg-white border-slate-200 focus-visible:ring-indigo-500 rounded-xl"
+              disabled
+              className="bg-slate-50 border-slate-200 text-slate-500 rounded-xl cursor-not-allowed opacity-100"
             />
           </div>
           <div className="space-y-2 sm:col-span-2">

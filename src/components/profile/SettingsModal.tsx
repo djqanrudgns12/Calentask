@@ -2,11 +2,9 @@
 
 import { useState, useEffect } from 'react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
-import { X, User, MonitorPlay, Tags, Database } from 'lucide-react'
+import { X, User, MonitorPlay } from 'lucide-react'
 import { ProfileTab } from './ProfileTab'
 import { DisplayTab } from './DisplayTab'
-import { TagsTab } from './TagsTab'
-import { DataTab } from './DataTab'
 
 interface SettingsModalProps {
   open: boolean
@@ -14,7 +12,7 @@ interface SettingsModalProps {
   initialTab?: TabKey
 }
 
-type TabKey = 'profile' | 'display' | 'tags' | 'data'
+type TabKey = 'profile' | 'display'
 
 export function SettingsModal({ open, onOpenChange, initialTab = 'profile' }: SettingsModalProps) {
   const [activeTab, setActiveTab] = useState<TabKey>(initialTab)
@@ -30,8 +28,6 @@ export function SettingsModal({ open, onOpenChange, initialTab = 'profile' }: Se
   const TABS = [
     { id: 'profile', label: '프로필', icon: User },
     { id: 'display', label: '디스플레이 및 테마', icon: MonitorPlay },
-    { id: 'tags', label: '태그 관리소', icon: Tags },
-    { id: 'data', label: '데이터 허브', icon: Database },
   ] as const
 
   return (
@@ -73,8 +69,6 @@ export function SettingsModal({ open, onOpenChange, initialTab = 'profile' }: Se
             <div className="max-w-3xl mx-auto">
               {activeTab === 'profile' && <ProfileTab />}
               {activeTab === 'display' && <DisplayTab />}
-              {activeTab === 'tags' && <TagsTab />}
-              {activeTab === 'data' && <DataTab />}
             </div>
           </div>
         </div>
