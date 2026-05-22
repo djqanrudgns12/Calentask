@@ -69,28 +69,28 @@ export function ListView({ currentDate, events }: ListViewProps) {
         {sortedGroupedEntries.map(([dateStr, dayEvents]) => {
           const date = parseISO(dateStr)
           return (
-            <div key={dateStr} className="flex flex-col md:flex-row mb-12 relative group">
-              {/* Left: Giant Typography Date */}
-              <div className="md:w-32 flex-shrink-0 flex flex-col md:items-end md:pr-8 mb-4 md:mb-0 md:border-r border-transparent relative z-10">
-                <span className="text-4xl font-light text-slate-800 tracking-tight">
+            <div key={dateStr} className="flex flex-col md:flex-row mb-8 relative group">
+              {/* Left: Typography Date */}
+              <div className="md:w-32 flex-shrink-0 flex flex-col md:items-end md:pr-8 mb-3 md:mb-0 md:border-r border-transparent relative z-10">
+                <span className="text-3xl font-light text-slate-800 tracking-tight">
                   {format(date, 'dd')}
                 </span>
-                <span className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">
+                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">
                   {format(date, 'M월')} {['일', '월', '화', '수', '목', '금', '토'][date.getDay()]}요일
                 </span>
                 {/* Timeline node */}
-                <div className="hidden md:block absolute right-[-5px] top-3 w-2 h-2 rounded-full bg-slate-300 ring-4 ring-[#FAFAFA] transition-colors group-hover:bg-[#312E81]" />
+                <div className="hidden md:block absolute right-[-4.5px] top-3 w-2 h-2 rounded-full bg-slate-300 ring-4 ring-[#FAFAFA] transition-colors group-hover:bg-[#312E81]" />
               </div>
 
               {/* Right: Events List */}
-              <div className="flex-1 md:pl-8 space-y-4">
+              <div className="flex-1 md:pl-6 space-y-2">
                 {dayEvents.map(event => {
                   const primaryColor = getEventPrimaryColor(event)
                   return (
                     <div 
                       key={event.id}
                       onClick={() => setSelectedEvent(event)}
-                      className="group/card relative flex flex-col p-4 rounded-xl cursor-pointer transition-all hover:bg-white hover:shadow-sm border border-transparent hover:border-[#EEEEEE]"
+                      className="group/card relative flex flex-col px-3 py-2.5 rounded-xl cursor-pointer transition-all hover:bg-white hover:shadow-sm border border-transparent hover:border-[#EEEEEE]"
                     >
                       <div className="flex items-center justify-between mb-1">
                         <span className="text-xs font-semibold text-slate-400 flex items-center">
@@ -101,7 +101,7 @@ export function ListView({ currentDate, events }: ListViewProps) {
                           {event.categories?.map(tag => (
                             <span 
                               key={tag.id} 
-                              className="px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider text-slate-600 bg-slate-100"
+                              className="px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider text-slate-600 bg-slate-100"
                               style={{ color: tag.hex_color }}
                             >
                               {tag.name}
@@ -109,23 +109,23 @@ export function ListView({ currentDate, events }: ListViewProps) {
                           ))}
                         </div>
                       </div>
-                      <h4 className="text-lg font-bold text-slate-800 group-hover/card:text-[#312E81] transition-colors pr-12">
+                      <h4 className="text-base font-bold text-slate-800 group-hover/card:text-[#312E81] transition-colors pr-12">
                         {event.title}
                       </h4>
 
                       {/* Hover Actions */}
-                      <div className="absolute right-4 top-1/2 -translate-y-1/2 hidden group-hover/card:flex items-center gap-1 bg-white/90 px-1 py-0.5 rounded shadow-sm">
+                      <div className="absolute right-3 top-1/2 -translate-y-1/2 hidden group-hover/card:flex items-center gap-1 bg-white/90 px-1 py-0.5 rounded shadow-sm">
                         <button 
                           onClick={(e) => { e.stopPropagation(); openEditEvent(event); }}
                           className="p-1 hover:bg-gray-100 rounded text-gray-500 hover:text-indigo-600 transition-colors"
                         >
-                          <Pencil className="w-4 h-4" />
+                          <Pencil className="w-3.5 h-3.5" />
                         </button>
                         <button 
                           onClick={(e) => { e.stopPropagation(); openDeleteConfirm(event.id); }}
                           className="p-1 hover:bg-gray-100 rounded text-gray-500 hover:text-red-600 transition-colors"
                         >
-                          <Trash2 className="w-4 h-4" />
+                          <Trash2 className="w-3.5 h-3.5" />
                         </button>
                       </div>
                     </div>

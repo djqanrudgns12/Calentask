@@ -43,7 +43,7 @@ export function GlobalCategoryFilter() {
       <button
         type="button"
         onClick={() => setActiveCategories([])}
-        className={`px-3 py-1.5 text-sm font-semibold rounded-lg transition-all shadow-sm
+        className={`px-2.5 py-1 text-xs font-semibold rounded-lg transition-all shadow-sm whitespace-nowrap shrink-0
           ${activeCategories.length === 0
             ? 'bg-white text-slate-900 border border-gray-200' 
             : 'bg-transparent text-gray-500 hover:bg-white/50 border border-transparent'
@@ -55,16 +55,16 @@ export function GlobalCategoryFilter() {
       {categories.map(cat => {
         const isSelected = activeCategories.includes(cat.id)
         return (
-          <div key={cat.id} className="relative group/cat flex items-center">
+          <div key={cat.id} className="relative group/cat flex items-center shrink-0">
             <button
               type="button"
               onClick={() => toggleCategory(cat.id)}
-              className={`px-3 py-1.5 text-sm font-semibold rounded-lg transition-all flex items-center gap-1.5 shadow-sm text-white border-2 
+              className={`px-2.5 py-1 text-xs font-semibold rounded-lg transition-all flex items-center gap-1 shadow-sm text-white border-2 whitespace-nowrap shrink-0
                 ${isSelected ? 'border-white ring-2 ring-indigo-300' : 'border-transparent opacity-85 hover:opacity-100'}`}
               style={{ backgroundColor: cat.hex_color || '#4f46e5', textShadow: '0 1px 2px rgba(0,0,0,0.5)' }}
             >
               {cat.name}
-              {isSelected && <X className="w-3.5 h-3.5" />}
+              {isSelected && <X className="w-3.5 h-3.5 shrink-0" />}
             </button>
             
             {/* Hover Actions */}
@@ -89,22 +89,22 @@ export function GlobalCategoryFilter() {
       })}
       
       {isAddingCategory ? (
-        <form onSubmit={handleAddCategorySubmit} className="flex items-center gap-1 bg-white p-0.5 rounded-lg shadow-sm">
+        <form onSubmit={handleAddCategorySubmit} className="flex items-center gap-1 bg-white p-0.5 rounded-lg shadow-sm shrink-0">
           <Input 
             autoFocus
             value={newCategoryName}
             onChange={e => setNewCategoryName(e.target.value)}
-            className="w-24 h-8 text-sm border-none shadow-none focus-visible:ring-0 px-2 bg-transparent"
+            className="w-24 h-8 text-xs border-none shadow-none focus-visible:ring-0 px-2 bg-transparent"
             placeholder="새 카테고리"
           />
-          <Button type="submit" size="sm" className="h-7 rounded-md px-2 bg-indigo-600 text-white hover:bg-indigo-700">추가</Button>
-          <Button type="button" variant="ghost" size="sm" className="h-7 rounded-md px-1 hover:bg-gray-100" onClick={() => setIsAddingCategory(false)}><X className="w-4 h-4 text-gray-500"/></Button>
+          <Button type="submit" size="sm" className="h-7 rounded-md px-2 bg-indigo-600 text-white hover:bg-indigo-700 whitespace-nowrap">추가</Button>
+          <Button type="button" variant="ghost" size="sm" className="h-7 rounded-md px-1 hover:bg-gray-100 shrink-0" onClick={() => setIsAddingCategory(false)}><X className="w-4 h-4 text-gray-500"/></Button>
         </form>
       ) : (
         <button
           type="button"
           onClick={() => setIsAddingCategory(true)}
-          className="px-2 py-1.5 text-sm font-medium rounded-lg border border-dashed border-gray-300 text-gray-500 hover:text-gray-700 hover:border-gray-400 hover:bg-white/50 transition-colors flex items-center justify-center shadow-sm"
+          className="px-2 py-1 text-xs font-medium rounded-lg border border-dashed border-gray-300 text-gray-500 hover:text-gray-700 hover:border-gray-400 hover:bg-white/50 transition-colors flex items-center justify-center shadow-sm shrink-0 whitespace-nowrap"
         >
           <Plus className="w-4 h-4" />
         </button>
