@@ -16,6 +16,8 @@ interface CalendarState {
   deletingEventId: string | null
   editingCategory: Category | null
   showHolidays: boolean
+  selectedDaySummary: Date | null
+  selectedEventDetail: Activity | null
   setCurrentDate: (date: Date) => void
   setViewMode: (mode: ViewMode) => void
   setActiveCategories: (categories: string[]) => void
@@ -29,6 +31,10 @@ interface CalendarState {
   openEditCategory: (category: Category) => void
   closeEditCategory: () => void
   setShowHolidays: (show: boolean) => void
+  openDaySummary: (date: Date) => void
+  closeDaySummary: () => void
+  openEventDetail: (event: Activity) => void
+  closeEventDetail: () => void
   resetStore: () => void
 }
 
@@ -46,19 +52,25 @@ export const useCalendarStore = create<CalendarState>()(
       deletingEventId: null,
       editingCategory: null,
       showHolidays: true,
+      selectedDaySummary: null,
+      selectedEventDetail: null,
       setCurrentDate: (date) => set({ currentDate: date }),
       setViewMode: (mode) => set({ viewMode: mode }),
       setActiveCategories: (categories) => set({ activeCategories: categories }),
       setSemesterYear: (year) => set({ semesterYear: year }),
       setSemesterTerm: (term) => set({ semesterTerm: term }),
-      openAddEvent: (date) => set({ isAddEventOpen: true, addEventDate: date || null, editingEvent: null }),
-      openEditEvent: (event) => set({ isAddEventOpen: true, addEventDate: new Date(event.start_time), editingEvent: event }),
+      openAddEvent: (date) => set({ isAddEventOpen: true, addEventDate: date || null, editingEvent: null, selectedDaySummary: null, selectedEventDetail: null }),
+      openEditEvent: (event) => set({ isAddEventOpen: true, addEventDate: new Date(event.start_time), editingEvent: event, selectedDaySummary: null, selectedEventDetail: null }),
       closeAddEvent: () => set({ isAddEventOpen: false, addEventDate: null, editingEvent: null }),
       openDeleteConfirm: (id) => set({ deletingEventId: id }),
       closeDeleteConfirm: () => set({ deletingEventId: null }),
       openEditCategory: (category) => set({ editingCategory: category }),
       closeEditCategory: () => set({ editingCategory: null }),
       setShowHolidays: (show) => set({ showHolidays: show }),
+      openDaySummary: (date) => set({ selectedDaySummary: date, selectedEventDetail: null, isAddEventOpen: false }),
+      closeDaySummary: () => set({ selectedDaySummary: null }),
+      openEventDetail: (event) => set({ selectedEventDetail: event, selectedDaySummary: null, isAddEventOpen: false }),
+      closeEventDetail: () => set({ selectedEventDetail: null }),
       resetStore: () => set({
         currentDate: new Date(),
         viewMode: 'monthly',
@@ -71,6 +83,8 @@ export const useCalendarStore = create<CalendarState>()(
         deletingEventId: null,
         editingCategory: null,
         showHolidays: true,
+        selectedDaySummary: null,
+        selectedEventDetail: null,
       }),
     }),
     {

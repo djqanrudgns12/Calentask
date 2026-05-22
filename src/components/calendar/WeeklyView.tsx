@@ -18,7 +18,7 @@ const HOURS = Array.from({ length: 24 }, (_, i) => i)
 const PIXELS_PER_HOUR = 40 // 시간당 40px로 축소하여 전체 높이 33% 감소 (1440px → 960px)
 
 export function WeeklyView({ currentDate, events }: WeeklyViewProps) {
-  const { openAddEvent, showHolidays, openEditEvent, openDeleteConfirm } = useCalendarStore()
+  const { openDaySummary, openEventDetail, openEditEvent, openDeleteConfirm, showHolidays } = useCalendarStore()
   const startDate = startOfWeek(currentDate)
   const endDate = endOfWeek(currentDate)
   const days = eachDayOfInterval({ start: startDate, end: endDate })
@@ -75,9 +75,15 @@ export function WeeklyView({ currentDate, events }: WeeklyViewProps) {
                    {allDayEvents.map(event => {
                      const primaryColor = getEventPrimaryColor(event)
                      return (
-                        <div key={event.id} className="text-[10px] font-semibold truncate px-1.5 py-0.5 rounded" style={{ backgroundColor: `${primaryColor}20`, color: primaryColor }}>
-                           {event.title}
-                        </div>
+                         <div 
+                           key={event.id} 
+                           onClick={(e) => { e.stopPropagation(); openEventDetail(event); }}
+                           onDoubleClick={(e) => { e.stopPropagation(); openEditEvent(event); }}
+                           className="text-[10px] font-semibold truncate px-1.5 py-0.5 rounded cursor-pointer transition-transform hover:scale-[1.02]" 
+                           style={{ backgroundColor: `${primaryColor}20`, color: primaryColor }}
+                         >
+                            {event.title}
+                         </div>
                      )
                    })}
                 </div>
@@ -179,7 +185,7 @@ export function WeeklyView({ currentDate, events }: WeeklyViewProps) {
                   key={dayIdx} 
                   className="relative border-r border-[#F1F5F9] last:border-r-0"
                   style={{ minHeight: PIXELS_PER_HOUR * 24 }}
-                  onClick={() => openAddEvent(day)}
+                  onClick={() => openDaySummary(day)}
                 >
                   {/* Events */}
                   {sortedEvents.map(event => {
@@ -200,7 +206,8 @@ export function WeeklyView({ currentDate, events }: WeeklyViewProps) {
                     return (
                       <div
                         key={event.id}
-                        onClick={(e) => e.stopPropagation()}
+                        onClick={(e) => { e.stopPropagation(); openEventDetail(event); }}
+                        onDoubleClick={(e) => { e.stopPropagation(); openEditEvent(event); }}
                         className="group absolute rounded-md overflow-hidden flex items-stretch transition-all duration-200 hover:z-50 hover:scale-[1.02] hover:min-w-[140px] shadow-sm backdrop-blur-md cursor-pointer"
                         style={{
                           top: `${top}px`,

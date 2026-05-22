@@ -14,7 +14,7 @@ interface MonthlyViewProps {
 }
 
 export function MonthlyView({ currentDate, events }: MonthlyViewProps) {
-  const { openAddEvent, showHolidays, openEditEvent, openDeleteConfirm } = useCalendarStore()
+  const { openDaySummary, openEventDetail, openEditEvent, openDeleteConfirm, showHolidays } = useCalendarStore()
   
   const monthStart = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1)
   const monthEnd = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0)
@@ -46,7 +46,7 @@ export function MonthlyView({ currentDate, events }: MonthlyViewProps) {
           return (
             <div 
               key={idx} 
-              onClick={() => openAddEvent(day)}
+              onClick={() => openDaySummary(day)}
               className={`min-h-0 rounded-2xl p-4 transition-all cursor-pointer flex flex-col border border-[#EEEEEE] shadow-sm hover:shadow-md bg-white ${
                 isCurrentMonth ? 'opacity-100' : 'opacity-40'
               }`}
@@ -69,8 +69,9 @@ export function MonthlyView({ currentDate, events }: MonthlyViewProps) {
                   return (
                     <div 
                       key={event.id}
-                      onClick={(e) => e.stopPropagation()}
-                      className="group relative flex items-stretch rounded-r-lg text-xs transition-all hover:scale-[1.02] overflow-hidden"
+                      onClick={(e) => { e.stopPropagation(); openEventDetail(event); }}
+                      onDoubleClick={(e) => { e.stopPropagation(); openEditEvent(event); }}
+                      className="group relative flex items-stretch rounded-r-lg text-xs transition-all hover:scale-[1.02] overflow-hidden cursor-pointer"
                       style={{ backgroundColor: getEventBgColor(event) }}
                     >
                       {/* 좌측 accent bar: 멀티 카테고리일 경우 그라데이션으로 표시 */}
