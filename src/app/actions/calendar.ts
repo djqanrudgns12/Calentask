@@ -254,7 +254,7 @@ export async function hardDeleteActivity(id: string) {
   return true
 }
 
-// ������ ���� (�ϰ� ���� ����)
+// 휴지통 비우기 (전체 삭제)
 export async function emptyTrash() {
   const supabase = await createClient()
   const { data: userData } = await supabase.auth.getUser()
@@ -269,4 +269,38 @@ export async function emptyTrash() {
   if (error) throw new Error(error.message)
   revalidatePath('/')
   return true
+}
+
+// 통합 검색 (Spotlight Search)을 위한 전역 일정 검색
+export async function searchActivities(query: string) {
+  const supabase = await createClient()
+  const { data: userData } = await supabase.auth.getUser()
+  if (!userData.user) throw new Error('Not authenticated')
+
+  if (!query || query.trim() === '') return []
+
+  const { data, error } = await supabase
+    .from('activities')
+    .select(`
+      *,
+      activity_category_map(
+        categories(*)
+      )
+    `)
+    .eq('user_id', userData.user.id)
+    .is('deleted_at', null)
+    .or(`title.ilike.%${query}%,memo.ilike.%${query}%`)
+    .order('start_time', { ascending: false })
+    .limit(20)
+
+  if (error) throw new Error(error.message)
+
+  const activities: Activity[] = data.map((item: any) => ({
+    ...item,
+    categories: item.activity_category_map
+      .map((mapItem: any) => mapItem.categories)
+      .filter(Boolean)
+  }))
+
+  return activities
 }

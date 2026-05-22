@@ -2,6 +2,7 @@
 
 import { format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, eachDayOfInterval, isSameMonth, isSameDay, addMonths } from 'date-fns'
 import { Activity } from '@/app/actions/calendar'
+import { isEventOnDay } from '@/lib/calendarUtils'
 import { getEventPrimaryColor, getEventBarGradient, getEventBgColor } from '@/lib/eventColor'
 import { getHolidayName } from '@/lib/holidays'
 import { Pencil, Trash2 } from 'lucide-react'
@@ -59,7 +60,7 @@ export function SemesterView({ events }: SemesterViewProps) {
                   {days.map((day, dayIdx) => {
                     const isCurrentMonth = isSameMonth(day, monthDate)
                     const isToday = isSameDay(day, new Date())
-                    const dayEvents = events.filter(e => isSameDay(new Date(e.start_time), day))
+                    const dayEvents = events.filter(e => isEventOnDay(e, day))
                     const holidayName = showHolidays ? getHolidayName(day) : null
 
                     return (
@@ -98,7 +99,7 @@ export function SemesterView({ events }: SemesterViewProps) {
                                   style={{ background: getEventBarGradient(event) }}
                                 />
                                 <div className="flex-1 flex flex-col px-1.5 py-1 min-w-0">
-                                  <span className="font-semibold text-slate-700 truncate leading-tight pr-8">
+                                  <span className="font-semibold text-slate-700 truncate leading-tight pr-1 group-hover:pr-10">
                                     {event.title}
                                   </span>
                                 </div>

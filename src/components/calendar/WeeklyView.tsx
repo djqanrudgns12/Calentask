@@ -2,6 +2,7 @@
 
 import { format, startOfWeek, endOfWeek, eachDayOfInterval, isSameDay, differenceInMinutes, parseISO } from 'date-fns'
 import { Activity } from '@/app/actions/calendar'
+import { isEventOnDay, isMultiDayEvent } from '@/lib/calendarUtils'
 import { getEventPrimaryColor, getEventBarGradient, getEventBgColor } from '@/lib/eventColor'
 import { getHolidayName } from '@/lib/holidays'
 import { Pencil, Trash2 } from 'lucide-react'
@@ -52,7 +53,7 @@ export function WeeklyView({ currentDate, events }: WeeklyViewProps) {
             const holidayName = showHolidays ? getHolidayName(day) : null
             
             // All day events for this day
-            const allDayEvents = events.filter(e => isSameDay(new Date(e.start_time), day) && e.is_all_day)
+            const allDayEvents = events.filter(e => isEventOnDay(e, day) && (e.is_all_day || isMultiDayEvent(e)))
 
             return (
               <div key={idx} className="flex flex-col items-center py-3 border-r border-[#EEEEEE] last:border-r-0 relative">
@@ -93,7 +94,9 @@ export function WeeklyView({ currentDate, events }: WeeklyViewProps) {
           <div className="w-16 shrink-0 flex flex-col border-r border-[#EEEEEE] bg-[#FAFAFA]">
             {HOURS.map(hour => (
               <div key={hour} className="relative text-[10px] font-medium text-slate-400 text-right pr-2" style={{ height: PIXELS_PER_HOUR }}>
-                <span className="absolute -top-2 right-2 bg-[#FAFAFA] px-1">{hour === 0 ? '12 AM' : hour < 12 ? `${hour} AM` : hour === 12 ? '12 PM' : `${hour - 12} PM`}</span>
+                <span className={`absolute right-2 bg-[#FAFAFA] px-1 ${hour === 0 ? 'top-1' : '-top-2'}`}>
+                  {hour === 0 ? '12 AM' : hour < 12 ? `${hour} AM` : hour === 12 ? '12 PM' : `${hour - 12} PM`}
+                </span>
               </div>
             ))}
           </div>
@@ -110,7 +113,66 @@ export function WeeklyView({ currentDate, events }: WeeklyViewProps) {
             {/* Day Columns */}
             {days.map((day, dayIdx) => {
               const isToday = isSameDay(day, now)
-              const dayEvents = events.filter(e => isSameDay(new Date(e.start_time), day) && !e.is_all_day)
+              const dayEvents = events.filter(e => isEventOnDay(e, day) && !e.is_all_day && !isMultiDayEvent(e))
+
+              // 1. Sort events
+              const sortedEvents = [...dayEvents].sort((a, b) => {
+                const startA = new Date(a.start_time).getTime()
+                const startB = new Date(b.start_time).getTime()
+                if (startA !== startB) return startA - startB
+                return new Date(b.end_time).getTime() - new Date(a.end_time).getTime()
+              })
+
+              // 2. Clustering & Column Assignment
+              const eventLayouts = new Map<string, { column: number, totalColumns: number }>()
+              let currentCluster: Activity[] = []
+              let clusterEndTime = 0
+
+              const processCluster = (cluster: Activity[]) => {
+                if (cluster.length === 0) return
+                const columns: Activity[][] = []
+                
+                cluster.forEach(event => {
+                  let placed = false
+                  for (let i = 0; i < columns.length; i++) {
+                    const col = columns[i]
+                    const lastEventInCol = col[col.length - 1]
+                    if (new Date(lastEventInCol.end_time).getTime() <= new Date(event.start_time).getTime()) {
+                      col.push(event)
+                      placed = true
+                      break
+                    }
+                  }
+                  if (!placed) {
+                    columns.push([event])
+                  }
+                })
+
+                const numCols = columns.length
+                columns.forEach((col, colIndex) => {
+                  col.forEach(event => {
+                    eventLayouts.set(event.id, { column: colIndex, totalColumns: numCols })
+                  })
+                })
+              }
+
+              sortedEvents.forEach(event => {
+                const start = new Date(event.start_time).getTime()
+                const end = new Date(event.end_time).getTime()
+                
+                if (currentCluster.length === 0) {
+                  currentCluster.push(event)
+                  clusterEndTime = end
+                } else if (start < clusterEndTime) {
+                  currentCluster.push(event)
+                  clusterEndTime = Math.max(clusterEndTime, end)
+                } else {
+                  processCluster(currentCluster)
+                  currentCluster = [event]
+                  clusterEndTime = end
+                }
+              })
+              processCluster(currentCluster)
 
               return (
                 <div 
@@ -120,7 +182,7 @@ export function WeeklyView({ currentDate, events }: WeeklyViewProps) {
                   onClick={() => openAddEvent(day)}
                 >
                   {/* Events */}
-                  {dayEvents.map(event => {
+                  {sortedEvents.map(event => {
                     const startDate = new Date(event.start_time)
                     const endDate = new Date(event.end_time)
                     const startMins = startDate.getHours() * 60 + startDate.getMinutes()
@@ -129,14 +191,23 @@ export function WeeklyView({ currentDate, events }: WeeklyViewProps) {
                     const height = durationMins * (PIXELS_PER_HOUR / 60)
                     const primaryColor = getEventPrimaryColor(event)
 
+                    const layout = eventLayouts.get(event.id) || { column: 0, totalColumns: 1 }
+                    const widthPercent = 100 / layout.totalColumns
+                    const leftPercent = layout.column * widthPercent
+                    const leftStr = `calc(${leftPercent}% + 2px)`
+                    const widthStr = `calc(${widthPercent}% - 4px)`
+
                     return (
                       <div
                         key={event.id}
                         onClick={(e) => e.stopPropagation()}
-                        className="group absolute left-1 right-1 rounded-md overflow-hidden flex items-stretch transition-transform hover:scale-[1.02] shadow-sm backdrop-blur-md cursor-pointer"
+                        className="group absolute rounded-md overflow-hidden flex items-stretch transition-all duration-200 hover:z-50 hover:scale-[1.02] hover:min-w-[140px] shadow-sm backdrop-blur-md cursor-pointer"
                         style={{
                           top: `${top}px`,
                           height: `${height}px`,
+                          left: leftStr,
+                          width: widthStr,
+                          zIndex: layout.column,
                           backgroundColor: getEventBgColor(event),
                           borderTop: `1px solid ${primaryColor}30`,
                           borderRight: `1px solid ${primaryColor}30`,

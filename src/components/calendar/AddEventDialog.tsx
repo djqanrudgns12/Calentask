@@ -118,10 +118,21 @@ export function AddEventDialog({ children }: { children?: React.ReactNode }) {
   const currentMonthEnd = endOfMonth(new Date()).toISOString()
 
   useEffect(() => {
-    if (startDate > endDate) {
-      setEndDate(startDate)
+    if (isAllDay) {
+      if (startDate > endDate) {
+        setEndDate(startDate)
+      }
+    } else {
+      const startObj = new Date(`${startDate}T${startTime}:00`)
+      const endObj = new Date(`${endDate}T${endTime}:00`)
+      
+      if (startObj.getTime() >= endObj.getTime()) {
+        const newEndObj = new Date(startObj.getTime() + 60 * 60 * 1000) // +1 hour
+        setEndDate(format(newEndObj, 'yyyy-MM-dd'))
+        setEndTime(format(newEndObj, 'HH:mm'))
+      }
     }
-  }, [startDate, endDate])
+  }, [startDate, startTime, endDate, endTime, isAllDay])
 
   const { data: categories = [] } = useCategories()
   const { mutate: createActivity, isPending: isCreating } = useCreateActivity(currentMonthStart, currentMonthEnd)
@@ -219,6 +230,11 @@ export function AddEventDialog({ children }: { children?: React.ReactNode }) {
     
     const startObj = isAllDay ? new Date(`${startDate}T00:00:00`) : new Date(`${startDate}T${startTime}:00`)
     const endObj = isAllDay ? new Date(`${startDate}T23:59:59`) : new Date(`${endDate}T${endTime}:00`)
+
+    if (startObj.getTime() >= endObj.getTime()) {
+      alert('종료 시간은 시작 시간보다 이후여야 합니다.')
+      return
+    }
 
     // Extract final color logic
     let finalHex = customColor
