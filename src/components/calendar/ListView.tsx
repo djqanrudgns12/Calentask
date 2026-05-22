@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+
 import { format, isSameMonth, parseISO, startOfMonth, endOfMonth, startOfDay, addDays } from 'date-fns'
 import { useCalendarStore } from '@/store/useCalendarStore'
 import { Activity } from '@/app/actions/calendar'
@@ -14,8 +14,7 @@ interface ListViewProps {
 }
 
 export function ListView({ currentDate, events }: ListViewProps) {
-  const { openEditEvent, openDeleteConfirm } = useCalendarStore()
-  const [selectedEvent, setSelectedEvent] = useState<Activity | null>(null)
+  const { openEventDetail, openEditEvent, openDeleteConfirm } = useCalendarStore()
 
   const monthStart = startOfMonth(currentDate)
   const monthEnd = endOfMonth(currentDate)
@@ -89,7 +88,8 @@ export function ListView({ currentDate, events }: ListViewProps) {
                   return (
                     <div 
                       key={event.id}
-                      onClick={() => setSelectedEvent(event)}
+                      onClick={() => openEventDetail(event)}
+                      onDoubleClick={(e) => { e.stopPropagation(); openEditEvent(event); }}
                       className="group/card relative flex flex-col px-3 py-2.5 rounded-xl cursor-pointer transition-all hover:bg-white hover:shadow-sm border border-transparent hover:border-[#EEEEEE]"
                     >
                       <div className="flex items-center justify-between mb-1">
@@ -137,66 +137,6 @@ export function ListView({ currentDate, events }: ListViewProps) {
         })}
       </div>
 
-      {/* Detail Modal */}
-      {selectedEvent && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm" onClick={() => setSelectedEvent(null)}>
-          <div 
-            className="bg-white rounded-2xl w-full max-w-md p-6 shadow-2xl border border-slate-100 transform transition-all"
-            onClick={e => e.stopPropagation()}
-          >
-            <div className="flex justify-between items-start mb-6">
-              <div className="flex space-x-1.5">
-                {selectedEvent.categories?.map(tag => (
-                  <span 
-                    key={tag.id} 
-                    className="px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider bg-slate-50"
-                    style={{ color: tag.hex_color, border: `1px solid ${tag.hex_color}30` }}
-                  >
-                    {tag.name}
-                  </span>
-                ))}
-              </div>
-              <button 
-                onClick={() => setSelectedEvent(null)}
-                className="w-8 h-8 flex items-center justify-center rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 transition-colors"
-              >
-                ✕
-              </button>
-            </div>
-            
-            <h2 className="text-2xl font-bold text-slate-900 mb-2 leading-tight">
-              {selectedEvent.title}
-            </h2>
-            
-            <div className="flex items-center text-sm font-medium text-slate-500 mb-6 bg-slate-50 p-3 rounded-xl border border-slate-100">
-              <svg className="w-4 h-4 mr-2 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              {format(new Date(selectedEvent.start_time), 'yyyy년 MM월 dd일 HH:mm')} 
-              <span className="mx-2">→</span> 
-              {format(new Date(selectedEvent.end_time), 'HH:mm')}
-            </div>
-            
-            {selectedEvent.memo && (
-              <div className="mb-6">
-                <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Description</h3>
-                <p className="text-slate-700 text-sm leading-relaxed whitespace-pre-wrap">
-                  {selectedEvent.memo}
-                </p>
-              </div>
-            )}
-            
-            <div className="mt-8 pt-4 border-t border-slate-100 flex justify-end">
-              <button 
-                onClick={() => setSelectedEvent(null)}
-                className="px-5 py-2.5 bg-[#312E81] text-white text-sm font-bold rounded-xl shadow-md shadow-[#4338CA]/30 hover:bg-[#4338CA] transition-colors"
-              >
-                닫기
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   )
 }

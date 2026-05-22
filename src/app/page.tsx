@@ -13,6 +13,8 @@ import { MonthlyView } from '@/components/calendar/MonthlyView'
 import { WeeklyView } from '@/components/calendar/WeeklyView'
 import { ListView } from '@/components/calendar/ListView'
 import { SemesterView } from '@/components/calendar/SemesterView'
+import { DaySummarySheet } from '@/components/calendar/DaySummarySheet'
+import { EventDetailPopover } from '@/components/calendar/EventDetailPopover'
 import { CsvUploader } from '@/components/calendar/CsvUploader'
 import { DeleteConfirmDialog } from '@/components/calendar/DeleteConfirmDialog'
 import { EditCategoryDialog } from '@/components/calendar/EditCategoryDialog'
@@ -149,6 +151,9 @@ export default function CalendarPage() {
         open={isDataHubModalOpen}
         onOpenChange={setIsDataHubModalOpen}
       />
+
+      <DaySummarySheet events={events} />
+      <EventDetailPopover />
 
       {/* Delete Confirmation Dialog */}
       <DeleteConfirmDialog />

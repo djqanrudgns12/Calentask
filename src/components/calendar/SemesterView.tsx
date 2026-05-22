@@ -14,7 +14,7 @@ interface SemesterViewProps {
 }
 
 export function SemesterView({ events }: SemesterViewProps) {
-  const { semesterYear, semesterTerm, openAddEvent, showHolidays, openEditEvent, openDeleteConfirm } = useCalendarStore()
+  const { semesterYear, semesterTerm, openDaySummary, openEventDetail, openEditEvent, openDeleteConfirm, showHolidays } = useCalendarStore()
 
   // 1학기: 3월 1일 ~ 8월 31일, 2학기: 9월 1일 ~ 익년 2월 28일
   const semesterStartDate = new Date(semesterYear, semesterTerm === 1 ? 2 : 8, 1)
@@ -66,7 +66,7 @@ export function SemesterView({ events }: SemesterViewProps) {
                     return (
                       <div 
                         key={dayIdx} 
-                        onClick={() => openAddEvent(day)}
+                        onClick={() => openDaySummary(day)}
                         className={`min-h-[110px] border-b border-r border-[#F1F5F9] p-2 flex flex-col cursor-pointer transition-colors hover:bg-[#FAFAFA] ${
                           isCurrentMonth ? 'bg-white' : 'bg-[#F8FAFC] opacity-40'
                         }`}
@@ -89,8 +89,9 @@ export function SemesterView({ events }: SemesterViewProps) {
                             return (
                               <div 
                                 key={event.id}
-                                onClick={(e) => e.stopPropagation()}
-                                className="group relative flex items-stretch rounded-r-md text-[10px] transition-transform hover:scale-[1.02] overflow-hidden"
+                                onClick={(e) => { e.stopPropagation(); openEventDetail(event); }}
+                                onDoubleClick={(e) => { e.stopPropagation(); openEditEvent(event); }}
+                                className="group relative flex items-stretch rounded-r-md text-[10px] transition-transform hover:scale-[1.02] overflow-hidden cursor-pointer"
                                 style={{ backgroundColor: getEventBgColor(event) }}
                               >
                                 {/* 좌측 accent bar: 멀티 카테고리일 경우 그라데이션으로 표시 */}
