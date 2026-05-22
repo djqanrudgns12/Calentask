@@ -1,9 +1,10 @@
 'use client'
 
 import { useState } from 'react'
-import { format, isSameMonth, parseISO } from 'date-fns'
+import { format, isSameMonth, parseISO, startOfMonth, endOfMonth, startOfDay, addDays } from 'date-fns'
 import { useCalendarStore } from '@/store/useCalendarStore'
 import { Activity } from '@/app/actions/calendar'
+import { isEventOnDay } from '@/lib/calendarUtils'
 import { getEventPrimaryColor } from '@/lib/eventColor'
 import { Pencil, Trash2 } from 'lucide-react'
 
@@ -16,17 +17,40 @@ export function ListView({ currentDate, events }: ListViewProps) {
   const { openEditEvent, openDeleteConfirm } = useCalendarStore()
   const [selectedEvent, setSelectedEvent] = useState<Activity | null>(null)
 
+  const monthStart = startOfMonth(currentDate)
+  const monthEnd = endOfMonth(currentDate)
+  
+  // Filter events that fall within the current month
   const monthEvents = events
-    .filter(e => isSameMonth(new Date(e.start_time), currentDate))
+    .filter(e => {
+      const eStart = new Date(e.start_time)
+      const eEnd = new Date(e.end_time)
+      return eStart <= monthEnd && eEnd > monthStart
+    })
     .sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime())
 
   // Group events by day to create the split timeline structure
-  const groupedEvents = monthEvents.reduce((acc, event) => {
-    const dateStr = format(new Date(event.start_time), 'yyyy-MM-dd')
-    if (!acc[dateStr]) acc[dateStr] = []
-    acc[dateStr].push(event)
-    return acc
-  }, {} as Record<string, Activity[]>)
+  const groupedEvents: Record<string, Activity[]> = {}
+  monthEvents.forEach(event => {
+    let current = startOfDay(new Date(event.start_time))
+    const end = startOfDay(new Date(event.end_time))
+    
+    if (current.getTime() > end.getTime()) current = end
+
+    let safetyCounter = 0
+    while (current <= end && safetyCounter < 1000) {
+      if (isSameMonth(current, currentDate) && isEventOnDay(event, current)) {
+        const dateStr = format(current, 'yyyy-MM-dd')
+        if (!groupedEvents[dateStr]) groupedEvents[dateStr] = []
+        groupedEvents[dateStr].push(event)
+      }
+      current = addDays(current, 1)
+      safetyCounter++
+    }
+  })
+
+  // Sort grouped events by date string chronologically
+  const sortedGroupedEntries = Object.entries(groupedEvents).sort(([dateA], [dateB]) => dateA.localeCompare(dateB))
 
   if (monthEvents.length === 0) {
     return (
@@ -42,7 +66,7 @@ export function ListView({ currentDate, events }: ListViewProps) {
         {/* Continuous Timeline Line */}
         <div className="hidden md:block absolute left-[128px] top-6 bottom-0 w-px bg-[#EEEEEE] -translate-x-1/2 z-0" />
 
-        {Object.entries(groupedEvents).map(([dateStr, dayEvents]) => {
+        {sortedGroupedEntries.map(([dateStr, dayEvents]) => {
           const date = parseISO(dateStr)
           return (
             <div key={dateStr} className="flex flex-col md:flex-row mb-12 relative group">

@@ -2,6 +2,7 @@
 
 import { format, eachDayOfInterval, isSameMonth, isSameDay, startOfWeek, endOfWeek } from 'date-fns'
 import { Activity } from '@/app/actions/calendar'
+import { isEventOnDay } from '@/lib/calendarUtils'
 import { getEventPrimaryColor, getEventBarGradient, getEventBgColor } from '@/lib/eventColor'
 import { getHolidayName } from '@/lib/holidays'
 import { useCalendarStore } from '@/store/useCalendarStore'
@@ -39,14 +40,14 @@ export function MonthlyView({ currentDate, events }: MonthlyViewProps) {
           const isCurrentMonth = isSameMonth(day, currentDate)
           const isToday = isSameDay(day, new Date())
           
-          const dayEvents = events.filter(e => isSameDay(new Date(e.start_time), day))
+          const dayEvents = events.filter(e => isEventOnDay(e, day))
           const holidayName = showHolidays ? getHolidayName(day) : null
 
           return (
             <div 
               key={idx} 
               onClick={() => openAddEvent(day)}
-              className={`rounded-2xl p-4 transition-all cursor-pointer flex flex-col border border-[#EEEEEE] shadow-sm hover:shadow-md bg-white ${
+              className={`min-h-0 rounded-2xl p-4 transition-all cursor-pointer flex flex-col border border-[#EEEEEE] shadow-sm hover:shadow-md bg-white ${
                 isCurrentMonth ? 'opacity-100' : 'opacity-40'
               }`}
             >
@@ -78,7 +79,7 @@ export function MonthlyView({ currentDate, events }: MonthlyViewProps) {
                         style={{ background: getEventBarGradient(event) }}
                       />
                       <div className="flex-1 flex flex-col px-2.5 py-1.5 min-w-0">
-                        <span className="font-medium text-slate-700 truncate pr-10">
+                        <span className="font-medium text-slate-700 truncate pr-1 group-hover:pr-10">
                           {event.title}
                         </span>
                       </div>

@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { getActivities, getCategories, createActivity, updateActivity, deleteActivity, createCategory, updateCategory, deleteCategory, getDeletedActivities, restoreActivity, hardDeleteActivity, emptyTrash, type Activity, type Category } from '@/app/actions/calendar'
+import { getActivities, getCategories, createActivity, updateActivity, deleteActivity, createCategory, updateCategory, deleteCategory, getDeletedActivities, restoreActivity, hardDeleteActivity, emptyTrash, searchActivities, type Activity, type Category } from '@/app/actions/calendar'
 import { getUserProfile, updateUserProfile } from '@/app/actions/profile'
 
 export function useCategories() {
@@ -240,5 +240,13 @@ import { updateUserPassword } from '@/app/actions/profile'
 export function useUpdatePassword() {
   return useMutation({
     mutationFn: (password: string) => updateUserPassword(password),
+  })
+}
+
+export function useSearchActivities(query: string) {
+  return useQuery({
+    queryKey: ['searchActivities', query],
+    queryFn: () => searchActivities(query),
+    enabled: query.length > 1, // 2글자 이상일 때만 검색
   })
 }
