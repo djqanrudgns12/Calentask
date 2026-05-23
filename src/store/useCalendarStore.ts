@@ -71,21 +71,24 @@ export const useCalendarStore = create<CalendarState>()(
       closeDaySummary: () => set({ selectedDaySummary: null }),
       openEventDetail: (event) => set({ selectedEventDetail: event, selectedDaySummary: null, isAddEventOpen: false }),
       closeEventDetail: () => set({ selectedEventDetail: null }),
-      resetStore: () => set({
-        currentDate: new Date(),
-        viewMode: 'monthly',
-        activeCategories: [],
-        semesterYear: new Date().getFullYear(),
-        semesterTerm: new Date().getMonth() >= 2 && new Date().getMonth() <= 7 ? 1 : 2,
+      resetStore: () => set((state) => ({
+        // 유지할 상태들 (localStorage에 저장되는 항목들)
+        currentDate: state.currentDate,
+        viewMode: state.viewMode,
+        activeCategories: state.activeCategories,
+        semesterYear: state.semesterYear,
+        semesterTerm: state.semesterTerm,
+        showHolidays: state.showHolidays,
+        
+        // 초기화할 임시 상태들 (모달, 팝업 등)
         isAddEventOpen: false,
         addEventDate: null,
         editingEvent: null,
         deletingEventId: null,
         editingCategory: null,
-        showHolidays: true,
         selectedDaySummary: null,
         selectedEventDetail: null,
-      }),
+      })),
     }),
     {
       name: 'calendar-storage',
