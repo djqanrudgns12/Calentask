@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useCalendarStore } from '@/store/useCalendarStore'
 import { useCategories, useCreateCategory, useDeleteCategory } from '@/hooks/useCalendarQueries'
-import { Plus, X, Pencil, Trash2, Tag as TagIcon, Check, Loader2 } from 'lucide-react'
+import { Plus, Pencil, Trash2, Tag as TagIcon, Check, Loader2 } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Popover, PopoverContent, PopoverTrigger, PopoverHeader, PopoverTitle } from '@/components/ui/popover'
@@ -52,9 +52,9 @@ export function GlobalCategoryFilter() {
 
   const activeCategoryObjects = categories.filter(cat => activeCategories.includes(cat.id))
   
-  // 최대 3개의 색상 도트 표시용
+  // 최대 3개의 색상 도트 표시용 (나머지는 숫자로 요약)
   const displayDots = activeCategoryObjects.slice(0, 3)
-  const extraCount = activeCategoryObjects.length > 3 ? activeCategoryObjects.length - 3 : 0
+  const remainingCount = activeCategoryObjects.length - displayDots.length
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -75,6 +75,9 @@ export function GlobalCategoryFilter() {
                 />
               ))}
             </div>
+            {remainingCount > 0 && (
+              <span className="text-xs font-bold text-slate-500 ml-0.5">+{remainingCount}</span>
+            )}
             <span className="text-sm font-bold text-slate-700 ml-1">
               {activeCategoryObjects.length}개 필터 적용 중
             </span>
