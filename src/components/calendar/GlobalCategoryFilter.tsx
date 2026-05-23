@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useCalendarStore } from '@/store/useCalendarStore'
 import { useCategories, useCreateCategory, useDeleteCategory } from '@/hooks/useCalendarQueries'
-import { Plus, Pencil, Trash2, Tag as TagIcon, Check, Loader2 } from 'lucide-react'
+import { Plus, Pencil, Trash2, Folder, Check, Loader2 } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Popover, PopoverContent, PopoverTrigger, PopoverHeader, PopoverTitle } from '@/components/ui/popover'
@@ -61,8 +61,8 @@ export function GlobalCategoryFilter() {
       <PopoverTrigger className="group flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-50 hover:bg-slate-100 border border-slate-200 transition-colors cursor-pointer outline-none shrink-0">
         {activeCategoryObjects.length === 0 ? (
           <div className="flex items-center text-slate-500 font-medium text-sm">
-            <TagIcon className="w-4 h-4 mr-1.5 opacity-70" />
-            태그 필터
+            <Folder className="w-4 h-4 mr-1.5 opacity-70" />
+            카테고리
           </div>
         ) : (
           <div className="flex items-center gap-1.5">
@@ -88,8 +88,8 @@ export function GlobalCategoryFilter() {
       <PopoverContent className="w-72 p-0 shadow-xl border-slate-100 rounded-2xl overflow-hidden" align="start" sideOffset={8}>
         <PopoverHeader className="px-4 py-3 border-b border-slate-100 bg-slate-50/50 flex flex-row items-center justify-between space-y-0">
           <PopoverTitle className="flex items-center text-slate-800 font-bold">
-            <TagIcon className="w-4 h-4 mr-1.5 text-indigo-500" />
-            태그 필터 관리
+            <Folder className="w-4 h-4 mr-1.5 text-indigo-500" />
+            카테고리 관리
           </PopoverTitle>
           {/* 전체 선택/해제 토글 버튼: 모든 카테고리가 선택되면 "전체 해제", 아니면 "전체 선택" 표시 */}
           {categories.length > 0 && (
@@ -115,7 +115,7 @@ export function GlobalCategoryFilter() {
         <div className="max-h-[300px] overflow-y-auto p-2 space-y-1 hide-scrollbar">
           {categories.length === 0 ? (
             <div className="py-8 text-center text-sm text-slate-400">
-              생성된 태그가 없습니다.
+              생성된 카테고리가 없습니다.
             </div>
           ) : (
             categories.map(cat => {
@@ -181,7 +181,7 @@ export function GlobalCategoryFilter() {
               <Input
                 value={newCategoryName}
                 onChange={e => setNewCategoryName(e.target.value)}
-                placeholder="새 태그 추가..."
+                placeholder="새 카테고리 추가..."
                 className="pl-9 h-9 text-sm bg-white border-slate-200 focus-visible:ring-indigo-500 rounded-xl"
                 disabled={isCreating}
               />
