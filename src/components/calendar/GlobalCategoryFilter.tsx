@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useCalendarStore } from '@/store/useCalendarStore'
 import { useCategories, useCreateCategory, useDeleteCategory } from '@/hooks/useCalendarQueries'
-import { Plus, Pencil, Trash2, Folder, Check, Loader2 } from 'lucide-react'
+import { Plus, Pencil, Trash2, Folder, Check, Loader2, X } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Popover, PopoverContent, PopoverTrigger, PopoverHeader, PopoverTitle } from '@/components/ui/popover'
@@ -57,10 +57,11 @@ export function GlobalCategoryFilter() {
   const remainingCount = activeCategoryObjects.length - displayDots.length
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger className="group flex items-center justify-center gap-2 px-3 py-2 sm:px-4 rounded-xl bg-white shadow-[0_2px_8px_-2px_rgba(0,0,0,0.05)] border border-slate-100 hover:border-indigo-200 hover:shadow-md transition-all cursor-pointer outline-none shrink-0">
-        <Folder className="w-4 h-4 text-indigo-500/80 group-hover:text-indigo-600 transition-colors" />
-        <span className="text-sm font-bold text-slate-700 hidden sm:block">카테고리</span>
+    <div className="flex flex-wrap items-center gap-2 bg-slate-50 border border-slate-100/60 p-1.5 rounded-[1.25rem] shadow-inner transition-all">
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger className="group flex items-center justify-center gap-2 px-3 py-1.5 sm:px-4 rounded-xl bg-white shadow-sm border border-slate-100 hover:border-indigo-200 hover:shadow-md transition-all cursor-pointer outline-none shrink-0 h-9">
+          <Folder className="w-4 h-4 text-indigo-500/80 group-hover:text-indigo-600 transition-colors" />
+          <span className="text-sm font-bold text-slate-700 hidden sm:block">카테고리</span>
         {activeCategoryObjects.length > 0 && (
           <div className="flex items-center justify-center min-w-[20px] h-5 px-1.5 ml-0.5 rounded-md bg-indigo-50 border border-indigo-100 text-indigo-600 text-xs font-extrabold tracking-tight">
             {activeCategoryObjects.length}
@@ -179,6 +180,36 @@ export function GlobalCategoryFilter() {
           </form>
         </div>
       </PopoverContent>
-    </Popover>
+      </Popover>
+
+      {/* Selected Categories */}
+      {activeCategoryObjects.length > 0 && (
+        <div className="flex flex-wrap items-center gap-1.5 border-l border-slate-200/60 pl-2 py-0.5">
+          {activeCategoryObjects.map(cat => (
+            <div 
+              key={cat.id} 
+              className="group/tag flex items-center gap-1.5 pl-2.5 pr-1 py-1 bg-white rounded-lg shadow-sm border border-slate-100/80 hover:border-slate-200 hover:shadow transition-all"
+            >
+              <div 
+                className="w-2 h-2 rounded-full shadow-sm shrink-0" 
+                style={{ backgroundColor: cat.hex_color || '#4f46e5' }} 
+              />
+              <span className="text-xs font-bold text-slate-700 whitespace-nowrap">
+                {cat.name}
+              </span>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  toggleCategory(cat.id)
+                }}
+                className="p-0.5 rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors ml-0.5"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
   )
 }
