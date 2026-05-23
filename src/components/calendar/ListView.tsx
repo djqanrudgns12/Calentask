@@ -1,12 +1,13 @@
 'use client'
 
 
+import { useState } from 'react'
 import { format, isSameMonth, parseISO, startOfMonth, endOfMonth, startOfDay, addDays } from 'date-fns'
 import { useCalendarStore } from '@/store/useCalendarStore'
 import { Activity } from '@/app/actions/calendar'
 import { isEventOnDay } from '@/lib/calendarUtils'
 import { getEventPrimaryColor } from '@/lib/eventColor'
-import { Pencil, Trash2 } from 'lucide-react'
+import { Pencil, Trash2, ChevronDown, ChevronUp } from 'lucide-react'
 
 interface ListViewProps {
   currentDate: Date
@@ -15,6 +16,14 @@ interface ListViewProps {
 
 export function ListView({ currentDate, events }: ListViewProps) {
   const { openEventDetail, openEditEvent, openDeleteConfirm } = useCalendarStore()
+  const [expandedDates, setExpandedDates] = useState<Record<string, boolean>>({})
+
+  const toggleExpand = (dateStr: string) => {
+    setExpandedDates(prev => ({
+      ...prev,
+      [dateStr]: !prev[dateStr]
+    }))
+  }
 
   const monthStart = startOfMonth(currentDate)
   const monthEnd = endOfMonth(currentDate)
@@ -67,6 +76,8 @@ export function ListView({ currentDate, events }: ListViewProps) {
 
         {sortedGroupedEntries.map(([dateStr, dayEvents]) => {
           const date = parseISO(dateStr)
+          const isExpanded = expandedDates[dateStr]
+
           return (
             <div key={dateStr} className="flex flex-col md:flex-row mb-8 relative group">
               {/* Left: Typography Date */}
@@ -83,7 +94,7 @@ export function ListView({ currentDate, events }: ListViewProps) {
 
               {/* Right: Events List */}
               <div className="flex-1 md:pl-6 space-y-2">
-                {dayEvents.map(event => {
+                {dayEvents.slice(0, isExpanded ? undefined : 3).map(event => {
                   const primaryColor = getEventPrimaryColor(event)
                   return (
                     <div 
@@ -131,6 +142,26 @@ export function ListView({ currentDate, events }: ListViewProps) {
                     </div>
                   )
                 })}
+                
+                {/* Accordion Toggle Button */}
+                {dayEvents.length > 3 && (
+                  <button
+                    onClick={() => toggleExpand(dateStr)}
+                    className="w-full mt-2 py-2 flex items-center justify-center gap-1.5 text-xs font-bold text-slate-500 bg-slate-100/50 hover:bg-slate-200/60 rounded-xl transition-colors shadow-sm"
+                  >
+                    {isExpanded ? (
+                      <>
+                        <ChevronUp className="w-4 h-4" />
+                        접기
+                      </>
+                    ) : (
+                      <>
+                        <ChevronDown className="w-4 h-4" />
+                        {dayEvents.length - 3}개의 일정 더보기
+                      </>
+                    )}
+                  </button>
+                )}
               </div>
             </div>
           )

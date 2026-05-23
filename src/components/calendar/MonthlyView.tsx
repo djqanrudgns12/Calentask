@@ -62,8 +62,8 @@ export function MonthlyView({ currentDate, events }: MonthlyViewProps) {
                 </span>
               </div>
               
-              <div className="space-y-1.5 overflow-y-auto flex-1 no-scrollbar">
-                {dayEvents.map(event => {
+              <div className="space-y-1.5 flex-1 overflow-hidden">
+                {dayEvents.slice(0, 3).map(event => {
                   const primaryColor = getEventPrimaryColor(event)
                   
                   return (
@@ -103,6 +103,15 @@ export function MonthlyView({ currentDate, events }: MonthlyViewProps) {
                     </div>
                   )
                 })}
+                
+                {dayEvents.length > 3 && (
+                  <button
+                    onClick={(e) => { e.stopPropagation(); openDaySummary(day); }}
+                    className="w-full mt-1.5 text-center px-2 py-1 text-xs font-bold text-slate-500 bg-slate-50/80 hover:bg-slate-100 rounded-md transition-colors"
+                  >
+                    + {dayEvents.length - 3}개 더보기
+                  </button>
+                )}
               </div>
             </div>
           )

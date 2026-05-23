@@ -6,6 +6,7 @@ import { Search, Loader2, FileText } from 'lucide-react'
 import { useSearchActivities } from '@/hooks/useCalendarQueries'
 import { format } from 'date-fns'
 import { ko } from 'date-fns/locale'
+import { useCalendarStore } from '@/store/useCalendarStore'
 
 interface SpotlightSearchProps {
   open: boolean
@@ -16,6 +17,8 @@ export function SpotlightSearch({ open, onOpenChange }: SpotlightSearchProps) {
   const [query, setQuery] = useState('')
   const [debouncedQuery, setDebouncedQuery] = useState('')
 
+  const { viewMode, setViewMode, setCurrentDate, setSemesterYear, setSemesterTerm, openEventDetail } = useCalendarStore()
+
   useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedQuery(query)
@@ -24,6 +27,38 @@ export function SpotlightSearch({ open, onOpenChange }: SpotlightSearchProps) {
   }, [query])
 
   const { data: results, isLoading } = useSearchActivities(debouncedQuery)
+
+  const handleResultClick = (activity: any) => {
+    const eventDate = new Date(activity.start_time)
+    
+    // 1. 현재 뷰 모드에 따른 이동 처리
+    if (viewMode === 'nice_import') {
+      // 캘린더가 아닌 다른 창(예: 나이스 연동 뷰)일 경우 '월 뷰(monthly)'로 전환
+      setViewMode('monthly')
+      setCurrentDate(eventDate)
+    } else if (viewMode === 'semester') {
+      // 학기 뷰일 경우 해당 날짜에 맞는 학기/학년도로 이동
+      const month = eventDate.getMonth()
+      const year = eventDate.getFullYear()
+      const term = (month >= 2 && month <= 7) ? 1 : 2
+      // 1,2월은 이전 학년도 2학기로 간주 (학사일정 상)
+      const academicYear = (month === 0 || month === 1) ? year - 1 : year
+      setSemesterYear(academicYear)
+      setSemesterTerm(term)
+      setCurrentDate(eventDate)
+    } else {
+      // monthly, weekly, list 등 일반 캘린더 뷰일 경우 뷰 모드는 유지한 채 날짜만 이동
+      setCurrentDate(eventDate)
+    }
+
+    // 2. 검색창 닫기
+    onOpenChange(false)
+
+    // 3. 약간의 딜레이 후(화면 전환/스크롤 애니메이션 감안) 상세 팝업 열기
+    setTimeout(() => {
+      openEventDetail(activity)
+    }, 150)
+  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -65,6 +100,7 @@ export function SpotlightSearch({ open, onOpenChange }: SpotlightSearchProps) {
               {results.map((activity) => (
                 <div 
                   key={activity.id} 
+                  onClick={() => handleResultClick(activity)}
                   className="flex flex-col p-3 rounded-xl hover:bg-white hover:shadow-sm border border-transparent hover:border-slate-100 transition-all cursor-pointer group"
                 >
                   <div className="flex items-center justify-between">
