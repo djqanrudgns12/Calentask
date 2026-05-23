@@ -199,7 +199,7 @@ export function NiceImportView() {
                         <div className="p-4 flex items-center justify-between hover:bg-slate-50/50 transition-colors group">
                           <div className="flex items-center space-x-4">
                             <div className={`h-10 px-2 min-w-[2.5rem] rounded-lg flex items-center justify-center font-bold text-xs whitespace-nowrap
-                              ${item.record_type === '출장' ? 'bg-blue-100 text-blue-700' : 'bg-orange-100 text-orange-700'}
+                              ${item.record_type === '출장' ? 'bg-purple-100 text-purple-700' : 'bg-orange-100 text-orange-700'}
                             `}>
                               {item.record_type}
                             </div>

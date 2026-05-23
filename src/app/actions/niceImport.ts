@@ -40,7 +40,7 @@ export async function processNiceImport(
 
   // 1. 카테고리 조회 및 생성
   const categoryName = recordType
-  const categoryColor = recordType === '출장' ? '#3B82F6' : '#F97316' // 파란색 / 주황색
+  const categoryColor = recordType === '출장' ? '#8B5CF6' : '#F97316' // 보라색 / 주황색
 
   let categoryId = ''
   const { data: existingCat, error: catError } = await supabase
