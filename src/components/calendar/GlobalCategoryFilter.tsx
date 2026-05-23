@@ -15,6 +15,7 @@ export function GlobalCategoryFilter() {
   const { mutate: deleteCategory, isPending: isDeleting } = useDeleteCategory()
 
   const [open, setOpen] = useState(false)
+  const [isExpanded, setIsExpanded] = useState(false)
   const [newCategoryName, setNewCategoryName] = useState('')
   // 로컬 호버 상태로 렌더링 덜 지저분하게 관리
   const [deletingId, setDeletingId] = useState<string | null>(null)
@@ -52,9 +53,9 @@ export function GlobalCategoryFilter() {
 
   const activeCategoryObjects = categories.filter(cat => activeCategories.includes(cat.id))
   
-  // 최대 3개의 색상 도트 표시용 (나머지는 숫자로 요약)
-  const displayDots = activeCategoryObjects.slice(0, 3)
-  const remainingCount = activeCategoryObjects.length - displayDots.length
+  const MAX_VISIBLE_TAGS = 2
+  const showExpandButton = activeCategoryObjects.length > MAX_VISIBLE_TAGS
+  const visibleTags = isExpanded ? activeCategoryObjects : activeCategoryObjects.slice(0, MAX_VISIBLE_TAGS)
 
   return (
     <div className="flex flex-wrap items-center gap-2 bg-slate-50 border border-slate-100/60 p-1.5 rounded-[1.25rem] shadow-inner transition-all max-w-[280px] sm:max-w-[360px] lg:max-w-[450px] xl:max-w-[500px]">
@@ -182,33 +183,53 @@ export function GlobalCategoryFilter() {
       </PopoverContent>
       </Popover>
 
-      {/* Selected Categories */}
+      {/* Separator */}
       {activeCategoryObjects.length > 0 && (
-        <div className="flex flex-wrap items-center gap-1.5 border-l border-slate-200/60 pl-2 py-0.5">
-          {activeCategoryObjects.map(cat => (
-            <div 
-              key={cat.id} 
-              className="group/tag flex items-center gap-1.5 pl-2.5 pr-1 py-1 bg-white rounded-lg shadow-sm border border-slate-100/80 hover:border-slate-200 hover:shadow transition-all"
-            >
-              <div 
-                className="w-2 h-2 rounded-full shadow-sm shrink-0" 
-                style={{ backgroundColor: cat.hex_color || '#4f46e5' }} 
-              />
-              <span className="text-xs font-bold text-slate-700 whitespace-nowrap">
-                {cat.name}
-              </span>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation()
-                  toggleCategory(cat.id)
-                }}
-                className="p-0.5 rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors ml-0.5"
-              >
-                <X className="w-3 h-3" />
-              </button>
-            </div>
-          ))}
+        <div className="w-px h-5 bg-slate-200/60 mx-0.5 hidden sm:block shrink-0"></div>
+      )}
+
+      {/* Direct Children Tags */}
+      {visibleTags.map(cat => (
+        <div 
+          key={cat.id} 
+          className="group/tag flex items-center gap-1.5 pl-2.5 pr-1 py-1 bg-white rounded-lg shadow-sm border border-slate-100/80 hover:border-slate-200 hover:shadow transition-all shrink-0"
+        >
+          <div 
+            className="w-2 h-2 rounded-full shadow-sm shrink-0" 
+            style={{ backgroundColor: cat.hex_color || '#4f46e5' }} 
+          />
+          <span className="text-xs font-bold text-slate-700 whitespace-nowrap">
+            {cat.name}
+          </span>
+          <button
+            onClick={(e) => {
+              e.stopPropagation()
+              toggleCategory(cat.id)
+            }}
+            className="p-0.5 rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors ml-0.5"
+          >
+            <X className="w-3 h-3" />
+          </button>
         </div>
+      ))}
+
+      {/* Expand/Collapse Button */}
+      {showExpandButton && !isExpanded && (
+        <button 
+          onClick={() => setIsExpanded(true)}
+          className="flex items-center justify-center px-2 py-1 bg-slate-100 hover:bg-slate-200 border border-slate-200/60 rounded-lg text-xs font-extrabold text-slate-600 transition-colors shrink-0"
+        >
+          +{activeCategoryObjects.length - MAX_VISIBLE_TAGS}
+        </button>
+      )}
+      
+      {showExpandButton && isExpanded && (
+        <button 
+          onClick={() => setIsExpanded(false)}
+          className="flex items-center justify-center px-2 py-1 bg-slate-100 hover:bg-slate-200 border border-slate-200/60 rounded-lg text-xs font-bold text-slate-600 transition-colors shrink-0"
+        >
+          접기
+        </button>
       )}
     </div>
   )
