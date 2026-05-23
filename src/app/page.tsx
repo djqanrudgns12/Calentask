@@ -4,10 +4,12 @@
 import { useState, useEffect } from 'react'
 import { useCalendarStore } from '@/store/useCalendarStore'
 import { Button } from '@/components/ui/button'
-import { Plus, Tags, Database } from 'lucide-react'
+import { Plus, Tags, Database, LogOut } from 'lucide-react'
 
 import { startOfWeek, endOfWeek } from 'date-fns'
 import { useActivities } from '@/hooks/useCalendarQueries'
+import { logout } from '@/app/actions/auth'
+import { useQueryClient } from '@tanstack/react-query'
 import { AddEventDialog } from '@/components/calendar/AddEventDialog'
 import { MonthlyView } from '@/components/calendar/MonthlyView'
 import { WeeklyView } from '@/components/calendar/WeeklyView'
@@ -23,6 +25,7 @@ import { TagsModal } from '@/components/profile/TagsModal'
 import { DataHubModal } from '@/components/profile/DataHubModal'
 import { ClearAllDataDialog } from '@/components/profile/ClearAllDataDialog'
 import { CalendarHeader } from '@/components/calendar/CalendarHeader'
+import { UpcomingAgenda } from '@/components/calendar/UpcomingAgenda'
 
 export default function CalendarPage() {
   const [mounted, setMounted] = useState(false)
@@ -30,10 +33,18 @@ export default function CalendarPage() {
   const [settingsTab, setSettingsTab] = useState<'profile' | 'display'>('profile')
   const [isTagsModalOpen, setIsTagsModalOpen] = useState(false)
   const [isDataHubModalOpen, setIsDataHubModalOpen] = useState(false)
+  const queryClient = useQueryClient()
+  
   const { 
     currentDate, viewMode, setViewMode,
-    semesterYear, semesterTerm, activeCategories 
+    semesterYear, semesterTerm, activeCategories, resetStore 
   } = useCalendarStore()
+
+  const handleLogout = async () => {
+    resetStore()
+    queryClient.clear()
+    await logout()
+  }
 
   // 현재 달 기준 날짜 계산 (전체 일정 패치를 위해)
   const monthStart = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1)
@@ -70,8 +81,19 @@ export default function CalendarPage() {
     <div className="flex h-screen w-full overflow-hidden bg-[#f2f2f7] text-slate-900 font-sans">
       {/* Sidebar - Clean, no borders, soft shadow */}
       <aside className="w-64 flex-shrink-0 bg-white shadow-apple-soft flex flex-col hidden md:flex z-10">
-        {/* Spacer for top header alignment */}
-        <div className="h-[88px]" aria-hidden="true" />
+        <div className="p-6 pb-2 flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <img src="/icon.png" alt="Calentask Logo" className="w-8 h-8 rounded-xl object-cover shadow-sm" />
+            <span className="text-xl font-extrabold tracking-tight text-slate-900">Calentask</span>
+          </div>
+          <button 
+            onClick={handleLogout}
+            className="p-2 -mr-2 rounded-full text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors"
+            title="로그아웃"
+          >
+            <LogOut className="w-5 h-5" />
+          </button>
+        </div>
         
         <div className="px-4 py-4 flex flex-col space-y-1">
           <button 
@@ -88,7 +110,10 @@ export default function CalendarPage() {
           </button>
         </div>
 
-        <div className="px-4 py-6 flex flex-col space-y-1 flex-1">
+        {/* 다가오는 일정 타임라인 */}
+        <UpcomingAgenda events={events} currentDate={currentDate} />
+
+        <div className="px-4 py-6 flex flex-col space-y-1 shrink-0">
           {/* Keep uploader and trash at the bottom or below */}
           <div className="mt-auto px-2 flex flex-col space-y-3">
             <Button

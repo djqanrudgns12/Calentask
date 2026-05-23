@@ -112,10 +112,9 @@ export function CalendarHeader({ onOpenSettings }: CalendarHeaderProps) {
           {/* Unified Pure White Pill Box */}
           <div className="flex-1 flex flex-col xl:flex-row items-center justify-between bg-white rounded-[2rem] xl:rounded-full shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] border border-slate-100 px-3 py-2 md:px-4 md:py-2.5 gap-4 transition-all">
             
-            {/* Left: Logo + Title */}
-            <div className="flex items-center shrink-0 pr-4 xl:border-r xl:border-slate-100">
-              <img src="/icon.png" alt="Calentask Logo" className="w-8 h-8 rounded-xl object-cover shadow-sm mr-3" />
-              <span className="text-xl font-extrabold tracking-tight text-slate-900 hidden sm:block">Calentask</span>
+            {/* Left: Category Filter (moved from center) */}
+            <div className="flex items-center shrink-0 xl:border-r xl:border-slate-100 xl:pr-4">
+              <GlobalCategoryFilter />
             </div>
 
             {viewMode === 'nice_import' ? (
@@ -136,11 +135,8 @@ export function CalendarHeader({ onOpenSettings }: CalendarHeaderProps) {
               </div>
             ) : (
               <div className="flex-1 flex flex-col lg:flex-row items-center justify-between gap-4 w-full overflow-hidden">
-                {/* Center: Global Filters & Date Navigation & View Switcher */}
+                {/* Center: Date Navigation & View Switcher */}
                 <div className="flex items-center justify-center flex-1 gap-2 sm:gap-4 overflow-x-auto hide-scrollbar w-full">
-                  <GlobalCategoryFilter />
-                  
-                  <div className="h-6 w-px bg-slate-200 mx-1 hidden sm:block"></div>
 
                   <div className="flex items-center space-x-1 sm:space-x-2 shrink-0">
                     <button onClick={handlePrev} className="p-1.5 rounded-full hover:bg-slate-100 text-slate-500 transition-colors">
