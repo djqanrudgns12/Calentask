@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { format, subMonths, addMonths, subWeeks, addWeeks, startOfWeek, endOfWeek, isSameMonth, isSameYear } from 'date-fns'
-import { Menu, ChevronLeft, ChevronRight, Search } from 'lucide-react'
+import { Menu, ChevronLeft, ChevronRight, Search, Sparkles } from 'lucide-react'
 import { useCalendarStore } from '@/store/useCalendarStore'
 import { GlobalCategoryFilter } from '@/components/calendar/GlobalCategoryFilter'
 import { ProfileDropdown } from '@/components/profile/ProfileDropdown'
@@ -113,45 +113,68 @@ export function CalendarHeader({ onOpenSettings }: CalendarHeaderProps) {
           {/* Unified Pill Box (Glassmorphism) */}
           <div className="flex-1 flex flex-col md:flex-row items-start md:items-center justify-between bg-white/60 backdrop-blur-xl border border-white shadow-sm rounded-[2rem] px-4 py-3 md:px-6 md:py-2.5 gap-4">
             
-            {/* Left: Global Filters */}
-            <div className="flex items-center overflow-x-auto hide-scrollbar w-full md:max-w-[250px] lg:max-w-[300px]">
-              <GlobalCategoryFilter />
-            </div>
+            {viewMode === 'nice_import' ? (
+              <div className="w-full flex items-center justify-center animate-in fade-in zoom-in-95 duration-500 py-1">
+                <div className="relative group cursor-default">
+                  {/* Subtle glowing blur behind */}
+                  <div className="absolute -inset-1 bg-gradient-to-r from-blue-400 via-indigo-400 to-purple-400 rounded-full blur opacity-25 group-hover:opacity-40 transition duration-500"></div>
+                  
+                  {/* Main badge */}
+                  <div className="relative flex items-center gap-2.5 px-6 py-2.5 bg-white/90 backdrop-blur-sm rounded-full border border-blue-100/50 shadow-sm ring-1 ring-white/50">
+                    <Sparkles className="w-4 h-4 text-blue-500" />
+                    <span className="font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-violet-600 tracking-tight text-sm sm:text-base">
+                      나이스(NEIS) 데이터 연동 센터
+                    </span>
+                    <div className="flex h-2 w-2 ml-1 relative">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <>
+                {/* Left: Global Filters */}
+                <div className="flex items-center overflow-x-auto hide-scrollbar w-full md:max-w-[250px] lg:max-w-[300px]">
+                  <GlobalCategoryFilter />
+                </div>
 
-            {/* Center: Date Navigation & DatePicker Trigger */}
-            <div className="flex items-center justify-center flex-1 space-x-1 sm:space-x-3 shrink-0">
-              <button onClick={handlePrev} className="p-1.5 rounded-full hover:bg-slate-200/50 text-slate-600 transition-colors">
-                <ChevronLeft className="w-5 h-5" />
-              </button>
-              
-              {/* Phase 3: DatePickerPopover 적용 */}
-              <DatePickerPopover>
-                {renderHeaderTitle()}
-              </DatePickerPopover>
+                {/* Center: Date Navigation & DatePicker Trigger */}
+                <div className="flex items-center justify-center flex-1 space-x-1 sm:space-x-3 shrink-0">
+                  <button onClick={handlePrev} className="p-1.5 rounded-full hover:bg-slate-200/50 text-slate-600 transition-colors">
+                    <ChevronLeft className="w-5 h-5" />
+                  </button>
+                  
+                  {/* Phase 3: DatePickerPopover 적용 */}
+                  <DatePickerPopover>
+                    {renderHeaderTitle()}
+                  </DatePickerPopover>
 
-              <button onClick={handleNext} className="p-1.5 rounded-full hover:bg-slate-200/50 text-slate-600 transition-colors">
-                <ChevronRight className="w-5 h-5" />
-              </button>
-              
-              <button onClick={handleToday} className="px-3.5 py-1.5 rounded-full bg-slate-200/50 hover:bg-slate-200 text-xs font-bold text-slate-700 transition-colors ml-1 sm:ml-2">
-                오늘
-              </button>
-            </div>
+                  <button onClick={handleNext} className="p-1.5 rounded-full hover:bg-slate-200/50 text-slate-600 transition-colors">
+                    <ChevronRight className="w-5 h-5" />
+                  </button>
+                  
+                  <button onClick={handleToday} className="px-3.5 py-1.5 rounded-full bg-slate-200/50 hover:bg-slate-200 text-xs font-bold text-slate-700 transition-colors ml-1 sm:ml-2">
+                    오늘
+                  </button>
+                </div>
 
-            {/* Right: View Switcher */}
-            <div className="flex items-center bg-slate-200/50 p-1.5 rounded-2xl overflow-x-auto hide-scrollbar shrink-0 w-full sm:w-auto justify-center">
-              {(['monthly', 'weekly', 'list', 'semester'] as const).map((mode) => (
-                <button
-                  key={mode}
-                  onClick={() => setViewMode(mode)}
-                  className={`px-3 sm:px-4 py-1.5 rounded-xl text-xs sm:text-sm font-bold transition-all whitespace-nowrap text-center ${
-                    viewMode === mode ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700 shadow-none'
-                  }`}
-                >
-                  {mode === 'monthly' ? '월' : mode === 'weekly' ? '주' : mode === 'list' ? '목록' : '학기'}
-                </button>
-              ))}
-            </div>
+                {/* Right: View Switcher */}
+                <div className="flex items-center bg-slate-200/50 p-1.5 rounded-2xl overflow-x-auto hide-scrollbar shrink-0 w-full sm:w-auto justify-center">
+                  {(['monthly', 'weekly', 'list', 'semester'] as const).map((mode) => (
+                    <button
+                      key={mode}
+                      onClick={() => setViewMode(mode)}
+                      className={`px-3 sm:px-4 py-1.5 rounded-xl text-xs sm:text-sm font-bold transition-all whitespace-nowrap text-center ${
+                        viewMode === mode ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700 shadow-none'
+                      }`}
+                    >
+                      {mode === 'monthly' ? '월' : mode === 'weekly' ? '주' : mode === 'list' ? '목록' : '학기'}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
           </div>
         </div>
 
