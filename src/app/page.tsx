@@ -71,9 +71,7 @@ export default function CalendarPage() {
       <aside className="w-64 flex-shrink-0 bg-white shadow-apple-soft flex flex-col hidden md:flex z-10">
         <div className="p-6 pb-2">
           <h1 className="text-2xl font-bold tracking-tight text-slate-900 flex items-center space-x-2">
-            <span className="w-8 h-8 rounded-xl bg-blue-600 flex items-center justify-center text-white">
-              C
-            </span>
+            <img src="/icon.png" alt="Calentask Logo" className="w-8 h-8 rounded-xl object-cover shadow-sm" />
             <span>Calentask</span>
           </h1>
         </div>
