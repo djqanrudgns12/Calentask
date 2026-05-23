@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { format, subMonths, addMonths, subWeeks, addWeeks, startOfWeek, endOfWeek, isSameMonth, isSameYear } from 'date-fns'
-import { Menu, ChevronLeft, ChevronRight, Search, Sparkles } from 'lucide-react'
+import { Menu, ChevronLeft, ChevronRight, Search, Sparkles, Bell } from 'lucide-react'
 import { useCalendarStore } from '@/store/useCalendarStore'
 import { GlobalCategoryFilter } from '@/components/calendar/GlobalCategoryFilter'
 import { ProfileDropdown } from '@/components/profile/ProfileDropdown'
@@ -104,23 +104,25 @@ export function CalendarHeader({ onOpenSettings }: CalendarHeaderProps) {
 
   return (
     <>
-      <header className="flex flex-col sm:flex-row items-center justify-between px-4 sm:px-8 py-4 sm:py-6 bg-transparent gap-4 w-full z-20 relative">
-        
-        {/* Mobile Menu Button & Unified Box Wrapper */}
-        <div className="flex w-full sm:w-auto flex-1 items-center gap-2">
-          <button className="md:hidden p-2 text-slate-600 bg-white rounded-full shadow-sm"><Menu className="w-5 h-5" /></button>
+      <header className="px-4 sm:px-6 py-4 w-full z-20 relative">
+        <div className="flex w-full items-center gap-2">
+          {/* Mobile Menu Button */}
+          <button className="md:hidden p-2 text-slate-600 bg-white rounded-full shadow-[0_2px_10px_-2px_rgba(0,0,0,0.05)] border border-slate-100"><Menu className="w-5 h-5" /></button>
 
-          {/* Unified Pill Box (Glassmorphism) */}
-          <div className="flex-1 flex flex-col md:flex-row items-start md:items-center justify-between bg-white/60 backdrop-blur-xl border border-white shadow-sm rounded-[2rem] px-4 py-3 md:px-6 md:py-2.5 gap-4">
+          {/* Unified Pure White Pill Box */}
+          <div className="flex-1 flex flex-col xl:flex-row items-center justify-between bg-white rounded-[2rem] xl:rounded-full shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] border border-slate-100 px-3 py-2 md:px-4 md:py-2.5 gap-4 transition-all">
             
+            {/* Left: Logo + Title */}
+            <div className="flex items-center shrink-0 pr-4 xl:border-r xl:border-slate-100">
+              <img src="/icon.png" alt="Calentask Logo" className="w-8 h-8 rounded-xl object-cover shadow-sm mr-3" />
+              <span className="text-xl font-extrabold tracking-tight text-slate-900 hidden sm:block">Calentask</span>
+            </div>
+
             {viewMode === 'nice_import' ? (
-              <div className="w-full flex items-center justify-center animate-in fade-in zoom-in-95 duration-500 py-1">
+              <div className="flex-1 flex items-center justify-center animate-in fade-in zoom-in-95 duration-500 py-1">
                 <div className="relative group cursor-default">
-                  {/* Subtle glowing blur behind */}
                   <div className="absolute -inset-1 bg-gradient-to-r from-blue-400 via-indigo-400 to-purple-400 rounded-full blur opacity-25 group-hover:opacity-40 transition duration-500"></div>
-                  
-                  {/* Main badge */}
-                  <div className="relative flex items-center gap-2.5 px-6 py-2.5 bg-white/90 backdrop-blur-sm rounded-full border border-blue-100/50 shadow-sm ring-1 ring-white/50">
+                  <div className="relative flex items-center gap-2.5 px-6 py-2 bg-white/90 backdrop-blur-sm rounded-full border border-blue-100/50 shadow-sm ring-1 ring-white/50">
                     <Sparkles className="w-4 h-4 text-blue-500" />
                     <span className="font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-violet-600 tracking-tight text-sm sm:text-base">
                       나이스(NEIS) 데이터 연동 센터
@@ -133,63 +135,70 @@ export function CalendarHeader({ onOpenSettings }: CalendarHeaderProps) {
                 </div>
               </div>
             ) : (
-              <>
-                {/* Left: Global Filters */}
-                <div className="flex items-center overflow-x-auto hide-scrollbar w-full md:max-w-[250px] lg:max-w-[300px]">
+              <div className="flex-1 flex flex-col lg:flex-row items-center justify-between gap-4 w-full overflow-hidden">
+                {/* Center: Global Filters & Date Navigation & View Switcher */}
+                <div className="flex items-center justify-center flex-1 gap-2 sm:gap-4 overflow-x-auto hide-scrollbar w-full">
                   <GlobalCategoryFilter />
-                </div>
-
-                {/* Center: Date Navigation & DatePicker Trigger */}
-                <div className="flex items-center justify-center flex-1 space-x-1 sm:space-x-3 shrink-0">
-                  <button onClick={handlePrev} className="p-1.5 rounded-full hover:bg-slate-200/50 text-slate-600 transition-colors">
-                    <ChevronLeft className="w-5 h-5" />
-                  </button>
                   
-                  {/* Phase 3: DatePickerPopover 적용 */}
-                  <DatePickerPopover>
-                    {renderHeaderTitle()}
-                  </DatePickerPopover>
+                  <div className="h-6 w-px bg-slate-200 mx-1 hidden sm:block"></div>
 
-                  <button onClick={handleNext} className="p-1.5 rounded-full hover:bg-slate-200/50 text-slate-600 transition-colors">
-                    <ChevronRight className="w-5 h-5" />
-                  </button>
-                  
-                  <button onClick={handleToday} className="px-3.5 py-1.5 rounded-full bg-slate-200/50 hover:bg-slate-200 text-xs font-bold text-slate-700 transition-colors ml-1 sm:ml-2">
-                    오늘
-                  </button>
-                </div>
-
-                {/* Right: View Switcher */}
-                <div className="flex items-center bg-slate-200/50 p-1.5 rounded-2xl overflow-x-auto hide-scrollbar shrink-0 w-full sm:w-auto justify-center">
-                  {(['monthly', 'weekly', 'list', 'semester'] as const).map((mode) => (
-                    <button
-                      key={mode}
-                      onClick={() => setViewMode(mode)}
-                      className={`px-3 sm:px-4 py-1.5 rounded-xl text-xs sm:text-sm font-bold transition-all whitespace-nowrap text-center ${
-                        viewMode === mode ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700 shadow-none'
-                      }`}
-                    >
-                      {mode === 'monthly' ? '월' : mode === 'weekly' ? '주' : mode === 'list' ? '목록' : '학기'}
+                  <div className="flex items-center space-x-1 sm:space-x-2 shrink-0">
+                    <button onClick={handlePrev} className="p-1.5 rounded-full hover:bg-slate-100 text-slate-500 transition-colors">
+                      <ChevronLeft className="w-5 h-5" />
                     </button>
-                  ))}
-                </div>
-              </>
-            )}
-          </div>
-        </div>
+                    <DatePickerPopover>
+                      {renderHeaderTitle()}
+                    </DatePickerPopover>
+                    <button onClick={handleNext} className="p-1.5 rounded-full hover:bg-slate-100 text-slate-500 transition-colors">
+                      <ChevronRight className="w-5 h-5" />
+                    </button>
+                    <button onClick={handleToday} className="px-3 py-1.5 rounded-full bg-slate-100 hover:bg-slate-200 text-xs font-bold text-slate-700 transition-colors ml-1">
+                      오늘
+                    </button>
+                  </div>
 
-        {/* Outer Right: Spotlight & Profile */}
-        <div className="flex items-center justify-end space-x-3 shrink-0 sm:pl-2">
-          {/* Spotlight Search Icon */}
-          <button 
-            onClick={() => setIsSearchOpen(true)}
-            className="p-2.5 rounded-full bg-white shadow-sm border border-slate-100 text-slate-500 hover:text-blue-600 hover:shadow-md transition-all group"
-          >
-            <Search className="w-5 h-5 group-hover:scale-110 transition-transform" />
-          </button>
-          {/* Profile */}
-          <div className="hidden sm:block">
-            <ProfileDropdown onOpenSettings={onOpenSettings} />
+                  <div className="h-6 w-px bg-slate-200 mx-1 hidden sm:block"></div>
+
+                  {/* View Switcher */}
+                  <div className="flex items-center bg-slate-100/80 p-1 rounded-full shrink-0">
+                    {(['monthly', 'weekly', 'list', 'semester'] as const).map((mode) => (
+                      <button
+                        key={mode}
+                        onClick={() => setViewMode(mode)}
+                        className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all whitespace-nowrap ${
+                          viewMode === mode ? 'bg-white text-blue-600 shadow-sm ring-1 ring-slate-200/50' : 'text-slate-500 hover:text-slate-700'
+                        }`}
+                      >
+                        {mode === 'monthly' ? '월' : mode === 'weekly' ? '주' : mode === 'list' ? '목록' : '학기'}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Right: Search, Notification, Profile */}
+            <div className="flex items-center justify-end gap-2 shrink-0 xl:border-l xl:border-slate-100 xl:pl-4">
+              <button 
+                onClick={() => setIsSearchOpen(true)}
+                className="p-2 rounded-full text-slate-500 hover:text-slate-800 hover:bg-slate-50 transition-colors group"
+                title="검색"
+              >
+                <Search className="w-5 h-5 group-hover:scale-110 transition-transform" />
+              </button>
+              
+              <button 
+                className="p-2 rounded-full text-slate-500 hover:text-slate-800 hover:bg-slate-50 transition-colors relative group"
+                title="알림"
+              >
+                <Bell className="w-5 h-5 group-hover:scale-110 transition-transform" />
+                <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-blue-500 rounded-full ring-2 ring-white"></span>
+              </button>
+
+              <div className="hidden sm:block ml-1">
+                <ProfileDropdown onOpenSettings={onOpenSettings} />
+              </div>
+            </div>
           </div>
         </div>
       </header>

@@ -70,12 +70,8 @@ export default function CalendarPage() {
     <div className="flex h-screen w-full overflow-hidden bg-[#f2f2f7] text-slate-900 font-sans">
       {/* Sidebar - Clean, no borders, soft shadow */}
       <aside className="w-64 flex-shrink-0 bg-white shadow-apple-soft flex flex-col hidden md:flex z-10">
-        <div className="p-6 pb-2">
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900 flex items-center space-x-2">
-            <img src="/icon.png" alt="Calentask Logo" className="w-8 h-8 rounded-xl object-cover shadow-sm" />
-            <span>Calentask</span>
-          </h1>
-        </div>
+        {/* Spacer for top header alignment */}
+        <div className="h-[88px]" aria-hidden="true" />
         
         <div className="px-4 py-4 flex flex-col space-y-1">
           <button 
