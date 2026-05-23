@@ -57,7 +57,7 @@ export function GlobalCategoryFilter() {
   const remainingCount = activeCategoryObjects.length - displayDots.length
 
   return (
-    <div className="flex flex-wrap items-center gap-2 bg-slate-50 border border-slate-100/60 p-1.5 rounded-[1.25rem] shadow-inner transition-all">
+    <div className="flex flex-wrap items-center gap-2 bg-slate-50 border border-slate-100/60 p-1.5 rounded-[1.25rem] shadow-inner transition-all max-w-[280px] sm:max-w-[360px] lg:max-w-[450px] xl:max-w-[500px]">
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger className="group flex items-center justify-center gap-2 px-3 py-1.5 sm:px-4 rounded-xl bg-white shadow-sm border border-slate-100 hover:border-indigo-200 hover:shadow-md transition-all cursor-pointer outline-none shrink-0 h-9">
           <Folder className="w-4 h-4 text-indigo-500/80 group-hover:text-indigo-600 transition-colors" />
