@@ -95,7 +95,7 @@ export function ClearAllDataDialog() {
               <Button
                 variant="destructive"
                 onClick={() => setStep(2)}
-                className="w-full sm:w-auto h-12 rounded-xl font-semibold bg-red-600 hover:bg-red-700"
+                className="w-full sm:w-auto h-12 rounded-xl font-semibold text-white bg-red-600 hover:bg-red-700"
               >
                 네, 초기화합니다
               </Button>
@@ -104,7 +104,7 @@ export function ClearAllDataDialog() {
                 variant="destructive"
                 onClick={handleDelete}
                 disabled={isDeleting}
-                className="w-full sm:w-auto h-12 rounded-xl font-semibold bg-red-600 hover:bg-red-700 relative"
+                className="w-full sm:w-auto h-12 rounded-xl font-semibold text-white bg-red-600 hover:bg-red-700 relative"
               >
                 {isDeleting ? '삭제 중...' : '영구 삭제'}
               </Button>
