@@ -58,29 +58,12 @@ export function GlobalCategoryFilter() {
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger className="group flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-50 hover:bg-slate-100 border border-slate-200 transition-colors cursor-pointer outline-none shrink-0">
-        {activeCategoryObjects.length === 0 ? (
-          <div className="flex items-center text-slate-500 font-medium text-sm">
-            <Folder className="w-4 h-4 mr-1.5 opacity-70" />
-            카테고리
-          </div>
-        ) : (
-          <div className="flex items-center gap-1.5">
-            <div className="flex -space-x-1.5">
-              {displayDots.map((cat, idx) => (
-                <div 
-                  key={cat.id} 
-                  className="w-5 h-5 rounded-full border-2 border-white shadow-sm flex items-center justify-center relative z-10"
-                  style={{ backgroundColor: cat.hex_color || '#4f46e5', zIndex: 3 - idx }}
-                />
-              ))}
-            </div>
-            {remainingCount > 0 && (
-              <span className="text-xs font-bold text-slate-500 ml-0.5">+{remainingCount}</span>
-            )}
-            <span className="text-sm font-bold text-slate-700 ml-1">
-              {activeCategoryObjects.length}개 필터 적용 중
-            </span>
+      <PopoverTrigger className="group flex items-center justify-center gap-2 px-3 py-2 sm:px-4 rounded-xl bg-white shadow-[0_2px_8px_-2px_rgba(0,0,0,0.05)] border border-slate-100 hover:border-indigo-200 hover:shadow-md transition-all cursor-pointer outline-none shrink-0">
+        <Folder className="w-4 h-4 text-indigo-500/80 group-hover:text-indigo-600 transition-colors" />
+        <span className="text-sm font-bold text-slate-700 hidden sm:block">카테고리</span>
+        {activeCategoryObjects.length > 0 && (
+          <div className="flex items-center justify-center min-w-[20px] h-5 px-1.5 ml-0.5 rounded-md bg-indigo-50 border border-indigo-100 text-indigo-600 text-xs font-extrabold tracking-tight">
+            {activeCategoryObjects.length}
           </div>
         )}
       </PopoverTrigger>
