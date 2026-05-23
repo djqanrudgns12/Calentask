@@ -21,6 +21,7 @@ import { EditCategoryDialog } from '@/components/calendar/EditCategoryDialog'
 import { SettingsModal } from '@/components/profile/SettingsModal'
 import { TagsModal } from '@/components/profile/TagsModal'
 import { DataHubModal } from '@/components/profile/DataHubModal'
+import { ClearAllDataDialog } from '@/components/profile/ClearAllDataDialog'
 import { CalendarHeader } from '@/components/calendar/CalendarHeader'
 
 export default function CalendarPage() {
@@ -110,6 +111,7 @@ export default function CalendarPage() {
               <Database className="w-4 h-4 mr-2" />
               데이터 허브
             </Button>
+            <ClearAllDataDialog />
           </div>
         </div>
       </aside>

@@ -304,3 +304,25 @@ export async function searchActivities(query: string) {
 
   return activities
 }
+
+export async function hardDeleteAllActivities() {
+  const supabase = await createClient()
+  const { data: userData } = await supabase.auth.getUser()
+  if (!userData.user) throw new Error('Not authenticated')
+
+  // Hard delete all activities
+  const { error: actError } = await supabase
+    .from('activities')
+    .delete()
+    .eq('user_id', userData.user.id)
+
+  if (actError) throw new Error(actError.message)
+
+  // Hard delete upload history as well to completely reset
+  const { error: histError } = await supabase
+    .from('upload_history')
+    .delete()
+    .eq('user_id', userData.user.id)
+
+  if (histError) throw new Error(histError.message)
+}
