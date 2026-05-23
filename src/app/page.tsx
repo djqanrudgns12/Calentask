@@ -30,7 +30,7 @@ export default function CalendarPage() {
   const [isTagsModalOpen, setIsTagsModalOpen] = useState(false)
   const [isDataHubModalOpen, setIsDataHubModalOpen] = useState(false)
   const { 
-    currentDate, viewMode,
+    currentDate, viewMode, setViewMode,
     semesterYear, semesterTerm, activeCategories 
   } = useCalendarStore()
 
