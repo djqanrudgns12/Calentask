@@ -44,6 +44,7 @@ export function ClearAllDataDialog() {
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
+      {/* @ts-expect-error DialogTrigger asChild typing issue */}
       <DialogTrigger asChild>
         <Button
           variant="outline"
