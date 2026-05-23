@@ -91,13 +91,23 @@ export function GlobalCategoryFilter() {
             <TagIcon className="w-4 h-4 mr-1.5 text-indigo-500" />
             태그 필터 관리
           </PopoverTitle>
-          {activeCategories.length > 0 && (
-            <button 
-              onClick={() => setActiveCategories([])}
-              className="text-xs font-semibold text-slate-500 hover:text-slate-800 transition-colors"
-            >
-              전체 해제
-            </button>
+          {/* 전체 선택/해제 토글 버튼: 모든 카테고리가 선택되면 "전체 해제", 아니면 "전체 선택" 표시 */}
+          {categories.length > 0 && (
+            activeCategories.length === categories.length ? (
+              <button 
+                onClick={() => setActiveCategories([])}
+                className="text-xs font-semibold text-slate-500 hover:text-slate-800 transition-colors"
+              >
+                전체 해제
+              </button>
+            ) : (
+              <button 
+                onClick={() => setActiveCategories(categories.map(c => c.id))}
+                className="text-xs font-semibold text-indigo-500 hover:text-indigo-700 transition-colors"
+              >
+                전체 선택
+              </button>
+            )
           )}
         </PopoverHeader>
 

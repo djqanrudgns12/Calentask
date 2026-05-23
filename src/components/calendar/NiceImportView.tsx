@@ -2,16 +2,34 @@
 
 import { useState, useCallback, useEffect } from 'react'
 import { useDropzone } from 'react-dropzone'
-import { UploadCloud, FileText, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react'
+import { useQueryClient } from '@tanstack/react-query'
+import { UploadCloud, FileText, CheckCircle2, AlertCircle, Loader2, Trash2, AlertTriangle, ClipboardList, CalendarX2, ChevronDown } from 'lucide-react'
 import { parseNiceFile } from '@/lib/fileParser'
-import { processNiceImport, getUploadHistory, UploadHistory } from '@/app/actions/niceImport'
+import { processNiceImport, getUploadHistory, deleteUploadHistoryOnly, deleteUploadHistoryWithActivities, UploadHistory } from '@/app/actions/niceImport'
 import { format } from 'date-fns'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
 
 export function NiceImportView() {
+  // 업로드 성공 시 태그 필터/캘린더 캐시를 갱신하기 위해 queryClient 사용
+  const queryClient = useQueryClient()
   const [isUploading, setIsUploading] = useState(false)
   const [toastMessage, setToastMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
   const [history, setHistory] = useState<UploadHistory[]>([])
   const [isLoadingHistory, setIsLoadingHistory] = useState(true)
+  // Phase 3: 삭제 경고 다이얼로그 상태
+  const [deleteTarget, setDeleteTarget] = useState<UploadHistory | null>(null)
+  const [isDeleting, setIsDeleting] = useState(false)
+  // Phase 4: 미리보기 아코디언 토글 — 어떤 이력 항목이 펌쳐져 있는지 추적
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set())
+
+  const toggleExpand = (id: string) => {
+    setExpandedIds(prev => {
+      const next = new Set(prev)
+      next.has(id) ? next.delete(id) : next.add(id)
+      return next
+    })
+  }
 
   const fetchHistory = useCallback(async () => {
     setIsLoadingHistory(true)
@@ -49,13 +67,17 @@ export function NiceImportView() {
       if (result.success) {
         showToast('success', `총 ${payloads.length}건 확인. ${result.addedCount}건 추가 완료. 아예 중복되는 복무는 제외하였습니다 (${result.dupCount}건).`)
         fetchHistory() // 이력 새로고침
+        // 서버에서 '출장'/'근무상황' 카테고리가 새로 생성되었을 수 있으므로 태그 필터 캐시 갱신
+        queryClient.invalidateQueries({ queryKey: ['categories'] })
+        // 새 일정이 추가되었으므로 캘린더 데이터도 즉시 반영
+        queryClient.invalidateQueries({ queryKey: ['activities'] })
       }
     } catch (error: any) {
       showToast('error', error.message || '파일 업로드 중 오류가 발생했습니다.')
     } finally {
       setIsUploading(false)
     }
-  }, [fetchHistory])
+  }, [fetchHistory, queryClient])
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({ 
     onDrop,
@@ -66,6 +88,29 @@ export function NiceImportView() {
     },
     multiple: false
   })
+
+  // Phase 3: 삭제 처리 핸들러 (이력만 / 이력+일정)
+  const handleDelete = async (mode: 'history-only' | 'with-activities') => {
+    if (!deleteTarget || isDeleting) return
+    setIsDeleting(true)
+    try {
+      if (mode === 'history-only') {
+        await deleteUploadHistoryOnly(deleteTarget.id)
+        showToast('success', `"${deleteTarget.file_name}" 이력이 삭제되었습니다.`)
+      } else {
+        await deleteUploadHistoryWithActivities(deleteTarget.id)
+        showToast('success', `"${deleteTarget.file_name}" 이력 및 ${deleteTarget.added_count}건의 일정이 휴지통으로 이동되었습니다.`)
+        // 일정이 삭제되었으므로 캘린더 캐시도 갱신
+        queryClient.invalidateQueries({ queryKey: ['activities'] })
+      }
+      fetchHistory()
+    } catch (error: any) {
+      showToast('error', error.message || '삭제 중 오류가 발생했습니다.')
+    } finally {
+      setIsDeleting(false)
+      setDeleteTarget(null)
+    }
+  }
 
   // 날짜별 이력 그룹화
   const groupedHistory = history.reduce((acc, curr) => {
@@ -145,39 +190,163 @@ export function NiceImportView() {
                   {format(new Date(date), 'yyyy년 MM월 dd일')}
                 </div>
                 <div className="divide-y divide-slate-100">
-                  {items.map((item) => (
-                    <div key={item.id} className="p-4 flex items-center justify-between hover:bg-slate-50/50 transition-colors">
-                      <div className="flex items-center space-x-4">
-                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center font-bold text-xs
-                          ${item.record_type === '출장' ? 'bg-blue-100 text-blue-700' : 'bg-orange-100 text-orange-700'}
-                        `}>
-                          {item.record_type}
+                  {items.map((item) => {
+                    const isExpanded = expandedIds.has(item.id)
+                    const hasPreview = item.added_items && item.added_items.length > 0
+
+                    return (
+                      <div key={item.id}>
+                        <div className="p-4 flex items-center justify-between hover:bg-slate-50/50 transition-colors group">
+                          <div className="flex items-center space-x-4">
+                            <div className={`w-10 h-10 rounded-lg flex items-center justify-center font-bold text-xs
+                              ${item.record_type === '출장' ? 'bg-blue-100 text-blue-700' : 'bg-orange-100 text-orange-700'}
+                            `}>
+                              {item.record_type}
+                            </div>
+                            <div>
+                              <p className="font-medium text-slate-800 text-sm">{item.file_name}</p>
+                              <p className="text-xs text-slate-500 mt-1">
+                                {format(new Date(item.created_at), 'a hh:mm')} 업로드
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <div className="text-right flex flex-col items-end">
+                              {/* Phase 4: 배지를 클릭 가능한 토글 버튼으로 변경 */}
+                              <button
+                                onClick={() => hasPreview && toggleExpand(item.id)}
+                                className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium transition-colors
+                                  ${hasPreview 
+                                    ? 'bg-green-100 text-green-800 hover:bg-green-200 cursor-pointer' 
+                                    : 'bg-green-100 text-green-800 cursor-default'}
+                                `}
+                              >
+                                +{item.added_count}건 추가됨
+                                {hasPreview && (
+                                  <ChevronDown className={`w-3 h-3 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`} />
+                                )}
+                              </button>
+                              {item.duplicate_count > 0 && (
+                                <span className="text-xs text-slate-400 mt-1">
+                                  (중복 {item.duplicate_count}건 제외)
+                                </span>
+                              )}
+                            </div>
+                            {/* Phase 3: 삭제 버튼 */}
+                            <button
+                              onClick={() => setDeleteTarget(item)}
+                              className="p-2 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-all opacity-0 group-hover:opacity-100"
+                              title="삭제"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
                         </div>
-                        <div>
-                          <p className="font-medium text-slate-800 text-sm">{item.file_name}</p>
-                          <p className="text-xs text-slate-500 mt-1">
-                            {format(new Date(item.created_at), 'a hh:mm')} 업로드
-                          </p>
-                        </div>
-                      </div>
-                      <div className="text-right flex flex-col items-end">
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                          +{item.added_count}건 추가됨
-                        </span>
-                        {item.duplicate_count > 0 && (
-                          <span className="text-xs text-slate-400 mt-1">
-                            (중복 {item.duplicate_count}건 제외)
-                          </span>
+
+                        {/* Phase 4: 미리보기 아코디언 패널 */}
+                        {isExpanded && hasPreview && (
+                          <div className="px-4 pb-4 animate-in slide-in-from-top-2 fade-in duration-200">
+                            <div className="bg-slate-50 rounded-xl border border-slate-200 overflow-hidden">
+                              {/* 패널 헤더 */}
+                              <div className="px-3 py-2 bg-slate-100/80 border-b border-slate-200 flex items-center justify-between">
+                                <span className="text-xs font-semibold text-slate-600">
+                                  📋 추가된 일정 미리보기
+                                </span>
+                                <span className="text-xs text-slate-400">
+                                  {item.added_items.length}건
+                                </span>
+                              </div>
+                              {/* 일정 목록 (최대 200px 스크롤) */}
+                              <div className="max-h-[200px] overflow-y-auto divide-y divide-slate-100">
+                                {item.added_items.map((entry, idx) => (
+                                  <div key={idx} className="px-3 py-2.5 flex items-center justify-between hover:bg-white/60 transition-colors">
+                                    <span className="text-sm text-slate-700 font-medium truncate max-w-[55%]">
+                                      {entry.title}
+                                    </span>
+                                    <span className="text-xs text-slate-400 whitespace-nowrap ml-3">
+                                      {format(new Date(entry.start_time), 'MM/dd HH:mm')} ~ {format(new Date(entry.end_time), 'HH:mm')}
+                                    </span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          </div>
                         )}
                       </div>
-                    </div>
-                  ))}
+                    )
+                  })}
                 </div>
               </div>
             ))
           )}
         </div>
       </div>
+
+      {/* Phase 3: 삭제 경고 다이얼로그 (3지선다: 이력만 / 이력+일정 / 취소) */}
+      <Dialog open={!!deleteTarget} onOpenChange={(open) => !open && !isDeleting && setDeleteTarget(null)}>
+        <DialogContent className="sm:max-w-[420px] rounded-2xl" showCloseButton={!isDeleting}>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-base">
+              <AlertTriangle className="w-5 h-5 text-amber-500" />
+              업로드 이력 삭제
+            </DialogTitle>
+            <DialogDescription>
+              <strong>&quot;{deleteTarget?.file_name}&quot;</strong>을(를) 삭제하시겠습니까?
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="flex flex-col gap-3 mt-2">
+            {/* 옵션 1: 이력만 삭제 */}
+            <button
+              onClick={() => handleDelete('history-only')}
+              disabled={isDeleting}
+              className="flex items-start gap-3 p-4 rounded-xl border border-slate-200 hover:border-slate-300 hover:bg-slate-50 text-left transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <ClipboardList className="w-5 h-5 text-slate-500 mt-0.5 shrink-0" />
+              <div>
+                <p className="font-semibold text-sm text-slate-800">이력만 삭제</p>
+                <p className="text-xs text-slate-500 mt-1">업로드 기록만 제거합니다. 추가된 일정은 캘린더에 유지됩니다.</p>
+              </div>
+            </button>
+
+            {/* 옵션 2: 해당 일정까지 삭제 */}
+            <button
+              onClick={() => handleDelete('with-activities')}
+              disabled={isDeleting}
+              className="flex items-start gap-3 p-4 rounded-xl border border-rose-200 hover:border-rose-300 hover:bg-rose-50 text-left transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <CalendarX2 className="w-5 h-5 text-rose-500 mt-0.5 shrink-0" />
+              <div>
+                <p className="font-semibold text-sm text-rose-700">해당 일정까지 삭제</p>
+                <p className="text-xs text-slate-500 mt-1">
+                  이 업로드로 추가된 {deleteTarget?.added_count}건의 일정도 함께 삭제합니다.
+                  <span className="block text-amber-600 mt-0.5">휴지통에서 복구할 수 있습니다.</span>
+                </p>
+              </div>
+            </button>
+          </div>
+
+          {/* 삭제 중 로딩 표시 */}
+          {isDeleting && (
+            <div className="flex items-center justify-center gap-2 py-2 text-sm text-slate-500">
+              <Loader2 className="w-4 h-4 animate-spin" />
+              삭제 중...
+            </div>
+          )}
+
+          {/* 취소 버튼 */}
+          <div className="flex justify-center mt-1">
+            <Button
+              variant="ghost"
+              onClick={() => setDeleteTarget(null)}
+              disabled={isDeleting}
+              className="text-slate-500 hover:text-slate-700"
+            >
+              취소
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
