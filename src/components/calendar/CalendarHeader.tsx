@@ -110,7 +110,7 @@ export function CalendarHeader({ onOpenSettings }: CalendarHeaderProps) {
           <button className="md:hidden p-2 text-slate-600 bg-white rounded-full shadow-[0_2px_10px_-2px_rgba(0,0,0,0.05)] border border-slate-100"><Menu className="w-5 h-5" /></button>
 
           {/* Unified Pure White Pill Box */}
-          <div className="flex-1 flex flex-col xl:flex-row items-center justify-between bg-white rounded-[2rem] xl:rounded-full shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] border border-slate-100 px-3 py-2 md:px-4 md:py-2.5 gap-4 transition-all">
+          <div className="flex-1 flex flex-col xl:flex-row items-center justify-between bg-white rounded-[2rem] shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] border border-slate-100 px-3 py-2 md:px-4 md:py-2.5 gap-4 transition-all">
             
             {/* Left: Category Filter (moved from center) */}
             <div className="flex items-center shrink-0 xl:border-r xl:border-slate-100 xl:pr-4">
