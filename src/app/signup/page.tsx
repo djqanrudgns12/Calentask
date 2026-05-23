@@ -12,7 +12,8 @@ export default async function SignupPage(
     <div className="flex min-h-screen w-full items-center justify-center bg-slate-50 p-6">
       <div className="w-full max-w-[420px] rounded-3xl bg-white p-10 shadow-apple-float border border-slate-100">
         <div className="text-center space-y-3 mb-10">
-          <h2 className="text-3xl font-bold tracking-tight text-slate-900">
+          <h2 className="flex items-center justify-center gap-2 text-3xl font-bold tracking-tight text-slate-900">
+            <img src="/icon.png" alt="Logo" className="w-8 h-8 rounded-xl object-cover shadow-sm" />
             회원가입
           </h2>
           <p className="text-sm text-slate-500 font-medium">
