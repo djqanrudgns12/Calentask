@@ -15,7 +15,7 @@ import { ListView } from '@/components/calendar/ListView'
 import { SemesterView } from '@/components/calendar/SemesterView'
 import { DaySummarySheet } from '@/components/calendar/DaySummarySheet'
 import { EventDetailPopover } from '@/components/calendar/EventDetailPopover'
-import { CsvUploader } from '@/components/calendar/CsvUploader'
+import { NiceImportView } from '@/components/calendar/NiceImportView'
 import { DeleteConfirmDialog } from '@/components/calendar/DeleteConfirmDialog'
 import { EditCategoryDialog } from '@/components/calendar/EditCategoryDialog'
 import { SettingsModal } from '@/components/profile/SettingsModal'
@@ -77,15 +77,23 @@ export default function CalendarPage() {
         </div>
         
         <div className="px-4 py-4 flex flex-col space-y-1">
-          <button className="text-left px-4 py-3 rounded-2xl text-base font-semibold transition-colors bg-blue-50 text-blue-600">
+          <button 
+            onClick={() => setViewMode('monthly')}
+            className={`text-left px-4 py-3 rounded-2xl text-base font-semibold transition-colors ${viewMode !== 'nice_import' ? 'bg-blue-50 text-blue-600' : 'text-slate-600 hover:bg-slate-100'}`}
+          >
             나의 캘린더
+          </button>
+          <button 
+            onClick={() => setViewMode('nice_import')}
+            className={`text-left px-4 ml-4 py-2 mt-1 rounded-xl text-sm transition-colors flex items-center ${viewMode === 'nice_import' ? 'bg-slate-100 text-slate-900 font-semibold' : 'text-slate-500 hover:bg-slate-50'}`}
+          >
+            <span className="mr-2 text-slate-400">↳</span> 나이스 복무 불러오기
           </button>
         </div>
 
         <div className="px-4 py-6 flex flex-col space-y-1 flex-1">
           {/* Keep uploader and trash at the bottom or below */}
           <div className="mt-auto px-2 flex flex-col space-y-3">
-            <CsvUploader />
             <Button
               variant="outline"
               className="w-full text-sm font-medium border-gray-300 flex items-center justify-center text-slate-700 hover:bg-slate-50"
@@ -121,6 +129,7 @@ export default function CalendarPage() {
           {viewMode === 'weekly' && <WeeklyView currentDate={currentDate} events={events} />}
           {viewMode === 'list' && <ListView currentDate={currentDate} events={events} />}
           {viewMode === 'semester' && <SemesterView currentDate={currentDate} events={events} />}
+          {viewMode === 'nice_import' && <NiceImportView />}
         </div>
       </main>
 
