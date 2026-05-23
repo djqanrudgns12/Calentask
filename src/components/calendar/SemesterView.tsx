@@ -82,47 +82,60 @@ export function SemesterView({ events }: SemesterViewProps) {
                           </span>
                         </div>
                         
-                        <div className="space-y-1.5 overflow-y-auto no-scrollbar flex-1">
-                          {dayEvents.map(event => {
-                            const primaryColor = getEventPrimaryColor(event)
-                            
-                            return (
-                              <div 
-                                key={event.id}
-                                onClick={(e) => { e.stopPropagation(); openEventDetail(event); }}
-                                onDoubleClick={(e) => { e.stopPropagation(); openEditEvent(event); }}
-                                className="group relative flex items-stretch rounded-r-md text-[10px] transition-transform hover:scale-[1.02] overflow-hidden cursor-pointer"
-                                style={{ backgroundColor: getEventBgColor(event) }}
-                              >
-                                {/* 좌측 accent bar: 멀티 카테고리일 경우 그라데이션으로 표시 */}
-                                <div
-                                  className="w-[3px] shrink-0"
-                                  style={{ background: getEventBarGradient(event) }}
-                                />
-                                <div className="flex-1 flex flex-col px-1.5 py-1 min-w-0">
-                                  <span className="font-semibold text-slate-700 truncate leading-tight pr-1 group-hover:pr-10">
-                                    {event.title}
-                                  </span>
-                                </div>
+                        <div className="flex-1 flex flex-col justify-between overflow-hidden">
+                          <div className="space-y-1.5">
+                            {dayEvents.slice(0, 2).map(event => {
+                              const primaryColor = getEventPrimaryColor(event)
+                              
+                              return (
+                                <div 
+                                  key={event.id}
+                                  onClick={(e) => { e.stopPropagation(); openEventDetail(event); }}
+                                  onDoubleClick={(e) => { e.stopPropagation(); openEditEvent(event); }}
+                                  className="group relative flex items-stretch rounded-r-md text-[10px] transition-transform hover:scale-[1.02] overflow-hidden cursor-pointer"
+                                  style={{ backgroundColor: getEventBgColor(event) }}
+                                >
+                                  {/* 좌측 accent bar: 멀티 카테고리일 경우 그라데이션으로 표시 */}
+                                  <div
+                                    className="w-[3px] shrink-0"
+                                    style={{ background: getEventBarGradient(event) }}
+                                  />
+                                  <div className="flex-1 flex flex-col px-1.5 py-1 min-w-0">
+                                    <span className="font-semibold text-slate-700 truncate leading-tight pr-1 group-hover:pr-10">
+                                      {event.title}
+                                    </span>
+                                  </div>
 
-                                {/* Hover Actions */}
-                                <div className="absolute right-0.5 top-1/2 -translate-y-1/2 hidden group-hover:flex items-center gap-0.5 bg-white/90 px-0.5 py-0.5 rounded shadow-sm">
-                                  <button 
-                                    onClick={(e) => { e.stopPropagation(); openEditEvent(event); }}
-                                    className="p-0.5 hover:bg-gray-100 rounded text-gray-500 hover:text-indigo-600 transition-colors"
-                                  >
-                                    <Pencil className="w-2.5 h-2.5" />
-                                  </button>
-                                  <button 
-                                    onClick={(e) => { e.stopPropagation(); openDeleteConfirm(event.id); }}
-                                    className="p-0.5 hover:bg-gray-100 rounded text-gray-500 hover:text-red-600 transition-colors"
-                                  >
-                                    <Trash2 className="w-2.5 h-2.5" />
-                                  </button>
+                                  {/* Hover Actions */}
+                                  <div className="absolute right-0.5 top-1/2 -translate-y-1/2 hidden group-hover:flex items-center gap-0.5 bg-white/90 px-0.5 py-0.5 rounded shadow-sm">
+                                    <button 
+                                      onClick={(e) => { e.stopPropagation(); openEditEvent(event); }}
+                                      className="p-0.5 hover:bg-gray-100 rounded text-gray-500 hover:text-indigo-600 transition-colors"
+                                    >
+                                      <Pencil className="w-2.5 h-2.5" />
+                                    </button>
+                                    <button 
+                                      onClick={(e) => { e.stopPropagation(); openDeleteConfirm(event.id); }}
+                                      className="p-0.5 hover:bg-gray-100 rounded text-gray-500 hover:text-red-600 transition-colors"
+                                    >
+                                      <Trash2 className="w-2.5 h-2.5" />
+                                    </button>
+                                  </div>
                                 </div>
-                              </div>
-                            )
-                          })}
+                              )
+                            })}
+                          </div>
+                          
+                          {dayEvents.length > 2 && (
+                            <div className="flex justify-end mt-1">
+                              <button 
+                                onClick={(e) => { e.stopPropagation(); openDaySummary(day); }}
+                                className="px-1.5 py-0.5 rounded-full bg-slate-200/60 hover:bg-slate-300 text-[9px] font-bold text-slate-600 transition-colors"
+                              >
+                                +{dayEvents.length - 2}
+                              </button>
+                            </div>
+                          )}
                         </div>
                       </div>
                     )

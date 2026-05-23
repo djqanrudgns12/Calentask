@@ -42,14 +42,26 @@ export function EventDetailPopover() {
               <h2 className="text-2xl font-bold text-slate-900 leading-tight">
                 {event.title}
               </h2>
-              {/* Category Badges could go here if we fetch them, but for now we just show a color dot or type */}
-              <div className="flex items-center gap-2 mt-2">
-                <span 
-                  className="px-2.5 py-0.5 rounded-full text-xs font-semibold text-white shadow-sm"
-                  style={{ backgroundColor: primaryColor }}
-                >
-                  {event.type}
-                </span>
+              {/* Category Badges */}
+              <div className="flex flex-wrap items-center gap-2 mt-2">
+                {event.categories && event.categories.length > 0 ? (
+                  event.categories.map((tag) => (
+                    <span 
+                      key={tag.id}
+                      className="px-2.5 py-0.5 rounded-full text-xs font-bold text-white shadow-sm break-keep"
+                      style={{ backgroundColor: tag.hex_color || primaryColor }}
+                    >
+                      {tag.name}
+                    </span>
+                  ))
+                ) : (
+                  <span 
+                    className="px-2.5 py-0.5 rounded-full text-xs font-bold text-white shadow-sm uppercase"
+                    style={{ backgroundColor: primaryColor }}
+                  >
+                    {event.type}
+                  </span>
+                )}
               </div>
             </div>
             <button 
