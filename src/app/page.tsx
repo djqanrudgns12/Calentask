@@ -26,6 +26,8 @@ import { DataHubModal } from '@/components/profile/DataHubModal'
 import { ClearAllDataDialog } from '@/components/profile/ClearAllDataDialog'
 import { CalendarHeader } from '@/components/calendar/CalendarHeader'
 import { UpcomingAgenda } from '@/components/calendar/UpcomingAgenda'
+import { useAnniversaryOverlay } from '@/hooks/useAnniversaryOverlay'
+import { AnniversarySettingsView } from '@/components/anniversary/AnniversarySettingsView'
 
 export default function CalendarPage() {
   const [mounted, setMounted] = useState(false)
@@ -33,6 +35,7 @@ export default function CalendarPage() {
   const [settingsTab, setSettingsTab] = useState<'profile' | 'display'>('profile')
   const [isTagsModalOpen, setIsTagsModalOpen] = useState(false)
   const [isDataHubModalOpen, setIsDataHubModalOpen] = useState(false)
+  const [isAnniversaryOpen, setIsAnniversaryOpen] = useState(false)
   const queryClient = useQueryClient()
   
   const { 
@@ -60,7 +63,10 @@ export default function CalendarPage() {
   
   // React Query Fetching
   const { data: activitiesData } = useActivities(queryStartDate.toISOString(), queryEndDate.toISOString())
-  let events = activitiesData || []
+  const { data: anniversaryEvents } = useAnniversaryOverlay(queryStartDate.toISOString(), queryEndDate.toISOString())
+  
+  // 가상 기념일 배열과 기존 일정을 스프레드 병합 (클린 아키텍처)
+  let events = [...(activitiesData || []), ...(anniversaryEvents || [])]
 
   // 글로벌 카테고리 필터 적용
   if (activeCategories.length > 0) {
@@ -107,6 +113,12 @@ export default function CalendarPage() {
             className={`text-left px-4 ml-4 py-2 mt-1 rounded-xl text-sm transition-colors flex items-center ${viewMode === 'nice_import' ? 'bg-slate-100 text-slate-900 font-semibold' : 'text-slate-500 hover:bg-slate-50'}`}
           >
             <span className="mr-2 text-slate-400">↳</span> 나이스 복무 불러오기
+          </button>
+          <button 
+            onClick={() => setIsAnniversaryOpen(true)}
+            className={`text-left px-4 ml-4 py-2 mt-1 rounded-xl text-sm transition-colors flex items-center ${isAnniversaryOpen ? 'bg-pink-50 text-pink-600 font-semibold' : 'text-slate-500 hover:bg-slate-50'}`}
+          >
+            <span className="mr-2 text-slate-400">↳</span> 기념일 설정
           </button>
         </div>
 
@@ -181,6 +193,11 @@ export default function CalendarPage() {
         open={isDataHubModalOpen}
         onOpenChange={setIsDataHubModalOpen}
       />
+
+      {/* Anniversary Settings Overlay */}
+      {isAnniversaryOpen && (
+        <AnniversarySettingsView onClose={() => setIsAnniversaryOpen(false)} />
+      )}
 
       <DaySummarySheet events={events} />
       <EventDetailPopover />
