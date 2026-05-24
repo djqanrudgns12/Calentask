@@ -67,11 +67,15 @@ export function calculateOverlays(anniversary: Anniversary, rangeStart: Date, ra
   const rule = anniversary.calculation_rule;
 
   const createEvent = (date: Date, suffix: string, color: string = '#F43F5E'): OverlayEvent => {
+    // end_time을 당일 23:59:59로 설정해야 isEventOnDay의 eventEnd > dayStart 비교를 통과함
+    const endOfDayDate = new Date(date);
+    endOfDayDate.setHours(23, 59, 59, 999);
+    
     return {
       id: `${anniversary.id}-${format(date, 'yyyyMMdd')}-${suffix}`,
       title: `${anniversary.title} ${suffix}`.trim(),
       start_time: date.toISOString(),
-      end_time: date.toISOString(),
+      end_time: endOfDayDate.toISOString(),
       is_all_day: true,
       type: 'ANNIVERSARY_OVERLAY',
       hex_color: color,
@@ -126,13 +130,18 @@ export function calculateOverlays(anniversary: Anniversary, rangeStart: Date, ra
   } else if (rule.type === 'RECURRENCE') {
     if (rule.unit === 'MONTH') {
       // 매월 반복 (예: 월급날)
-      let currentMonthDate = new Date(rangeStart.getFullYear(), rangeStart.getMonth(), baseDate.getDate());
+      // rangeStart보다 2개월 전부터 시작하여 avoid_weekends로 당겨진 날짜도 놓치지 않도록 함
+      const loopStart = new Date(rangeStart.getFullYear(), rangeStart.getMonth() - 2, 1);
+      const loopEnd = new Date(rangeEnd.getFullYear(), rangeEnd.getMonth() + 2, 0);
       
-      // rangeStart 이전 월부터 시작해서 rangeEnd까지 반복
-      currentMonthDate = subDays(currentMonthDate, 31); 
+      let cursor = new Date(loopStart);
       
-      while (currentMonthDate <= rangeEnd) {
-        const monthDate = new Date(currentMonthDate.getFullYear(), currentMonthDate.getMonth(), baseDate.getDate());
+      while (cursor <= loopEnd) {
+        const targetDay = baseDate.getDate();
+        // 해당 월의 마지막 날을 넘지 않도록 보정 (예: 31일인데 2월인 경우)
+        const lastDayOfMonth = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 0).getDate();
+        const safeDay = Math.min(targetDay, lastDayOfMonth);
+        const monthDate = new Date(cursor.getFullYear(), cursor.getMonth(), safeDay);
         
         let finalDate = monthDate;
         if (rule.options?.avoid_weekends) {
@@ -143,7 +152,7 @@ export function calculateOverlays(anniversary: Anniversary, rangeStart: Date, ra
           events.push(createEvent(finalDate, '', '#10B981')); // Green for Payday/Monthly
         }
         
-        currentMonthDate = addMonths(currentMonthDate, rule.interval || 1);
+        cursor = addMonths(cursor, rule.interval || 1);
       }
     } else if (rule.unit === 'YEAR') {
       // 매년 반복 (예: 생일, 결혼기념일, 제사)
