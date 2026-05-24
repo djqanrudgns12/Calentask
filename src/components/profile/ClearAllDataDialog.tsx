@@ -44,15 +44,16 @@ export function ClearAllDataDialog() {
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      {/* @ts-expect-error DialogTrigger asChild typing issue */}
-      <DialogTrigger asChild>
-        <Button
-          variant="outline"
-          className="w-full text-sm font-medium border-red-200 flex items-center justify-center text-red-600 hover:bg-red-50 hover:text-red-700 hover:border-red-300"
-        >
-          <Trash2 className="w-4 h-4 mr-2" />
-          전체 내용 초기화
-        </Button>
+      <DialogTrigger 
+        render={
+          <Button
+            variant="outline"
+            className="w-full text-sm font-medium border-red-200 flex items-center justify-center text-red-600 hover:bg-red-50 hover:text-red-700 hover:border-red-300"
+          />
+        }
+      >
+        <Trash2 className="w-4 h-4 mr-2" />
+        전체 내용 초기화
       </DialogTrigger>
 
       <DialogContent className="sm:max-w-[425px] rounded-2xl p-0 overflow-hidden bg-white shadow-apple-float border-0">
