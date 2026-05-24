@@ -59,7 +59,7 @@ async function fetchKasiData(endpoint: string, year: string): Promise<KasiItem[]
     const data = await res.json() as KasiResponse
     const itemsData = data.response?.body?.items
     
-    if (!itemsData || itemsData === '') return []
+    if (!itemsData || typeof itemsData === 'string') return []
     
     const items = itemsData.item
     if (!items) return []
