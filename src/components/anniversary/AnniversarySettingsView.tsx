@@ -6,7 +6,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { createClient } from '@/lib/supabase/client';
 import { Anniversary } from '@/utils/anniversaryCalculator';
 
-export function AnniversarySettingsView({ onClose }: { onClose: () => void }) {
+export function AnniversarySettingsView() {
   const [isAdding, setIsAdding] = useState(false);
   const supabase = createClient();
   const queryClient = useQueryClient();
@@ -46,27 +46,21 @@ export function AnniversarySettingsView({ onClose }: { onClose: () => void }) {
   return (
     <AnimatePresence>
       <motion.div 
-        initial={{ y: '100%' }}
-        animate={{ y: 0 }}
-        exit={{ y: '100%' }}
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -10 }}
         transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-        className="absolute inset-0 z-50 bg-[#f7f9fb]/90 backdrop-blur-3xl overflow-y-auto"
+        className="h-full overflow-y-auto"
       >
-        <div className="max-w-5xl mx-auto p-10 h-full flex flex-col">
-          <div className="flex items-center justify-between mb-12">
+        <div className="max-w-5xl mx-auto py-6 h-full flex flex-col">
+          <div className="flex items-center justify-between mb-8">
             <div>
-              <h1 className="text-4xl font-extrabold tracking-tight text-slate-900 flex items-center">
-                <CalendarHeart className="w-10 h-10 mr-4 text-blue-600" />
+              <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 flex items-center">
+                <CalendarHeart className="w-8 h-8 mr-3 text-blue-600" />
                 기념일 설정
               </h1>
-              <p className="text-slate-500 mt-2 text-lg">나만의 특별한 날들을 아름답게 기록하세요.</p>
+              <p className="text-slate-500 mt-2 text-base">나만의 특별한 날들을 아름답게 기록하세요.</p>
             </div>
-            <button 
-              onClick={onClose}
-              className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-sm border border-slate-200 text-slate-400 hover:text-slate-700 hover:bg-slate-50 transition-all"
-            >
-              ✕
-            </button>
           </div>
 
           <AnimatePresence mode="wait">
