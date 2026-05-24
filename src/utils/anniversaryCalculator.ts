@@ -1,7 +1,5 @@
 import { addDays, addMonths, addYears, differenceInDays, format, getDay, isAfter, isBefore, isSameDay, subDays, startOfDay, isWeekend } from 'date-fns';
 import { Lunar, Solar } from 'lunar-javascript';
-import { Database } from '@/lib/database.types'; // Assuming types exist
-
 export type AnniversaryPresetType = 'COUPLE' | 'BIRTHDAY' | 'LUNAR_BIRTHDAY' | 'EXAM' | 'PAYDAY' | 'CUSTOM';
 
 export type CalculationRule = {
