@@ -8,6 +8,7 @@ import { Plus, Tags, Database, LogOut } from 'lucide-react'
 
 import { startOfWeek, endOfWeek } from 'date-fns'
 import { useActivities } from '@/hooks/useCalendarQueries'
+import type { Activity } from '@/app/actions/calendar'
 import { logout } from '@/app/actions/auth'
 import { useQueryClient } from '@tanstack/react-query'
 import { AddEventDialog } from '@/components/calendar/AddEventDialog'
@@ -66,7 +67,10 @@ export default function CalendarPage() {
   const { data: anniversaryEvents } = useAnniversaryOverlay(queryStartDate.toISOString(), queryEndDate.toISOString())
   
   // 가상 기념일 배열과 기존 일정을 스프레드 병합 (클린 아키텍처)
-  let events = [...(activitiesData || []), ...(anniversaryEvents || [])]
+  let events = [
+    ...(activitiesData || []),
+    ...((anniversaryEvents || []) as unknown as Activity[])
+  ]
 
   // 글로벌 카테고리 필터 적용
   if (activeCategories.length > 0) {
