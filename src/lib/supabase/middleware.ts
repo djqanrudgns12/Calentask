@@ -6,6 +6,8 @@ export async function updateSession(request: NextRequest) {
     request,
   })
 
+  const keepLoggedIn = request.cookies.get('sb-keep-logged-in')?.value !== 'false'
+
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -19,9 +21,14 @@ export async function updateSession(request: NextRequest) {
           supabaseResponse = NextResponse.next({
             request,
           })
-          cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, options)
-          )
+          cookiesToSet.forEach(({ name, value, options }) => {
+            const cookieOptions = { ...options }
+            if (!keepLoggedIn) {
+              delete cookieOptions.maxAge
+              delete cookieOptions.expires
+            }
+            supabaseResponse.cookies.set(name, value, cookieOptions)
+          })
         },
       },
     }

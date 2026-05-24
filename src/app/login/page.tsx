@@ -50,6 +50,19 @@ export default async function LoginPage(
                 placeholder="비밀번호를 입력하세요"
               />
             </div>
+            
+            <div className="flex items-center space-x-2 pl-1">
+              <input
+                id="keepLoggedIn"
+                name="keepLoggedIn"
+                type="checkbox"
+                defaultChecked={true}
+                className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+              />
+              <label htmlFor="keepLoggedIn" className="text-sm font-medium text-slate-700">
+                로그인 상태 유지
+              </label>
+            </div>
           </div>
 
           {searchParams?.error && (

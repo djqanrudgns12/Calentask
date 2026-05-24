@@ -3,8 +3,22 @@
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
+import { cookies } from 'next/headers'
 
 export async function login(formData: FormData) {
+  const keepLoggedIn = formData.get('keepLoggedIn') === 'on'
+  
+  const cookieStore = await cookies()
+  if (!keepLoggedIn) {
+    cookieStore.set('sb-keep-logged-in', 'false', { 
+      httpOnly: false, 
+      sameSite: 'lax', 
+      path: '/' 
+    })
+  } else {
+    cookieStore.delete('sb-keep-logged-in')
+  }
+
   const supabase = await createClient()
   
   // 우회 로직: 아이디 -> 가짜 이메일 변환
@@ -70,6 +84,9 @@ export async function signup(formData: FormData) {
 }
 
 export async function logout() {
+  const cookieStore = await cookies()
+  cookieStore.delete('sb-keep-logged-in')
+  
   const supabase = await createClient()
   await supabase.auth.signOut()
   redirect('/login')
