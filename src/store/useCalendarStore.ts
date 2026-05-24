@@ -16,6 +16,10 @@ interface CalendarState {
   deletingEventId: string | null
   editingCategory: Category | null
   showHolidays: boolean
+  showHolidaysAsTags: boolean
+  showNationalDays: boolean
+  showAnniversaries: boolean
+  showTraditionalTerms: boolean
   selectedDaySummary: Date | null
   selectedEventDetail: Activity | null
   setCurrentDate: (date: Date) => void
@@ -31,6 +35,10 @@ interface CalendarState {
   openEditCategory: (category: Category) => void
   closeEditCategory: () => void
   setShowHolidays: (show: boolean) => void
+  setShowHolidaysAsTags: (show: boolean) => void
+  setShowNationalDays: (show: boolean) => void
+  setShowAnniversaries: (show: boolean) => void
+  setShowTraditionalTerms: (show: boolean) => void
   openDaySummary: (date: Date) => void
   closeDaySummary: () => void
   openEventDetail: (event: Activity) => void
@@ -52,6 +60,10 @@ export const useCalendarStore = create<CalendarState>()(
       deletingEventId: null,
       editingCategory: null,
       showHolidays: true,
+      showHolidaysAsTags: false,
+      showNationalDays: true,
+      showAnniversaries: false,
+      showTraditionalTerms: false,
       selectedDaySummary: null,
       selectedEventDetail: null,
       setCurrentDate: (date) => set({ currentDate: date }),
@@ -67,6 +79,10 @@ export const useCalendarStore = create<CalendarState>()(
       openEditCategory: (category) => set({ editingCategory: category }),
       closeEditCategory: () => set({ editingCategory: null }),
       setShowHolidays: (show) => set({ showHolidays: show }),
+      setShowHolidaysAsTags: (show) => set({ showHolidaysAsTags: show }),
+      setShowNationalDays: (show) => set({ showNationalDays: show }),
+      setShowAnniversaries: (show) => set({ showAnniversaries: show }),
+      setShowTraditionalTerms: (show) => set({ showTraditionalTerms: show }),
       openDaySummary: (date) => set({ selectedDaySummary: date, selectedEventDetail: null, isAddEventOpen: false }),
       closeDaySummary: () => set({ selectedDaySummary: null }),
       openEventDetail: (event) => set({ selectedEventDetail: event, selectedDaySummary: null, isAddEventOpen: false }),
@@ -79,6 +95,10 @@ export const useCalendarStore = create<CalendarState>()(
         semesterYear: state.semesterYear,
         semesterTerm: state.semesterTerm,
         showHolidays: state.showHolidays,
+        showHolidaysAsTags: state.showHolidaysAsTags,
+        showNationalDays: state.showNationalDays,
+        showAnniversaries: state.showAnniversaries,
+        showTraditionalTerms: state.showTraditionalTerms,
         
         // 초기화할 임시 상태들 (모달, 팝업 등)
         isAddEventOpen: false,
@@ -99,14 +119,18 @@ export const useCalendarStore = create<CalendarState>()(
         semesterYear: state.semesterYear,
         semesterTerm: state.semesterTerm,
         showHolidays: state.showHolidays,
+        showHolidaysAsTags: state.showHolidaysAsTags,
+        showNationalDays: state.showNationalDays,
+        showAnniversaries: state.showAnniversaries,
+        showTraditionalTerms: state.showTraditionalTerms,
       }),
       merge: (persistedState: unknown, currentState) => {
         const state = persistedState as Partial<CalendarState>
         return {
           ...currentState,
           ...state,
-          currentDate: state.currentDate 
-            ? new Date(state.currentDate) 
+          currentDate: state.currentDate
+            ? new Date(state.currentDate)
             : currentState.currentDate,
         }
       },

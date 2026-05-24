@@ -4,8 +4,8 @@ import { format, eachDayOfInterval, isSameMonth, isSameDay, startOfWeek, endOfWe
 import { Activity } from '@/app/actions/calendar'
 import { isEventOnDay } from '@/lib/calendarUtils'
 import { getEventPrimaryColor, getEventBarGradient, getEventBgColor } from '@/lib/eventColor'
-import { getHolidayName } from '@/lib/holidays'
 import { useCalendarStore } from '@/store/useCalendarStore'
+import { useSpecialDays } from '@/hooks/useSpecialDays'
 import { Pencil, Trash2 } from 'lucide-react'
 
 interface MonthlyViewProps {
@@ -14,13 +14,20 @@ interface MonthlyViewProps {
 }
 
 export function MonthlyView({ currentDate, events }: MonthlyViewProps) {
-  const { openDaySummary, openEventDetail, openEditEvent, openDeleteConfirm, showHolidays } = useCalendarStore()
+  const { 
+    openDaySummary, openEventDetail, openEditEvent, openDeleteConfirm, 
+    showHolidays, showHolidaysAsTags,
+    showNationalDays, showAnniversaries, showTraditionalTerms
+  } = useCalendarStore()
   
+  const year = currentDate.getFullYear()
+  const { data: specialDaysMap = {} } = useSpecialDays(year)
+
   const monthStart = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1)
   const monthEnd = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0)
   const startDate = startOfWeek(monthStart)
   const endDate = endOfWeek(monthEnd)
-  
+
   const days = eachDayOfInterval({ start: startDate, end: endDate })
 
   return (
@@ -33,41 +40,70 @@ export function MonthlyView({ currentDate, events }: MonthlyViewProps) {
           </div>
         ))}
       </div>
-      
+
       {/* Calendar Grid */}
       <div className="grid grid-cols-7 gap-3 flex-1 auto-rows-fr pb-4">
         {days.map((day, idx) => {
           const isCurrentMonth = isSameMonth(day, currentDate)
           const isToday = isSameDay(day, new Date())
-          
+
           const dayEvents = events.filter(e => isEventOnDay(e, day))
-          const holidayName = showHolidays ? getHolidayName(day) : null
+          
+          const dateStr = format(day, 'yyyy-MM-dd')
+          const specialDays = specialDaysMap[dateStr] || []
+          
+          const holidays = specialDays.filter(d => d.type === 'holiday')
+          const nationalDays = specialDays.filter(d => d.type === 'national')
+          const anniversaries = specialDays.filter(d => d.type === 'anniversary')
+          const traditionalTerms = specialDays.filter(d => d.type === 'traditional')
+          
+          const isHolidayDay = showHolidays && holidays.some(d => d.isHoliday)
+          const holidayName = showHolidays && holidays.length > 0 ? holidays[0].name : null
+          
+          const otherTerms = [
+            showNationalDays ? nationalDays.map(d=>d.name) : [],
+            showAnniversaries ? anniversaries.map(d=>d.name) : [],
+            showTraditionalTerms ? traditionalTerms.map(d=>d.name) : []
+          ].flat().join(', ')
 
           return (
-            <div 
-              key={idx} 
+            <div
+              key={idx}
               onClick={() => openDaySummary(day)}
-              className={`min-h-0 rounded-2xl p-4 transition-all cursor-pointer flex flex-col border border-[#EEEEEE] shadow-sm hover:shadow-md bg-white ${
-                isCurrentMonth ? 'opacity-100' : 'opacity-40'
-              }`}
+              className={`min-h-0 rounded-2xl p-4 transition-all cursor-pointer flex flex-col border border-[#EEEEEE] shadow-sm hover:shadow-md bg-white ${isCurrentMonth ? 'opacity-100' : 'opacity-40'
+                }`}
             >
               <div className="flex justify-between items-start mb-3">
-                <span className="text-xs font-semibold text-red-400 truncate w-16">
-                  {holidayName && holidayName}
-                </span>
-                <span className={`text-sm font-bold w-8 h-8 flex items-center justify-center rounded-full ${
-                  isToday ? 'bg-[#312E81] text-white shadow-lg shadow-[#4338CA]/40' : holidayName || day.getDay() === 0 ? 'text-red-500' : 'text-slate-700'
-                }`}>
+                <div className="flex flex-col gap-0.5 max-w-[70%]">
+                  <span className="text-xs font-semibold text-red-400 truncate">
+                    {holidayName && !showHolidaysAsTags && holidayName}
+                  </span>
+                  {otherTerms && (
+                    <span className="text-[10px] font-medium text-slate-400 truncate leading-tight">
+                      {otherTerms}
+                    </span>
+                  )}
+                </div>
+                <span className={`text-sm font-bold w-8 h-8 flex items-center justify-center rounded-full shrink-0 ${isToday ? 'bg-[#312E81] text-white shadow-lg shadow-[#4338CA]/40' : isHolidayDay || day.getDay() === 0 ? 'text-red-500' : 'text-slate-700'
+                  }`}>
                   {format(day, 'd')}
                 </span>
               </div>
-              
+
               <div className="space-y-1.5 flex-1 overflow-hidden">
-                {dayEvents.slice(0, 3).map(event => {
+                {holidayName && showHolidaysAsTags && (
+                  <div className="group relative flex items-stretch rounded-r-lg text-xs transition-all overflow-hidden bg-red-50 text-red-600">
+                    <div className="w-[3px] shrink-0 rounded-l-lg bg-red-500" />
+                    <div className="flex-1 flex flex-col px-2.5 py-1.5 min-w-0">
+                      <span className="font-semibold truncate pr-1">{holidayName}</span>
+                    </div>
+                  </div>
+                )}
+                {dayEvents.slice(0, (holidayName && showHolidaysAsTags) ? 2 : 3).map(event => {
                   const primaryColor = getEventPrimaryColor(event)
-                  
+
                   return (
-                    <div 
+                    <div
                       key={event.id}
                       onClick={(e) => { e.stopPropagation(); openEventDetail(event); }}
                       onDoubleClick={(e) => { e.stopPropagation(); openEditEvent(event); }}
@@ -84,16 +120,16 @@ export function MonthlyView({ currentDate, events }: MonthlyViewProps) {
                           {event.title}
                         </span>
                       </div>
-                      
+
                       {/* Hover Actions */}
                       <div className="absolute right-1 top-1/2 -translate-y-1/2 hidden group-hover:flex items-center gap-1 bg-white/90 px-1 py-0.5 rounded shadow-sm">
-                        <button 
+                        <button
                           onClick={(e) => { e.stopPropagation(); openEditEvent(event); }}
                           className="p-1 hover:bg-gray-100 rounded text-gray-500 hover:text-indigo-600 transition-colors"
                         >
                           <Pencil className="w-3 h-3" />
                         </button>
-                        <button 
+                        <button
                           onClick={(e) => { e.stopPropagation(); openDeleteConfirm(event.id); }}
                           className="p-1 hover:bg-gray-100 rounded text-gray-500 hover:text-red-600 transition-colors"
                         >
@@ -103,13 +139,13 @@ export function MonthlyView({ currentDate, events }: MonthlyViewProps) {
                     </div>
                   )
                 })}
-                
-                {dayEvents.length > 3 && (
+
+                {dayEvents.length > ((holidayName && showHolidaysAsTags) ? 2 : 3) && (
                   <button
                     onClick={(e) => { e.stopPropagation(); openDaySummary(day); }}
                     className="w-full mt-1.5 text-center px-2 py-1 text-xs font-bold text-slate-500 bg-slate-50/80 hover:bg-slate-100 rounded-md transition-colors"
                   >
-                    + {dayEvents.length - 3}개 더보기
+                    + {dayEvents.length - ((holidayName && showHolidaysAsTags) ? 2 : 3)}개 더보기
                   </button>
                 )}
               </div>
