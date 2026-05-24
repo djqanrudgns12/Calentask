@@ -41,6 +41,7 @@ export function GlobalCategoryFilter() {
   const handleDeleteCategory = (e: React.MouseEvent, id: string) => {
     e.stopPropagation()
     if (isDeleting) return
+    if (!window.confirm('정말 이 카테고리를 삭제하시겠습니까? 관련 일정에서 이 카테고리 지정이 해제됩니다.')) return
     setDeletingId(id)
     deleteCategory(id, {
       onSuccess: () => {

@@ -4,9 +4,9 @@ import { format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, eachDayOfInte
 import { Activity } from '@/app/actions/calendar'
 import { isEventOnDay } from '@/lib/calendarUtils'
 import { getEventPrimaryColor, getEventBarGradient, getEventBgColor } from '@/lib/eventColor'
-import { getHolidayName } from '@/lib/holidays'
 import { Pencil, Trash2 } from 'lucide-react'
 import { useCalendarStore } from '@/store/useCalendarStore'
+import { useSpecialDays } from '@/hooks/useSpecialDays'
 
 interface SemesterViewProps {
   currentDate: Date
@@ -14,11 +14,17 @@ interface SemesterViewProps {
 }
 
 export function SemesterView({ events }: SemesterViewProps) {
-  const { semesterYear, semesterTerm, openDaySummary, openEventDetail, openEditEvent, openDeleteConfirm, showHolidays } = useCalendarStore()
+  const { 
+    semesterYear, semesterTerm, openDaySummary, openEventDetail, openEditEvent, openDeleteConfirm, 
+    showHolidays, showHolidaysAsTags,
+    showNationalDays, showAnniversaries, showTraditionalTerms
+  } = useCalendarStore()
+  
+  const { data: specialDaysMap = {} } = useSpecialDays(semesterYear)
 
   // 1학기: 3월 1일 ~ 8월 31일, 2학기: 9월 1일 ~ 익년 2월 28일
   const semesterStartDate = new Date(semesterYear, semesterTerm === 1 ? 2 : 8, 1)
-  
+
   // Create an array of the 6 months in the semester
   const months = Array.from({ length: 6 }, (_, i) => addMonths(semesterStartDate, i))
 
@@ -61,34 +67,63 @@ export function SemesterView({ events }: SemesterViewProps) {
                     const isCurrentMonth = isSameMonth(day, monthDate)
                     const isToday = isSameDay(day, new Date())
                     const dayEvents = events.filter(e => isEventOnDay(e, day))
-                    const holidayName = showHolidays ? getHolidayName(day) : null
+                    
+                    const dateStr = format(day, 'yyyy-MM-dd')
+                    const specialDays = specialDaysMap[dateStr] || []
+                    
+                    const holidays = specialDays.filter(d => d.type === 'holiday')
+                    const nationalDays = specialDays.filter(d => d.type === 'national')
+                    const anniversaries = specialDays.filter(d => d.type === 'anniversary')
+                    const traditionalTerms = specialDays.filter(d => d.type === 'traditional')
+                    
+                    const isHolidayDay = showHolidays && holidays.some(d => d.isHoliday)
+                    const holidayName = showHolidays && holidays.length > 0 ? holidays[0].name : null
+
+                    const otherTerms = [
+                      showNationalDays ? nationalDays.map(d=>d.name) : [],
+                      showAnniversaries ? anniversaries.map(d=>d.name) : [],
+                      showTraditionalTerms ? traditionalTerms.map(d=>d.name) : []
+                    ].flat().join(', ')
 
                     return (
-                      <div 
-                        key={dayIdx} 
+                      <div
+                        key={dayIdx}
                         onClick={() => openDaySummary(day)}
-                        className={`min-h-[110px] border-b border-r border-[#F1F5F9] p-2 flex flex-col cursor-pointer transition-colors hover:bg-[#FAFAFA] ${
-                          isCurrentMonth ? 'bg-white' : 'bg-[#F8FAFC] opacity-40'
-                        }`}
+                        className={`min-h-[110px] border-b border-r border-[#F1F5F9] p-2 flex flex-col cursor-pointer transition-colors hover:bg-[#FAFAFA] ${isCurrentMonth ? 'bg-white' : 'bg-[#F8FAFC] opacity-40'
+                          }`}
                       >
                         <div className="flex justify-between items-start mb-2">
-                          <span className="text-[8px] font-bold text-red-400 truncate max-w-[60%]">
-                            {holidayName && holidayName}
-                          </span>
-                          <span className={`text-[11px] font-bold w-6 h-6 flex items-center justify-center rounded-full ${
-                            isToday ? 'bg-[#312E81] text-white shadow-md shadow-[#4338CA]/40' : holidayName || day.getDay() === 0 ? 'text-red-500' : 'text-slate-700'
-                          }`}>
+                          <div className="flex flex-col gap-0.5 max-w-[70%]">
+                            <span className="text-[8px] font-bold text-red-400 truncate">
+                              {holidayName && !showHolidaysAsTags && holidayName}
+                            </span>
+                            {otherTerms && (
+                              <span className="text-[7.5px] font-medium text-slate-400 truncate leading-tight">
+                                {otherTerms}
+                              </span>
+                            )}
+                          </div>
+                          <span className={`text-[11px] font-bold w-6 h-6 flex items-center justify-center rounded-full shrink-0 ${isToday ? 'bg-[#312E81] text-white shadow-md shadow-[#4338CA]/40' : isHolidayDay || day.getDay() === 0 ? 'text-red-500' : 'text-slate-700'
+                            }`}>
                             {format(day, 'd')}
                           </span>
                         </div>
-                        
+
                         <div className="flex-1 flex flex-col justify-between overflow-hidden">
                           <div className="space-y-1.5">
-                            {dayEvents.slice(0, 2).map(event => {
+                            {holidayName && showHolidaysAsTags && (
+                              <div className="group relative flex items-stretch rounded-r-md text-[10px] transition-transform overflow-hidden bg-red-50 text-red-600">
+                                <div className="w-[3px] shrink-0 bg-red-500" />
+                                <div className="flex-1 flex flex-col px-1.5 py-1 min-w-0">
+                                  <span className="font-semibold truncate leading-tight pr-1">{holidayName}</span>
+                                </div>
+                              </div>
+                            )}
+                            {dayEvents.slice(0, (holidayName && showHolidaysAsTags) ? 1 : 2).map(event => {
                               const primaryColor = getEventPrimaryColor(event)
-                              
+
                               return (
-                                <div 
+                                <div
                                   key={event.id}
                                   onClick={(e) => { e.stopPropagation(); openEventDetail(event); }}
                                   onDoubleClick={(e) => { e.stopPropagation(); openEditEvent(event); }}
@@ -108,13 +143,13 @@ export function SemesterView({ events }: SemesterViewProps) {
 
                                   {/* Hover Actions */}
                                   <div className="absolute right-0.5 top-1/2 -translate-y-1/2 hidden group-hover:flex items-center gap-0.5 bg-white/90 px-0.5 py-0.5 rounded shadow-sm">
-                                    <button 
+                                    <button
                                       onClick={(e) => { e.stopPropagation(); openEditEvent(event); }}
                                       className="p-0.5 hover:bg-gray-100 rounded text-gray-500 hover:text-indigo-600 transition-colors"
                                     >
                                       <Pencil className="w-2.5 h-2.5" />
                                     </button>
-                                    <button 
+                                    <button
                                       onClick={(e) => { e.stopPropagation(); openDeleteConfirm(event.id); }}
                                       className="p-0.5 hover:bg-gray-100 rounded text-gray-500 hover:text-red-600 transition-colors"
                                     >
@@ -125,14 +160,14 @@ export function SemesterView({ events }: SemesterViewProps) {
                               )
                             })}
                           </div>
-                          
-                          {dayEvents.length > 2 && (
+
+                          {dayEvents.length > ((holidayName && showHolidaysAsTags) ? 1 : 2) && (
                             <div className="flex justify-end mt-1">
-                              <button 
+                              <button
                                 onClick={(e) => { e.stopPropagation(); openDaySummary(day); }}
                                 className="px-1.5 py-0.5 rounded-full bg-slate-200/60 hover:bg-slate-300 text-[9px] font-bold text-slate-600 transition-colors"
                               >
-                                +{dayEvents.length - 2}
+                                +{dayEvents.length - ((holidayName && showHolidaysAsTags) ? 1 : 2)}
                               </button>
                             </div>
                           )}

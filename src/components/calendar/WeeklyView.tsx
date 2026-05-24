@@ -4,9 +4,9 @@ import { format, startOfWeek, endOfWeek, eachDayOfInterval, isSameDay, differenc
 import { Activity } from '@/app/actions/calendar'
 import { isEventOnDay, isMultiDayEvent } from '@/lib/calendarUtils'
 import { getEventPrimaryColor, getEventBarGradient, getEventBgColor } from '@/lib/eventColor'
-import { getHolidayName } from '@/lib/holidays'
 import { Pencil, Trash2 } from 'lucide-react'
 import { useCalendarStore } from '@/store/useCalendarStore'
+import { useSpecialDays } from '@/hooks/useSpecialDays'
 import { useEffect, useRef, useState } from 'react'
 
 interface WeeklyViewProps {
@@ -18,11 +18,19 @@ const HOURS = Array.from({ length: 24 }, (_, i) => i)
 const PIXELS_PER_HOUR = 40 // 시간당 40px로 축소하여 전체 높이 33% 감소 (1440px → 960px)
 
 export function WeeklyView({ currentDate, events }: WeeklyViewProps) {
-  const { openDaySummary, openEventDetail, openEditEvent, openDeleteConfirm, showHolidays } = useCalendarStore()
+  const { 
+    openDaySummary, openEventDetail, openEditEvent, openDeleteConfirm, 
+    showHolidays, showHolidaysAsTags,
+    showNationalDays, showAnniversaries, showTraditionalTerms
+  } = useCalendarStore()
+  
+  const year = currentDate.getFullYear()
+  const { data: specialDaysMap = {} } = useSpecialDays(year)
+  
   const startDate = startOfWeek(currentDate)
   const endDate = endOfWeek(currentDate)
   const days = eachDayOfInterval({ start: startDate, end: endDate })
-  
+
   const [now, setNow] = useState(new Date())
   const scrollContainerRef = useRef<HTMLDivElement>(null)
 
@@ -50,8 +58,24 @@ export function WeeklyView({ currentDate, events }: WeeklyViewProps) {
         <div className="flex-1 grid grid-cols-7">
           {days.map((day, idx) => {
             const isToday = isSameDay(day, now)
-            const holidayName = showHolidays ? getHolidayName(day) : null
             
+            const dateStr = format(day, 'yyyy-MM-dd')
+            const specialDays = specialDaysMap[dateStr] || []
+            
+            const holidays = specialDays.filter(d => d.type === 'holiday')
+            const nationalDays = specialDays.filter(d => d.type === 'national')
+            const anniversaries = specialDays.filter(d => d.type === 'anniversary')
+            const traditionalTerms = specialDays.filter(d => d.type === 'traditional')
+            
+            const isHolidayDay = showHolidays && holidays.some(d => d.isHoliday)
+            const holidayName = showHolidays && holidays.length > 0 ? holidays[0].name : null
+
+            const otherTerms = [
+              showNationalDays ? nationalDays.map(d=>d.name) : [],
+              showAnniversaries ? anniversaries.map(d=>d.name) : [],
+              showTraditionalTerms ? traditionalTerms.map(d=>d.name) : []
+            ].flat().join(', ')
+
             // All day events for this day
             const allDayEvents = events.filter(e => isEventOnDay(e, day) && (e.is_all_day || isMultiDayEvent(e)))
 
@@ -60,32 +84,44 @@ export function WeeklyView({ currentDate, events }: WeeklyViewProps) {
                 <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">
                   {['일', '월', '화', '수', '목', '금', '토'][day.getDay()]}
                 </span>
-                <div className={`w-8 h-8 flex items-center justify-center rounded-full text-sm font-bold ${
-                  isToday ? 'bg-[#312E81] text-white shadow-md shadow-[#4338CA]/40' : holidayName || day.getDay() === 0 ? 'text-red-500' : 'text-slate-700'
-                }`}>
+                <div className={`w-8 h-8 flex items-center justify-center rounded-full text-sm font-bold ${isToday ? 'bg-[#312E81] text-white shadow-md shadow-[#4338CA]/40' : isHolidayDay || day.getDay() === 0 ? 'text-red-500' : 'text-slate-700'
+                  }`}>
                   {format(day, 'd')}
                 </div>
-                {holidayName && (
+                {holidayName && !showHolidaysAsTags && (
                   <span className="mt-1 text-[10px] font-medium text-red-400 truncate px-1 text-center w-full">
                     {holidayName}
                   </span>
                 )}
+                {otherTerms && (
+                  <span className="mt-0.5 text-[9px] font-medium text-slate-400 truncate px-1 text-center w-full leading-tight">
+                    {otherTerms}
+                  </span>
+                )}
                 {/* All day events */}
                 <div className="w-full px-1 mt-1 space-y-1">
-                   {allDayEvents.map(event => {
-                     const primaryColor = getEventPrimaryColor(event)
-                     return (
-                         <div 
-                           key={event.id} 
-                           onClick={(e) => { e.stopPropagation(); openEventDetail(event); }}
-                           onDoubleClick={(e) => { e.stopPropagation(); openEditEvent(event); }}
-                           className="text-[10px] font-semibold truncate px-1.5 py-0.5 rounded cursor-pointer transition-transform hover:scale-[1.02]" 
-                           style={{ backgroundColor: `${primaryColor}20`, color: primaryColor }}
-                         >
-                            {event.title}
-                         </div>
-                     )
-                   })}
+                   {holidayName && showHolidaysAsTags && (
+                       <div 
+                         className="text-[10px] font-semibold truncate px-1.5 py-0.5 rounded" 
+                         style={{ backgroundColor: `#ef444420`, color: '#ef4444' }}
+                       >
+                          {holidayName}
+                       </div>
+                   )}
+                  {allDayEvents.map(event => {
+                    const primaryColor = getEventPrimaryColor(event)
+                    return (
+                      <div
+                        key={event.id}
+                        onClick={(e) => { e.stopPropagation(); openEventDetail(event); }}
+                        onDoubleClick={(e) => { e.stopPropagation(); openEditEvent(event); }}
+                        className="text-[10px] font-semibold truncate px-1.5 py-0.5 rounded cursor-pointer transition-transform hover:scale-[1.02]"
+                        style={{ backgroundColor: `${primaryColor}20`, color: primaryColor }}
+                      >
+                        {event.title}
+                      </div>
+                    )
+                  })}
                 </div>
               </div>
             )
@@ -137,7 +173,7 @@ export function WeeklyView({ currentDate, events }: WeeklyViewProps) {
               const processCluster = (cluster: Activity[]) => {
                 if (cluster.length === 0) return
                 const columns: Activity[][] = []
-                
+
                 cluster.forEach(event => {
                   let placed = false
                   for (let i = 0; i < columns.length; i++) {
@@ -165,7 +201,7 @@ export function WeeklyView({ currentDate, events }: WeeklyViewProps) {
               sortedEvents.forEach(event => {
                 const start = new Date(event.start_time).getTime()
                 const end = new Date(event.end_time).getTime()
-                
+
                 if (currentCluster.length === 0) {
                   currentCluster.push(event)
                   clusterEndTime = end
@@ -181,8 +217,8 @@ export function WeeklyView({ currentDate, events }: WeeklyViewProps) {
               processCluster(currentCluster)
 
               return (
-                <div 
-                  key={dayIdx} 
+                <div
+                  key={dayIdx}
                   className="relative border-r border-[#F1F5F9] last:border-r-0"
                   style={{ minHeight: PIXELS_PER_HOUR * 24 }}
                   onClick={() => openDaySummary(day)}
@@ -237,13 +273,13 @@ export function WeeklyView({ currentDate, events }: WeeklyViewProps) {
 
                         {/* Hover Actions */}
                         <div className="absolute right-1 top-1 hidden group-hover:flex items-center gap-1 bg-white/90 px-1 py-0.5 rounded shadow-sm">
-                          <button 
+                          <button
                             onClick={(e) => { e.stopPropagation(); openEditEvent(event); }}
                             className="p-1 hover:bg-gray-100 rounded text-gray-500 hover:text-indigo-600 transition-colors"
                           >
                             <Pencil className="w-3 h-3" />
                           </button>
-                          <button 
+                          <button
                             onClick={(e) => { e.stopPropagation(); openDeleteConfirm(event.id); }}
                             className="p-1 hover:bg-gray-100 rounded text-gray-500 hover:text-red-600 transition-colors"
                           >
@@ -256,7 +292,7 @@ export function WeeklyView({ currentDate, events }: WeeklyViewProps) {
 
                   {/* Crimson Neon Line for Current Time */}
                   {isToday && (
-                    <div 
+                    <div
                       className="absolute left-0 right-0 z-10 pointer-events-none flex items-center"
                       style={{ top: `${(now.getHours() * 60 + now.getMinutes()) * (PIXELS_PER_HOUR / 60)}px` }}
                     >
