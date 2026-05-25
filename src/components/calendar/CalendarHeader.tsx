@@ -116,7 +116,7 @@ export function CalendarHeader({ onOpenSettings }: CalendarHeaderProps) {
   } else if (isAnniversary) {
     wrapperClassName += "bg-white/80 backdrop-blur-md shadow-[0_0_30px_-5px_rgba(244,63,94,0.15)] border border-rose-100/50"
   } else if (isInsights) {
-    wrapperClassName += "bg-slate-900/95 backdrop-blur-xl shadow-[0_10px_40px_-10px_rgba(99,102,241,0.4)] border border-indigo-500/30 text-white"
+    wrapperClassName += "bg-white/90 backdrop-blur-xl shadow-[0_10px_40px_-10px_rgba(99,102,241,0.2)] border border-indigo-100/80"
   }
 
   // --- Slots ---
@@ -181,18 +181,18 @@ export function CalendarHeader({ onOpenSettings }: CalendarHeaderProps) {
           exit={{ opacity: 0, x: -20 }}
           className="flex items-center shrink-0 gap-4 py-1"
         >
-          <div className="relative w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shrink-0 shadow-[0_0_20px_rgba(99,102,241,0.5)]">
-            <BrainCircuit className="w-6 h-6 text-white absolute z-10" />
-            <div className="absolute inset-0 bg-indigo-400 rounded-xl animate-ping opacity-30" />
+          <div className="relative w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-100 to-purple-100 flex items-center justify-center shrink-0 shadow-inner border border-white">
+            <BrainCircuit className="w-6 h-6 text-indigo-600 relative z-10" />
+            <div className="absolute inset-0 bg-white/50 rounded-xl animate-pulse" />
           </div>
           <div className="flex flex-col">
-            <h2 className="font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-indigo-200 via-white to-purple-200 text-xl tracking-tight">인사이트 대시보드</h2>
+            <h2 className="font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-indigo-700 to-purple-700 text-xl tracking-tight">인사이트 대시보드</h2>
             <div className="flex items-center gap-2 mt-0.5">
               <span className="relative flex w-2 h-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full w-2 h-2 bg-emerald-400"></span>
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-500 opacity-75"></span>
+                <span className="relative inline-flex rounded-full w-2 h-2 bg-emerald-500"></span>
               </span>
-              <p className="text-xs text-indigo-200/80 font-mono tracking-wider font-semibold">INSIGHT DASHBOARD ONLINE</p>
+              <p className="text-xs text-indigo-500 font-mono tracking-wider font-bold">INSIGHT DASHBOARD ONLINE</p>
             </div>
           </div>
         </motion.div>
@@ -302,7 +302,10 @@ export function CalendarHeader({ onOpenSettings }: CalendarHeaderProps) {
               <div className="absolute inset-0 bg-gradient-to-r from-rose-50/50 to-pink-50/50 pointer-events-none" />
             )}
             {isInsights && (
-              <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-indigo-900/40 via-transparent to-transparent pointer-events-none" />
+              <>
+                <div className="absolute inset-0 bg-gradient-to-r from-indigo-50/50 via-purple-50/30 to-pink-50/50 pointer-events-none" />
+                <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-white/40 via-transparent to-transparent pointer-events-none" />
+              </>
             )}
 
             <div className="relative z-10 flex flex-col xl:flex-row w-full items-center justify-between gap-4">
