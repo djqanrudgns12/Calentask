@@ -24,6 +24,7 @@ export type CalculationRule = {
     show_d_day_only?: boolean;
     show_every_month?: boolean;
     show_every_week?: boolean;
+    show_in_sidebar?: boolean;
   };
 };
 
