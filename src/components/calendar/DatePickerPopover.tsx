@@ -27,6 +27,7 @@ export function DatePickerPopover({ children }: DatePickerPopoverProps) {
   // 팝업이 열릴 때 선택된 연도를 현재 캘린더 연도로 동기화 및 자동 스크롤
   useEffect(() => {
     if (open) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setSelectedYear(currentY)
       setTimeout(() => {
         if (yearScrollRef.current) {

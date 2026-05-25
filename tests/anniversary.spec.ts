@@ -189,6 +189,7 @@ test.describe('4️⃣ Phase 1 & 2 - 프리셋별 DB 페이로드(calculation_ru
     await openAnniversarySettings(page);
 
     // COUPLE → DAYS_COUNT
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let interceptedPayload: any = null;
     page.on('request', req => {
       if (req.url().includes('/rest/v1/anniversaries') && req.method() === 'POST') {

@@ -1,7 +1,7 @@
 'use client'
 
 import { useCalendarStore } from '@/store/useCalendarStore'
-import { CalendarDays, Check, Sun, Moon } from 'lucide-react'
+import { Check, Sun, Moon } from 'lucide-react'
 
 export function DisplayTab() {
   const { 

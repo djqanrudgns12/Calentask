@@ -26,7 +26,11 @@ export function NiceImportView() {
   const toggleExpand = (id: string) => {
     setExpandedIds(prev => {
       const next = new Set(prev)
-      next.has(id) ? next.delete(id) : next.add(id)
+      if (next.has(id)) {
+        next.delete(id)
+      } else {
+        next.add(id)
+      }
       return next
     })
   }
@@ -44,6 +48,7 @@ export function NiceImportView() {
   }, [])
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchHistory()
   }, [fetchHistory])
 
@@ -72,8 +77,9 @@ export function NiceImportView() {
         // 새 일정이 추가되었으므로 캘린더 데이터도 즉시 반영
         queryClient.invalidateQueries({ queryKey: ['activities'] })
       }
-    } catch (error: any) {
-      showToast('error', error.message || '파일 업로드 중 오류가 발생했습니다.')
+    } catch (error: unknown) {
+      const err = error as Error
+      showToast('error', err.message || '파일 업로드 중 오류가 발생했습니다.')
     } finally {
       setIsUploading(false)
     }
@@ -104,8 +110,9 @@ export function NiceImportView() {
         queryClient.invalidateQueries({ queryKey: ['activities'] })
       }
       fetchHistory()
-    } catch (error: any) {
-      showToast('error', error.message || '삭제 중 오류가 발생했습니다.')
+    } catch (error: unknown) {
+      const err = error as Error
+      showToast('error', err.message || '삭제 중 오류가 발생했습니다.')
     } finally {
       setIsDeleting(false)
       setDeleteTarget(null)

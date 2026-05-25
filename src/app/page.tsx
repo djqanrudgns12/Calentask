@@ -1,4 +1,5 @@
 /* eslint-disable react-hooks/set-state-in-effect */
+/* eslint-disable @next/next/no-img-element */
 'use client'
 
 import { useState, useEffect } from 'react'
@@ -131,7 +132,7 @@ export default function CalendarPage() {
         </div>
 
         {/* 다가오는 일정 타임라인 */}
-        <UpcomingAgenda events={events} currentDate={currentDate} />
+        <UpcomingAgenda events={events} />
 
         <div className="px-4 py-6 flex flex-col space-y-1 shrink-0">
           {/* Keep uploader and trash at the bottom or below */}

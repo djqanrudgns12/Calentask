@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { AnniversaryPresetType, Anniversary } from '@/utils/anniversaryCalculator';
@@ -31,11 +31,12 @@ const CUSTOM_TYPES = {
   ]
 };
 
-export function DynamicAnniversaryForm({ 
+export const DynamicAnniversaryForm = React.memo(function DynamicAnniversaryForm({ 
   onSubmit, 
   onCancel, 
   initialData 
 }: { 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   onSubmit: (data: any) => void, 
   onCancel: () => void,
   initialData?: Anniversary | null
@@ -125,6 +126,7 @@ export function DynamicAnniversaryForm({
     if (!title || !baseDate) return;
     if (preset === 'CUSTOM' && customStep === 1) return;
     
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let calculation_rule: any = { type: 'DAYS_COUNT', options: { show_in_calendar: showInCalendar, show_100_days: show100Days, show_years: showYears } };
     
     if (preset === 'EXAM') calculation_rule = { type: 'D_DAY', options: { show_in_calendar: showInCalendar, show_d_day_only: showDDayOnly } };
@@ -156,6 +158,7 @@ export function DynamicAnniversaryForm({
       }
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const payload: any = {
       preset_type: preset,
       title,
@@ -183,7 +186,7 @@ export function DynamicAnniversaryForm({
         } else {
           dateInputRef.current.focus();
         }
-      } catch (e) {
+      } catch {
         dateInputRef.current.focus();
       }
     }
@@ -560,4 +563,4 @@ export function DynamicAnniversaryForm({
       </div>
     </motion.div>
   );
-}
+})

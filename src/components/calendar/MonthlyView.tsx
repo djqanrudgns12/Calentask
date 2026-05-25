@@ -3,17 +3,19 @@
 import { format, eachDayOfInterval, isSameMonth, isSameDay, startOfWeek, endOfWeek } from 'date-fns'
 import { Activity } from '@/app/actions/calendar'
 import { isEventOnDay } from '@/lib/calendarUtils'
-import { getEventPrimaryColor, getEventBarGradient, getEventBgColor } from '@/lib/eventColor'
+import { getEventBarGradient, getEventBgColor } from '@/lib/eventColor'
 import { useCalendarStore } from '@/store/useCalendarStore'
 import { useSpecialDays } from '@/hooks/useSpecialDays'
 import { Pencil, Trash2 } from 'lucide-react'
+
+import React from 'react'
 
 interface MonthlyViewProps {
   currentDate: Date
   events: Activity[]
 }
 
-export function MonthlyView({ currentDate, events }: MonthlyViewProps) {
+export const MonthlyView = React.memo(function MonthlyView({ currentDate, events }: MonthlyViewProps) {
   const { 
     openDaySummary, openEventDetail, openEditEvent, openDeleteConfirm, 
     showHolidays, showHolidaysAsTags,
@@ -100,8 +102,6 @@ export function MonthlyView({ currentDate, events }: MonthlyViewProps) {
                   </div>
                 )}
                 {dayEvents.slice(0, (holidayName && showHolidaysAsTags) ? 2 : 3).map(event => {
-                  const primaryColor = getEventPrimaryColor(event)
-
                   return (
                     <div
                       key={event.id}
@@ -155,4 +155,4 @@ export function MonthlyView({ currentDate, events }: MonthlyViewProps) {
       </div>
     </div>
   )
-}
+})

@@ -1,6 +1,6 @@
 'use client'
 
-import { format, startOfWeek, endOfWeek, eachDayOfInterval, isSameDay, differenceInMinutes, parseISO } from 'date-fns'
+import { format, startOfWeek, endOfWeek, eachDayOfInterval, isSameDay, differenceInMinutes } from 'date-fns'
 import { Activity } from '@/app/actions/calendar'
 import { isEventOnDay, isMultiDayEvent } from '@/lib/calendarUtils'
 import { getEventPrimaryColor, getEventBarGradient, getEventBgColor } from '@/lib/eventColor'
@@ -17,7 +17,9 @@ interface WeeklyViewProps {
 const HOURS = Array.from({ length: 24 }, (_, i) => i)
 const PIXELS_PER_HOUR = 40 // 시간당 40px로 축소하여 전체 높이 33% 감소 (1440px → 960px)
 
-export function WeeklyView({ currentDate, events }: WeeklyViewProps) {
+import React from 'react'
+
+export const WeeklyView = React.memo(function WeeklyView({ currentDate, events }: WeeklyViewProps) {
   const { 
     openDaySummary, openEventDetail, openEditEvent, openDeleteConfirm, 
     showHolidays, showHolidaysAsTags,
@@ -308,4 +310,4 @@ export function WeeklyView({ currentDate, events }: WeeklyViewProps) {
       </div>
     </div>
   )
-}
+})

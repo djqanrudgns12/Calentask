@@ -41,6 +41,7 @@ export function EditCategoryDialog() {
 
   useEffect(() => {
     if (editingCategory) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setName(editingCategory.name)
       setHexColor(editingCategory.hex_color || '#4f46e5')
     }

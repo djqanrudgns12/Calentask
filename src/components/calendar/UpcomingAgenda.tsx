@@ -1,10 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import React, { useState } from 'react'
 import { isToday, isThisWeek, parseISO, format, isValid } from 'date-fns'
 import { Clock, Inbox } from 'lucide-react'
 
-// 이벤트 타입 추론용 (필요한 속성만 명시)
 interface Category {
   id: string
   name: string
@@ -23,10 +22,9 @@ interface CalendarEvent {
 
 interface UpcomingAgendaProps {
   events: CalendarEvent[]
-  currentDate: Date
 }
 
-export function UpcomingAgenda({ events, currentDate }: UpcomingAgendaProps) {
+export const UpcomingAgenda = React.memo(function UpcomingAgenda({ events }: UpcomingAgendaProps) {
   const [activeTab, setActiveTab] = useState<'today' | 'week'>('today')
 
   // 이벤트 필터링 및 정렬
@@ -161,4 +159,4 @@ export function UpcomingAgenda({ events, currentDate }: UpcomingAgendaProps) {
       </div>
     </div>
   )
-}
+})
