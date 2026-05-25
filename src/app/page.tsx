@@ -26,7 +26,9 @@ import { TagsModal } from '@/components/profile/TagsModal'
 import { DataHubModal } from '@/components/profile/DataHubModal'
 import { ClearAllDataDialog } from '@/components/profile/ClearAllDataDialog'
 import { CalendarHeader } from '@/components/calendar/CalendarHeader'
+import { AnniversaryConfetti } from '@/components/anniversary/AnniversaryConfetti'
 import { UpcomingAgenda } from '@/components/calendar/UpcomingAgenda'
+import { UpcomingAnniversaryWidget } from '@/components/anniversary/UpcomingAnniversaryWidget'
 import { useAnniversaryOverlay } from '@/hooks/useAnniversaryOverlay'
 import { AnniversarySettingsView } from '@/components/anniversary/AnniversarySettingsView'
 
@@ -105,6 +107,9 @@ export default function CalendarPage() {
         </div>
         
         <div className="px-4 py-4 flex flex-col space-y-1">
+          {/* 다가오는 기념일 D-Day 위젯 (최상단) */}
+          <UpcomingAnniversaryWidget />
+
           <button 
             onClick={() => setViewMode('monthly')}
             className={`text-left px-4 py-3 rounded-2xl text-base font-semibold transition-colors ${viewMode !== 'nice_import' ? 'bg-blue-50 text-blue-600' : 'text-slate-600 hover:bg-slate-100'}`}
@@ -206,6 +211,9 @@ export default function CalendarPage() {
       
       {/* Edit Category Dialog */}
       <EditCategoryDialog />
+      
+      {/* Confetti Animation wrapper */}
+      <AnniversaryConfetti />
     </div>
   )
 }
