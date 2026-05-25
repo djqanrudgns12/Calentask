@@ -1,53 +1,130 @@
 "use client";
 import { BarChart, Bar, ResponsiveContainer, XAxis, Tooltip, Cell } from 'recharts';
-import { Activity } from 'lucide-react';
+import { Activity, Plus, Clock } from 'lucide-react';
+import { useCalendarStore } from '@/store/useCalendarStore';
+import { format } from 'date-fns';
+import { ko } from 'date-fns/locale';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 function CustomTooltip({ active, payload, label }: any) {
+  const openAddEvent = useCalendarStore((state) => state.openAddEvent);
+  
   if (!active || !payload?.length) return null;
+  
+  const data = payload[0].payload;
+  const activities = data.activities || [];
+  
+  // Get top 3 activities (sort by start time)
+  const sortedActivities = [...activities].sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime());
+  const displayActivities = sortedActivities.slice(0, 3);
+  const hasMore = sortedActivities.length > 3;
+
   return (
-    <div className="bg-white px-4 py-3 rounded-xl border border-gray-200 shadow-lg">
-      <p className="text-xs font-bold text-gray-900 mb-1">{label}요일</p>
-      <p className="text-sm text-blue-600 font-semibold">{payload[0].value}시간</p>
+    <div className="bg-white/95 backdrop-blur-md px-4 py-4 rounded-2xl border border-gray-100 shadow-xl min-w-[200px] z-50">
+      <div className="flex items-center justify-between mb-3">
+        <p className="text-sm font-bold text-gray-900">{label}요일</p>
+        <p className="text-sm text-blue-600 font-bold">{data.value}시간</p>
+      </div>
+
+      {activities.length > 0 ? (
+        <div className="space-y-2.5 mb-3">
+          {displayActivities.map((act: any) => {
+            const isSameDay = act.is_all_day;
+            const date = new Date(act.start_time);
+            return (
+              <div key={act.id} className="flex items-start gap-2">
+                <div 
+                  className="w-2 h-2 rounded-full mt-1.5 shrink-0" 
+                  style={{ backgroundColor: act.hex_color || (act.categories?.[0]?.hex_color) || '#E5E7EB' }} 
+                />
+                <div className="flex-1 min-w-0">
+                  <p className="text-[13px] font-semibold text-gray-800 truncate">{act.title}</p>
+                  <p className="text-[11px] text-gray-400 font-medium">
+                    {isSameDay ? '하루 종일' : format(date, 'a h:mm', { locale: ko })}
+                  </p>
+                </div>
+              </div>
+            )
+          })}
+          {hasMore && (
+            <p className="text-[11px] text-gray-400 font-medium text-center pt-1">+ {sortedActivities.length - 3}개 더보기</p>
+          )}
+        </div>
+      ) : (
+        <div className="py-3 flex flex-col items-center justify-center text-gray-400 mb-2">
+          <Clock size={16} className="mb-1 opacity-50" />
+          <p className="text-[12px] font-medium">활동 기록이 없습니다.</p>
+        </div>
+      )}
+
+      {/* 일정 추가 버튼 (Actionable) */}
+      <button 
+        onClick={() => {
+          // 일자 계산을 정확히 하려면 날짜 정보를 넘겨야 하지만, 우선 요일 정보를 바탕으로 새 모달 띄우기
+          openAddEvent();
+        }}
+        className="w-full flex items-center justify-center gap-1.5 py-2 mt-1 rounded-xl bg-gray-50 hover:bg-gray-100 text-gray-600 text-[12px] font-bold transition-colors"
+      >
+        <Plus size={14} />
+        일정 추가하기
+      </button>
     </div>
   );
 }
 
 export default function WeeklySummaryCard({ totalHours, totalCount, chartData, period }: { totalHours: number, totalCount: number, chartData: any[], period: string }) {
-  const periodLabel = period === 'week' ? '이번 주 활동 요약' : period === 'month' ? '이번 달 활동 요약' : period === 'year' ? '올해 활동 요약' : '최근 30일 활동 요약';
+  const periodLabel = period === 'week' ? '이번 주 활동 요약' : period === 'month' ? '이번 달 활동 요약' : period === 'year' ? '올해 활동 요약' : '최근 조회 기간 요약';
+  const openAddEvent = useCalendarStore((state) => state.openAddEvent);
 
-  // 오늘 요일 인덱스 (월=0)
   const todayIdx = (() => {
     const d = new Date().getDay();
     return d === 0 ? 6 : d - 1;
   })();
 
   return (
-    <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 flex flex-col justify-between w-full h-[280px]">
+    <div className="bg-white rounded-[24px] p-6 shadow-sm border border-gray-100 flex flex-col justify-between w-full h-[280px]">
       <div>
-        <h3 className="text-gray-400 font-semibold text-xs tracking-wider mb-2">
+        <h3 className="text-gray-400 font-bold text-[13px] tracking-wider mb-1.5">
           {periodLabel}
         </h3>
         <div className="flex items-end gap-3">
-          <div className="text-5xl font-bold text-gray-900 tracking-tighter">
-            {totalHours}<span className="text-3xl text-gray-300 font-semibold ml-1">시간</span>
+          <div className="text-[44px] font-black text-gray-900 tracking-tighter leading-none">
+            {totalHours}<span className="text-[24px] text-gray-300 font-bold ml-1">시간</span>
           </div>
-          <div className="flex items-center text-xs font-semibold bg-blue-50 text-blue-600 px-2.5 py-1 rounded-full mb-1 border border-blue-100">
-            <Activity size={12} className="mr-1" />
+          <div className="flex items-center text-[13px] font-bold bg-blue-50/80 text-blue-600 px-3 py-1.5 rounded-full mb-1 border border-blue-100 shadow-sm">
+            <Activity size={14} className="mr-1.5" />
             총 {totalCount}건
           </div>
         </div>
       </div>
 
-      <div className="h-[100px] w-full mt-6">
+      <div className="h-[100px] w-full mt-4">
         {chartData && chartData.length > 0 ? (
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={chartData} margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
-              <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#9CA3AF', fontWeight: 500 }} dy={10} />
-              <Tooltip content={<CustomTooltip />} cursor={{ fill: '#F9FAFB', radius: 6 }} />
-              <Bar dataKey="value" radius={[6, 6, 6, 6]}>
+              <XAxis 
+                dataKey="day" 
+                axisLine={false} 
+                tickLine={false} 
+                tick={{ fontSize: 13, fill: '#9CA3AF', fontWeight: 600 }} 
+                dy={10} 
+              />
+              <Tooltip 
+                content={<CustomTooltip />} 
+                cursor={{ fill: '#F3F4F6', opacity: 0.6, radius: 8 }} 
+                isAnimationActive={false}
+              />
+              <Bar 
+                dataKey="value" 
+                radius={[6, 6, 6, 6]}
+                minPointSize={4} // 데이터가 0이어도 클릭/호버 가능하게 최소 높이 부여
+                onClick={(data) => {
+                  openAddEvent(); // 클릭 시 모달 열기
+                }}
+                className="cursor-pointer"
+              >
                 {chartData.map((_entry, index) => (
-                  <Cell key={`cell-${index}`} fill={index === todayIdx ? '#3B82F6' : '#F3F4F6'} />
+                  <Cell key={`cell-${index}`} fill={index === todayIdx ? '#3B82F6' : '#E5E7EB'} />
                 ))}
               </Bar>
             </BarChart>
