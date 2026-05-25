@@ -135,13 +135,15 @@ export function GlobalCategoryFilter() {
 
                   {/* Hover Actions */}
                   <div className="opacity-0 group-hover:opacity-100 flex items-center gap-1 transition-opacity">
-                    <button
-                      onClick={(e) => { e.stopPropagation(); openEditCategory(cat); setOpen(false); }}
-                      className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-white rounded-md shadow-sm transition-all"
-                      title="수정"
-                    >
-                      <Pencil className="w-3.5 h-3.5" />
-                    </button>
+                    {cat.id !== 'sys-anniversary' && (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); openEditCategory(cat); setOpen(false); }}
+                        className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-white rounded-md shadow-sm transition-all"
+                        title="수정"
+                      >
+                        <Pencil className="w-3.5 h-3.5" />
+                      </button>
+                    )}
                     {!cat.is_default && (
                       <button
                         onClick={(e) => handleDeleteCategory(e, cat.id)}

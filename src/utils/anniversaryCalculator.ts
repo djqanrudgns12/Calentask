@@ -9,6 +9,10 @@ export type CalculationRule = {
   options?: {
     avoid_weekends?: boolean;
     milestones?: number[];
+    show_in_calendar?: boolean;
+    show_100_days?: boolean;
+    show_years?: boolean;
+    show_d_day_only?: boolean;
   };
 };
 
@@ -64,6 +68,9 @@ export function calculateOverlays(anniversary: Anniversary, rangeStart: Date, ra
   const baseDate = startOfDay(new Date(anniversary.base_date));
   const rule = anniversary.calculation_rule;
 
+  // 마스터 토글 확인
+  if (rule.options?.show_in_calendar === false) return [];
+
   const createEvent = (date: Date, suffix: string, color: string = '#F43F5E'): OverlayEvent => {
     // end_time을 당일 23:59:59로 설정해야 isEventOnDay의 eventEnd > dayStart 비교를 통과함
     const endOfDayDate = new Date(date);
@@ -77,33 +84,35 @@ export function calculateOverlays(anniversary: Anniversary, rangeStart: Date, ra
       is_all_day: true,
       type: 'ANNIVERSARY_OVERLAY',
       hex_color: color,
-      categories: [{ id: 'anniversary-sys', name: '기념일', hex_color: color }],
+      categories: [{ id: 'sys-anniversary', name: '기념일', hex_color: '#8B5CF6' }],
     };
   };
 
   if (rule.type === 'DAYS_COUNT') {
     // 1일부터 시작. base_date가 1일.
-    // 마일스톤 생성 (100일, 200일, 1주년 등)
-    const milestones = rule.options?.milestones || LUNAR_MILESTONES;
-    
     // 매년 1주년, 2주년 등도 계산 (range 내)
-    for (let y = rangeStart.getFullYear() - 1; y <= rangeEnd.getFullYear() + 1; y++) {
-      const anniversaryYearDate = new Date(baseDate.getFullYear() + (y - baseDate.getFullYear()), baseDate.getMonth(), baseDate.getDate());
-      if (anniversaryYearDate >= rangeStart && anniversaryYearDate <= rangeEnd) {
-        const diffYears = y - baseDate.getFullYear();
-        if (diffYears > 0) {
-          events.push(createEvent(anniversaryYearDate, `${diffYears}주년`, '#EC4899')); // Pink
+    if (rule.options?.show_years !== false) {
+      for (let y = rangeStart.getFullYear() - 1; y <= rangeEnd.getFullYear() + 1; y++) {
+        const anniversaryYearDate = new Date(baseDate.getFullYear() + (y - baseDate.getFullYear()), baseDate.getMonth(), baseDate.getDate());
+        if (anniversaryYearDate >= rangeStart && anniversaryYearDate <= rangeEnd) {
+          const diffYears = y - baseDate.getFullYear();
+          if (diffYears > 0) {
+            events.push(createEvent(anniversaryYearDate, `${diffYears}주년`, '#EC4899')); // Pink
+          }
         }
       }
     }
 
     // 일수 마일스톤 계산
-    milestones.forEach(m => {
-      const milestoneDate = addDays(baseDate, m - 1);
-      if (milestoneDate >= rangeStart && milestoneDate <= rangeEnd) {
-        events.push(createEvent(milestoneDate, `${m}일`, '#F472B6')); // Lighter Pink
-      }
-    });
+    if (rule.options?.show_100_days !== false) {
+      const milestones = rule.options?.milestones || LUNAR_MILESTONES;
+      milestones.forEach(m => {
+        const milestoneDate = addDays(baseDate, m - 1);
+        if (milestoneDate >= rangeStart && milestoneDate <= rangeEnd) {
+          events.push(createEvent(milestoneDate, `${m}일`, '#F472B6')); // Lighter Pink
+        }
+      });
+    }
 
   } else if (rule.type === 'D_DAY') {
     // 0일부터 시작. base_date가 D-Day.
@@ -113,17 +122,19 @@ export function calculateOverlays(anniversary: Anniversary, rangeStart: Date, ra
     }
     
     // D-10, D-30 등 주요 마일스톤
-    const milestones = rule.options?.milestones || [10, 30, 50, 100];
-    milestones.forEach(m => {
-      const beforeDate = subDays(baseDate, m);
-      if (beforeDate >= rangeStart && beforeDate <= rangeEnd) {
-        events.push(createEvent(beforeDate, `D-${m}`, '#FCA5A5'));
-      }
-      const afterDate = addDays(baseDate, m);
-      if (afterDate >= rangeStart && afterDate <= rangeEnd) {
-        events.push(createEvent(afterDate, `D+${m}`, '#FCA5A5'));
-      }
-    });
+    if (rule.options?.show_d_day_only !== true) {
+      const milestones = rule.options?.milestones || [10, 30, 50, 100];
+      milestones.forEach(m => {
+        const beforeDate = subDays(baseDate, m);
+        if (beforeDate >= rangeStart && beforeDate <= rangeEnd) {
+          events.push(createEvent(beforeDate, `D-${m}`, '#FCA5A5'));
+        }
+        const afterDate = addDays(baseDate, m);
+        if (afterDate >= rangeStart && afterDate <= rangeEnd) {
+          events.push(createEvent(afterDate, `D+${m}`, '#FCA5A5'));
+        }
+      });
+    }
 
   } else if (rule.type === 'RECURRENCE') {
     if (rule.unit === 'MONTH') {

@@ -1,24 +1,56 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { AnniversaryPresetType } from '@/utils/anniversaryCalculator';
-import { CalendarDays, Sparkles } from 'lucide-react';
+import { AnniversaryPresetType, Anniversary } from '@/utils/anniversaryCalculator';
+import { CalendarDays, Sparkles, Settings2, ChevronDown } from 'lucide-react';
 import { format } from 'date-fns';
 
 const PRESET_LABELS: Record<AnniversaryPresetType, string> = {
   COUPLE: '💕 연인/커플',
   BIRTHDAY: '🎂 생일',
-  LUNAR_BIRTHDAY: '🎂 생일', // 내부적으로만 쓰임
+  LUNAR_BIRTHDAY: '🎂 생일',
   EXAM: '📝 시험/디데이',
   PAYDAY: '💰 월급/정기일',
   CUSTOM: '✨ 직접 설정'
 };
 
-export function DynamicAnniversaryForm({ onSubmit, onCancel }: { onSubmit: (data: any) => void, onCancel: () => void }) {
+export function DynamicAnniversaryForm({ 
+  onSubmit, 
+  onCancel, 
+  initialData 
+}: { 
+  onSubmit: (data: any) => void, 
+  onCancel: () => void,
+  initialData?: Anniversary | null
+}) {
   const [preset, setPreset] = useState<AnniversaryPresetType>('COUPLE');
   const [title, setTitle] = useState('');
   const [baseDate, setBaseDate] = useState('');
   const [isLunar, setIsLunar] = useState(false);
+  
+  // Advanced Settings State
+  const [showAdvanced, setShowAdvanced] = useState(false);
+  const [showInCalendar, setShowInCalendar] = useState(true);
+  const [show100Days, setShow100Days] = useState(true);
+  const [showYears, setShowYears] = useState(true);
+  const [showDDayOnly, setShowDDayOnly] = useState(false);
+  const [avoidWeekends, setAvoidWeekends] = useState(true);
+
+  useEffect(() => {
+    if (initialData) {
+      setPreset(initialData.preset_type);
+      setTitle(initialData.title);
+      setBaseDate(initialData.base_date);
+      setIsLunar(initialData.is_lunar);
+      
+      const opts = initialData.calculation_rule?.options || {};
+      if (opts.show_in_calendar !== undefined) setShowInCalendar(opts.show_in_calendar);
+      if (opts.show_100_days !== undefined) setShow100Days(opts.show_100_days);
+      if (opts.show_years !== undefined) setShowYears(opts.show_years);
+      if (opts.show_d_day_only !== undefined) setShowDDayOnly(opts.show_d_day_only);
+      if (opts.avoid_weekends !== undefined) setAvoidWeekends(opts.avoid_weekends);
+    }
+  }, [initialData]);
 
   const getPlaceholder = () => {
     switch(preset) {
@@ -36,21 +68,25 @@ export function DynamicAnniversaryForm({ onSubmit, onCancel }: { onSubmit: (data
     e.preventDefault();
     if (!title || !baseDate) return;
     
-    let calculation_rule: any = { type: 'DAYS_COUNT' };
-    if (preset === 'EXAM') calculation_rule = { type: 'D_DAY' };
-    if (preset === 'PAYDAY') calculation_rule = { type: 'RECURRENCE', unit: 'MONTH', options: { avoid_weekends: true } };
-    if (preset === 'BIRTHDAY' || preset === 'LUNAR_BIRTHDAY') calculation_rule = { type: 'RECURRENCE', unit: 'YEAR' };
+    let calculation_rule: any = { type: 'DAYS_COUNT', options: { show_in_calendar: showInCalendar, show_100_days: show100Days, show_years: showYears } };
+    if (preset === 'EXAM') calculation_rule = { type: 'D_DAY', options: { show_in_calendar: showInCalendar, show_d_day_only: showDDayOnly } };
+    if (preset === 'PAYDAY') calculation_rule = { type: 'RECURRENCE', unit: 'MONTH', options: { show_in_calendar: showInCalendar, avoid_weekends: avoidWeekends } };
+    if (preset === 'BIRTHDAY' || preset === 'LUNAR_BIRTHDAY') calculation_rule = { type: 'RECURRENCE', unit: 'YEAR', options: { show_in_calendar: showInCalendar } };
+    if (preset === 'CUSTOM') calculation_rule = { type: 'DAYS_COUNT', options: { show_in_calendar: showInCalendar, show_100_days: show100Days, show_years: showYears } };
 
-    onSubmit({
+    const payload: any = {
       preset_type: preset,
       title,
       base_date: baseDate,
       is_lunar: preset === 'LUNAR_BIRTHDAY' || isLunar,
       calculation_rule
-    });
+    };
+
+    if (initialData?.id) payload.id = initialData.id;
+
+    onSubmit(payload);
   };
 
-  // 날짜 포맷팅 로직
   const formattedDate = baseDate 
     ? format(new Date(baseDate), 'yyyy년 M월 d일') 
     : '날짜를 선택해 주세요';
@@ -77,23 +113,23 @@ export function DynamicAnniversaryForm({ onSubmit, onCancel }: { onSubmit: (data
       animate={{ opacity: 1, scale: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.95, y: 20 }}
       transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-      className="bg-white/95 backdrop-blur-3xl p-8 rounded-[2.5rem] shadow-[0_24px_60px_-15px_rgba(0,0,0,0.1)] border border-white/60 w-full max-w-md relative overflow-hidden group"
+      className="bg-white/95 backdrop-blur-3xl p-8 rounded-[2.5rem] shadow-[0_24px_60px_-15px_rgba(0,0,0,0.1)] border border-white/60 w-full max-w-md relative overflow-hidden group h-full max-h-[85vh] flex flex-col"
     >
-      {/* Decorative Glow */}
       <div className="absolute -top-24 -right-24 w-48 h-48 bg-blue-400/20 rounded-full blur-3xl opacity-50 group-hover:opacity-100 transition-opacity duration-1000 pointer-events-none" />
       <div className="absolute -bottom-24 -left-24 w-48 h-48 bg-pink-400/20 rounded-full blur-3xl opacity-50 group-hover:opacity-100 transition-opacity duration-1000 pointer-events-none" />
 
-      <div className="relative z-10">
-        <div className="flex items-center gap-3 mb-8">
+      <div className="relative z-10 flex flex-col h-full">
+        <div className="flex items-center gap-3 mb-8 shrink-0">
           <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-blue-50 to-indigo-50 flex items-center justify-center shadow-inner border border-white">
             <Sparkles className="w-5 h-5 text-blue-500" />
           </div>
-          <h2 className="text-2xl font-extrabold text-slate-800 tracking-tight">새로운 기념일 추가</h2>
+          <h2 className="text-2xl font-extrabold text-slate-800 tracking-tight">
+            {initialData ? '기념일 수정' : '새로운 기념일 추가'}
+          </h2>
         </div>
         
-        <form onSubmit={handleSubmit} className="space-y-8">
+        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto pr-2 hide-scrollbar space-y-8">
           
-          {/* Preset Selector */}
           <div className="space-y-3">
             <label className="text-xs font-bold text-slate-400 tracking-wider uppercase ml-1">유형 선택</label>
             <div className="flex flex-wrap gap-2">
@@ -119,7 +155,6 @@ export function DynamicAnniversaryForm({ onSubmit, onCancel }: { onSubmit: (data
             </div>
           </div>
 
-          {/* Title Field (Floating Label style) */}
           <div className="relative pt-5">
             <input 
               type="text" 
@@ -139,11 +174,9 @@ export function DynamicAnniversaryForm({ onSubmit, onCancel }: { onSubmit: (data
             </label>
           </div>
 
-          {/* Date Field (Custom Masked UI) */}
           <div className="space-y-3">
             <label className="text-xs font-bold text-slate-400 tracking-wider uppercase ml-1">기준 날짜</label>
             <div className="relative group cursor-pointer" onClick={handleDateClick}>
-              {/* Actual Input (Invisible but interactive) */}
               <input 
                 type="date"
                 ref={dateInputRef}
@@ -152,7 +185,6 @@ export function DynamicAnniversaryForm({ onSubmit, onCancel }: { onSubmit: (data
                 className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                 required
               />
-              {/* Custom Display UI */}
               <div className={`w-full p-4 rounded-2xl border-2 transition-all duration-300 flex items-center justify-between ${
                 baseDate ? 'bg-blue-50/50 border-blue-200' : 'bg-slate-50/80 border-slate-100 group-hover:border-slate-300 group-hover:bg-slate-100/50'
               }`}>
@@ -166,7 +198,6 @@ export function DynamicAnniversaryForm({ onSubmit, onCancel }: { onSubmit: (data
             </div>
           </div>
 
-          {/* Lunar Toggle */}
           <AnimatePresence>
             {(preset === 'BIRTHDAY' || preset === 'LUNAR_BIRTHDAY') && (
               <motion.div
@@ -200,25 +231,110 @@ export function DynamicAnniversaryForm({ onSubmit, onCancel }: { onSubmit: (data
             )}
           </AnimatePresence>
 
-          {/* Actions */}
-          <div className="flex justify-end space-x-3 pt-6 border-t border-slate-100/60">
-            <Button 
-              variant="ghost" 
-              type="button" 
-              onClick={onCancel} 
-              className="text-slate-500 hover:text-slate-800 font-semibold px-6 py-6 rounded-2xl"
+          {/* Advanced Settings Accordion */}
+          <div className="border border-slate-200/60 rounded-2xl overflow-hidden bg-slate-50/50">
+            <button
+              type="button"
+              onClick={() => setShowAdvanced(!showAdvanced)}
+              className="w-full flex items-center justify-between p-4 bg-white/50 hover:bg-white/80 transition-colors"
             >
-              취소
-            </Button>
-            <Button 
-              type="submit" 
-              onClick={handleSubmit}
-              className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-[0_8px_20px_-6px_rgba(79,70,229,0.5)] font-bold text-base px-8 py-6 rounded-2xl transition-all hover:scale-[1.02] active:scale-95"
-            >
-              저장하기
-            </Button>
+              <div className="flex items-center space-x-2 text-slate-700 font-semibold">
+                <Settings2 className="w-4 h-4 text-slate-400" />
+                <span className="text-sm">고급 설정 (캘린더 표시)</span>
+              </div>
+              <motion.div animate={{ rotate: showAdvanced ? 180 : 0 }}>
+                <ChevronDown className="w-4 h-4 text-slate-400" />
+              </motion.div>
+            </button>
+            <AnimatePresence>
+              {showAdvanced && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: 'auto', opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  className="overflow-hidden border-t border-slate-100"
+                >
+                  <div className="p-4 space-y-4">
+                    
+                    {/* Master Toggle */}
+                    <label className="flex items-center justify-between cursor-pointer group">
+                      <span className="text-sm font-bold text-slate-700">나의 캘린더에 표시하기</span>
+                      <div className="relative flex items-center justify-center">
+                        <input type="checkbox" className="sr-only peer" checked={showInCalendar} onChange={(e) => setShowInCalendar(e.target.checked)} />
+                        <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-500"></div>
+                      </div>
+                    </label>
+
+                    {showInCalendar && (
+                      <div className="pt-3 border-t border-slate-200/60 space-y-4">
+                        {(preset === 'COUPLE' || preset === 'CUSTOM') && (
+                          <>
+                            <label className="flex items-center justify-between cursor-pointer group">
+                              <span className="text-sm font-medium text-slate-600">100일 단위 기념일 달력에 표시</span>
+                              <div className="relative flex items-center justify-center">
+                                <input type="checkbox" className="sr-only peer" checked={show100Days} onChange={(e) => setShow100Days(e.target.checked)} />
+                                <div className="w-9 h-5 bg-slate-200 rounded-full peer peer-checked:after:translate-x-full after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-indigo-500"></div>
+                              </div>
+                            </label>
+                            <label className="flex items-center justify-between cursor-pointer group">
+                              <span className="text-sm font-medium text-slate-600">주년 단위(1주년 등) 달력에 표시</span>
+                              <div className="relative flex items-center justify-center">
+                                <input type="checkbox" className="sr-only peer" checked={showYears} onChange={(e) => setShowYears(e.target.checked)} />
+                                <div className="w-9 h-5 bg-slate-200 rounded-full peer peer-checked:after:translate-x-full after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-indigo-500"></div>
+                              </div>
+                            </label>
+                          </>
+                        )}
+                        {preset === 'EXAM' && (
+                          <label className="flex items-center justify-between cursor-pointer group">
+                            <div className="flex flex-col">
+                              <span className="text-sm font-medium text-slate-600">디데이 당일만 표시 (D-Day)</span>
+                              <span className="text-xs text-slate-400 mt-0.5">D-10, D-30 등 중간 알람 숨기기</span>
+                            </div>
+                            <div className="relative flex items-center justify-center shrink-0">
+                              <input type="checkbox" className="sr-only peer" checked={showDDayOnly} onChange={(e) => setShowDDayOnly(e.target.checked)} />
+                              <div className="w-9 h-5 bg-slate-200 rounded-full peer peer-checked:after:translate-x-full after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-rose-500"></div>
+                            </div>
+                          </label>
+                        )}
+                        {preset === 'PAYDAY' && (
+                          <label className="flex items-center justify-between cursor-pointer group">
+                            <span className="text-sm font-medium text-slate-600">주말일 경우 직전 평일로 앞당기기</span>
+                            <div className="relative flex items-center justify-center shrink-0">
+                              <input type="checkbox" className="sr-only peer" checked={avoidWeekends} onChange={(e) => setAvoidWeekends(e.target.checked)} />
+                              <div className="w-9 h-5 bg-slate-200 rounded-full peer peer-checked:after:translate-x-full after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500"></div>
+                            </div>
+                          </label>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
+          
+          <div className="h-4"></div> {/* spacer for scroll */}
         </form>
+        
+        {/* Actions fixed at bottom */}
+        <div className="flex justify-end space-x-3 pt-6 border-t border-slate-100/60 shrink-0 bg-white">
+          <Button 
+            variant="ghost" 
+            type="button" 
+            onClick={onCancel} 
+            className="text-slate-500 hover:text-slate-800 font-semibold px-6 py-6 rounded-2xl"
+          >
+            취소
+          </Button>
+          <Button 
+            type="submit" 
+            onClick={handleSubmit}
+            className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-[0_8px_20px_-6px_rgba(79,70,229,0.5)] font-bold text-base px-8 py-6 rounded-2xl transition-all hover:scale-[1.02] active:scale-95"
+          >
+            {initialData ? '수정 완료' : '저장하기'}
+          </Button>
+        </div>
       </div>
     </motion.div>
   );
