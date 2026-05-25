@@ -2,6 +2,15 @@ import { addDays, addMonths, addYears, differenceInDays, format, getDay, isAfter
 import { Lunar, Solar } from 'lunar-javascript';
 export type AnniversaryPresetType = 'COUPLE' | 'BIRTHDAY' | 'LUNAR_BIRTHDAY' | 'EXAM' | 'PAYDAY' | 'CUSTOM';
 
+export const PRESET_THEMES: Record<AnniversaryPresetType, string> = {
+  COUPLE: '#9f1239', // Deep Velvet / Rose 800
+  BIRTHDAY: '#b45309', // Champagne Gold / Amber 700
+  LUNAR_BIRTHDAY: '#b45309', // Champagne Gold / Amber 700
+  EXAM: '#0369a1', // Steel Blue / Sky 700
+  PAYDAY: '#047857', // Emerald Forest / Emerald 700
+  CUSTOM: '#4338ca', // Royal Purple / Indigo 700
+};
+
 export type CalculationRule = {
   type: 'DAYS_COUNT' | 'D_DAY' | 'RECURRENCE';
   interval?: number;
@@ -71,7 +80,9 @@ export function calculateOverlays(anniversary: Anniversary, rangeStart: Date, ra
   // 마스터 토글 확인
   if (rule.options?.show_in_calendar === false) return [];
 
-  const createEvent = (date: Date, suffix: string, color: string = '#F43F5E'): OverlayEvent => {
+  const themeColor = PRESET_THEMES[anniversary.preset_type] || '#4338ca';
+
+  const createEvent = (date: Date, suffix: string): OverlayEvent => {
     // end_time을 당일 23:59:59로 설정해야 isEventOnDay의 eventEnd > dayStart 비교를 통과함
     const endOfDayDate = new Date(date);
     endOfDayDate.setHours(23, 59, 59, 999);
@@ -83,8 +94,8 @@ export function calculateOverlays(anniversary: Anniversary, rangeStart: Date, ra
       end_time: endOfDayDate.toISOString(),
       is_all_day: true,
       type: 'ANNIVERSARY_OVERLAY',
-      hex_color: color,
-      categories: [{ id: 'sys-anniversary', name: '기념일', hex_color: '#8B5CF6' }],
+      hex_color: themeColor,
+      categories: [{ id: 'sys-anniversary', name: '기념일', hex_color: themeColor }],
     };
   };
 
@@ -97,7 +108,7 @@ export function calculateOverlays(anniversary: Anniversary, rangeStart: Date, ra
         if (anniversaryYearDate >= rangeStart && anniversaryYearDate <= rangeEnd) {
           const diffYears = y - baseDate.getFullYear();
           if (diffYears > 0) {
-            events.push(createEvent(anniversaryYearDate, `${diffYears}주년`, '#EC4899')); // Pink
+            events.push(createEvent(anniversaryYearDate, `${diffYears}주년`));
           }
         }
       }
@@ -109,7 +120,7 @@ export function calculateOverlays(anniversary: Anniversary, rangeStart: Date, ra
       milestones.forEach(m => {
         const milestoneDate = addDays(baseDate, m - 1);
         if (milestoneDate >= rangeStart && milestoneDate <= rangeEnd) {
-          events.push(createEvent(milestoneDate, `${m}일`, '#F472B6')); // Lighter Pink
+          events.push(createEvent(milestoneDate, `${m}일`));
         }
       });
     }
@@ -118,7 +129,7 @@ export function calculateOverlays(anniversary: Anniversary, rangeStart: Date, ra
     // 0일부터 시작. base_date가 D-Day.
     // range 안에 D-day 당일이 있으면 추가
     if (baseDate >= rangeStart && baseDate <= rangeEnd) {
-      events.push(createEvent(baseDate, 'D-Day', '#EF4444')); // Red
+      events.push(createEvent(baseDate, 'D-Day'));
     }
     
     // D-10, D-30 등 주요 마일스톤
@@ -127,11 +138,11 @@ export function calculateOverlays(anniversary: Anniversary, rangeStart: Date, ra
       milestones.forEach(m => {
         const beforeDate = subDays(baseDate, m);
         if (beforeDate >= rangeStart && beforeDate <= rangeEnd) {
-          events.push(createEvent(beforeDate, `D-${m}`, '#FCA5A5'));
+          events.push(createEvent(beforeDate, `D-${m}`));
         }
         const afterDate = addDays(baseDate, m);
         if (afterDate >= rangeStart && afterDate <= rangeEnd) {
-          events.push(createEvent(afterDate, `D+${m}`, '#FCA5A5'));
+          events.push(createEvent(afterDate, `D+${m}`));
         }
       });
     }
@@ -158,7 +169,7 @@ export function calculateOverlays(anniversary: Anniversary, rangeStart: Date, ra
         }
 
         if (finalDate >= rangeStart && finalDate <= rangeEnd) {
-          events.push(createEvent(finalDate, '', '#10B981')); // Green for Payday/Monthly
+          events.push(createEvent(finalDate, ''));
         }
         
         cursor = addMonths(cursor, rule.interval || 1);
@@ -177,7 +188,7 @@ export function calculateOverlays(anniversary: Anniversary, rangeStart: Date, ra
         if (finalDate >= rangeStart && finalDate <= rangeEnd) {
           const diffYears = y - baseDate.getFullYear();
           const suffix = diffYears > 0 && anniversary.preset_type !== 'LUNAR_BIRTHDAY' && anniversary.preset_type !== 'BIRTHDAY' ? `${diffYears}주년` : '';
-          events.push(createEvent(finalDate, suffix, '#F59E0B')); // Amber
+          events.push(createEvent(finalDate, suffix));
         }
       }
     }

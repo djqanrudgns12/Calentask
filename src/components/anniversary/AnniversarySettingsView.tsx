@@ -1,12 +1,14 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { DynamicAnniversaryForm } from './DynamicAnniversaryForm';
-import { Plus, Trash2, Pencil } from 'lucide-react';
+import { AnniversaryTimeline } from './AnniversaryTimeline';
+import { Plus, Trash2, Pencil, LayoutGrid, List } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { createClient } from '@/lib/supabase/client';
 import { Anniversary } from '@/utils/anniversaryCalculator';
 
 export function AnniversarySettingsView() {
+  const [viewMode, setViewMode] = useState<'grid' | 'timeline'>('grid');
   const [isAdding, setIsAdding] = useState(false);
   const [editingAnn, setEditingAnn] = useState<Anniversary | null>(null);
   const supabase = createClient();
@@ -103,7 +105,26 @@ export function AnniversarySettingsView() {
                 exit={{ opacity: 0 }}
                 className="flex-1"
               >
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {/* Header Actions */}
+                <div className="flex justify-end mb-6 space-x-2">
+                  <button 
+                    onClick={() => setViewMode('grid')}
+                    className={`p-2 rounded-xl transition-colors ${viewMode === 'grid' ? 'bg-slate-200 text-slate-800' : 'text-slate-400 hover:bg-slate-100'}`}
+                    title="그리드 뷰"
+                  >
+                    <LayoutGrid className="w-5 h-5" />
+                  </button>
+                  <button 
+                    onClick={() => setViewMode('timeline')}
+                    className={`p-2 rounded-xl transition-colors ${viewMode === 'timeline' ? 'bg-slate-200 text-slate-800' : 'text-slate-400 hover:bg-slate-100'}`}
+                    title="타임라인 뷰"
+                  >
+                    <List className="w-5 h-5" />
+                  </button>
+                </div>
+
+                {viewMode === 'grid' ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   
                   {/* Add New Button Card */}
                   <motion.button
@@ -210,6 +231,15 @@ export function AnniversarySettingsView() {
                     );
                   })}
                 </div>
+                ) : (
+                  <div className="bg-slate-50/50 rounded-3xl p-6 border border-slate-100">
+                    <AnniversaryTimeline 
+                      anniversaries={anniversaries || []}
+                      onEdit={setEditingAnn}
+                      onDelete={(id) => deleteMutation.mutate(id)}
+                    />
+                  </div>
+                )}
               </motion.div>
             )}
           </AnimatePresence>
