@@ -2,10 +2,21 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { getActivities, getCategories, createActivity, updateActivity, deleteActivity, createCategory, updateCategory, deleteCategory, getDeletedActivities, restoreActivity, hardDeleteActivity, emptyTrash, searchActivities, type Activity, type Category } from '@/app/actions/calendar'
 import { getUserProfile, updateUserProfile } from '@/app/actions/profile'
 
+export const SYS_ANNIVERSARY_CATEGORY: Category = {
+  id: 'sys-anniversary',
+  name: '기념일',
+  hex_color: '#8B5CF6',
+  is_default: true,
+  user_id: 'system'
+}
+
 export function useCategories() {
   return useQuery({
     queryKey: ['categories'],
-    queryFn: () => getCategories(),
+    queryFn: async () => {
+      const data = await getCategories()
+      return [...data, SYS_ANNIVERSARY_CATEGORY]
+    },
   })
 }
 
