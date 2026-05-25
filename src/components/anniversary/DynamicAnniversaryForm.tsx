@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { AnniversaryPresetType } from '@/utils/anniversaryCalculator';
@@ -22,10 +22,12 @@ export function DynamicAnniversaryForm({ onSubmit, onCancel }: { onSubmit: (data
 
   const getPlaceholder = () => {
     switch(preset) {
-      case 'COUPLE': return '우리가 처음 만난 날';
-      case 'EXAM': return '수능 / 자격증 시험일';
-      case 'PAYDAY': return '월급날 (매월 며칠)';
-      case 'CUSTOM': return '금연한 지 (목표일)';
+      case 'COUPLE': return '누구와의 디데이인가요?';
+      case 'BIRTHDAY':
+      case 'LUNAR_BIRTHDAY': return '누구의 생일인가요?';
+      case 'EXAM': return '어떤 시험/디데이인가요?';
+      case 'PAYDAY': return '어떤 정기일인가요?';
+      case 'CUSTOM': return '어떤 기념일인가요?';
       default: return '기념일 이름';
     }
   };
@@ -52,6 +54,22 @@ export function DynamicAnniversaryForm({ onSubmit, onCancel }: { onSubmit: (data
   const formattedDate = baseDate 
     ? format(new Date(baseDate), 'yyyy년 M월 d일') 
     : '날짜를 선택해 주세요';
+
+  const dateInputRef = useRef<HTMLInputElement>(null);
+
+  const handleDateClick = () => {
+    if (dateInputRef.current) {
+      try {
+        if ('showPicker' in HTMLInputElement.prototype) {
+          dateInputRef.current.showPicker();
+        } else {
+          dateInputRef.current.focus();
+        }
+      } catch (e) {
+        dateInputRef.current.focus();
+      }
+    }
+  };
 
   return (
     <motion.div 
@@ -124,10 +142,11 @@ export function DynamicAnniversaryForm({ onSubmit, onCancel }: { onSubmit: (data
           {/* Date Field (Custom Masked UI) */}
           <div className="space-y-3">
             <label className="text-xs font-bold text-slate-400 tracking-wider uppercase ml-1">기준 날짜</label>
-            <div className="relative group cursor-pointer">
+            <div className="relative group cursor-pointer" onClick={handleDateClick}>
               {/* Actual Input (Invisible but interactive) */}
               <input 
-                type="date" 
+                type="date"
+                ref={dateInputRef}
                 value={baseDate}
                 onChange={(e) => setBaseDate(e.target.value)}
                 className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
