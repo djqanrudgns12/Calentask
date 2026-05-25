@@ -10,6 +10,7 @@ export type ActivityTemplate = {
   category_id: string
   duration_minutes: number
   hex_color?: string
+  memo?: string
 }
 
 export async function getActivityTemplates() {
@@ -36,11 +37,72 @@ export async function getActivityTemplates() {
     title: t.title,
     category_id: t.category_id,
     duration_minutes: t.duration_minutes,
-    hex_color: t.categories?.hex_color
+    hex_color: t.hex_color || t.categories?.hex_color,
+    memo: t.memo
   })) as ActivityTemplate[]
 }
 
-export async function createActivityFromTemplate(templateId: string, customDate?: Date) {
+export async function createActivityTemplate(payload: Omit<ActivityTemplate, 'id'>) {
+  const supabase = await createClient()
+  const { data: userData } = await supabase.auth.getUser()
+  if (!userData.user) throw new Error('Not authenticated')
+
+  const { data, error } = await supabase
+    .from('activity_templates')
+    .insert([{
+      user_id: userData.user.id,
+      title: payload.title,
+      category_id: payload.category_id,
+      duration_minutes: payload.duration_minutes,
+      hex_color: payload.hex_color || null,
+      memo: payload.memo || null
+    }])
+    .select()
+    .single()
+
+  if (error) throw new Error(error.message)
+  return data
+}
+
+export async function updateActivityTemplate(id: string, payload: Partial<Omit<ActivityTemplate, 'id'>>) {
+  const supabase = await createClient()
+  const { data: userData } = await supabase.auth.getUser()
+  if (!userData.user) throw new Error('Not authenticated')
+
+  const { data, error } = await supabase
+    .from('activity_templates')
+    .update({
+      title: payload.title,
+      category_id: payload.category_id,
+      duration_minutes: payload.duration_minutes,
+      hex_color: payload.hex_color !== undefined ? payload.hex_color : undefined,
+      memo: payload.memo !== undefined ? payload.memo : undefined
+    })
+    .eq('id', id)
+    .eq('user_id', userData.user.id)
+    .select()
+    .single()
+
+  if (error) throw new Error(error.message)
+  return data
+}
+
+export async function deleteActivityTemplate(id: string) {
+  const supabase = await createClient()
+  const { data: userData } = await supabase.auth.getUser()
+  if (!userData.user) throw new Error('Not authenticated')
+
+  const { error } = await supabase
+    .from('activity_templates')
+    .delete()
+    .eq('id', id)
+    .eq('user_id', userData.user.id)
+
+  if (error) throw new Error(error.message)
+  return true
+}
+
+export async function createActivityFromTemplate(templateId: string, customStartDate?: Date, customDurationMinutes?: number) {
   const supabase = await createClient()
   const { data: userData } = await supabase.auth.getUser()
   if (!userData.user) throw new Error('Not authenticated')
@@ -54,8 +116,9 @@ export async function createActivityFromTemplate(templateId: string, customDate?
 
   if (tmplError || !template) throw new Error('Template not found')
 
-  const start_time = customDate || new Date()
-  const end_time = new Date(start_time.getTime() + (template.duration_minutes * 60000))
+  const start_time = customStartDate || new Date()
+  const duration = customDurationMinutes ?? template.duration_minutes
+  const end_time = new Date(start_time.getTime() + (duration * 60000))
 
   // 1. Create activity
   const { data: activity, error: activityError } = await supabase
@@ -67,7 +130,9 @@ export async function createActivityFromTemplate(templateId: string, customDate?
       end_time: end_time.toISOString(),
       is_all_day: false,
       type: 'EVENT',
-      template_id: template.id
+      template_id: template.id,
+      memo: template.memo || null,
+      hex_color: template.hex_color || null
     }])
     .select()
     .single()

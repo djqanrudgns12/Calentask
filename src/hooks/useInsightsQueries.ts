@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { getActivityTemplates, createActivityFromTemplate, getInsightsData, getSubjectDetails } from '@/app/actions/insights'
+import { getActivityTemplates, createActivityTemplate, updateActivityTemplate, deleteActivityTemplate, createActivityFromTemplate, getInsightsData, getSubjectDetails } from '@/app/actions/insights'
+import type { ActivityTemplate } from '@/app/actions/insights'
 
 export function useActivityTemplates() {
   return useQuery({
@@ -11,7 +12,7 @@ export function useActivityTemplates() {
 export function useCreateActivityFromTemplate() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: ({ templateId, customDate }: { templateId: string, customDate?: Date }) => createActivityFromTemplate(templateId, customDate),
+    mutationFn: ({ templateId, customDate, durationMinutes }: { templateId: string, customDate?: Date, durationMinutes?: number }) => createActivityFromTemplate(templateId, customDate, durationMinutes),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['activities'] })
       queryClient.invalidateQueries({ queryKey: ['insights'] })
@@ -32,5 +33,35 @@ export function useSubjectDetails(subjectId: string, startDate: string, endDate:
     queryKey: ['subjectDetails', subjectId, startDate, endDate],
     queryFn: () => getSubjectDetails(subjectId, startDate, endDate),
     enabled: !!subjectId && !!startDate && !!endDate
+  })
+}
+
+export function useCreateTemplate() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (payload: Omit<ActivityTemplate, 'id'>) => createActivityTemplate(payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['activityTemplates'] })
+    }
+  })
+}
+
+export function useUpdateTemplate() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, payload }: { id: string, payload: Partial<Omit<ActivityTemplate, 'id'>> }) => updateActivityTemplate(id, payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['activityTemplates'] })
+    }
+  })
+}
+
+export function useDeleteTemplate() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (id: string) => deleteActivityTemplate(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['activityTemplates'] })
+    }
   })
 }

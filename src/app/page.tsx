@@ -133,7 +133,7 @@ export default function CalendarPage() {
 
           <button 
             onClick={() => setViewMode('insights')}
-            className={`text-left px-4 py-3 mt-6 rounded-2xl text-base font-bold transition-colors border flex items-center justify-between shadow-sm ${viewMode === 'insights' ? 'bg-gradient-to-r from-indigo-100 to-purple-100 text-indigo-800 border-indigo-200 shadow-md' : 'bg-gradient-to-r from-indigo-50 to-purple-50 text-indigo-700 border-indigo-100 hover:shadow-md'}`}
+            className={`text-left px-4 py-3 mt-6 rounded-2xl text-base font-bold transition-all border flex items-center justify-between ${viewMode === 'insights' ? 'bg-gradient-to-r from-indigo-100 to-purple-100 text-indigo-800 border-indigo-200 shadow-md' : 'bg-white text-slate-600 border-slate-200 hover:border-indigo-200 hover:text-indigo-600 hover:shadow-sm'}`}
           >
             <span>✨ 인사이트 대시보드</span>
           </button>

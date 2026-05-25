@@ -1,24 +1,31 @@
 "use client";
-import { Plus, Loader2 } from 'lucide-react';
+import { Settings2, Plus } from 'lucide-react';
 import { useState } from 'react';
-import { useCreateActivityFromTemplate } from '@/hooks/useInsightsQueries';
+import { SmartQuickAdjustPopup } from './SmartQuickAdjustPopup';
+import { TemplateManagementSheet } from './TemplateManagementSheet';
+import type { ActivityTemplate } from '@/app/actions/insights';
 
-export default function QuickAddCarousel({ templates }: { templates: any[] }) {
+export default function QuickAddCarousel({ templates }: { templates: ActivityTemplate[] }) {
+  const [selectedTemplate, setSelectedTemplate] = useState<ActivityTemplate | null>(null);
+  const [isPopupOpen, setIsPopupOpen] = useState(false);
+  const [isManagementOpen, setIsManagementOpen] = useState(false);
   const [showToast, setShowToast] = useState(false);
-  const mutation = useCreateActivityFromTemplate();
 
-  const handleAdd = (id: string) => {
-    mutation.mutate({ templateId: id }, {
-      onSuccess: () => {
-        setShowToast(true);
-        setTimeout(() => setShowToast(false), 3000);
-      }
-    });
-  }
+  const handleChipClick = (template: ActivityTemplate) => {
+    setSelectedTemplate(template);
+    setIsPopupOpen(true);
+  };
+
+  const handleSuccess = () => {
+    setShowToast(true);
+    setTimeout(() => setShowToast(false), 3000);
+  };
 
   return (
     <div className="mt-8 relative">
-      <h2 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">빠른 일정 등록</h2>
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-xs font-bold text-gray-400 uppercase tracking-widest">빠른 일정 등록</h2>
+      </div>
       
       {/* Hide scrollbar with inline styles */}
       <style dangerouslySetInnerHTML={{__html: `
@@ -29,35 +36,58 @@ export default function QuickAddCarousel({ templates }: { templates: any[] }) {
       <div className="flex overflow-x-auto gap-3 pb-4 hide-scroll -mx-6 px-6">
         {templates && templates.length > 0 ? (
           templates.map((item) => {
-            const color = item.hex_color || '#374151';
-            const bg = item.hex_color ? `${item.hex_color}1A` : '#F3F4F6';
+            const color = item.hex_color || '#4f46e5';
             
             return (
               <button 
                 key={item.id}
-                onClick={() => handleAdd(item.id)}
-                disabled={mutation.isPending}
-                style={{ backgroundColor: bg, color: color }}
-                className={`flex items-center gap-2 px-5 py-3.5 rounded-2xl text-sm font-bold whitespace-nowrap transition-transform active:scale-95 shadow-sm disabled:opacity-50 border-transparent`}
+                onClick={() => handleChipClick(item)}
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-full text-[13px] font-bold whitespace-nowrap transition-transform hover:scale-105 active:scale-95 shadow-sm border border-gray-100 bg-white hover:bg-gray-50`}
+                style={{ color: '#374151' }}
               >
-                {mutation.isPending ? <Loader2 size={18} className="animate-spin opacity-70" /> : <Plus size={18} className="opacity-70" />}
+                <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: color }} />
                 {item.title}
+                <div className="bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded text-[10px] ml-1">
+                  {item.duration_minutes}분
+                </div>
               </button>
             )
           })
         ) : (
-          <div className="text-sm text-gray-400 font-medium px-4 py-3 border border-dashed border-gray-300 rounded-xl w-full text-center">
-            등록된 템플릿이 없습니다.
+          <div className="text-[13px] text-gray-400 font-medium px-4 py-2.5 border border-dashed border-gray-300 rounded-full bg-gray-50">
+            템플릿을 등록해보세요
           </div>
         )}
+
+        <button 
+          onClick={() => setIsManagementOpen(true)}
+          className="flex items-center gap-1.5 px-4 py-2.5 rounded-full text-[13px] font-bold whitespace-nowrap transition-transform hover:scale-105 active:scale-95 bg-indigo-50 text-indigo-600 ml-1 shrink-0"
+        >
+          <Settings2 size={16} />
+          관리
+        </button>
       </div>
 
       {showToast && (
-        <div className="fixed bottom-24 left-1/2 transform -translate-x-1/2 bg-gray-900 text-white px-5 py-4 rounded-2xl shadow-xl flex items-center gap-3 text-sm font-medium z-50 animate-in fade-in slide-in-from-bottom-6">
-          <span>✅ 일정이 추가되었습니다.</span>
-          <button onClick={() => setShowToast(false)} className="text-gray-400 underline underline-offset-4 hover:text-white ml-3">닫기</button>
+        <div className="fixed bottom-24 left-1/2 transform -translate-x-1/2 bg-gray-900/90 backdrop-blur-sm text-white px-5 py-3.5 rounded-2xl shadow-xl flex items-center gap-3 text-sm font-medium z-50 animate-in fade-in slide-in-from-bottom-6">
+          <span>✅ 캘린더에 일정이 추가되었습니다.</span>
+          <button onClick={() => setShowToast(false)} className="text-gray-400 underline underline-offset-4 hover:text-white ml-2 text-xs">닫기</button>
         </div>
       )}
+
+      {/* 스마트 팝업 (칩 클릭 시) */}
+      <SmartQuickAdjustPopup 
+        isOpen={isPopupOpen}
+        onClose={() => setIsPopupOpen(false)}
+        template={selectedTemplate}
+        onSuccess={handleSuccess}
+      />
+
+      {/* 관리 시트 (관리 버튼 클릭 시) */}
+      <TemplateManagementSheet 
+        isOpen={isManagementOpen}
+        onClose={() => setIsManagementOpen(false)}
+      />
     </div>
   );
 }
