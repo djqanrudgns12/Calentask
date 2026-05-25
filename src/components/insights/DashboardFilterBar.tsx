@@ -3,47 +3,49 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
-import { Calendar as CalendarIcon, Check, ChevronDown, Filter } from 'lucide-react';
+import { Calendar as CalendarIcon, Check, ChevronDown, Filter, RotateCcw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Calendar } from '@/components/ui/calendar';
 import { Category } from '@/app/actions/calendar';
 import { DateRange } from 'react-day-picker';
+import { useInsightsFilterStore } from '@/store/useInsightsFilterStore';
 
 export type ActivityTypeFilter = 'ALL' | 'TASK' | 'EVENT';
 
 interface DashboardFilterBarProps {
-  period: 'week' | 'month' | 'year' | 'custom';
-  setPeriod: (period: 'week' | 'month' | 'year' | 'custom') => void;
-  dateRange: DateRange | undefined;
-  setDateRange: (range: DateRange | undefined) => void;
-  activityType: ActivityTypeFilter;
-  setActivityType: (type: ActivityTypeFilter) => void;
-  selectedCategoryIds: string[];
-  setSelectedCategoryIds: (ids: string[]) => void;
   categories: Category[];
 }
 
-export default function DashboardFilterBar({
-  period,
-  setPeriod,
-  dateRange,
-  setDateRange,
-  activityType,
-  setActivityType,
-  selectedCategoryIds,
-  setSelectedCategoryIds,
-  categories
-}: DashboardFilterBarProps) {
-  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+export default function DashboardFilterBar({ categories }: DashboardFilterBarProps) {
+  const {
+    period,
+    setPeriod,
+    customDateRange,
+    setCustomDateRange,
+    singleDate,
+    setSingleDate,
+    activityType,
+    setActivityType,
+    selectedCategoryIds,
+    setSelectedCategoryIds,
+    resetFilter
+  } = useInsightsFilterStore();
+
+  const [isSingleCalendarOpen, setIsSingleCalendarOpen] = useState(false);
+  const [isCustomCalendarOpen, setIsCustomCalendarOpen] = useState(false);
   const [isCategoryOpen, setIsCategoryOpen] = useState(false);
-  const calendarRef = useRef<HTMLDivElement>(null);
+  const singleCalendarRef = useRef<HTMLDivElement>(null);
+  const customCalendarRef = useRef<HTMLDivElement>(null);
   const categoryRef = useRef<HTMLDivElement>(null);
 
   // Close dropdowns on outside click
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
-      if (calendarRef.current && !calendarRef.current.contains(e.target as Node)) {
-        setIsCalendarOpen(false);
+      if (singleCalendarRef.current && !singleCalendarRef.current.contains(e.target as Node)) {
+        setIsSingleCalendarOpen(false);
+      }
+      if (customCalendarRef.current && !customCalendarRef.current.contains(e.target as Node)) {
+        setIsCustomCalendarOpen(false);
       }
       if (categoryRef.current && !categoryRef.current.contains(e.target as Node)) {
         setIsCategoryOpen(false);
@@ -78,7 +80,7 @@ export default function DashboardFilterBar({
             key={tab.id}
             onClick={() => setPeriod(tab.id)}
             className={cn(
-              "px-5 py-2.5 rounded-[14px] text-[14px] font-bold transition-all whitespace-nowrap flex-1",
+              "px-5 py-2.5 rounded-[14px] text-[14px] font-bold transition-all whitespace-nowrap",
               period === tab.id 
                 ? "bg-gray-900 text-white shadow-md" 
                 : "text-gray-500 hover:text-gray-900 hover:bg-gray-50"
@@ -88,63 +90,100 @@ export default function DashboardFilterBar({
           </button>
         ))}
 
+        <div className="w-px h-6 bg-gray-200 mx-1"></div>
+
+        {/* Single Date Picker */}
+        <div className="relative" ref={singleCalendarRef}>
+          <button
+            onClick={() => {
+              setPeriod('single');
+              setIsSingleCalendarOpen(!isSingleCalendarOpen);
+              setIsCustomCalendarOpen(false);
+            }}
+            className={cn(
+              "flex items-center justify-center gap-2 px-5 py-2.5 rounded-[14px] text-[14px] font-bold transition-all whitespace-nowrap",
+              period === 'single'
+                ? "bg-indigo-600 text-white shadow-md"
+                : "text-gray-500 hover:text-gray-900 hover:bg-gray-50"
+            )}
+          >
+            <CalendarIcon size={16} />
+            {period === 'single' && singleDate ? format(singleDate, "M/d (하루)") : "특정 일자"}
+          </button>
+          {isSingleCalendarOpen && (
+            <div className="absolute top-full right-0 mt-2 z-50 bg-white rounded-2xl shadow-2xl border border-gray-200 p-3 animate-in fade-in-0 zoom-in-95 min-w-[280px]">
+              <Calendar
+                mode="single"
+                defaultMonth={singleDate}
+                selected={singleDate}
+                onSelect={(date) => {
+                  if (date) setSingleDate(date);
+                  setIsSingleCalendarOpen(false);
+                }}
+                locale={ko}
+              />
+            </div>
+          )}
+        </div>
+
         {/* Custom Date Range Picker */}
-        <div className="relative flex-1" ref={calendarRef}>
+        <div className="relative" ref={customCalendarRef}>
           <button
             onClick={() => {
               setPeriod('custom');
-              setIsCalendarOpen(!isCalendarOpen);
+              setIsCustomCalendarOpen(!isCustomCalendarOpen);
+              setIsSingleCalendarOpen(false);
             }}
             className={cn(
-              "flex items-center justify-center gap-2 px-5 py-2.5 rounded-[14px] text-[14px] font-bold transition-all whitespace-nowrap w-full",
+              "flex items-center justify-center gap-2 px-5 py-2.5 rounded-[14px] text-[14px] font-bold transition-all whitespace-nowrap",
               period === 'custom'
                 ? "bg-gray-900 text-white shadow-md"
                 : "text-gray-500 hover:text-gray-900 hover:bg-gray-50"
             )}
           >
             <CalendarIcon size={16} />
-            {period === 'custom' && dateRange?.from ? (
-              dateRange.to ? (
-                dateRange.from.getTime() === dateRange.to.getTime() ? (
-                  format(dateRange.from, "M/d (하루)")
+            {period === 'custom' && customDateRange?.from ? (
+              customDateRange.to ? (
+                customDateRange.from.getTime() === customDateRange.to.getTime() ? (
+                  format(customDateRange.from, "M/d (하루)")
                 ) : (
                   <>
-                    {format(dateRange.from, "M/d")} - {format(dateRange.to, "M/d")}
+                    {format(customDateRange.from, "M/d")} - {format(customDateRange.to, "M/d")}
                   </>
                 )
               ) : (
-                format(dateRange.from, "M/d (하루)")
+                format(customDateRange.from, "M/d (하루)")
               )
             ) : (
-              "직접 설정"
+              "기간 설정"
             )}
           </button>
-          {isCalendarOpen && (
+          {isCustomCalendarOpen && (
             <div className="absolute top-full right-0 mt-2 z-50 bg-white rounded-2xl shadow-2xl border border-gray-200 p-3 animate-in fade-in-0 zoom-in-95 min-w-[280px]">
               <Calendar
                 mode="range"
-                defaultMonth={dateRange?.from}
-                selected={dateRange}
-                onSelect={setDateRange}
+                defaultMonth={customDateRange?.from}
+                selected={customDateRange}
+                onSelect={setCustomDateRange}
                 numberOfMonths={1}
                 locale={ko}
               />
               <div className="mt-3 pt-3 border-t border-gray-100 flex flex-col gap-2">
                 <div className="text-[13px] text-center font-semibold text-gray-600">
-                  {dateRange?.from ? (
-                    dateRange.to ? (
-                      dateRange.from.getTime() === dateRange.to.getTime()
-                        ? `${format(dateRange.from, "yyyy년 M월 d일")} (하루)`
-                        : `${format(dateRange.from, "M월 d일")} - ${format(dateRange.to, "M월 d일")}`
+                  {customDateRange?.from ? (
+                    customDateRange.to ? (
+                      customDateRange.from.getTime() === customDateRange.to.getTime()
+                        ? `${format(customDateRange.from, "yyyy년 M월 d일")} (하루)`
+                        : `${format(customDateRange.from, "M월 d일")} - ${format(customDateRange.to, "M월 d일")}`
                     ) : (
-                      `${format(dateRange.from, "yyyy년 M월 d일")} (하루)`
+                      `${format(customDateRange.from, "yyyy년 M월 d일")} (하루)`
                     )
                   ) : (
                     "조회할 날짜를 선택하세요"
                   )}
                 </div>
                 <button
-                  onClick={() => setIsCalendarOpen(false)}
+                  onClick={() => setIsCustomCalendarOpen(false)}
                   className="w-full py-2 bg-gray-900 text-white rounded-xl text-[13px] font-bold hover:bg-gray-800 transition-colors"
                 >
                   적용하기
@@ -153,6 +192,15 @@ export default function DashboardFilterBar({
             </div>
           )}
         </div>
+
+        {/* Reset Filter Button */}
+        <button
+          onClick={resetFilter}
+          className="flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-[14px] text-[14px] font-bold text-gray-400 hover:text-gray-900 hover:bg-gray-100 transition-all ml-auto shrink-0"
+          title="필터 초기화"
+        >
+          <RotateCcw size={16} />
+        </button>
       </div>
 
       {/* Advanced Filters (Type & Category) */}

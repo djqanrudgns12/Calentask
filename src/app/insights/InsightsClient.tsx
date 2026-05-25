@@ -3,20 +3,22 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useInsightsData, useActivityTemplates } from '@/hooks/useInsightsQueries';
 import { useCategories } from '@/hooks/useCalendarQueries';
+import { useInsightsFilterStore } from '@/store/useInsightsFilterStore';
 import WeeklySummaryCard from '@/components/insights/WeeklySummaryCard';
 import ActivityBreakdownGrid from '@/components/insights/ActivityBreakdownGrid';
 import QuickAddCarousel from '@/components/insights/QuickAddCarousel';
 import SubjectDetailSheet from '@/components/insights/SubjectDetailSheet';
-import DashboardFilterBar, { ActivityTypeFilter } from '@/components/insights/DashboardFilterBar';
+import DashboardFilterBar from '@/components/insights/DashboardFilterBar';
 import SmartInsightComment from '@/components/insights/SmartInsightComment';
 import ActivityHeatmap from '@/components/insights/ActivityHeatmap';
 import ActivityPunchCard from '@/components/insights/ActivityPunchCard';
 import AnnualGoalWidget from '@/components/insights/AnnualGoalWidget';
+import DDayWidget from '@/components/insights/DDayWidget';
 import { startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear, subDays, startOfDay, endOfDay, subMonths, subYears, differenceInDays } from 'date-fns';
 import { DateRange } from 'react-day-picker';
 import { Activity } from '@/app/actions/calendar';
 
-type PeriodType = 'week' | 'month' | 'year' | 'custom';
+type PeriodType = 'week' | 'month' | 'year' | 'single' | 'custom';
 
 function getPresetDateRange(period: PeriodType) {
   const now = new Date();
@@ -27,34 +29,47 @@ function getPresetDateRange(period: PeriodType) {
       return { from: startOfMonth(now), to: endOfMonth(now) };
     case 'year':
       return { from: startOfYear(now), to: endOfYear(now) };
+    case 'single':
+      return { from: now, to: now };
     case 'custom':
       return { from: subDays(now, 30), to: now };
   }
 }
 
 export default function InsightsClient() {
-  const [period, setPeriod] = useState<PeriodType>('week');
-  const [customDateRange, setCustomDateRange] = useState<DateRange | undefined>(getPresetDateRange('week'));
-  
-  const [activityType, setActivityType] = useState<ActivityTypeFilter>('ALL');
-  const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([]);
+  const {
+    period,
+    customDateRange,
+    singleDate,
+    activityType,
+    selectedCategoryIds,
+    setCustomDateRange
+  } = useInsightsFilterStore();
   
   const [selectedSubjectId, setSelectedSubjectId] = useState<string | null>(null);
 
   // When preset period changes, update customDateRange
   useEffect(() => {
-    if (period !== 'custom') {
+    if (period !== 'custom' && period !== 'single') {
       setCustomDateRange(getPresetDateRange(period));
     }
-  }, [period]);
+  }, [period, setCustomDateRange]);
 
-  const fromDate = customDateRange?.from ? startOfDay(customDateRange.from) : getPresetDateRange('week').from;
-  const toDate = customDateRange?.to ? endOfDay(customDateRange.to) : (customDateRange?.from ? endOfDay(customDateRange.from) : getPresetDateRange('week').to);
+  const fromDate = period === 'single' && singleDate
+    ? startOfDay(singleDate)
+    : customDateRange?.from ? startOfDay(customDateRange.from) : getPresetDateRange('week').from;
+    
+  const toDate = period === 'single' && singleDate
+    ? endOfDay(singleDate)
+    : customDateRange?.to ? endOfDay(customDateRange.to) : (customDateRange?.from ? endOfDay(customDateRange.from) : getPresetDateRange('week').to);
 
   // Calculate previous period dates for comparative analytics
   const { prevFromDate, prevToDate } = useMemo(() => {
     let prevFrom, prevTo;
-    if (period === 'week') {
+    if (period === 'single') {
+      prevFrom = subDays(fromDate, 1);
+      prevTo = subDays(toDate, 1);
+    } else if (period === 'week') {
       prevFrom = subDays(fromDate, 7);
       prevTo = subDays(toDate, 7);
     } else if (period === 'month') {
@@ -215,20 +230,7 @@ export default function InsightsClient() {
       )}
       
       <div className="relative z-10">
-        <DashboardFilterBar
-          period={period}
-          setPeriod={setPeriod}
-          dateRange={customDateRange}
-          setDateRange={(range) => {
-            setCustomDateRange(range);
-            if (period !== 'custom') setPeriod('custom');
-          }}
-        activityType={activityType}
-        setActivityType={setActivityType}
-        selectedCategoryIds={selectedCategoryIds}
-        setSelectedCategoryIds={setSelectedCategoryIds}
-        categories={categories}
-      />
+        <DashboardFilterBar categories={categories} />
 
       {isLoadingInsights ? (
         <div className="flex flex-col gap-6 animate-pulse">
@@ -252,7 +254,7 @@ export default function InsightsClient() {
               />
             </div>
             <div className="col-span-1 lg:col-span-4">
-              <AnnualGoalWidget />
+              {period === 'single' ? <DDayWidget /> : <AnnualGoalWidget />}
             </div>
             
             <div className="col-span-1 lg:col-span-7">
