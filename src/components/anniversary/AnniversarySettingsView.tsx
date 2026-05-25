@@ -14,7 +14,7 @@ export function AnniversarySettingsView() {
   const supabase = createClient();
   const queryClient = useQueryClient();
 
-  const { data: anniversaries, isLoading } = useQuery({
+  const { data: anniversaries } = useQuery({
     queryKey: ['anniversaries_list'],
     queryFn: async () => {
       const { data: userData } = await supabase.auth.getUser();
@@ -51,6 +51,7 @@ export function AnniversarySettingsView() {
   });
 
   const editMutation = useMutation({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     mutationFn: async (updatedAnn: any) => {
       const { data: userData } = await supabase.auth.getUser();
       const { error } = await supabase.from('anniversaries').update({

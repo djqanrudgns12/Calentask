@@ -1,5 +1,5 @@
 /* eslint-disable react-hooks/set-state-in-effect */
-/* eslint-disable @typescript-eslint/no-unused-vars */
+
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
@@ -27,8 +27,9 @@ function useKeyboardAwareDialog(isOpen: boolean) {
     const vv = window.visualViewport
     if (!vv) return
 
+    const el = dialogRef.current
+
     const handleResize = () => {
-      const el = dialogRef.current
       if (!el) return
 
       // visualViewport.height는 키보드가 올라오면 줄어든 실제 보이는 영역 높이
@@ -51,7 +52,6 @@ function useKeyboardAwareDialog(isOpen: boolean) {
       vv.removeEventListener('resize', handleResize)
       vv.removeEventListener('scroll', handleResize)
       // 정리: 스타일 초기화
-      const el = dialogRef.current
       if (el) {
         el.style.maxHeight = ''
         el.style.top = ''

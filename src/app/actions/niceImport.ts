@@ -43,7 +43,7 @@ export async function processNiceImport(
   const categoryColor = recordType === '출장' ? '#8B5CF6' : '#F97316' // 보라색 / 주황색
 
   let categoryId = ''
-  const { data: existingCat, error: catError } = await supabase
+  const { data: existingCat } = await supabase
     .from('categories')
     .select('id')
     .eq('user_id', userData.user.id)

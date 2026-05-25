@@ -1,5 +1,6 @@
 import { login } from '@/app/actions/auth'
 import { Button } from '@/components/ui/button'
+/* eslint-disable @next/next/no-img-element */
 import Link from 'next/link'
 
 export default async function LoginPage(

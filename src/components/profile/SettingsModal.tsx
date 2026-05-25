@@ -20,6 +20,7 @@ export function SettingsModal({ open, onOpenChange, initialTab = 'profile' }: Se
   // 모달이 열리거나 initialTab이 변경될 때 상태 동기화
   useEffect(() => {
     if (open && initialTab) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setActiveTab(initialTab)
     }
   }, [open, initialTab])

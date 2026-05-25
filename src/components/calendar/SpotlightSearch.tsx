@@ -7,6 +7,7 @@ import { useSearchActivities } from '@/hooks/useCalendarQueries'
 import { format } from 'date-fns'
 import { ko } from 'date-fns/locale'
 import { useCalendarStore } from '@/store/useCalendarStore'
+import { Activity } from '@/app/actions/calendar'
 
 interface SpotlightSearchProps {
   open: boolean
@@ -28,7 +29,7 @@ export function SpotlightSearch({ open, onOpenChange }: SpotlightSearchProps) {
 
   const { data: results, isLoading } = useSearchActivities(debouncedQuery)
 
-  const handleResultClick = (activity: any) => {
+  const handleResultClick = (activity: Activity) => {
     const eventDate = new Date(activity.start_time)
     
     // 1. 현재 뷰 모드에 따른 이동 처리

@@ -3,17 +3,19 @@
 import { format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, eachDayOfInterval, isSameMonth, isSameDay, addMonths } from 'date-fns'
 import { Activity } from '@/app/actions/calendar'
 import { isEventOnDay } from '@/lib/calendarUtils'
-import { getEventPrimaryColor, getEventBarGradient, getEventBgColor } from '@/lib/eventColor'
+import { getEventBarGradient, getEventBgColor } from '@/lib/eventColor'
 import { Pencil, Trash2 } from 'lucide-react'
 import { useCalendarStore } from '@/store/useCalendarStore'
 import { useSpecialDays } from '@/hooks/useSpecialDays'
+
+import React from 'react'
 
 interface SemesterViewProps {
   currentDate: Date
   events: Activity[]
 }
 
-export function SemesterView({ events }: SemesterViewProps) {
+export const SemesterView = React.memo(function SemesterView({ events }: SemesterViewProps) {
   const { 
     semesterYear, semesterTerm, openDaySummary, openEventDetail, openEditEvent, openDeleteConfirm, 
     showHolidays, showHolidaysAsTags,
@@ -120,8 +122,6 @@ export function SemesterView({ events }: SemesterViewProps) {
                               </div>
                             )}
                             {dayEvents.slice(0, (holidayName && showHolidaysAsTags) ? 1 : 2).map(event => {
-                              const primaryColor = getEventPrimaryColor(event)
-
                               return (
                                 <div
                                   key={event.id}
@@ -183,4 +183,4 @@ export function SemesterView({ events }: SemesterViewProps) {
       </div>
     </div>
   )
-}
+})

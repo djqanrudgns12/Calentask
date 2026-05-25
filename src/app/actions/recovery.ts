@@ -1,4 +1,4 @@
-﻿/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 'use server'
 
 import { createAdminClient } from '@/lib/supabase/server'
@@ -39,7 +39,7 @@ export async function findUsername(prevState: any, formData: FormData) {
     // 마스킹 처리된 아이디 반환 (여러 개일 수 있으나 첫 번째 계정 반환)
     const maskedId = maskUsername(users[0].username)
     return { success: true, username: maskedId }
-  } catch (error: any) {
+  } catch {
     return { error: '서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.', success: false }
   }
 }
@@ -93,7 +93,7 @@ export async function resetUserPassword(prevState: any, formData: FormData) {
     }
 
     return { success: true, message: '비밀번호가 성공적으로 변경되었습니다. 새 비밀번호로 로그인해주세요.' }
-  } catch (error: any) {
+  } catch {
     return { error: '서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.', success: false }
   }
 }

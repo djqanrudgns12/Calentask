@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { createClient } from '@/lib/supabase/client';
-import { Anniversary, calculateOverlays, OverlayEvent, PRESET_THEMES } from '@/utils/anniversaryCalculator';
+import { Anniversary, calculateOverlays, OverlayEvent } from '@/utils/anniversaryCalculator';
 import { startOfDay, addDays, differenceInDays } from 'date-fns';
 
 export function useUpcomingAnniversary() {

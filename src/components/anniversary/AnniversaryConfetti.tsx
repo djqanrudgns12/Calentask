@@ -36,6 +36,7 @@ export function AnniversaryConfetti() {
       };
 
       frame();
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setHasFired(true);
     }
   }, [data, hasFired]);
