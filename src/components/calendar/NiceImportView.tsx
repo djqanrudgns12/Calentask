@@ -122,15 +122,6 @@ export function NiceImportView() {
 
   return (
     <div className="flex flex-col h-full w-full max-w-4xl mx-auto py-8">
-      {/* 타이틀 및 헤더 */}
-      <div className="mb-8">
-        <h2 className="text-2xl font-bold text-slate-800">나이스 복무 불러오기</h2>
-        <p className="text-sm text-slate-500 mt-2">
-          나이스(NEIS)에서 다운로드한 '출장 목록' 또는 '근무상황목록' (CSV/XLSX) 파일을 업로드하세요.<br/>
-          결재 완료된 건만 자동으로 캘린더에 연동되며 중복 데이터는 방지됩니다.
-        </p>
-      </div>
-
       {/* 업로드 존 (Dropzone) */}
       <div 
         {...getRootProps()} 

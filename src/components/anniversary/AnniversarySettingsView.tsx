@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { DynamicAnniversaryForm } from './DynamicAnniversaryForm';
-import { Plus, CalendarHeart, Trash2 } from 'lucide-react';
+import { Plus, Trash2 } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { createClient } from '@/lib/supabase/client';
 import { Anniversary } from '@/utils/anniversaryCalculator';
@@ -53,16 +53,6 @@ export function AnniversarySettingsView() {
         className="h-full overflow-y-auto"
       >
         <div className="max-w-5xl mx-auto py-6 h-full flex flex-col">
-          <div className="flex items-center justify-between mb-8">
-            <div>
-              <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 flex items-center">
-                <CalendarHeart className="w-8 h-8 mr-3 text-blue-600" />
-                기념일 설정
-              </h1>
-              <p className="text-slate-500 mt-2 text-base">나만의 특별한 날들을 아름답게 기록하세요.</p>
-            </div>
-          </div>
-
           <AnimatePresence mode="wait">
             {isAdding ? (
               <motion.div 
