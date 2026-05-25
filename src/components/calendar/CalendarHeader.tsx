@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { format, subMonths, addMonths, subWeeks, addWeeks, startOfWeek, endOfWeek, isSameMonth, isSameYear } from 'date-fns'
-import { Menu, ChevronLeft, ChevronRight, Search, Sparkles, Bell, CalendarHeart } from 'lucide-react'
+import { Menu, ChevronLeft, ChevronRight, Search, Sparkles, Bell, CalendarHeart, Activity, BrainCircuit } from 'lucide-react'
 import { useCalendarStore } from '@/store/useCalendarStore'
 import { GlobalCategoryFilter } from '@/components/calendar/GlobalCategoryFilter'
 import { ProfileDropdown } from '@/components/profile/ProfileDropdown'
@@ -105,6 +105,7 @@ export function CalendarHeader({ onOpenSettings }: CalendarHeaderProps) {
   const isCalendarView = ['monthly', 'weekly', 'list', 'semester'].includes(viewMode)
   const isNiceImport = viewMode === 'nice_import'
   const isAnniversary = viewMode === 'anniversary'
+  const isInsights = viewMode === 'insights'
 
   let wrapperClassName = "flex-1 flex flex-col xl:flex-row items-center justify-between rounded-[2rem] px-3 py-2 md:px-4 md:py-2.5 gap-4 transition-all duration-500 overflow-hidden relative "
 
@@ -114,6 +115,8 @@ export function CalendarHeader({ onOpenSettings }: CalendarHeaderProps) {
     wrapperClassName += "bg-white/80 backdrop-blur-md shadow-[0_0_30px_-5px_rgba(99,102,241,0.15)] border border-indigo-100/50"
   } else if (isAnniversary) {
     wrapperClassName += "bg-white/80 backdrop-blur-md shadow-[0_0_30px_-5px_rgba(244,63,94,0.15)] border border-rose-100/50"
+  } else if (isInsights) {
+    wrapperClassName += "bg-slate-900/95 backdrop-blur-xl shadow-[0_10px_40px_-10px_rgba(99,102,241,0.4)] border border-indigo-500/30 text-white"
   }
 
   // --- Slots ---
@@ -165,6 +168,32 @@ export function CalendarHeader({ onOpenSettings }: CalendarHeaderProps) {
           <div className="flex flex-col">
             <h2 className="font-bold text-transparent bg-clip-text bg-gradient-to-r from-rose-600 to-pink-600 text-lg leading-tight tracking-tight">기념일 설정</h2>
             <p className="text-xs text-slate-500 font-medium">나만의 특별한 날들을 아름답게 기록하세요</p>
+          </div>
+        </motion.div>
+      )
+    }
+    if (isInsights) {
+      return (
+        <motion.div 
+          key="insights-left"
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={{ opacity: 0, x: -20 }}
+          className="flex items-center shrink-0 gap-4 py-1"
+        >
+          <div className="relative w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shrink-0 shadow-[0_0_20px_rgba(99,102,241,0.5)]">
+            <BrainCircuit className="w-6 h-6 text-white absolute z-10" />
+            <div className="absolute inset-0 bg-indigo-400 rounded-xl animate-ping opacity-30" />
+          </div>
+          <div className="flex flex-col">
+            <h2 className="font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-indigo-200 via-white to-purple-200 text-xl tracking-tight">인사이트 대시보드</h2>
+            <div className="flex items-center gap-2 mt-0.5">
+              <span className="relative flex w-2 h-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full w-2 h-2 bg-emerald-400"></span>
+              </span>
+              <p className="text-xs text-indigo-200/80 font-mono tracking-wider font-semibold">INSIGHT DASHBOARD ONLINE</p>
+            </div>
           </div>
         </motion.div>
       )
@@ -271,6 +300,9 @@ export function CalendarHeader({ onOpenSettings }: CalendarHeaderProps) {
             )}
             {isAnniversary && (
               <div className="absolute inset-0 bg-gradient-to-r from-rose-50/50 to-pink-50/50 pointer-events-none" />
+            )}
+            {isInsights && (
+              <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-indigo-900/40 via-transparent to-transparent pointer-events-none" />
             )}
 
             <div className="relative z-10 flex flex-col xl:flex-row w-full items-center justify-between gap-4">
