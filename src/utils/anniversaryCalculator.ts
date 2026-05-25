@@ -12,9 +12,9 @@ export const PRESET_THEMES: Record<AnniversaryPresetType, string> = {
 };
 
 export type CalculationRule = {
-  type: 'DAYS_COUNT' | 'D_DAY' | 'RECURRENCE';
+  type: 'DAYS_COUNT' | 'D_DAY' | 'RECURRENCE' | 'MONTHS_COUNT' | 'WEEKS_COUNT' | 'YEAR_MONTH_DAY';
   interval?: number;
-  unit?: 'YEAR' | 'MONTH' | 'WEEK' | 'DAY';
+  unit?: 'YEAR' | 'MONTH' | 'WEEK' | 'DAY' | 'LUNAR_YEAR';
   options?: {
     avoid_weekends?: boolean;
     milestones?: number[];
@@ -22,6 +22,8 @@ export type CalculationRule = {
     show_100_days?: boolean;
     show_years?: boolean;
     show_d_day_only?: boolean;
+    show_every_month?: boolean;
+    show_every_week?: boolean;
   };
 };
 
@@ -79,6 +81,7 @@ export function calculateOverlays(anniversary: Anniversary, rangeStart: Date, ra
 
   // 마스터 토글 확인
   if (rule.options?.show_in_calendar === false) return [];
+  if (rule.type === 'YEAR_MONTH_DAY') return []; // 연월일은 달력에 표시하지 않음 (안내됨)
 
   const themeColor = PRESET_THEMES[anniversary.preset_type] || '#4338ca';
 
@@ -148,9 +151,33 @@ export function calculateOverlays(anniversary: Anniversary, rangeStart: Date, ra
     }
 
   } else if (rule.type === 'RECURRENCE') {
-    if (rule.unit === 'MONTH') {
-      // 매월 반복 (예: 월급날)
-      // rangeStart보다 2개월 전부터 시작하여 avoid_weekends로 당겨진 날짜도 놓치지 않도록 함
+    const interval = rule.interval || 1;
+    
+    if (rule.unit === 'DAY' || rule.unit === 'WEEK') {
+      const stepDays = rule.unit === 'WEEK' ? interval * 7 : interval;
+      // 시작점 계산 (rangeStart 이전 가장 가까운 반복일 찾기)
+      // 최적화를 위해 차이 계산 후 cursor를 rangeStart 근처로 점프시킵니다.
+      const diffMs = rangeStart.getTime() - baseDate.getTime();
+      let jumpDays = 0;
+      if (diffMs > 0) {
+        const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+        jumpDays = Math.floor(diffDays / stepDays) * stepDays;
+      }
+      
+      let cursor = addDays(baseDate, jumpDays);
+      if (cursor < baseDate) cursor = new Date(baseDate);
+
+      // loop End
+      const loopEnd = new Date(rangeEnd);
+      
+      while (cursor <= loopEnd) {
+        if (cursor >= rangeStart && cursor <= rangeEnd) {
+          events.push(createEvent(cursor, ''));
+        }
+        cursor = addDays(cursor, stepDays);
+      }
+    } else if (rule.unit === 'MONTH') {
+      // 매월 반복
       const loopStart = new Date(rangeStart.getFullYear(), rangeStart.getMonth() - 2, 1);
       const loopEnd = new Date(rangeEnd.getFullYear(), rangeEnd.getMonth() + 2, 0);
       
@@ -158,28 +185,33 @@ export function calculateOverlays(anniversary: Anniversary, rangeStart: Date, ra
       
       while (cursor <= loopEnd) {
         const targetDay = baseDate.getDate();
-        // 해당 월의 마지막 날을 넘지 않도록 보정 (예: 31일인데 2월인 경우)
         const lastDayOfMonth = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 0).getDate();
         const safeDay = Math.min(targetDay, lastDayOfMonth);
         const monthDate = new Date(cursor.getFullYear(), cursor.getMonth(), safeDay);
         
-        let finalDate = monthDate;
-        if (rule.options?.avoid_weekends) {
-          finalDate = avoidWeekends(finalDate);
-        }
+        // interval 보정 로직 (baseDate로부터 경과 개월 수가 interval의 배수인지 확인)
+        const monthsDiff = (cursor.getFullYear() - baseDate.getFullYear()) * 12 + (cursor.getMonth() - baseDate.getMonth());
+        
+        if (monthsDiff >= 0 && monthsDiff % interval === 0) {
+          let finalDate = monthDate;
+          if (rule.options?.avoid_weekends) {
+            finalDate = avoidWeekends(finalDate);
+          }
 
-        if (finalDate >= rangeStart && finalDate <= rangeEnd) {
-          events.push(createEvent(finalDate, ''));
+          if (finalDate >= rangeStart && finalDate <= rangeEnd) {
+            events.push(createEvent(finalDate, ''));
+          }
         }
         
-        cursor = addMonths(cursor, rule.interval || 1);
+        cursor = addMonths(cursor, 1);
       }
-    } else if (rule.unit === 'YEAR') {
-      // 매년 반복 (예: 생일, 결혼기념일, 제사)
+    } else if (rule.unit === 'YEAR' || rule.unit === 'LUNAR_YEAR') {
+      // 매년 (또는 음력) 반복
       for (let y = rangeStart.getFullYear() - 1; y <= rangeEnd.getFullYear() + 1; y++) {
         let finalDate: Date;
         
-        if (anniversary.is_lunar) {
+        // 음력 반복은 LUNAR_YEAR 이거나 is_lunar가 켜져있을때
+        if (anniversary.is_lunar || rule.unit === 'LUNAR_YEAR') {
           finalDate = getSolarDateFromLunar(anniversary.base_date, y);
         } else {
           finalDate = new Date(y, baseDate.getMonth(), baseDate.getDate());
@@ -187,9 +219,53 @@ export function calculateOverlays(anniversary: Anniversary, rangeStart: Date, ra
 
         if (finalDate >= rangeStart && finalDate <= rangeEnd) {
           const diffYears = y - baseDate.getFullYear();
-          const suffix = diffYears > 0 && anniversary.preset_type !== 'LUNAR_BIRTHDAY' && anniversary.preset_type !== 'BIRTHDAY' ? `${diffYears}주년` : '';
-          events.push(createEvent(finalDate, suffix));
+          // interval 체크 (예: 2년마다)
+          if (diffYears >= 0 && diffYears % interval === 0) {
+            const suffix = diffYears > 0 && anniversary.preset_type !== 'LUNAR_BIRTHDAY' && anniversary.preset_type !== 'BIRTHDAY' ? `${diffYears}주년` : '';
+            events.push(createEvent(finalDate, suffix));
+          }
         }
+      }
+    }
+  } else if (rule.type === 'MONTHS_COUNT') {
+    if (rule.options?.show_every_month !== false) {
+      const loopStart = new Date(rangeStart.getFullYear(), rangeStart.getMonth() - 2, 1);
+      const loopEnd = new Date(rangeEnd.getFullYear(), rangeEnd.getMonth() + 2, 0);
+      let cursor = new Date(loopStart);
+      while (cursor <= loopEnd) {
+        const targetDay = baseDate.getDate();
+        const lastDayOfMonth = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 0).getDate();
+        const safeDay = Math.min(targetDay, lastDayOfMonth);
+        const monthDate = new Date(cursor.getFullYear(), cursor.getMonth(), safeDay);
+        
+        const monthsDiff = (cursor.getFullYear() - baseDate.getFullYear()) * 12 + (cursor.getMonth() - baseDate.getMonth());
+        
+        if (monthsDiff > 0 && monthDate >= rangeStart && monthDate <= rangeEnd) {
+          events.push(createEvent(monthDate, `${monthsDiff}개월`));
+        }
+        cursor = addMonths(cursor, 1);
+      }
+    }
+  } else if (rule.type === 'WEEKS_COUNT') {
+    if (rule.options?.show_every_week !== false) {
+      const diffMs = rangeStart.getTime() - baseDate.getTime();
+      let jumpWeeks = 0;
+      if (diffMs > 0) {
+        const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+        jumpWeeks = Math.floor(diffDays / 7);
+      }
+      let cursor = addDays(baseDate, jumpWeeks * 7);
+      if (cursor <= baseDate) cursor = addDays(baseDate, 7); // 1주차부터 표시
+
+      const loopEnd = new Date(rangeEnd);
+      while (cursor <= loopEnd) {
+        if (cursor >= rangeStart) {
+          const weeksDiff = Math.round((cursor.getTime() - baseDate.getTime()) / (1000 * 60 * 60 * 24 * 7));
+          if (weeksDiff > 0) {
+             events.push(createEvent(cursor, `${weeksDiff}주차`));
+          }
+        }
+        cursor = addDays(cursor, 7);
       }
     }
   }
