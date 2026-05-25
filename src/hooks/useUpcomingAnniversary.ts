@@ -27,6 +27,10 @@ export function useUpcomingAnniversary() {
       
       let allOverlays: OverlayEvent[] = [];
       (anniversaries as Anniversary[]).forEach(ann => {
+        // 사이드바 표시 여부 체크 (undefined면 true로 간주)
+        if (ann.calculation_rule?.options?.show_in_sidebar === false) {
+          return;
+        }
         const overlays = calculateOverlays(ann, today, oneYearLater);
         allOverlays = [...allOverlays, ...overlays];
       });

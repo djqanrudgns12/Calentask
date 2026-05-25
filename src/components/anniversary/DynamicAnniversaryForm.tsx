@@ -54,6 +54,7 @@ export const DynamicAnniversaryForm = React.memo(function DynamicAnniversaryForm
 
   // Advanced Settings State
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const [showInSidebar, setShowInSidebar] = useState(true);
   const [showInCalendar, setShowInCalendar] = useState(true);
   const [show100Days, setShow100Days] = useState(true);
   const [showYears, setShowYears] = useState(true);
@@ -81,6 +82,7 @@ export const DynamicAnniversaryForm = React.memo(function DynamicAnniversaryForm
       }
 
       const opts = rule.options || {};
+      if (opts.show_in_sidebar !== undefined) setShowInSidebar(opts.show_in_sidebar);
       if (opts.show_in_calendar !== undefined) setShowInCalendar(opts.show_in_calendar);
       if (opts.show_100_days !== undefined) setShow100Days(opts.show_100_days);
       if (opts.show_years !== undefined) setShowYears(opts.show_years);
@@ -127,17 +129,18 @@ export const DynamicAnniversaryForm = React.memo(function DynamicAnniversaryForm
     if (preset === 'CUSTOM' && customStep === 1) return;
     
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let calculation_rule: any = { type: 'DAYS_COUNT', options: { show_in_calendar: showInCalendar, show_100_days: show100Days, show_years: showYears } };
+    let calculation_rule: any = { type: 'DAYS_COUNT', options: { show_in_sidebar: showInSidebar, show_in_calendar: showInCalendar, show_100_days: show100Days, show_years: showYears } };
     
-    if (preset === 'EXAM') calculation_rule = { type: 'D_DAY', options: { show_in_calendar: showInCalendar, show_d_day_only: showDDayOnly } };
-    if (preset === 'PAYDAY') calculation_rule = { type: 'RECURRENCE', unit: 'MONTH', interval: 1, options: { show_in_calendar: showInCalendar, avoid_weekends: avoidWeekends } };
-    if (preset === 'BIRTHDAY' || preset === 'LUNAR_BIRTHDAY') calculation_rule = { type: 'RECURRENCE', unit: 'YEAR', interval: 1, options: { show_in_calendar: showInCalendar } };
+    if (preset === 'EXAM') calculation_rule = { type: 'D_DAY', options: { show_in_sidebar: showInSidebar, show_in_calendar: showInCalendar, show_d_day_only: showDDayOnly } };
+    if (preset === 'PAYDAY') calculation_rule = { type: 'RECURRENCE', unit: 'MONTH', interval: 1, options: { show_in_sidebar: showInSidebar, show_in_calendar: showInCalendar, avoid_weekends: avoidWeekends } };
+    if (preset === 'BIRTHDAY' || preset === 'LUNAR_BIRTHDAY') calculation_rule = { type: 'RECURRENCE', unit: 'YEAR', interval: 1, options: { show_in_sidebar: showInSidebar, show_in_calendar: showInCalendar } };
     
     if (preset === 'CUSTOM') {
       if (['D_DAY', 'DAYS_COUNT', 'MONTHS_COUNT', 'WEEKS_COUNT', 'YEAR_MONTH_DAY'].includes(customRuleType)) {
         calculation_rule = { 
           type: customRuleType, 
           options: { 
+            show_in_sidebar: showInSidebar,
             show_in_calendar: showInCalendar, 
             show_every_month: showEveryMonth, 
             show_every_week: showEveryWeek,
@@ -151,6 +154,7 @@ export const DynamicAnniversaryForm = React.memo(function DynamicAnniversaryForm
           unit: customRuleType,
           interval: customRuleType === 'LUNAR_YEAR' ? 1 : interval, // 음력반복은 주기 1 고정
           options: {
+            show_in_sidebar: showInSidebar,
             show_in_calendar: showInCalendar,
             avoid_weekends: avoidWeekends
           }
@@ -205,6 +209,21 @@ export const DynamicAnniversaryForm = React.memo(function DynamicAnniversaryForm
 
     return (
       <div className="p-4 space-y-4">
+        {/* 마스터 토글 1: 사이드바 위젯 표시 (항상 보임) */}
+        <label className="flex items-center justify-between cursor-pointer group pb-2">
+          <div className="flex flex-col">
+            <span className="text-sm font-bold text-slate-700">사이드바 위젯에 표시하기</span>
+            <span className="text-xs text-slate-400 mt-0.5">D-Day 위젯에 이 항목을 띄웁니다</span>
+          </div>
+          <div className="relative flex items-center justify-center shrink-0">
+            <input type="checkbox" className="sr-only peer" checked={showInSidebar} onChange={(e) => setShowInSidebar(e.target.checked)} />
+            <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-500"></div>
+          </div>
+        </label>
+        
+        <div className="w-full h-px bg-slate-100" />
+
+        {/* 마스터 토글 2: 캘린더 표시 */}
         <label className="flex items-center justify-between cursor-pointer group">
           <span className="text-sm font-bold text-slate-700">나의 캘린더에 표시하기</span>
           <div className="relative flex items-center justify-center">
