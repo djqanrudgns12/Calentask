@@ -10,6 +10,7 @@ import { Plus, Tags, Database, LogOut } from 'lucide-react'
 import { startOfWeek, endOfWeek } from 'date-fns'
 import { useActivities } from '@/hooks/useCalendarQueries'
 import type { Activity } from '@/app/actions/calendar'
+import { useRouter } from 'next/navigation'
 import { logout } from '@/app/actions/auth'
 import { useQueryClient } from '@tanstack/react-query'
 import { AddEventDialog } from '@/components/calendar/AddEventDialog'
@@ -40,6 +41,7 @@ export default function CalendarPage() {
   const [isTagsModalOpen, setIsTagsModalOpen] = useState(false)
   const [isDataHubModalOpen, setIsDataHubModalOpen] = useState(false)
   const queryClient = useQueryClient()
+  const router = useRouter()
   
   const { 
     currentDate, viewMode, setViewMode,
@@ -128,6 +130,13 @@ export default function CalendarPage() {
             className={`text-left px-4 ml-4 py-2 mt-1 rounded-xl text-sm transition-colors flex items-center ${viewMode === 'anniversary' ? 'bg-pink-50 text-pink-600 font-semibold' : 'text-slate-500 hover:bg-slate-50'}`}
           >
             <span className="mr-2 text-slate-400">↳</span> 기념일 설정
+          </button>
+
+          <button 
+            onClick={() => router.push('/insights')}
+            className={`text-left px-4 py-3 mt-6 rounded-2xl text-base font-bold transition-colors bg-gradient-to-r from-indigo-50 to-purple-50 text-indigo-700 hover:shadow-md border border-indigo-100 flex items-center justify-between shadow-sm`}
+          >
+            <span>✨ 인사이트 대시보드</span>
           </button>
         </div>
 
