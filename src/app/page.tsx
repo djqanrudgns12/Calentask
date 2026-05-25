@@ -10,7 +10,6 @@ import { Plus, Tags, Database, LogOut } from 'lucide-react'
 import { startOfWeek, endOfWeek } from 'date-fns'
 import { useActivities } from '@/hooks/useCalendarQueries'
 import type { Activity } from '@/app/actions/calendar'
-import { useRouter } from 'next/navigation'
 import { logout } from '@/app/actions/auth'
 import { useQueryClient } from '@tanstack/react-query'
 import { AddEventDialog } from '@/components/calendar/AddEventDialog'
@@ -33,6 +32,7 @@ import { UpcomingAgenda } from '@/components/calendar/UpcomingAgenda'
 import { UpcomingAnniversaryWidget } from '@/components/anniversary/UpcomingAnniversaryWidget'
 import { useAnniversaryOverlay } from '@/hooks/useAnniversaryOverlay'
 import { AnniversarySettingsView } from '@/components/anniversary/AnniversarySettingsView'
+import InsightsClient from '@/app/insights/InsightsClient'
 
 export default function CalendarPage() {
   const [mounted, setMounted] = useState(false)
@@ -41,7 +41,6 @@ export default function CalendarPage() {
   const [isTagsModalOpen, setIsTagsModalOpen] = useState(false)
   const [isDataHubModalOpen, setIsDataHubModalOpen] = useState(false)
   const queryClient = useQueryClient()
-  const router = useRouter()
   
   const { 
     currentDate, viewMode, setViewMode,
@@ -115,7 +114,7 @@ export default function CalendarPage() {
 
           <button 
             onClick={() => setViewMode('monthly')}
-            className={`text-left px-4 py-3 rounded-2xl text-base font-semibold transition-colors ${viewMode !== 'nice_import' ? 'bg-blue-50 text-blue-600' : 'text-slate-600 hover:bg-slate-100'}`}
+            className={`text-left px-4 py-3 rounded-2xl text-base font-semibold transition-colors ${viewMode !== 'nice_import' && viewMode !== 'insights' ? 'bg-blue-50 text-blue-600' : 'text-slate-600 hover:bg-slate-100'}`}
           >
             나의 캘린더
           </button>
@@ -133,8 +132,8 @@ export default function CalendarPage() {
           </button>
 
           <button 
-            onClick={() => router.push('/insights')}
-            className={`text-left px-4 py-3 mt-6 rounded-2xl text-base font-bold transition-colors bg-gradient-to-r from-indigo-50 to-purple-50 text-indigo-700 hover:shadow-md border border-indigo-100 flex items-center justify-between shadow-sm`}
+            onClick={() => setViewMode('insights')}
+            className={`text-left px-4 py-3 mt-6 rounded-2xl text-base font-bold transition-colors border flex items-center justify-between shadow-sm ${viewMode === 'insights' ? 'bg-gradient-to-r from-indigo-100 to-purple-100 text-indigo-800 border-indigo-200 shadow-md' : 'bg-gradient-to-r from-indigo-50 to-purple-50 text-indigo-700 border-indigo-100 hover:shadow-md'}`}
           >
             <span>✨ 인사이트 대시보드</span>
           </button>
@@ -184,6 +183,11 @@ export default function CalendarPage() {
           {viewMode === 'semester' && <SemesterView currentDate={currentDate} events={events} />}
           {viewMode === 'nice_import' && <NiceImportView />}
           {viewMode === 'anniversary' && <AnniversarySettingsView />}
+          {viewMode === 'insights' && (
+            <div className="min-h-full bg-[#FAFAFA] rounded-3xl p-6">
+              <InsightsClient />
+            </div>
+          )}
         </div>
       </main>
 

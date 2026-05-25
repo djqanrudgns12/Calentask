@@ -1,0 +1,179 @@
+'use server'
+
+import { createClient } from '@/lib/supabase/server'
+import { revalidatePath } from 'next/cache'
+import { getActivities, type Activity } from './calendar'
+
+export type ActivityTemplate = {
+  id: string
+  title: string
+  category_id: string
+  duration_minutes: number
+  hex_color?: string
+}
+
+export async function getActivityTemplates() {
+  const supabase = await createClient()
+  const { data: userData } = await supabase.auth.getUser()
+  if (!userData.user) throw new Error('Not authenticated')
+
+  const { data, error } = await supabase
+    .from('activity_templates')
+    .select(`
+      id,
+      title,
+      category_id,
+      duration_minutes,
+      categories ( hex_color )
+    `)
+    .eq('user_id', userData.user.id)
+    .order('created_at', { ascending: false })
+
+  if (error) throw new Error(error.message)
+
+  return data.map((t: any) => ({
+    id: t.id,
+    title: t.title,
+    category_id: t.category_id,
+    duration_minutes: t.duration_minutes,
+    hex_color: t.categories?.hex_color
+  })) as ActivityTemplate[]
+}
+
+export async function createActivityFromTemplate(templateId: string, customDate?: Date) {
+  const supabase = await createClient()
+  const { data: userData } = await supabase.auth.getUser()
+  if (!userData.user) throw new Error('Not authenticated')
+
+  // Fetch template
+  const { data: template, error: tmplError } = await supabase
+    .from('activity_templates')
+    .select('*')
+    .eq('id', templateId)
+    .single()
+
+  if (tmplError || !template) throw new Error('Template not found')
+
+  const start_time = customDate || new Date()
+  const end_time = new Date(start_time.getTime() + (template.duration_minutes * 60000))
+
+  // 1. Create activity
+  const { data: activity, error: activityError } = await supabase
+    .from('activities')
+    .insert([{
+      user_id: userData.user.id,
+      title: template.title,
+      start_time: start_time.toISOString(),
+      end_time: end_time.toISOString(),
+      is_all_day: false,
+      type: 'EVENT',
+      template_id: template.id
+    }])
+    .select()
+    .single()
+
+  if (activityError) throw new Error(activityError.message)
+
+  // 2. Map category
+  if (template.category_id) {
+    await supabase.from('activity_category_map').insert([{
+      activity_id: activity.id,
+      category_id: template.category_id
+    }])
+  }
+
+  revalidatePath('/')
+  return activity
+}
+
+export async function getInsightsData(startDate: string, endDate: string) {
+  // Use existing getActivities action to get all activities in period
+  const activities = await getActivities(startDate, endDate)
+  
+  // 1. Summary
+  let totalMinutes = 0
+  let totalCount = activities.length
+
+  // 2. Breakdown
+  const breakdown: Record<string, { minutes: number, count: number, name: string, hex_color: string }> = {}
+
+  // 3. Weekly Chart (Mon-Sun)
+  const days = ['월', '화', '수', '목', '금', '토', '일']
+  const weeklyData = days.map(day => ({ day, value: 0 }))
+
+  activities.forEach(act => {
+    const start = new Date(act.start_time)
+    const end = new Date(act.end_time)
+    const durationMins = (end.getTime() - start.getTime()) / 60000
+
+    totalMinutes += durationMins
+
+    // Chart logic (assuming current week or specific period)
+    const dayOfWeek = start.getDay() // 0=Sun, 1=Mon...
+    const adjustedDayIndex = dayOfWeek === 0 ? 6 : dayOfWeek - 1 // 0=Mon, 6=Sun
+    if (adjustedDayIndex >= 0 && adjustedDayIndex <= 6) {
+      weeklyData[adjustedDayIndex].value += Number((durationMins / 60).toFixed(1))
+    }
+
+    // Breakdown logic
+    if (act.categories && act.categories.length > 0) {
+      const cat = act.categories[0] // take first category for simplicity
+      if (!breakdown[cat.id]) {
+        breakdown[cat.id] = { minutes: 0, count: 0, name: cat.name, hex_color: cat.hex_color }
+      }
+      breakdown[cat.id].minutes += durationMins
+      breakdown[cat.id].count += 1
+    } else {
+      if (!breakdown['unclassified']) {
+        breakdown['unclassified'] = { minutes: 0, count: 0, name: '미분류', hex_color: '#9CA3AF' }
+      }
+      breakdown['unclassified'].minutes += durationMins
+      breakdown['unclassified'].count += 1
+    }
+  })
+
+  return {
+    summary: {
+      totalHours: Number((totalMinutes / 60).toFixed(1)),
+      totalCount
+    },
+    breakdown,
+    weeklyData,
+    rawData: activities
+  }
+}
+
+export async function getSubjectDetails(subjectId: string, startDate: string, endDate: string) {
+  // Get all activities for a specific category ID
+  const supabase = await createClient()
+  const { data: userData } = await supabase.auth.getUser()
+  if (!userData.user) throw new Error('Not authenticated')
+
+  const { data, error } = await supabase
+    .from('activities')
+    .select(`
+      *,
+      activity_category_map!inner ( category_id )
+    `)
+    .eq('user_id', userData.user.id)
+    .gte('start_time', startDate)
+    .lte('end_time', endDate)
+    .is('deleted_at', null)
+    .eq('activity_category_map.category_id', subjectId)
+    .order('start_time', { ascending: false })
+
+  if (error) throw new Error(error.message)
+
+  let totalMinutes = 0
+  data.forEach((act: any) => {
+    const start = new Date(act.start_time)
+    const end = new Date(act.end_time)
+    totalMinutes += (end.getTime() - start.getTime()) / 60000
+  })
+
+  return {
+    activities: data,
+    totalMinutes,
+    totalCount: data.length
+  }
+}

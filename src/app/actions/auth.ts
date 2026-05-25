@@ -32,7 +32,7 @@ export async function login(formData: FormData) {
   })
 
   if (error) {
-    return redirect('/login?error=아이디가 존재하지 않거나 비밀번호가 일치하지 않습니다.')
+    return redirect('/login?error=invalid_credentials')
   }
 
   revalidatePath('/', 'layout')
@@ -49,15 +49,15 @@ export async function signup(formData: FormData) {
   const recoveryEmail = formData.get('recoveryEmail') as string
   
   if (!fullName || !username || !password || !passwordConfirm) {
-    return redirect('/signup?error=모든 필수 항목을 입력해주세요.')
+    return redirect('/signup?error=missing_fields')
   }
 
   if (password.length < 8) {
-    return redirect('/signup?error=비밀번호는 8자 이상이어야 합니다.')
+    return redirect('/signup?error=password_too_short')
   }
 
   if (password !== passwordConfirm) {
-    return redirect('/signup?error=비밀번호가 일치하지 않습니다.')
+    return redirect('/signup?error=password_mismatch')
   }
 
   // 우회 로직: 아이디 -> 가짜 이메일 변환
@@ -76,7 +76,7 @@ export async function signup(formData: FormData) {
   })
 
   if (error) {
-    return redirect(`/signup?error=${encodeURIComponent(error.message)}`)
+    return redirect(`/signup?error=signup_failed`)
   }
 
   revalidatePath('/', 'layout')

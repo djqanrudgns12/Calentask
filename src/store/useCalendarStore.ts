@@ -2,7 +2,7 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { Activity, Category } from '@/app/actions/calendar'
 
-export type ViewMode = 'monthly' | 'weekly' | 'list' | 'semester' | 'nice_import' | 'anniversary'
+export type ViewMode = 'monthly' | 'weekly' | 'list' | 'semester' | 'nice_import' | 'anniversary' | 'insights'
 
 interface CalendarState {
   currentDate: Date
