@@ -30,6 +30,10 @@ export function AnniversarySettingsView() {
       queryClient.invalidateQueries({ queryKey: ['anniversaries_list'] });
       queryClient.invalidateQueries({ queryKey: ['anniversaries'] }); // overlay query
       setIsAdding(false);
+    },
+    onError: (err) => {
+      console.error('Mutation error:', err);
+      alert('저장 중 오류가 발생했습니다: ' + err.message);
     }
   });
 

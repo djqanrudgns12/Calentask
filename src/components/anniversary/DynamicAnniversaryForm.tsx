@@ -212,6 +212,7 @@ export function DynamicAnniversaryForm({ onSubmit, onCancel }: { onSubmit: (data
             </Button>
             <Button 
               type="submit" 
+              onClick={handleSubmit}
               className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-[0_8px_20px_-6px_rgba(79,70,229,0.5)] font-bold text-base px-8 py-6 rounded-2xl transition-all hover:scale-[1.02] active:scale-95"
             >
               저장하기
