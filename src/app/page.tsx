@@ -5,7 +5,7 @@
 import { useState, useEffect } from 'react'
 import { useCalendarStore } from '@/store/useCalendarStore'
 import { Button } from '@/components/ui/button'
-import { Plus, Tags, Database, LogOut } from 'lucide-react'
+import { Plus, Tags, Database, LogOut, Calendar as CalendarIcon, DownloadCloud, Gift, Sparkles } from 'lucide-react'
 
 import { startOfWeek, endOfWeek } from 'date-fns'
 import { useActivities } from '@/hooks/useCalendarQueries'
@@ -108,35 +108,75 @@ export default function CalendarPage() {
           </button>
         </div>
         
-        <div className="px-4 py-4 flex flex-col space-y-1">
+        <div className="px-4 py-6 flex flex-col space-y-3">
           {/* 다가오는 기념일 D-Day 위젯 (최상단) */}
           <UpcomingAnniversaryWidget />
 
-          <button 
-            onClick={() => setViewMode('monthly')}
-            className={`text-left px-4 py-3 rounded-2xl text-base font-semibold transition-colors ${viewMode !== 'nice_import' && viewMode !== 'insights' ? 'bg-blue-50 text-blue-600' : 'text-slate-600 hover:bg-slate-100'}`}
-          >
-            나의 캘린더
-          </button>
-          <button 
-            onClick={() => setViewMode('nice_import')}
-            className={`text-left px-4 ml-4 py-2 mt-1 rounded-xl text-sm transition-colors flex items-center ${viewMode === 'nice_import' ? 'bg-slate-100 text-slate-900 font-semibold' : 'text-slate-500 hover:bg-slate-50'}`}
-          >
-            <span className="mr-2 text-slate-400">↳</span> 나이스 복무 불러오기
-          </button>
-          <button 
-            onClick={() => setViewMode('anniversary')}
-            className={`text-left px-4 ml-4 py-2 mt-1 rounded-xl text-sm transition-colors flex items-center ${viewMode === 'anniversary' ? 'bg-pink-50 text-pink-600 font-semibold' : 'text-slate-500 hover:bg-slate-50'}`}
-          >
-            <span className="mr-2 text-slate-400">↳</span> 기념일 설정
-          </button>
+          <div className="flex flex-col space-y-1.5 mt-2">
+            <button 
+              onClick={() => setViewMode('monthly')}
+              className={`group relative w-full text-left px-4 py-3.5 rounded-2xl text-[15px] transition-all duration-300 ease-out flex items-center gap-3 ${
+                viewMode !== 'nice_import' && viewMode !== 'anniversary' && viewMode !== 'insights' 
+                ? 'bg-gradient-to-r from-blue-50/80 to-white text-blue-700 font-bold shadow-[0_2px_10px_-3px_rgba(59,130,246,0.2)] border border-blue-100 translate-y-[-1px]' 
+                : 'bg-transparent text-slate-500 hover:bg-white hover:shadow-sm hover:text-slate-900 border border-transparent'
+              }`}
+            >
+              {viewMode !== 'nice_import' && viewMode !== 'anniversary' && viewMode !== 'insights' && (
+                <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-blue-500 rounded-r-full shadow-[0_0_8px_rgba(59,130,246,0.6)]" />
+              )}
+              <CalendarIcon className={`w-5 h-5 transition-colors ${viewMode !== 'nice_import' && viewMode !== 'anniversary' && viewMode !== 'insights' ? 'text-blue-600' : 'text-slate-400 group-hover:text-blue-500'}`} />
+              나의 캘린더
+            </button>
 
-          <button 
-            onClick={() => setViewMode('insights')}
-            className={`text-left px-4 py-3 mt-6 rounded-2xl text-base font-bold transition-all border flex items-center justify-between ${viewMode === 'insights' ? 'bg-gradient-to-r from-indigo-100 to-purple-100 text-indigo-800 border-indigo-200 shadow-md' : 'bg-white text-slate-600 border-slate-200 hover:border-indigo-200 hover:text-indigo-600 hover:shadow-sm'}`}
-          >
-            <span>✨ 인사이트 대시보드</span>
-          </button>
+            <div className="flex flex-col space-y-1 mt-1.5">
+              <button 
+                onClick={() => setViewMode('nice_import')}
+                className={`w-[calc(100%-1.25rem)] ml-5 text-left px-4 py-2.5 rounded-xl text-sm transition-all duration-300 flex items-center gap-2.5 ${
+                  viewMode === 'nice_import' 
+                  ? 'bg-indigo-50/80 text-indigo-700 font-semibold shadow-sm border border-indigo-100/50' 
+                  : 'bg-transparent text-slate-400 hover:bg-white hover:shadow-sm hover:text-slate-700 border border-transparent'
+                }`}
+              >
+                <DownloadCloud className={`w-4 h-4 ${viewMode === 'nice_import' ? 'text-indigo-500' : 'text-slate-300'}`} />
+                나이스 복무 불러오기
+              </button>
+
+              <button 
+                onClick={() => setViewMode('anniversary')}
+                className={`w-[calc(100%-1.25rem)] ml-5 text-left px-4 py-2.5 rounded-xl text-sm transition-all duration-300 flex items-center gap-2.5 ${
+                  viewMode === 'anniversary' 
+                  ? 'bg-pink-50/80 text-pink-700 font-semibold shadow-sm border border-pink-100/50' 
+                  : 'bg-transparent text-slate-400 hover:bg-white hover:shadow-sm hover:text-slate-700 border border-transparent'
+                }`}
+              >
+                <Gift className={`w-4 h-4 ${viewMode === 'anniversary' ? 'text-pink-500' : 'text-slate-300'}`} />
+                기념일 설정
+              </button>
+            </div>
+          </div>
+
+          <div className="pt-4 mt-2 relative">
+            <div className="absolute inset-x-4 top-0 h-px bg-gradient-to-r from-transparent via-slate-200 to-transparent opacity-50" />
+            <button 
+              onClick={() => setViewMode('insights')}
+              className={`group relative w-full text-left px-4 py-3.5 rounded-2xl text-[15px] transition-all duration-300 overflow-hidden flex items-center justify-between ${
+                viewMode === 'insights' 
+                ? 'font-bold text-indigo-800 shadow-[0_4px_20px_-5px_rgba(99,102,241,0.3)] border border-indigo-200/50 scale-[1.02] bg-white' 
+                : 'font-medium text-slate-500 hover:bg-white hover:shadow-sm hover:text-slate-800 border border-transparent'
+              }`}
+            >
+              <div className={`absolute inset-0 opacity-20 transition-opacity duration-300 ${
+                viewMode === 'insights' 
+                ? 'bg-gradient-to-br from-indigo-400 via-purple-300 to-pink-300' 
+                : 'bg-gradient-to-br from-slate-100 to-slate-50 group-hover:opacity-40'
+              }`} />
+              
+              <div className="relative z-10 flex items-center gap-3">
+                <Sparkles className={`w-5 h-5 transition-transform duration-500 ${viewMode === 'insights' ? 'text-purple-500 rotate-12 scale-110' : 'text-slate-300 group-hover:text-purple-400'}`} />
+                <span>인사이트 대시보드</span>
+              </div>
+            </button>
+          </div>
         </div>
 
         {/* 다가오는 일정 타임라인 */}
