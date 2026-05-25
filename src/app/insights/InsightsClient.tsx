@@ -11,7 +11,8 @@ import DashboardFilterBar, { ActivityTypeFilter } from '@/components/insights/Da
 import SmartInsightComment from '@/components/insights/SmartInsightComment';
 import ActivityHeatmap from '@/components/insights/ActivityHeatmap';
 import ActivityPunchCard from '@/components/insights/ActivityPunchCard';
-import { startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear, subDays } from 'date-fns';
+import AnnualGoalWidget from '@/components/insights/AnnualGoalWidget';
+import { startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear, subDays, startOfDay, endOfDay, subMonths, subYears, differenceInDays } from 'date-fns';
 import { DateRange } from 'react-day-picker';
 import { Activity } from '@/app/actions/calendar';
 
@@ -47,10 +48,37 @@ export default function InsightsClient() {
     }
   }, [period]);
 
-  const startDateIso = customDateRange?.from ? customDateRange.from.toISOString() : getPresetDateRange('week').from.toISOString();
-  const endDateIso = customDateRange?.to ? customDateRange.to.toISOString() : (customDateRange?.from ? customDateRange.from.toISOString() : getPresetDateRange('week').to.toISOString());
+  const fromDate = customDateRange?.from ? startOfDay(customDateRange.from) : getPresetDateRange('week').from;
+  const toDate = customDateRange?.to ? endOfDay(customDateRange.to) : (customDateRange?.from ? endOfDay(customDateRange.from) : getPresetDateRange('week').to);
+
+  // Calculate previous period dates for comparative analytics
+  const { prevFromDate, prevToDate } = useMemo(() => {
+    let prevFrom, prevTo;
+    if (period === 'week') {
+      prevFrom = subDays(fromDate, 7);
+      prevTo = subDays(toDate, 7);
+    } else if (period === 'month') {
+      prevFrom = subMonths(fromDate, 1);
+      prevTo = subMonths(toDate, 1);
+    } else if (period === 'year') {
+      prevFrom = subYears(fromDate, 1);
+      prevTo = subYears(toDate, 1);
+    } else {
+      const diff = differenceInDays(toDate, fromDate) + 1;
+      prevFrom = subDays(fromDate, diff);
+      prevTo = subDays(toDate, diff);
+    }
+    return { prevFromDate: prevFrom, prevToDate: prevTo };
+  }, [period, fromDate, toDate]);
+
+  const startDateIso = fromDate.toISOString();
+  const endDateIso = toDate.toISOString();
+  const prevStartDateIso = prevFromDate.toISOString();
+  const prevEndDateIso = prevToDate.toISOString();
 
   const { data: insightsData, isLoading: isLoadingInsights } = useInsightsData(startDateIso, endDateIso);
+  const { data: prevInsightsData } = useInsightsData(prevStartDateIso, prevEndDateIso);
+
   const { data: templatesData } = useActivityTemplates();
   const { data: categoriesData } = useCategories();
 
@@ -131,16 +159,70 @@ export default function InsightsClient() {
     };
   }, [insightsData?.rawData, activityType, selectedCategoryIds]);
 
+  const prevProcessedData = useMemo(() => {
+    if (!prevInsightsData?.rawData) return null;
+    const rawActivities = prevInsightsData.rawData as Activity[];
+    
+    const filtered = rawActivities.filter(act => {
+      if (activityType !== 'ALL' && act.type !== activityType) return false;
+      if (selectedCategoryIds.length > 0) {
+        if (!act.categories || act.categories.length === 0) return false;
+        const hasMatchingCategory = act.categories.some(cat => selectedCategoryIds.includes(cat.id));
+        if (!hasMatchingCategory) return false;
+      }
+      return true;
+    });
+
+    let totalMinutes = 0;
+    filtered.forEach(act => {
+      const start = new Date(act.start_time);
+      const end = new Date(act.end_time);
+      totalMinutes += (end.getTime() - start.getTime()) / 60000;
+    });
+
+    return {
+      totalHours: Number((totalMinutes / 60).toFixed(1)),
+      totalCount: filtered.length
+    };
+  }, [prevInsightsData?.rawData, activityType, selectedCategoryIds]);
+
+
+  // Find top category for ambient theming
+  const topCategoryColor = useMemo(() => {
+    if (!processedData.breakdown) return null;
+    let topColor: string | null = null;
+    let maxMins = -1;
+    Object.values(processedData.breakdown).forEach(item => {
+      if (item.minutes > maxMins) {
+        maxMins = item.minutes;
+        topColor = item.hex_color;
+      }
+    });
+    return topColor;
+  }, [processedData.breakdown]);
+
   return (
-    <div className="mt-2 pb-10">
-      <DashboardFilterBar
-        period={period}
-        setPeriod={setPeriod}
-        dateRange={customDateRange}
-        setDateRange={(range) => {
-          setCustomDateRange(range);
-          if (period !== 'custom') setPeriod('custom');
-        }}
+    <div className="mt-2 pb-10 relative min-h-screen">
+      {/* Ambient Glow Background */}
+      {topCategoryColor && (
+        <div 
+          className="absolute top-[-100px] left-0 w-full h-[600px] pointer-events-none transition-all duration-1000 ease-in-out"
+          style={{
+            background: `radial-gradient(ellipse at 50% 0%, ${topCategoryColor}20 0%, transparent 70%)`,
+            zIndex: 0
+          }}
+        />
+      )}
+      
+      <div className="relative z-10">
+        <DashboardFilterBar
+          period={period}
+          setPeriod={setPeriod}
+          dateRange={customDateRange}
+          setDateRange={(range) => {
+            setCustomDateRange(range);
+            if (period !== 'custom') setPeriod('custom');
+          }}
         activityType={activityType}
         setActivityType={setActivityType}
         selectedCategoryIds={selectedCategoryIds}
@@ -162,19 +244,41 @@ export default function InsightsClient() {
         </div>
       ) : (
         <>
-          <SmartInsightComment activities={insightsData?.rawData as any || []} />
-          <WeeklySummaryCard 
-            totalHours={processedData.summary.totalHours} 
-            totalCount={processedData.summary.totalCount} 
-            chartData={processedData.weeklyData} 
-            period={period} 
-          />
-          <ActivityBreakdownGrid 
-            breakdown={processedData.breakdown} 
-            onSelectSubject={(id) => setSelectedSubjectId(id)} 
-          />
-          <ActivityHeatmap activities={insightsData?.rawData as any || []} />
-          <ActivityPunchCard activities={insightsData?.rawData as any || []} />
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            <div className="col-span-1 lg:col-span-8">
+              <SmartInsightComment 
+                activities={insightsData?.rawData as any || []} 
+                prevActivities={prevInsightsData?.rawData as any || []}
+              />
+            </div>
+            <div className="col-span-1 lg:col-span-4">
+              <AnnualGoalWidget />
+            </div>
+            
+            <div className="col-span-1 lg:col-span-7">
+              <WeeklySummaryCard 
+                totalHours={processedData.summary.totalHours} 
+                totalCount={processedData.summary.totalCount} 
+                prevTotalHours={prevProcessedData?.totalHours}
+                prevTotalCount={prevProcessedData?.totalCount}
+                chartData={processedData.weeklyData} 
+                period={period} 
+              />
+            </div>
+            <div className="col-span-1 lg:col-span-5">
+              <ActivityBreakdownGrid 
+                breakdown={processedData.breakdown} 
+                onSelectSubject={(id) => setSelectedSubjectId(id)} 
+              />
+            </div>
+
+            <div className="col-span-1 lg:col-span-6">
+              <ActivityHeatmap activities={insightsData?.rawData as any || []} />
+            </div>
+            <div className="col-span-1 lg:col-span-6">
+              <ActivityPunchCard activities={insightsData?.rawData as any || []} />
+            </div>
+          </div>
         </>
       )}
 
@@ -187,6 +291,7 @@ export default function InsightsClient() {
         endDate={endDateIso}
         breakdownInfo={selectedSubjectId && processedData.breakdown[selectedSubjectId] ? processedData.breakdown[selectedSubjectId] : null}
       />
+      </div>
     </div>
   );
 }

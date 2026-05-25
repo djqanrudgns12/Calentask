@@ -105,18 +105,22 @@ export default function DashboardFilterBar({
             <CalendarIcon size={16} />
             {period === 'custom' && dateRange?.from ? (
               dateRange.to ? (
-                <>
-                  {format(dateRange.from, "M/d")} - {format(dateRange.to, "M/d")}
-                </>
+                dateRange.from.getTime() === dateRange.to.getTime() ? (
+                  format(dateRange.from, "M/d (하루)")
+                ) : (
+                  <>
+                    {format(dateRange.from, "M/d")} - {format(dateRange.to, "M/d")}
+                  </>
+                )
               ) : (
-                format(dateRange.from, "M월 d일")
+                format(dateRange.from, "M/d (하루)")
               )
             ) : (
               "직접 설정"
             )}
           </button>
           {isCalendarOpen && (
-            <div className="absolute top-full right-0 mt-2 z-50 bg-white rounded-2xl shadow-2xl border border-gray-200 p-3 animate-in fade-in-0 zoom-in-95">
+            <div className="absolute top-full right-0 mt-2 z-50 bg-white rounded-2xl shadow-2xl border border-gray-200 p-3 animate-in fade-in-0 zoom-in-95 min-w-[280px]">
               <Calendar
                 mode="range"
                 defaultMonth={dateRange?.from}
@@ -125,6 +129,27 @@ export default function DashboardFilterBar({
                 numberOfMonths={1}
                 locale={ko}
               />
+              <div className="mt-3 pt-3 border-t border-gray-100 flex flex-col gap-2">
+                <div className="text-[13px] text-center font-semibold text-gray-600">
+                  {dateRange?.from ? (
+                    dateRange.to ? (
+                      dateRange.from.getTime() === dateRange.to.getTime()
+                        ? `${format(dateRange.from, "yyyy년 M월 d일")} (하루)`
+                        : `${format(dateRange.from, "M월 d일")} - ${format(dateRange.to, "M월 d일")}`
+                    ) : (
+                      `${format(dateRange.from, "yyyy년 M월 d일")} (하루)`
+                    )
+                  ) : (
+                    "조회할 날짜를 선택하세요"
+                  )}
+                </div>
+                <button
+                  onClick={() => setIsCalendarOpen(false)}
+                  className="w-full py-2 bg-gray-900 text-white rounded-xl text-[13px] font-bold hover:bg-gray-800 transition-colors"
+                >
+                  적용하기
+                </button>
+              </div>
             </div>
           )}
         </div>

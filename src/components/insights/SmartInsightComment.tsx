@@ -8,9 +8,10 @@ import { startOfDay, subDays } from 'date-fns';
 
 interface SmartInsightCommentProps {
   activities: Activity[];
+  prevActivities?: Activity[];
 }
 
-export default function SmartInsightComment({ activities }: SmartInsightCommentProps) {
+export default function SmartInsightComment({ activities, prevActivities }: SmartInsightCommentProps) {
   const insight = useMemo(() => {
     if (!activities || activities.length === 0) {
       return {
@@ -27,12 +28,11 @@ export default function SmartInsightComment({ activities }: SmartInsightCommentP
     const today = startOfDay(new Date());
     const uniqueDays = Array.from(new Set(
       activities.map(act => startOfDay(new Date(act.start_time)).getTime())
-    )).sort((a, b) => b - a); // descending
+    )).sort((a, b) => b - a);
 
     let currentStreak = 0;
     let checkDate = today.getTime();
 
-    // If today is not in uniqueDays, check if yesterday is.
     if (uniqueDays[0] !== checkDate) {
       checkDate = subDays(today, 1).getTime();
     }
@@ -73,8 +73,29 @@ export default function SmartInsightComment({ activities }: SmartInsightCommentP
     const topCategory = Object.values(categoryMinutes).sort((a, b) => b.mins - a.mins)[0];
     const totalHours = Math.round(totalMins / 60);
 
-    // 3. Generate Insights (Pick one randomly or based on priority)
+    // 3. Generate Insights
     const options = [];
+
+    // Option E: Deep Analytical (Growth)
+    if (prevActivities && prevActivities.length > 0) {
+      let prevTotalMins = 0;
+      prevActivities.forEach(act => {
+        prevTotalMins += (new Date(act.end_time).getTime() - new Date(act.start_time).getTime()) / 60000;
+      });
+      
+      const diffMins = totalMins - prevTotalMins;
+      const growthRate = prevTotalMins > 0 ? Math.round((diffMins / prevTotalMins) * 100) : 0;
+
+      if (growthRate >= 15 && topCategory) {
+        options.push({
+          icon: <TrendingUp className="text-indigo-500" size={20} />,
+          title: `이전 기간 대비 ${growthRate}% 몰입 상승! 📈`,
+          description: `지난 기간보다 몰입도가 ${growthRate}% 증가했습니다. 특히 '${topCategory.name}'에 전체 시간의 ${Math.round(topCategory.mins / totalMins * 100)}%를 집중하며 압도적인 딥워크를 보여주었습니다.`,
+          gradient: "from-indigo-50 to-blue-50",
+          textColor: "text-indigo-900"
+        });
+      }
+    }
 
     // Option A: Streak
     if (currentStreak >= 3) {

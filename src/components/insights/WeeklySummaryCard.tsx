@@ -72,7 +72,23 @@ function CustomTooltip({ active, payload, label }: any) {
   );
 }
 
-export default function WeeklySummaryCard({ totalHours, totalCount, chartData, period }: { totalHours: number, totalCount: number, chartData: any[], period: string }) {
+import { TrendingUp, TrendingDown } from 'lucide-react';
+
+export default function WeeklySummaryCard({ 
+  totalHours, 
+  totalCount, 
+  prevTotalHours,
+  prevTotalCount,
+  chartData, 
+  period 
+}: { 
+  totalHours: number; 
+  totalCount: number; 
+  prevTotalHours?: number;
+  prevTotalCount?: number;
+  chartData: any[]; 
+  period: string; 
+}) {
   const periodLabel = period === 'week' ? '이번 주 활동 요약' : period === 'month' ? '이번 달 활동 요약' : period === 'year' ? '올해 활동 요약' : '최근 조회 기간 요약';
   const openAddEvent = useCalendarStore((state) => state.openAddEvent);
 
@@ -81,12 +97,24 @@ export default function WeeklySummaryCard({ totalHours, totalCount, chartData, p
     return d === 0 ? 6 : d - 1;
   })();
 
+  const diffHours = prevTotalHours !== undefined ? totalHours - prevTotalHours : 0;
+  const diffPercent = prevTotalHours ? Math.round((diffHours / prevTotalHours) * 100) : (totalHours > 0 ? 100 : 0);
+  const isPositive = diffHours >= 0;
+
   return (
     <div className="bg-white rounded-[24px] p-6 shadow-sm border border-gray-100 flex flex-col justify-between w-full h-[280px]">
       <div>
-        <h3 className="text-gray-400 font-bold text-[13px] tracking-wider mb-1.5">
-          {periodLabel}
-        </h3>
+        <div className="flex items-center justify-between mb-1.5">
+          <h3 className="text-gray-400 font-bold text-[13px] tracking-wider">
+            {periodLabel}
+          </h3>
+          {prevTotalHours !== undefined && diffHours !== 0 && (
+            <div className={`flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full ${isPositive ? 'bg-red-50 text-red-500' : 'bg-blue-50 text-blue-500'}`}>
+              {isPositive ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
+              {Math.abs(diffPercent)}%
+            </div>
+          )}
+        </div>
         <div className="flex items-end gap-3">
           <div className="text-[44px] font-black text-gray-900 tracking-tighter leading-none">
             {totalHours}<span className="text-[24px] text-gray-300 font-bold ml-1">시간</span>
@@ -102,6 +130,16 @@ export default function WeeklySummaryCard({ totalHours, totalCount, chartData, p
         {chartData && chartData.length > 0 ? (
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={chartData} margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
+              <defs>
+                <linearGradient id="colorToday" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#60A5FA" stopOpacity={1} />
+                  <stop offset="100%" stopColor="#3B82F6" stopOpacity={1} />
+                </linearGradient>
+                <linearGradient id="colorNormal" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#E5E7EB" stopOpacity={1} />
+                  <stop offset="100%" stopColor="#D1D5DB" stopOpacity={1} />
+                </linearGradient>
+              </defs>
               <XAxis 
                 dataKey="day" 
                 axisLine={false} 
@@ -117,14 +155,14 @@ export default function WeeklySummaryCard({ totalHours, totalCount, chartData, p
               <Bar 
                 dataKey="value" 
                 radius={[6, 6, 6, 6]}
-                minPointSize={4} // 데이터가 0이어도 클릭/호버 가능하게 최소 높이 부여
-                onClick={(data) => {
-                  openAddEvent(); // 클릭 시 모달 열기
+                minPointSize={4}
+                onClick={() => {
+                  openAddEvent();
                 }}
                 className="cursor-pointer"
               >
                 {chartData.map((_entry, index) => (
-                  <Cell key={`cell-${index}`} fill={index === todayIdx ? '#3B82F6' : '#E5E7EB'} />
+                  <Cell key={`cell-${index}`} fill={index === todayIdx ? 'url(#colorToday)' : 'url(#colorNormal)'} />
                 ))}
               </Bar>
             </BarChart>
