@@ -23,7 +23,7 @@ async function signupAndLogin(page: Page, suffix: string) {
 // ============================================================
 async function openAnniversarySettings(page: Page) {
   await page.click('button:has-text("기념일 설정")');
-  await expect(page.locator('h1:has-text("기념일 설정")')).toBeVisible();
+  await expect(page.locator('text="새로운 기념일"').first()).toBeVisible();
 }
 
 // ============================================================
@@ -38,7 +38,7 @@ async function addAnniversary(
     isLunar?: boolean;
   }
 ) {
-  await page.click('button:has-text("새로운 기념일 추가")');
+  await page.click('button:has-text("새로운 기념일")');
   await expect(page.locator('h2:has-text("새로운 기념일 추가")')).toBeVisible();
 
   // 프리셋 선택
@@ -76,11 +76,9 @@ test.describe('1️⃣ Phase 3 - UI/UX 프리미엄 디자인 검증', () => {
     const overlay = page.locator('.backdrop-blur-3xl');
     await expect(overlay).toBeVisible();
 
-    // 서브타이틀 노출 확인
-    await expect(page.locator('text=나만의 특별한 날들을 아름답게 기록하세요.')).toBeVisible();
-
-    // "새로운 기념일 추가" 대시 보더 카드 존재
-    const addCard = page.locator('button:has-text("새로운 기념일 추가")');
+    // 서브타이틀 노출 확인 (삭제됨)
+    // "새로운 기념일 추가" 버튼 존재 확인
+    const addCard = page.locator('text="새로운 기념일"');
     await expect(addCard).toBeVisible();
 
     // 닫기 버튼(✕) 클릭으로 설정 뷰 닫힘
@@ -96,7 +94,7 @@ test.describe('2️⃣ Phase 3 - 동적 폼 상태 전환(Micro-Interaction) 검
   test('프리셋 버튼 클릭마다 placeholder가 동적으로 변경된다', async ({ page }) => {
     await signupAndLogin(page, 'form_ph');
     await openAnniversarySettings(page);
-    await page.click('button:has-text("새로운 기념일 추가")');
+    await page.click('button:has-text("새로운 기념일")');
 
     // COUPLE(기본)
     await expect(page.locator('input[placeholder="우리가 처음 만난 날"]')).toBeVisible();
@@ -121,7 +119,7 @@ test.describe('2️⃣ Phase 3 - 동적 폼 상태 전환(Micro-Interaction) 검
   test('BIRTHDAY 선택 시 음력 체크박스가 나타나고, 다른 프리셋으로 바꾸면 사라진다', async ({ page }) => {
     await signupAndLogin(page, 'form_lunar');
     await openAnniversarySettings(page);
-    await page.click('button:has-text("새로운 기념일 추가")');
+    await page.click('button:has-text("새로운 기념일")');
 
     // 초기(COUPLE) — 음력 체크박스 미노출
     await expect(page.locator('#lunar-check')).not.toBeVisible();
@@ -139,13 +137,13 @@ test.describe('2️⃣ Phase 3 - 동적 폼 상태 전환(Micro-Interaction) 검
   test('취소 버튼을 누르면 폼이 닫히고 그리드 뷰로 복귀한다', async ({ page }) => {
     await signupAndLogin(page, 'form_cancel');
     await openAnniversarySettings(page);
-    await page.click('button:has-text("새로운 기념일 추가")');
+    await page.click('button:has-text("새로운 기념일")');
     await expect(page.locator('h2:has-text("새로운 기념일 추가")')).toBeVisible();
 
     await page.click('button:has-text("취소")');
 
     // 그리드 뷰의 "새로운 기념일 추가" 버튼이 다시 보여야 함
-    await expect(page.locator('button:has-text("새로운 기념일 추가")')).toBeVisible({ timeout: 5000 });
+    await expect(page.locator('button:has-text("새로운 기념일")')).toBeVisible({ timeout: 5000 });
   });
 });
 
@@ -322,7 +320,7 @@ test.describe('7️⃣ Phase 1 - RLS 격리 (사용자 간 데이터 비노출)'
     await expect(pageB.locator('h3:has-text("A의비밀기념일")')).not.toBeVisible({ timeout: 3000 });
 
     // User B는 빈 목록(추가 버튼만 존재)만 보여야 함
-    await expect(pageB.locator('button:has-text("새로운 기념일 추가")')).toBeVisible();
+    await expect(pageB.locator('button:has-text("새로운 기념일")')).toBeVisible();
 
     await pageB.close();
     await contextB.close();
