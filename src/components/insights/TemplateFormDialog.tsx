@@ -103,8 +103,17 @@ export function TemplateFormDialog({ isOpen, onClose, editingTemplate }: Templat
   const getGradient = () => {
     if (customColor) return `linear-gradient(to right, ${customColor}, ${customColor})`
     if (categoryIds.length === 0) return 'linear-gradient(to right, #e2e8f0, #e2e8f0)'
-    const catColor = categories.find(c => c.id === categoryIds[0])?.hex_color || '#4f46e5'
-    return `linear-gradient(to right, ${catColor}, ${catColor})`
+    
+    const colors = categoryIds.map(id => {
+      const cat = categories.find(c => c.id === id)
+      return cat?.hex_color || '#4f46e5'
+    })
+    
+    if (colors.length === 1) return `linear-gradient(to right, ${colors[0]}, ${colors[0]})`
+    
+    const step = 100 / colors.length
+    const stops = colors.map((c, i) => `${c} ${i * step}%, ${c} ${(i + 1) * step}%`)
+    return `linear-gradient(to right, ${stops.join(', ')})`
   }
 
   const handleAddCategorySubmit = (e: React.FormEvent) => {
