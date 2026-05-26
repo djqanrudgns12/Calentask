@@ -116,6 +116,29 @@ export default function CalendarPage() {
           {/* 다가오는 기념일 D-Day 위젯 (최상단) */}
           <UpcomingAnniversaryWidget />
 
+          <div className="pb-3 mb-2 relative">
+            <button 
+              onClick={() => setViewMode('insights')}
+              className={`group relative w-full text-left px-4 py-3.5 rounded-2xl text-[15px] transition-all duration-300 overflow-hidden flex items-center justify-between ${
+                viewMode === 'insights' 
+                ? 'font-bold text-indigo-800 shadow-[0_4px_20px_-5px_rgba(99,102,241,0.3)] border border-indigo-200/50 scale-[1.02] bg-white' 
+                : 'font-medium text-slate-500 hover:bg-white hover:shadow-sm hover:text-slate-800 border border-transparent'
+              }`}
+            >
+              <div className={`absolute inset-0 opacity-20 transition-opacity duration-300 ${
+                viewMode === 'insights' 
+                ? 'bg-gradient-to-br from-indigo-400 via-purple-300 to-pink-300' 
+                : 'bg-gradient-to-br from-slate-100 to-slate-50 group-hover:opacity-40'
+              }`} />
+              
+              <div className="relative z-10 flex items-center gap-3">
+                <Sparkles className={`w-5 h-5 transition-transform duration-500 ${viewMode === 'insights' ? 'text-purple-500 rotate-12 scale-110' : 'text-slate-300 group-hover:text-purple-400'}`} />
+                <span>인사이트 대시보드</span>
+              </div>
+            </button>
+            <div className="absolute inset-x-4 bottom-0 h-px bg-gradient-to-r from-transparent via-slate-200 to-transparent opacity-50" />
+          </div>
+
           <div className="flex flex-col space-y-1.5 mt-2">
             <button 
               onClick={() => {
@@ -188,28 +211,6 @@ export default function CalendarPage() {
             </AnimatePresence>
           </div>
 
-          <div className="pt-4 mt-2 relative">
-            <div className="absolute inset-x-4 top-0 h-px bg-gradient-to-r from-transparent via-slate-200 to-transparent opacity-50" />
-            <button 
-              onClick={() => setViewMode('insights')}
-              className={`group relative w-full text-left px-4 py-3.5 rounded-2xl text-[15px] transition-all duration-300 overflow-hidden flex items-center justify-between ${
-                viewMode === 'insights' 
-                ? 'font-bold text-indigo-800 shadow-[0_4px_20px_-5px_rgba(99,102,241,0.3)] border border-indigo-200/50 scale-[1.02] bg-white' 
-                : 'font-medium text-slate-500 hover:bg-white hover:shadow-sm hover:text-slate-800 border border-transparent'
-              }`}
-            >
-              <div className={`absolute inset-0 opacity-20 transition-opacity duration-300 ${
-                viewMode === 'insights' 
-                ? 'bg-gradient-to-br from-indigo-400 via-purple-300 to-pink-300' 
-                : 'bg-gradient-to-br from-slate-100 to-slate-50 group-hover:opacity-40'
-              }`} />
-              
-              <div className="relative z-10 flex items-center gap-3">
-                <Sparkles className={`w-5 h-5 transition-transform duration-500 ${viewMode === 'insights' ? 'text-purple-500 rotate-12 scale-110' : 'text-slate-300 group-hover:text-purple-400'}`} />
-                <span>인사이트 대시보드</span>
-              </div>
-            </button>
-          </div>
         </div>
 
         {/* 다가오는 일정 타임라인 */}
