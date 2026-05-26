@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { getActivities, getCategories, createActivity, updateActivity, deleteActivity, createCategory, updateCategory, deleteCategory, getDeletedActivities, restoreActivity, hardDeleteActivity, emptyTrash, searchActivities, type Activity, type Category } from '@/app/actions/calendar'
+import { getActivities, getCategories, createActivity, updateActivity, deleteActivity, createCategory, updateCategory, deleteCategory, getDeletedActivities, restoreActivity, hardDeleteActivity, emptyTrash, searchActivities, getCategoryPresets, createCategoryPreset, updateCategoryPreset, deleteCategoryPreset, type Activity, type Category, type CategoryPreset } from '@/app/actions/calendar'
 import { getUserProfile, updateUserProfile } from '@/app/actions/profile'
 
 export const SYS_ANNIVERSARY_CATEGORY: Category = {
@@ -94,6 +94,43 @@ export function useDeleteCategory() {
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['categories'] })
+    }
+  })
+}
+
+export function useCategoryPresets() {
+  return useQuery({
+    queryKey: ['category_presets'],
+    queryFn: () => getCategoryPresets(),
+  })
+}
+
+export function useCreateCategoryPreset() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ name, categoryIds }: { name: string, categoryIds: string[] }) => createCategoryPreset(name, categoryIds),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['category_presets'] })
+    }
+  })
+}
+
+export function useUpdateCategoryPreset() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, name }: { id: string, name: string }) => updateCategoryPreset(id, name),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['category_presets'] })
+    }
+  })
+}
+
+export function useDeleteCategoryPreset() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (id: string) => deleteCategoryPreset(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['category_presets'] })
     }
   })
 }

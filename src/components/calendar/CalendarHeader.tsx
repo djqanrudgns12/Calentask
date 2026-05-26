@@ -5,6 +5,7 @@ import { format, subMonths, addMonths, subWeeks, addWeeks, startOfWeek, endOfWee
 import { Menu, ChevronLeft, ChevronRight, Search, Sparkles, Bell, CalendarHeart, Activity, BrainCircuit } from 'lucide-react'
 import { useCalendarStore } from '@/store/useCalendarStore'
 import { GlobalCategoryFilter } from '@/components/calendar/GlobalCategoryFilter'
+import { CategoryPresetMenu } from '@/components/calendar/CategoryPresetMenu'
 import { ProfileDropdown } from '@/components/profile/ProfileDropdown'
 import { DatePickerPopover } from '@/components/calendar/DatePickerPopover'
 import { SpotlightSearch } from '@/components/calendar/SpotlightSearch'
@@ -249,16 +250,31 @@ export function CalendarHeader({ onOpenSettings }: CalendarHeaderProps) {
 
   const renderRightSlot = () => {
     return (
-      <div className={`flex items-center justify-end gap-2 shrink-0 ${isCalendarView ? 'xl:border-l xl:border-slate-100 xl:pl-4' : ''}`}>
+      <div className="flex items-center justify-end gap-1 sm:gap-2 shrink-0">
         <AnimatePresence mode="popLayout">
           {isCalendarView && (
             <motion.div
-              key="cal-actions"
+              key="cal-actions-presets"
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.8 }}
-              className="flex items-center gap-2"
+              className="flex items-center mr-1"
             >
+              <CategoryPresetMenu />
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        <div className={`flex items-center justify-end gap-2 shrink-0 ${isCalendarView ? 'xl:border-l xl:border-slate-100 xl:pl-4' : ''}`}>
+          <AnimatePresence mode="popLayout">
+            {isCalendarView && (
+              <motion.div
+                key="cal-actions"
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.8 }}
+                className="flex items-center gap-2"
+              >
               <button 
                 onClick={() => setIsSearchOpen(true)}
                 className="p-2 rounded-full text-slate-500 hover:text-slate-800 hover:bg-slate-50 transition-colors group"
@@ -278,8 +294,9 @@ export function CalendarHeader({ onOpenSettings }: CalendarHeaderProps) {
           )}
         </AnimatePresence>
 
-        <div className="hidden sm:block ml-1">
-          <ProfileDropdown onOpenSettings={onOpenSettings} />
+          <div className="hidden sm:block ml-1">
+            <ProfileDropdown onOpenSettings={onOpenSettings} />
+          </div>
         </div>
       </div>
     )

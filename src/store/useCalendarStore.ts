@@ -8,6 +8,8 @@ interface CalendarState {
   currentDate: Date
   viewMode: ViewMode
   activeCategories: string[]
+  activePresetId: string | null
+  activePresetName: string | null
   semesterYear: number
   semesterTerm: 1 | 2
   isAddEventOpen: boolean
@@ -25,6 +27,7 @@ interface CalendarState {
   setCurrentDate: (date: Date) => void
   setViewMode: (mode: ViewMode) => void
   setActiveCategories: (categories: string[]) => void
+  setActivePreset: (id: string | null, name: string | null) => void
   setSemesterYear: (year: number) => void
   setSemesterTerm: (term: 1 | 2) => void
   openAddEvent: (date?: Date) => void
@@ -52,6 +55,8 @@ export const useCalendarStore = create<CalendarState>()(
       currentDate: new Date(),
       viewMode: 'monthly',
       activeCategories: [], // Empty means all categories
+      activePresetId: null,
+      activePresetName: null,
       semesterYear: new Date().getFullYear(),
       semesterTerm: new Date().getMonth() >= 2 && new Date().getMonth() <= 7 ? 1 : 2,
       isAddEventOpen: false,
@@ -68,7 +73,8 @@ export const useCalendarStore = create<CalendarState>()(
       selectedEventDetail: null,
       setCurrentDate: (date) => set({ currentDate: date }),
       setViewMode: (mode) => set({ viewMode: mode }),
-      setActiveCategories: (categories) => set({ activeCategories: categories }),
+      setActiveCategories: (categories) => set({ activeCategories: categories, activePresetId: null, activePresetName: null }),
+      setActivePreset: (id, name) => set({ activePresetId: id, activePresetName: name }),
       setSemesterYear: (year) => set({ semesterYear: year }),
       setSemesterTerm: (term) => set({ semesterTerm: term }),
       openAddEvent: (date) => set({ isAddEventOpen: true, addEventDate: date || null, editingEvent: null, selectedDaySummary: null, selectedEventDetail: null }),
@@ -92,6 +98,8 @@ export const useCalendarStore = create<CalendarState>()(
         currentDate: state.currentDate,
         viewMode: state.viewMode,
         activeCategories: state.activeCategories,
+        activePresetId: state.activePresetId,
+        activePresetName: state.activePresetName,
         semesterYear: state.semesterYear,
         semesterTerm: state.semesterTerm,
         showHolidays: state.showHolidays,
@@ -116,6 +124,8 @@ export const useCalendarStore = create<CalendarState>()(
         currentDate: state.currentDate,
         viewMode: state.viewMode,
         activeCategories: state.activeCategories,
+        activePresetId: state.activePresetId,
+        activePresetName: state.activePresetName,
         semesterYear: state.semesterYear,
         semesterTerm: state.semesterTerm,
         showHolidays: state.showHolidays,

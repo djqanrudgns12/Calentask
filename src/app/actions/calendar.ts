@@ -26,6 +26,13 @@ export type Category = {
   is_default: boolean
 }
 
+export type CategoryPreset = {
+  id: string
+  user_id: string
+  name: string
+  category_ids: string[]
+}
+
 // 카테고리 가져오기
 export async function getCategories() {
   const supabase = await createClient()
@@ -89,6 +96,68 @@ export async function updateCategory(id: string, name: string, hexColor: string)
 
   if (error) throw new Error(error.message)
   return data as Category
+}
+
+// 카테고리 프리셋 가져오기
+export async function getCategoryPresets() {
+  const supabase = await createClient()
+  const { data, error } = await supabase
+    .from('category_presets')
+    .select('*')
+    .order('created_at', { ascending: true })
+
+  if (error) throw new Error(error.message)
+  return data as CategoryPreset[]
+}
+
+// 카테고리 프리셋 생성
+export async function createCategoryPreset(name: string, categoryIds: string[]) {
+  const supabase = await createClient()
+  const { data: userData } = await supabase.auth.getUser()
+  if (!userData.user) throw new Error('Not authenticated')
+
+  const { data, error } = await supabase
+    .from('category_presets')
+    .insert([{ user_id: userData.user.id, name, category_ids: categoryIds }])
+    .select()
+    .single()
+
+  if (error) throw new Error(error.message)
+  return data as CategoryPreset
+}
+
+// 카테고리 프리셋 수정
+export async function updateCategoryPreset(id: string, name: string) {
+  const supabase = await createClient()
+  const { data: userData } = await supabase.auth.getUser()
+  if (!userData.user) throw new Error('Not authenticated')
+
+  const { data, error } = await supabase
+    .from('category_presets')
+    .update({ name })
+    .eq('id', id)
+    .eq('user_id', userData.user.id)
+    .select()
+    .single()
+
+  if (error) throw new Error(error.message)
+  return data as CategoryPreset
+}
+
+// 카테고리 프리셋 삭제
+export async function deleteCategoryPreset(id: string) {
+  const supabase = await createClient()
+  const { data: userData } = await supabase.auth.getUser()
+  if (!userData.user) throw new Error('Not authenticated')
+
+  const { error } = await supabase
+    .from('category_presets')
+    .delete()
+    .eq('id', id)
+    .eq('user_id', userData.user.id)
+
+  if (error) throw new Error(error.message)
+  return true
 }
 
 // 일정 가져오기 (해당 월 기준 필터링을 위해 start, end 파라미터 사용)
