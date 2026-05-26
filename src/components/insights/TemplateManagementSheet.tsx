@@ -55,12 +55,15 @@ export function TemplateManagementSheet({ isOpen, onClose }: TemplateManagementS
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500" />
               </div>
             ) : templates.length === 0 ? (
-              <div className="text-center py-12 px-4 bg-white rounded-xl border border-dashed border-gray-200">
-                <div className="w-12 h-12 bg-indigo-50 text-indigo-400 rounded-full flex items-center justify-center mx-auto mb-3">
+              <div 
+                onClick={handleCreateNew}
+                className="text-center py-12 px-4 bg-white rounded-xl border border-dashed border-gray-300 cursor-pointer hover:border-indigo-400 hover:bg-indigo-50/50 transition-colors group"
+              >
+                <div className="w-12 h-12 bg-indigo-50 text-indigo-400 rounded-full flex items-center justify-center mx-auto mb-3 group-hover:bg-indigo-100 group-hover:text-indigo-600 transition-colors">
                   <Plus className="w-6 h-6" />
                 </div>
-                <h3 className="text-sm font-semibold text-gray-900 mb-1">템플릿이 없습니다</h3>
-                <p className="text-xs text-gray-500">첫 번째 빠른 일정 템플릿을 추가해보세요.</p>
+                <h3 className="text-sm font-semibold text-gray-900 mb-1 group-hover:text-indigo-900">템플릿이 없습니다</h3>
+                <p className="text-xs text-gray-500 group-hover:text-indigo-600">첫 번째 빠른 일정 템플릿을 추가해보세요.</p>
               </div>
             ) : (
               templates.map(template => {

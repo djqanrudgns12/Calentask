@@ -5,8 +5,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { X, Pencil, Clock } from 'lucide-react'
-import { useCategories } from '@/hooks/useCalendarQueries'
+import { X, Pencil, Clock, Plus } from 'lucide-react'
+import { useCategories, useCreateCategory } from '@/hooks/useCalendarQueries'
 import { useCreateTemplate, useUpdateTemplate } from '@/hooks/useInsightsQueries'
 import type { ActivityTemplate } from '@/app/actions/insights'
 
@@ -68,7 +68,11 @@ export function TemplateFormDialog({ isOpen, onClose, editingTemplate }: Templat
   const [customColor, setCustomColor] = useState<string | null>(null)
   const [memo, setMemo] = useState('')
 
+  const [isAddingCategory, setIsAddingCategory] = useState(false)
+  const [newCategoryName, setNewCategoryName] = useState('')
+
   const { data: categories = [] } = useCategories()
+  const { mutate: createCategory } = useCreateCategory()
   const { mutate: createTemplate, isPending: isCreating } = useCreateTemplate()
   const { mutate: updateTemplate, isPending: isUpdating } = useUpdateTemplate()
 
@@ -95,6 +99,39 @@ export function TemplateFormDialog({ isOpen, onClose, editingTemplate }: Templat
     if (!categoryId) return 'linear-gradient(to right, #e2e8f0, #e2e8f0)'
     const catColor = categories.find(c => c.id === categoryId)?.hex_color || '#4f46e5'
     return `linear-gradient(to right, ${catColor}, ${catColor})`
+  }
+
+  const handleAddCategorySubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (newCategoryName.trim()) {
+      const isNameDuplicate = categories.some(c => c.name === newCategoryName.trim())
+      if (isNameDuplicate) {
+        alert('이미 존재하는 카테고리 이름입니다.')
+        return
+      }
+
+      let newColor = '#4f46e5'
+      const usedColors = categories.map(c => c.hex_color)
+      const availableColors = COLOR_SWATCHES.filter(c => !usedColors.includes(c))
+      
+      if (availableColors.length > 0) {
+        newColor = availableColors[0]
+      } else {
+        if (!window.confirm('기존 카테고리와 색상이 중복되었는데 이대로 등록할까요?')) {
+          return
+        }
+      }
+
+      createCategory({ name: newCategoryName.trim(), hexColor: newColor }, {
+        onSuccess: (data) => {
+          if (data && data.length > 0) {
+            setCategoryId(data[0].id)
+          }
+          setIsAddingCategory(false)
+          setNewCategoryName('')
+        }
+      })
+    }
   }
 
   const adjustDuration = (amount: number) => {
@@ -169,6 +206,35 @@ export function TemplateFormDialog({ isOpen, onClose, editingTemplate }: Templat
                       </button>
                     )
                   })}
+                  
+                  {isAddingCategory ? (
+                    <div className="flex items-center gap-1">
+                      <Input 
+                        autoFocus
+                        value={newCategoryName}
+                        onChange={e => setNewCategoryName(e.target.value)}
+                        onKeyDown={e => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault()
+                            handleAddCategorySubmit(e as any)
+                          }
+                        }}
+                        className="w-28 h-8 text-sm rounded-full px-3 bg-white border-indigo-200 focus-visible:ring-indigo-500"
+                        placeholder="이름..."
+                      />
+                      <Button type="button" size="sm" className="h-8 rounded-full px-3 bg-indigo-600 hover:bg-indigo-700" onClick={handleAddCategorySubmit}>추가</Button>
+                      <Button type="button" variant="ghost" size="sm" className="h-8 rounded-full px-2 text-gray-500 hover:text-gray-700" onClick={() => setIsAddingCategory(false)}><X className="w-4 h-4"/></Button>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => setIsAddingCategory(true)}
+                      className="px-3.5 py-1.5 text-sm font-medium rounded-full border border-dashed border-gray-300 text-gray-500 hover:text-gray-700 hover:border-gray-400 hover:bg-gray-50 transition-colors flex items-center gap-1 bg-white"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      Add
+                    </button>
+                  )}
                 </div>
               </div>
 
