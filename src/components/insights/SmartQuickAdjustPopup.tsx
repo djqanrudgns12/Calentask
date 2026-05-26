@@ -35,7 +35,7 @@ export function SmartQuickAdjustPopup({ isOpen, onClose, template, onSuccess }: 
   useEffect(() => {
     if (isOpen && template) {
       setStartDate(format(new Date(), 'yyyy-MM-dd'))
-      setStartTime(getRoundedNow())
+      setStartTime(template.default_start_time || getRoundedNow())
       setDurationMinutes(template.duration_minutes || 60)
     }
   }, [isOpen, template])

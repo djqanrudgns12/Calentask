@@ -12,6 +12,7 @@ export type ActivityTemplate = {
   duration_minutes: number
   hex_color?: string
   memo?: string
+  default_start_time?: string // HH:mm format
 }
 
 export async function getActivityTemplates() {
@@ -29,6 +30,7 @@ export async function getActivityTemplates() {
       duration_minutes,
       hex_color,
       memo,
+      default_start_time,
       categories ( hex_color )
     `)
     .eq('user_id', userData.user.id)
@@ -43,7 +45,8 @@ export async function getActivityTemplates() {
     category_ids: t.category_ids || (t.category_id ? [t.category_id] : []),
     duration_minutes: t.duration_minutes,
     hex_color: t.hex_color || t.categories?.hex_color,
-    memo: t.memo
+    memo: t.memo,
+    default_start_time: t.default_start_time ? t.default_start_time.substring(0, 5) : undefined
   })) as ActivityTemplate[]
 }
 
@@ -61,6 +64,7 @@ export async function createActivityTemplate(payload: Omit<ActivityTemplate, 'id
   }
   if (payload.hex_color) insertPayload.hex_color = payload.hex_color
   if (payload.memo) insertPayload.memo = payload.memo
+  if (payload.default_start_time) insertPayload.default_start_time = payload.default_start_time + ':00'
 
   const { data, error } = await supabase
     .from('activity_templates')
@@ -88,6 +92,7 @@ export async function updateActivityTemplate(id: string, payload: Partial<Omit<A
   if (payload.duration_minutes !== undefined) updatePayload.duration_minutes = payload.duration_minutes
   if (payload.hex_color !== undefined) updatePayload.hex_color = payload.hex_color
   if (payload.memo !== undefined) updatePayload.memo = payload.memo
+  if (payload.default_start_time !== undefined) updatePayload.default_start_time = payload.default_start_time ? payload.default_start_time + ':00' : null
 
   const { data, error } = await supabase
     .from('activity_templates')
@@ -98,6 +103,53 @@ export async function updateActivityTemplate(id: string, payload: Partial<Omit<A
     .single()
 
   if (error) return { data: null, error: error.message }
+
+  // --- 기존 일정에도 변경 사항 전파 (시간·메모 제외) ---
+  const activityUpdate: Record<string, unknown> = {}
+  if (payload.title !== undefined) activityUpdate.title = payload.title
+  if (payload.hex_color !== undefined) activityUpdate.hex_color = payload.hex_color || null
+
+  // 1. 일정의 title/memo/hex_color 동기화
+  if (Object.keys(activityUpdate).length > 0) {
+    await supabase
+      .from('activities')
+      .update(activityUpdate)
+      .eq('template_id', id)
+      .eq('user_id', userData.user.id)
+  }
+
+  // 2. 카테고리 매핑 동기화
+  if (payload.category_ids !== undefined) {
+    // 해당 템플릿으로 생성된 모든 일정 ID 조회
+    const { data: linkedActivities } = await supabase
+      .from('activities')
+      .select('id')
+      .eq('template_id', id)
+      .eq('user_id', userData.user.id)
+
+    if (linkedActivities && linkedActivities.length > 0) {
+      const activityIds = linkedActivities.map(a => a.id)
+
+      // 기존 카테고리 매핑 삭제
+      await supabase
+        .from('activity_category_map')
+        .delete()
+        .in('activity_id', activityIds)
+
+      // 새 카테고리 매핑 일괄 삽입
+      if (payload.category_ids.length > 0) {
+        const newMappings = activityIds.flatMap(actId =>
+          payload.category_ids!.map(catId => ({
+            activity_id: actId,
+            category_id: catId
+          }))
+        )
+        await supabase.from('activity_category_map').insert(newMappings)
+      }
+    }
+  }
+
+  revalidatePath('/')
   return { data, error: null }
 }
 
@@ -153,12 +205,17 @@ export async function createActivityFromTemplate(templateId: string, customStart
 
   if (activityError) throw new Error(activityError.message)
 
-  // 2. Map category
-  if (template.category_id) {
-    await supabase.from('activity_category_map').insert([{
+  // 2. Map categories
+  const categoryIdsToMap = template.category_ids && template.category_ids.length > 0 
+    ? template.category_ids 
+    : (template.category_id ? [template.category_id] : [])
+
+  if (categoryIdsToMap.length > 0) {
+    const mappings = categoryIdsToMap.map((id: string) => ({
       activity_id: activity.id,
-      category_id: template.category_id
-    }])
+      category_id: id
+    }))
+    await supabase.from('activity_category_map').insert(mappings)
   }
 
   revalidatePath('/')

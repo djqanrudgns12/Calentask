@@ -67,6 +67,7 @@ export function TemplateFormDialog({ isOpen, onClose, editingTemplate }: Templat
   const [durationMinutes, setDurationMinutes] = useState<number>(60)
   const [customColor, setCustomColor] = useState<string | null>(null)
   const [memo, setMemo] = useState('')
+  const [defaultStartTime, setDefaultStartTime] = useState('')
 
   const [isAddingCategory, setIsAddingCategory] = useState(false)
   const [newCategoryName, setNewCategoryName] = useState('')
@@ -87,12 +88,14 @@ export function TemplateFormDialog({ isOpen, onClose, editingTemplate }: Templat
         setDurationMinutes(editingTemplate.duration_minutes)
         setCustomColor(editingTemplate.hex_color || null)
         setMemo(editingTemplate.memo || '')
+        setDefaultStartTime(editingTemplate.default_start_time || '')
       } else {
         setTitle('')
         setCategoryIds([])
         setDurationMinutes(60)
         setCustomColor(null)
         setMemo('')
+        setDefaultStartTime('')
       }
     }
   }, [isOpen, editingTemplate])
@@ -154,7 +157,8 @@ export function TemplateFormDialog({ isOpen, onClose, editingTemplate }: Templat
       category_ids: categoryIds,
       duration_minutes: durationMinutes,
       hex_color: customColor || undefined,
-      memo: memo || undefined
+      memo: memo || undefined,
+      default_start_time: defaultStartTime || undefined
     }
 
     if (editingTemplate) {
@@ -306,6 +310,31 @@ export function TemplateFormDialog({ isOpen, onClose, editingTemplate }: Templat
                     +15
                   </Button>
                 </div>
+              </div>
+
+              {/* Default Start Time */}
+              <div className="space-y-2">
+                <Label className="text-gray-600 font-medium text-sm pl-1">기본 시작 시각 (선택)</Label>
+                <div className="flex items-center gap-3">
+                  <Input 
+                    type="time"
+                    value={defaultStartTime}
+                    onChange={e => setDefaultStartTime(e.target.value)}
+                    className="flex-1 bg-white border-gray-200 focus-visible:ring-indigo-500 rounded-lg h-11"
+                  />
+                  {defaultStartTime && (
+                    <Button 
+                      type="button" 
+                      variant="ghost" 
+                      size="sm"
+                      className="text-gray-400 hover:text-rose-500 rounded-full px-3 text-xs"
+                      onClick={() => setDefaultStartTime('')}
+                    >
+                      초기화
+                    </Button>
+                  )}
+                </div>
+                <p className="text-xs text-gray-400 pl-1">설정 시 빠른 일정 등록에서 이 시각이 자동으로 채워집니다.</p>
               </div>
 
               {/* Memo */}

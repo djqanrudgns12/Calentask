@@ -235,16 +235,21 @@ export function AddEventDialog({ children }: { children?: React.ReactNode }) {
 
   const handleLoadTemplate = (template: ActivityTemplate) => {
     setTitle(template.title)
-    if (template.category_id) {
-      setSelectedCategories([template.category_id])
-    } else {
-      setSelectedCategories([])
-    }
+    // 복수 카테고리 지원
+    const catIds = template.category_ids && template.category_ids.length > 0 
+      ? template.category_ids 
+      : (template.category_id ? [template.category_id] : [])
+    setSelectedCategories(catIds)
     setCustomColor(template.hex_color || null)
     setMemo(template.memo || '')
     
     if (!isAllDay) {
-       const startObj = new Date(`${startDate}T${startTime}:00`)
+       // 템플릿에 기본 시작 시각이 있으면 적용 (날짜는 유지)
+       const effectiveStartTime = template.default_start_time || startTime
+       if (template.default_start_time) {
+         setStartTime(template.default_start_time)
+       }
+       const startObj = new Date(`${startDate}T${effectiveStartTime}:00`)
        const duration = template.duration_minutes || 60
        const newEndObj = new Date(startObj.getTime() + duration * 60000)
        setEndDate(format(newEndObj, 'yyyy-MM-dd'))
