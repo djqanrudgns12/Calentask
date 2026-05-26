@@ -7,7 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { X, Plus, Calendar as CalendarIcon, Clock, Pencil } from 'lucide-react'
+import { X, Plus, Calendar as CalendarIcon, Clock, Pencil, Zap } from 'lucide-react'
 import { useCategories, useCreateActivity, useUpdateActivity, useCreateCategory, useDeleteCategory } from '@/hooks/useCalendarQueries'
 import { format, startOfMonth, endOfMonth, parseISO } from 'date-fns'
 import { Popover, PopoverContent, PopoverTrigger, PopoverHeader, PopoverTitle } from '@/components/ui/popover'
@@ -342,11 +342,9 @@ export function AddEventDialog({ children }: { children?: React.ReactNode }) {
           <DialogTitle className="text-xl font-bold text-gray-900">{editingEvent ? '일정 수정' : '새 일정 추가'}</DialogTitle>
           <div className="flex items-center">
             <Popover open={isTemplateOpen} onOpenChange={setIsTemplateOpen}>
-              <PopoverTrigger asChild>
-                <button type="button" className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 text-indigo-600 rounded-lg text-sm font-bold hover:bg-indigo-100 transition-colors">
-                  <Zap className="w-3.5 h-3.5" />
-                  템플릿
-                </button>
+              <PopoverTrigger render={<button type="button" className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 text-indigo-600 rounded-lg text-sm font-bold hover:bg-indigo-100 transition-colors" />}>
+                <Zap className="w-3.5 h-3.5" />
+                템플릿
               </PopoverTrigger>
               <PopoverContent align="end" className="w-64 p-2 shadow-xl border-gray-100 rounded-2xl bg-white z-[110]">
                 <PopoverHeader className="px-2 py-2 mb-1 border-b border-gray-50">
