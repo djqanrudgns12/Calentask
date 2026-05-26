@@ -10,6 +10,9 @@ import { Label } from '@/components/ui/label'
 import { X, Plus, Calendar as CalendarIcon, Clock, Pencil } from 'lucide-react'
 import { useCategories, useCreateActivity, useUpdateActivity, useCreateCategory, useDeleteCategory } from '@/hooks/useCalendarQueries'
 import { format, startOfMonth, endOfMonth, parseISO } from 'date-fns'
+import { Popover, PopoverContent, PopoverTrigger, PopoverHeader, PopoverTitle } from '@/components/ui/popover'
+import { useActivityTemplates } from '@/hooks/useInsightsQueries'
+import type { ActivityTemplate } from '@/app/actions/insights'
 import { useCalendarStore } from '@/store/useCalendarStore'
 
 /**
@@ -113,6 +116,7 @@ export function AddEventDialog({ children }: { children?: React.ReactNode }) {
   
   const [isAddingCategory, setIsAddingCategory] = useState(false)
   const [newCategoryName, setNewCategoryName] = useState('')
+  const [isTemplateOpen, setIsTemplateOpen] = useState(false)
 
   const currentMonthStart = startOfMonth(new Date()).toISOString()
   const currentMonthEnd = endOfMonth(new Date()).toISOString()
@@ -135,6 +139,7 @@ export function AddEventDialog({ children }: { children?: React.ReactNode }) {
   }, [startDate, startTime, endDate, endTime, isAllDay])
 
   const { data: categories = [] } = useCategories()
+  const { data: templates = [] } = useActivityTemplates()
   const { mutate: createActivity, isPending: isCreating } = useCreateActivity(currentMonthStart, currentMonthEnd)
   const { mutate: updateActivity, isPending: isUpdating } = useUpdateActivity(currentMonthStart, currentMonthEnd)
   const { mutate: createCategory } = useCreateCategory()
@@ -181,6 +186,7 @@ export function AddEventDialog({ children }: { children?: React.ReactNode }) {
         setMemo('')
         setIsAddingCategory(false)
         setNewCategoryName('')
+        setIsTemplateOpen(false)
       }
     }
   }, [isAddEventOpen, addEventDate, editingEvent])
@@ -196,8 +202,25 @@ export function AddEventDialog({ children }: { children?: React.ReactNode }) {
   const handleAddCategorySubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (newCategoryName.trim()) {
-      // 랜덤 색상 혹은 지정된 기본 색상 할당 (예: 파란색 계열)
-      createCategory({ name: newCategoryName.trim(), hexColor: '#4f46e5' })
+      const isNameDuplicate = categories.some(c => c.name === newCategoryName.trim())
+      if (isNameDuplicate) {
+        alert('이미 존재하는 카테고리 이름입니다.')
+        return
+      }
+
+      let newColor = '#4f46e5'
+      const usedColors = categories.map(c => c.hex_color)
+      const availableColors = COLOR_SWATCHES.filter(c => !usedColors.includes(c))
+      
+      if (availableColors.length > 0) {
+        newColor = availableColors[0]
+      } else {
+        if (!window.confirm('기존 카테고리와 색상이 중복되었는데 이대로 등록할까요?')) {
+          return
+        }
+      }
+
+      createCategory({ name: newCategoryName.trim(), hexColor: newColor })
       setNewCategoryName('')
       setIsAddingCategory(false)
     }
@@ -208,6 +231,26 @@ export function AddEventDialog({ children }: { children?: React.ReactNode }) {
     if (!window.confirm('정말 이 카테고리를 삭제하시겠습니까? 관련 일정에서 이 카테고리 지정이 해제됩니다.')) return
     deleteCategory(id)
     setSelectedCategories(prev => prev.filter(c => c !== id))
+  }
+
+  const handleLoadTemplate = (template: ActivityTemplate) => {
+    setTitle(template.title)
+    if (template.category_id) {
+      setSelectedCategories([template.category_id])
+    } else {
+      setSelectedCategories([])
+    }
+    setCustomColor(template.hex_color || null)
+    setMemo(template.memo || '')
+    
+    if (!isAllDay) {
+       const startObj = new Date(`${startDate}T${startTime}:00`)
+       const duration = template.duration_minutes || 60
+       const newEndObj = new Date(startObj.getTime() + duration * 60000)
+       setEndDate(format(newEndObj, 'yyyy-MM-dd'))
+       setEndTime(format(newEndObj, 'HH:mm'))
+    }
+    setIsTemplateOpen(false)
   }
 
   const getGradient = () => {
@@ -295,8 +338,45 @@ export function AddEventDialog({ children }: { children?: React.ReactNode }) {
         <div onClick={() => openAddEvent()}>{children}</div>
       )}
       <DialogContent ref={dialogRef} className="sm:max-w-[440px] p-0 overflow-hidden bg-[#f8f9ff] border-none shadow-2xl rounded-2xl flex flex-col">
-        <DialogHeader className="px-6 py-4 border-b border-gray-100 bg-white">
+        <DialogHeader className="px-6 py-4 border-b border-gray-100 bg-white flex flex-row items-center justify-between pr-10">
           <DialogTitle className="text-xl font-bold text-gray-900">{editingEvent ? '일정 수정' : '새 일정 추가'}</DialogTitle>
+          <div className="flex items-center">
+            <Popover open={isTemplateOpen} onOpenChange={setIsTemplateOpen}>
+              <PopoverTrigger asChild>
+                <button type="button" className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 text-indigo-600 rounded-lg text-sm font-bold hover:bg-indigo-100 transition-colors">
+                  <Zap className="w-3.5 h-3.5" />
+                  템플릿
+                </button>
+              </PopoverTrigger>
+              <PopoverContent align="end" className="w-64 p-2 shadow-xl border-gray-100 rounded-2xl bg-white z-[110]">
+                <PopoverHeader className="px-2 py-2 mb-1 border-b border-gray-50">
+                  <PopoverTitle className="text-sm font-bold text-gray-700">템플릿 불러오기</PopoverTitle>
+                </PopoverHeader>
+                <div className="max-h-[240px] overflow-y-auto space-y-1">
+                  {templates.length === 0 ? (
+                    <div className="py-4 text-center text-xs text-gray-400">
+                      등록된 템플릿이 없습니다.
+                    </div>
+                  ) : (
+                    templates.map(template => (
+                      <button
+                        key={template.id}
+                        type="button"
+                        onClick={() => handleLoadTemplate(template)}
+                        className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl hover:bg-indigo-50 transition-colors group text-left"
+                      >
+                        <div className="flex items-center gap-2.5 truncate pr-2">
+                          <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: template.hex_color || '#4f46e5' }} />
+                          <span className="text-sm font-medium text-gray-700 group-hover:text-indigo-700 truncate">{template.title}</span>
+                        </div>
+                        <span className="text-[11px] font-bold text-gray-400 bg-gray-50 px-1.5 py-0.5 rounded-md whitespace-nowrap flex-shrink-0">{template.duration_minutes}분</span>
+                      </button>
+                    ))
+                  )}
+                </div>
+              </PopoverContent>
+            </Popover>
+          </div>
           <DialogDescription className="sr-only">{editingEvent ? '일정을 수정합니다.' : '새로운 일정을 추가하기 위한 모달입니다. 아래 양식을 채워주세요.'}</DialogDescription>
         </DialogHeader>
         
@@ -435,6 +515,12 @@ export function AddEventDialog({ children }: { children?: React.ReactNode }) {
                     autoFocus
                     value={newCategoryName}
                     onChange={e => setNewCategoryName(e.target.value)}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault()
+                        handleAddCategorySubmit(e as any)
+                      }
+                    }}
                     className="w-28 h-8 text-sm rounded-full px-3 bg-white border-indigo-200"
                     placeholder="이름..."
                   />

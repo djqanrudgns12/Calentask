@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useCalendarStore } from '@/store/useCalendarStore'
-import { useUpdateCategory } from '@/hooks/useCalendarQueries'
+import { useUpdateCategory, useCategories } from '@/hooks/useCalendarQueries'
 import { Check } from 'lucide-react'
 
 const COLOR_SWATCHES = [
@@ -35,6 +35,7 @@ const COLOR_SWATCHES = [
 export function EditCategoryDialog() {
   const { editingCategory, closeEditCategory } = useCalendarStore()
   const { mutate: updateCategory, isPending } = useUpdateCategory()
+  const { data: categories = [] } = useCategories()
 
   const [name, setName] = useState('')
   const [hexColor, setHexColor] = useState('')
@@ -50,6 +51,19 @@ export function EditCategoryDialog() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (editingCategory && name.trim()) {
+      const isNameDuplicate = categories.some(c => c.id !== editingCategory.id && c.name === name.trim())
+      if (isNameDuplicate) {
+        alert('이미 존재하는 카테고리 이름입니다.')
+        return
+      }
+
+      const isColorDuplicate = categories.some(c => c.id !== editingCategory.id && c.hex_color === hexColor)
+      if (isColorDuplicate) {
+        if (!window.confirm('기존 카테고리와 색상이 중복되었는데 이대로 수정할까요?')) {
+          return
+        }
+      }
+
       updateCategory({
         id: editingCategory.id,
         name: name.trim(),

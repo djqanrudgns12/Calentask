@@ -30,7 +30,25 @@ export function GlobalCategoryFilter() {
   const handleAddCategorySubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (newCategoryName.trim() && !isCreating) {
-      createCategory({ name: newCategoryName.trim(), hexColor: '#4f46e5' }, {
+      const isNameDuplicate = categories.some(c => c.name === newCategoryName.trim())
+      if (isNameDuplicate) {
+        alert('이미 존재하는 카테고리 이름입니다.')
+        return
+      }
+
+      let newColor = '#4f46e5'
+      const usedColors = categories.map(c => c.hex_color)
+      const availableColors = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#14b8a6', '#0ea5e9', '#3b82f6', '#6366f1', '#a855f7', '#ec4899', '#f43f5e', '#84cc16', '#10b981', '#06b6d4', '#8b5cf6', '#d946ef', '#64748b', '#78716c', '#000000', '#475569'].filter(c => !usedColors.includes(c))
+      
+      if (availableColors.length > 0) {
+        newColor = availableColors[0]
+      } else {
+        if (!window.confirm('기존 카테고리와 색상이 중복되었는데 이대로 등록할까요?')) {
+          return
+        }
+      }
+
+      createCategory({ name: newCategoryName.trim(), hexColor: newColor }, {
         onSuccess: () => {
           setNewCategoryName('')
         }

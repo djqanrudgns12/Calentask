@@ -116,7 +116,7 @@ export async function createActivityFromTemplate(templateId: string, customStart
 
   if (tmplError || !template) throw new Error('Template not found')
 
-  const start_time = customStartDate || new Date()
+  const start_time = customStartDate ? new Date(customStartDate) : new Date()
   const duration = customDurationMinutes ?? template.duration_minutes
   const end_time = new Date(start_time.getTime() + (duration * 60000))
 
