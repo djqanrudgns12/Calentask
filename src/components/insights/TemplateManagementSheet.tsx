@@ -67,8 +67,9 @@ export function TemplateManagementSheet({ isOpen, onClose }: TemplateManagementS
               </div>
             ) : (
               templates.map(template => {
-                const category = categories.find(c => c.id === template.category_id)
-                const hexColor = template.hex_color || category?.hex_color || '#4f46e5'
+                const templateCatIds = template.category_ids || (template.category_id ? [template.category_id] : [])
+                const templateCats = templateCatIds.map(id => categories.find(c => c.id === id)).filter(Boolean)
+                const hexColor = template.hex_color || templateCats[0]?.hex_color || '#4f46e5'
 
                 return (
                   <div key={template.id} className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex items-center justify-between group hover:shadow-md transition-shadow">
@@ -77,7 +78,7 @@ export function TemplateManagementSheet({ isOpen, onClose }: TemplateManagementS
                       <div className="flex flex-col overflow-hidden">
                         <span className="font-semibold text-gray-900 truncate">{template.title}</span>
                         <div className="flex items-center gap-2 text-xs text-gray-500 mt-0.5">
-                          <span className="truncate">{category?.name || '알 수 없음'}</span>
+                          <span className="truncate">{templateCats.map(c => c?.name).join(', ') || '알 수 없음'}</span>
                           <span>•</span>
                           <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> {template.duration_minutes}분</span>
                         </div>

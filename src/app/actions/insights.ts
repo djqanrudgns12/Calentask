@@ -8,6 +8,7 @@ export type ActivityTemplate = {
   id: string
   title: string
   category_id: string
+  category_ids: string[]
   duration_minutes: number
   hex_color?: string
   memo?: string
@@ -24,7 +25,10 @@ export async function getActivityTemplates() {
       id,
       title,
       category_id,
+      category_ids,
       duration_minutes,
+      hex_color,
+      memo,
       categories ( hex_color )
     `)
     .eq('user_id', userData.user.id)
@@ -36,6 +40,7 @@ export async function getActivityTemplates() {
     id: t.id,
     title: t.title,
     category_id: t.category_id,
+    category_ids: t.category_ids || (t.category_id ? [t.category_id] : []),
     duration_minutes: t.duration_minutes,
     hex_color: t.hex_color || t.categories?.hex_color,
     memo: t.memo
@@ -50,7 +55,8 @@ export async function createActivityTemplate(payload: Omit<ActivityTemplate, 'id
   const insertPayload: Record<string, unknown> = {
     user_id: userData.user.id,
     title: payload.title,
-    category_id: payload.category_id,
+    category_id: payload.category_ids?.[0] || payload.category_id || null,
+    category_ids: payload.category_ids || (payload.category_id ? [payload.category_id] : []),
     duration_minutes: payload.duration_minutes,
   }
   if (payload.hex_color) insertPayload.hex_color = payload.hex_color
@@ -73,7 +79,12 @@ export async function updateActivityTemplate(id: string, payload: Partial<Omit<A
 
   const updatePayload: Record<string, unknown> = {}
   if (payload.title !== undefined) updatePayload.title = payload.title
-  if (payload.category_id !== undefined) updatePayload.category_id = payload.category_id
+  if (payload.category_ids !== undefined) {
+    updatePayload.category_ids = payload.category_ids
+    updatePayload.category_id = payload.category_ids[0] || null
+  } else if (payload.category_id !== undefined) {
+    updatePayload.category_id = payload.category_id
+  }
   if (payload.duration_minutes !== undefined) updatePayload.duration_minutes = payload.duration_minutes
   if (payload.hex_color !== undefined) updatePayload.hex_color = payload.hex_color
   if (payload.memo !== undefined) updatePayload.memo = payload.memo

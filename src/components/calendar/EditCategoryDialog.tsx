@@ -83,8 +83,8 @@ export function EditCategoryDialog() {
   }
 
   return (
-    <Dialog open={!!editingCategory} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-[400px] bg-white border-none shadow-2xl rounded-2xl">
+    <Dialog open={!!editingCategory} onOpenChange={handleOpenChange} modal>
+      <DialogContent className="sm:max-w-[400px] bg-white border-none shadow-2xl rounded-2xl z-[300]" showCloseButton={false}>
         <DialogHeader>
           <DialogTitle className="text-xl font-bold text-gray-900">카테고리 수정</DialogTitle>
           <DialogDescription className="sr-only">카테고리의 이름과 색상을 수정합니다.</DialogDescription>

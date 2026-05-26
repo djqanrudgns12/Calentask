@@ -63,7 +63,7 @@ export function TemplateFormDialog({ isOpen, onClose, editingTemplate }: Templat
   const { dialogRef, scrollRef, handleFocusScroll } = useKeyboardAwareDialog(isOpen)
   
   const [title, setTitle] = useState('')
-  const [categoryId, setCategoryId] = useState<string>('')
+  const [categoryIds, setCategoryIds] = useState<string[]>([])
   const [durationMinutes, setDurationMinutes] = useState<number>(60)
   const [customColor, setCustomColor] = useState<string | null>(null)
   const [memo, setMemo] = useState('')
@@ -83,13 +83,13 @@ export function TemplateFormDialog({ isOpen, onClose, editingTemplate }: Templat
     if (isOpen) {
       if (editingTemplate) {
         setTitle(editingTemplate.title)
-        setCategoryId(editingTemplate.category_id)
+        setCategoryIds(editingTemplate.category_ids || (editingTemplate.category_id ? [editingTemplate.category_id] : []))
         setDurationMinutes(editingTemplate.duration_minutes)
         setCustomColor(editingTemplate.hex_color || null)
         setMemo(editingTemplate.memo || '')
       } else {
         setTitle('')
-        setCategoryId('')
+        setCategoryIds([])
         setDurationMinutes(60)
         setCustomColor(null)
         setMemo('')
@@ -99,8 +99,8 @@ export function TemplateFormDialog({ isOpen, onClose, editingTemplate }: Templat
 
   const getGradient = () => {
     if (customColor) return `linear-gradient(to right, ${customColor}, ${customColor})`
-    if (!categoryId) return 'linear-gradient(to right, #e2e8f0, #e2e8f0)'
-    const catColor = categories.find(c => c.id === categoryId)?.hex_color || '#4f46e5'
+    if (categoryIds.length === 0) return 'linear-gradient(to right, #e2e8f0, #e2e8f0)'
+    const catColor = categories.find(c => c.id === categoryIds[0])?.hex_color || '#4f46e5'
     return `linear-gradient(to right, ${catColor}, ${catColor})`
   }
 
@@ -128,7 +128,7 @@ export function TemplateFormDialog({ isOpen, onClose, editingTemplate }: Templat
       createCategory({ name: newCategoryName.trim(), hexColor: newColor }, {
         onSuccess: (data) => {
           if (data) {
-            setCategoryId(data.id)
+          setCategoryIds(prev => [...prev, data.id])
           }
           setIsAddingCategory(false)
           setNewCategoryName('')
@@ -143,14 +143,15 @@ export function TemplateFormDialog({ isOpen, onClose, editingTemplate }: Templat
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    if (!categoryId) {
-      alert('카테고리를 선택해주세요.')
+    if (categoryIds.length === 0) {
+      alert('카테고리를 하나 이상 선택해주세요.')
       return
     }
 
     const payload = {
       title,
-      category_id: categoryId,
+      category_id: categoryIds[0],
+      category_ids: categoryIds,
       duration_minutes: durationMinutes,
       hex_color: customColor || undefined,
       memo: memo || undefined
@@ -200,12 +201,16 @@ export function TemplateFormDialog({ isOpen, onClose, editingTemplate }: Templat
                 <Label className="text-gray-600 font-medium text-sm pl-1">카테고리 선택</Label>
                 <div className="flex flex-wrap items-center gap-2">
                   {categories.map(cat => {
-                    const isSelected = categoryId === cat.id
+                    const isSelected = categoryIds.includes(cat.id)
                     return (
                       <button
                         key={cat.id}
                         type="button"
-                        onClick={() => setCategoryId(prev => prev === cat.id ? '' : cat.id)}
+                        onClick={() => setCategoryIds(prev => 
+                          prev.includes(cat.id) 
+                            ? prev.filter(id => id !== cat.id) 
+                            : [...prev, cat.id]
+                        )}
                         className={`group/cat px-3.5 py-1.5 text-sm font-medium rounded-full transition-all flex items-center gap-1.5 shadow-sm text-white border-2
                           ${isSelected ? 'border-white ring-2 ring-indigo-300' : 'border-transparent opacity-85 hover:opacity-100'}`}
                         style={{ backgroundColor: cat.hex_color || '#4f46e5', textShadow: '0 1px 2px rgba(0,0,0,0.5)' }}
@@ -219,7 +224,7 @@ export function TemplateFormDialog({ isOpen, onClose, editingTemplate }: Templat
                             onClick={(e) => {
                               e.stopPropagation()
                               if (window.confirm(`'${cat.name}' 카테고리를 삭제하시겠습니까?\n\n⚠️ 이 카테고리에 연결된 일정의 카테고리 정보가 해제됩니다.`)) {
-                                if (categoryId === cat.id) setCategoryId('')
+                                setCategoryIds(prev => prev.filter(id => id !== cat.id))
                                 deleteCategory(cat.id)
                               }
                             }}
