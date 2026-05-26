@@ -3,8 +3,9 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Plus, Trash2, Tag as TagIcon, Loader2, X } from 'lucide-react'
+import { Plus, Trash2, Tag as TagIcon, Loader2, X, Pencil } from 'lucide-react'
 import { useTagsManagement, COLORS } from '@/hooks/useTagsManagement'
+import { useCalendarStore } from '@/store/useCalendarStore'
 
 interface TagsModalProps {
   open: boolean
@@ -25,6 +26,8 @@ export function TagsModal({ open, onOpenChange }: TagsModalProps) {
     isDeleting,
     getUsageCount
   } = useTagsManagement()
+
+  const { openEditCategory } = useCalendarStore()
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -105,15 +108,23 @@ export function TagsModal({ open, onOpenChange }: TagsModalProps) {
                             {usageCount}개의 일정
                           </span>
                         </div>
-                        
-                        <button
-                          onClick={() => handleDelete(cat.id, cat.name)}
-                          disabled={isDeleting}
-                          className="p-2 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100"
-                          title="삭제"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
+                          <button
+                            onClick={() => openEditCategory(cat)}
+                            className="p-2 text-slate-300 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+                            title="수정"
+                          >
+                            <Pencil className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(cat.id, cat.name)}
+                            disabled={isDeleting}
+                            className="p-2 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-colors"
+                            title="삭제"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
                       </div>
                     )
                   })}

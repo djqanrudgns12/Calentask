@@ -71,7 +71,9 @@ export function TemplateFormDialog({ isOpen, onClose, editingTemplate }: Templat
   const [isAddingCategory, setIsAddingCategory] = useState(false)
   const [newCategoryName, setNewCategoryName] = useState('')
 
-  const { data: categories = [] } = useCategories()
+  const { data: allCategories = [] } = useCategories()
+  // 시스템 가상 카테고리(기념일 등)는 DB에 실제로 없으므로 템플릿 폼에서 제외
+  const categories = allCategories.filter(c => c.user_id !== 'system')
   const { mutate: createCategory } = useCreateCategory()
   const { mutate: createTemplate, isPending: isCreating } = useCreateTemplate()
   const { mutate: updateTemplate, isPending: isUpdating } = useUpdateTemplate()
@@ -156,10 +158,16 @@ export function TemplateFormDialog({ isOpen, onClose, editingTemplate }: Templat
     if (editingTemplate) {
       updateTemplate(
         { id: editingTemplate.id, payload },
-        { onSuccess: onClose }
+        { 
+          onSuccess: onClose,
+          onError: (err) => alert(`템플릿 수정에 실패했습니다: ${err.message}`)
+        }
       )
     } else {
-      createTemplate(payload, { onSuccess: onClose })
+      createTemplate(payload, { 
+        onSuccess: onClose,
+        onError: (err) => alert(`템플릿 저장에 실패했습니다: ${err.message}`)
+      })
     }
   }
 
