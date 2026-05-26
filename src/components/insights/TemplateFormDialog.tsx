@@ -124,8 +124,8 @@ export function TemplateFormDialog({ isOpen, onClose, editingTemplate }: Templat
 
       createCategory({ name: newCategoryName.trim(), hexColor: newColor }, {
         onSuccess: (data) => {
-          if (data && data.length > 0) {
-            setCategoryId(data[0].id)
+          if (data) {
+            setCategoryId(data.id)
           }
           setIsAddingCategory(false)
           setNewCategoryName('')

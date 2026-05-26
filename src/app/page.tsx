@@ -5,7 +5,8 @@
 import { useState, useEffect } from 'react'
 import { useCalendarStore } from '@/store/useCalendarStore'
 import { Button } from '@/components/ui/button'
-import { Plus, Tags, Database, LogOut, Calendar as CalendarIcon, DownloadCloud, Gift, Sparkles } from 'lucide-react'
+import { Plus, Tags, Database, LogOut, Calendar as CalendarIcon, DownloadCloud, Gift, Sparkles, ChevronDown } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
 
 import { startOfWeek, endOfWeek } from 'date-fns'
 import { useActivities } from '@/hooks/useCalendarQueries'
@@ -46,6 +47,9 @@ export default function CalendarPage() {
     currentDate, viewMode, setViewMode,
     semesterYear, semesterTerm, activeCategories, resetStore 
   } = useCalendarStore()
+
+  const isCalendarMenuOpen = ['monthly', 'weekly', 'list', 'semester', 'nice_import', 'anniversary'].includes(viewMode)
+  const isMyCalendarActive = ['monthly', 'weekly', 'list', 'semester'].includes(viewMode)
 
   const handleLogout = async () => {
     resetStore()
@@ -114,45 +118,74 @@ export default function CalendarPage() {
 
           <div className="flex flex-col space-y-1.5 mt-2">
             <button 
-              onClick={() => setViewMode('monthly')}
-              className={`group relative w-full text-left px-4 py-3.5 rounded-2xl text-[15px] transition-all duration-300 ease-out flex items-center gap-3 ${
-                viewMode !== 'nice_import' && viewMode !== 'anniversary' && viewMode !== 'insights' 
+              onClick={() => {
+                if (!isCalendarMenuOpen) setViewMode('monthly')
+              }}
+              className={`group relative w-full text-left px-4 py-3.5 rounded-2xl text-[15px] transition-all duration-300 ease-out flex items-center justify-between ${
+                isCalendarMenuOpen 
                 ? 'bg-gradient-to-r from-blue-50/80 to-white text-blue-700 font-bold shadow-[0_2px_10px_-3px_rgba(59,130,246,0.2)] border border-blue-100 translate-y-[-1px]' 
                 : 'bg-transparent text-slate-500 hover:bg-white hover:shadow-sm hover:text-slate-900 border border-transparent'
               }`}
             >
-              {viewMode !== 'nice_import' && viewMode !== 'anniversary' && viewMode !== 'insights' && (
+              {isCalendarMenuOpen && (
                 <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-blue-500 rounded-r-full shadow-[0_0_8px_rgba(59,130,246,0.6)]" />
               )}
-              <CalendarIcon className={`w-5 h-5 transition-colors ${viewMode !== 'nice_import' && viewMode !== 'anniversary' && viewMode !== 'insights' ? 'text-blue-600' : 'text-slate-400 group-hover:text-blue-500'}`} />
-              나의 캘린더
+              <div className="flex items-center gap-3">
+                <CalendarIcon className={`w-5 h-5 transition-colors ${isCalendarMenuOpen ? 'text-blue-600' : 'text-slate-400 group-hover:text-blue-500'}`} />
+                <span>캘린더 관리</span>
+              </div>
+              <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${isCalendarMenuOpen ? 'rotate-180 text-blue-600' : 'text-slate-400'}`} />
             </button>
 
-            <div className="flex flex-col space-y-1 mt-1.5">
-              <button 
-                onClick={() => setViewMode('nice_import')}
-                className={`w-[calc(100%-1.25rem)] ml-5 text-left px-4 py-2.5 rounded-xl text-sm transition-all duration-300 flex items-center gap-2.5 ${
-                  viewMode === 'nice_import' 
-                  ? 'bg-indigo-50/80 text-indigo-700 font-semibold shadow-sm border border-indigo-100/50' 
-                  : 'bg-transparent text-slate-400 hover:bg-white hover:shadow-sm hover:text-slate-700 border border-transparent'
-                }`}
-              >
-                <DownloadCloud className={`w-4 h-4 ${viewMode === 'nice_import' ? 'text-indigo-500' : 'text-slate-300'}`} />
-                나이스 복무 불러오기
-              </button>
+            <AnimatePresence initial={false}>
+              {isCalendarMenuOpen && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: 'auto', opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.3, ease: 'easeInOut' }}
+                  className="overflow-hidden"
+                >
+                  <div className="flex flex-col space-y-1 mt-1.5 pb-1">
+                    <button 
+                      onClick={() => setViewMode('monthly')}
+                      className={`w-[calc(100%-1.25rem)] ml-5 text-left px-4 py-2.5 rounded-xl text-sm transition-all duration-300 flex items-center gap-2.5 ${
+                        isMyCalendarActive
+                        ? 'bg-blue-50/80 text-blue-700 font-semibold shadow-sm border border-blue-100/50' 
+                        : 'bg-transparent text-slate-400 hover:bg-white hover:shadow-sm hover:text-slate-700 border border-transparent'
+                      }`}
+                    >
+                      <CalendarIcon className={`w-4 h-4 ${isMyCalendarActive ? 'text-blue-500' : 'text-slate-300'}`} />
+                      나의 캘린더
+                    </button>
 
-              <button 
-                onClick={() => setViewMode('anniversary')}
-                className={`w-[calc(100%-1.25rem)] ml-5 text-left px-4 py-2.5 rounded-xl text-sm transition-all duration-300 flex items-center gap-2.5 ${
-                  viewMode === 'anniversary' 
-                  ? 'bg-pink-50/80 text-pink-700 font-semibold shadow-sm border border-pink-100/50' 
-                  : 'bg-transparent text-slate-400 hover:bg-white hover:shadow-sm hover:text-slate-700 border border-transparent'
-                }`}
-              >
-                <Gift className={`w-4 h-4 ${viewMode === 'anniversary' ? 'text-pink-500' : 'text-slate-300'}`} />
-                기념일 설정
-              </button>
-            </div>
+                    <button 
+                      onClick={() => setViewMode('anniversary')}
+                      className={`w-[calc(100%-1.25rem)] ml-5 text-left px-4 py-2.5 rounded-xl text-sm transition-all duration-300 flex items-center gap-2.5 ${
+                        viewMode === 'anniversary' 
+                        ? 'bg-pink-50/80 text-pink-700 font-semibold shadow-sm border border-pink-100/50' 
+                        : 'bg-transparent text-slate-400 hover:bg-white hover:shadow-sm hover:text-slate-700 border border-transparent'
+                      }`}
+                    >
+                      <Gift className={`w-4 h-4 ${viewMode === 'anniversary' ? 'text-pink-500' : 'text-slate-300'}`} />
+                      기념일 설정
+                    </button>
+
+                    <button 
+                      onClick={() => setViewMode('nice_import')}
+                      className={`w-[calc(100%-1.25rem)] ml-5 text-left px-4 py-2.5 rounded-xl text-sm transition-all duration-300 flex items-center gap-2.5 ${
+                        viewMode === 'nice_import' 
+                        ? 'bg-indigo-50/80 text-indigo-700 font-semibold shadow-sm border border-indigo-100/50' 
+                        : 'bg-transparent text-slate-400 hover:bg-white hover:shadow-sm hover:text-slate-700 border border-transparent'
+                      }`}
+                    >
+                      <DownloadCloud className={`w-4 h-4 ${viewMode === 'nice_import' ? 'text-indigo-500' : 'text-slate-300'}`} />
+                      나이스 복무 불러오기
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
 
           <div className="pt-4 mt-2 relative">

@@ -89,19 +89,17 @@ export function CategoryPresetMenu() {
 
   return (
     <Popover open={isOpen} onOpenChange={setIsOpen}>
-      <PopoverTrigger asChild>
-        <button 
-          className={cn(
-            "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-all duration-300 border border-transparent shadow-sm",
-            activePresetId 
-              ? "bg-indigo-50 text-indigo-700 hover:bg-indigo-100 ring-1 ring-indigo-200" 
-              : "bg-white text-gray-500 hover:text-gray-700 hover:bg-gray-50 ring-1 ring-gray-200",
-            isPulsing && "animate-pulse shadow-indigo-200 shadow-lg ring-2 ring-indigo-400"
-          )}
-        >
-          <Star className={cn("w-4 h-4", activePresetId ? "fill-indigo-500 text-indigo-500" : "text-gray-400")} />
-          <span>{activePresetName || '프리셋'}</span>
-        </button>
+      <PopoverTrigger
+        className={cn(
+          "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-all duration-300 border border-transparent shadow-sm",
+          activePresetId 
+            ? "bg-indigo-50 text-indigo-700 hover:bg-indigo-100 ring-1 ring-indigo-200" 
+            : "bg-white text-gray-500 hover:text-gray-700 hover:bg-gray-50 ring-1 ring-gray-200",
+          isPulsing && "animate-pulse shadow-indigo-200 shadow-lg ring-2 ring-indigo-400"
+        )}
+      >
+        <Star className={cn("w-4 h-4", activePresetId ? "fill-indigo-500 text-indigo-500" : "text-gray-400")} />
+        <span>{activePresetName || '프리셋'}</span>
       </PopoverTrigger>
       
       <PopoverContent className="w-64 p-2 rounded-xl shadow-lg border-gray-100 bg-white/95 backdrop-blur-md" align="start">
