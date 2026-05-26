@@ -39,7 +39,11 @@ export function useSubjectDetails(subjectId: string, startDate: string, endDate:
 export function useCreateTemplate() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: (payload: Omit<ActivityTemplate, 'id'>) => createActivityTemplate(payload),
+    mutationFn: async (payload: Omit<ActivityTemplate, 'id'>) => {
+      const result = await createActivityTemplate(payload)
+      if (result.error) throw new Error(result.error)
+      return result.data
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['activityTemplates'] })
     }
@@ -49,7 +53,11 @@ export function useCreateTemplate() {
 export function useUpdateTemplate() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: ({ id, payload }: { id: string, payload: Partial<Omit<ActivityTemplate, 'id'>> }) => updateActivityTemplate(id, payload),
+    mutationFn: async ({ id, payload }: { id: string, payload: Partial<Omit<ActivityTemplate, 'id'>> }) => {
+      const result = await updateActivityTemplate(id, payload)
+      if (result.error) throw new Error(result.error)
+      return result.data
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['activityTemplates'] })
     }

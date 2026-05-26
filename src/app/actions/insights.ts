@@ -45,46 +45,49 @@ export async function getActivityTemplates() {
 export async function createActivityTemplate(payload: Omit<ActivityTemplate, 'id'>) {
   const supabase = await createClient()
   const { data: userData } = await supabase.auth.getUser()
-  if (!userData.user) throw new Error('Not authenticated')
+  if (!userData.user) return { data: null, error: '로그인이 필요합니다.' }
+
+  const insertPayload: Record<string, unknown> = {
+    user_id: userData.user.id,
+    title: payload.title,
+    category_id: payload.category_id,
+    duration_minutes: payload.duration_minutes,
+  }
+  if (payload.hex_color) insertPayload.hex_color = payload.hex_color
+  if (payload.memo) insertPayload.memo = payload.memo
 
   const { data, error } = await supabase
     .from('activity_templates')
-    .insert([{
-      user_id: userData.user.id,
-      title: payload.title,
-      category_id: payload.category_id,
-      duration_minutes: payload.duration_minutes,
-      hex_color: payload.hex_color || null,
-      memo: payload.memo || null
-    }])
+    .insert([insertPayload])
     .select()
     .single()
 
-  if (error) throw new Error(error.message)
-  return data
+  if (error) return { data: null, error: error.message }
+  return { data, error: null }
 }
 
 export async function updateActivityTemplate(id: string, payload: Partial<Omit<ActivityTemplate, 'id'>>) {
   const supabase = await createClient()
   const { data: userData } = await supabase.auth.getUser()
-  if (!userData.user) throw new Error('Not authenticated')
+  if (!userData.user) return { data: null, error: '로그인이 필요합니다.' }
+
+  const updatePayload: Record<string, unknown> = {}
+  if (payload.title !== undefined) updatePayload.title = payload.title
+  if (payload.category_id !== undefined) updatePayload.category_id = payload.category_id
+  if (payload.duration_minutes !== undefined) updatePayload.duration_minutes = payload.duration_minutes
+  if (payload.hex_color !== undefined) updatePayload.hex_color = payload.hex_color
+  if (payload.memo !== undefined) updatePayload.memo = payload.memo
 
   const { data, error } = await supabase
     .from('activity_templates')
-    .update({
-      title: payload.title,
-      category_id: payload.category_id,
-      duration_minutes: payload.duration_minutes,
-      hex_color: payload.hex_color !== undefined ? payload.hex_color : undefined,
-      memo: payload.memo !== undefined ? payload.memo : undefined
-    })
+    .update(updatePayload)
     .eq('id', id)
     .eq('user_id', userData.user.id)
     .select()
     .single()
 
-  if (error) throw new Error(error.message)
-  return data
+  if (error) return { data: null, error: error.message }
+  return { data, error: null }
 }
 
 export async function deleteActivityTemplate(id: string) {
