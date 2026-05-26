@@ -5,8 +5,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { X, Pencil, Clock, Plus } from 'lucide-react'
-import { useCategories, useCreateCategory } from '@/hooks/useCalendarQueries'
+import { X, Pencil, Clock, Plus, Trash2 } from 'lucide-react'
+import { useCategories, useCreateCategory, useDeleteCategory } from '@/hooks/useCalendarQueries'
 import { useCreateTemplate, useUpdateTemplate } from '@/hooks/useInsightsQueries'
 import type { ActivityTemplate } from '@/app/actions/insights'
 
@@ -75,6 +75,7 @@ export function TemplateFormDialog({ isOpen, onClose, editingTemplate }: Templat
   // 시스템 가상 카테고리(기념일 등)는 DB에 실제로 없으므로 템플릿 폼에서 제외
   const categories = allCategories.filter(c => c.user_id !== 'system')
   const { mutate: createCategory } = useCreateCategory()
+  const { mutate: deleteCategory, isPending: isDeletingCategory } = useDeleteCategory()
   const { mutate: createTemplate, isPending: isCreating } = useCreateTemplate()
   const { mutate: updateTemplate, isPending: isUpdating } = useUpdateTemplate()
 
@@ -172,8 +173,8 @@ export function TemplateFormDialog({ isOpen, onClose, editingTemplate }: Templat
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent ref={dialogRef} className="sm:max-w-[440px] p-0 overflow-hidden bg-[#f8f9ff] border-none shadow-2xl rounded-2xl flex flex-col z-[100]">
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()} modal>
+      <DialogContent ref={dialogRef} className="sm:max-w-[440px] p-0 overflow-hidden bg-[#f8f9ff] border-none shadow-2xl rounded-2xl flex flex-col z-[200]" showCloseButton={false}>
         <DialogHeader className="px-6 py-4 border-b border-gray-100 bg-white">
           <DialogTitle className="text-xl font-bold text-gray-900">{editingTemplate ? '템플릿 수정' : '새 템플릿 만들기'}</DialogTitle>
           <DialogDescription className="sr-only">일정 등록 템플릿 폼</DialogDescription>
@@ -204,13 +205,28 @@ export function TemplateFormDialog({ isOpen, onClose, editingTemplate }: Templat
                       <button
                         key={cat.id}
                         type="button"
-                        onClick={() => setCategoryId(cat.id)}
-                        className={`px-3.5 py-1.5 text-sm font-medium rounded-full transition-all flex items-center gap-1.5 shadow-sm text-white border-2
+                        onClick={() => setCategoryId(prev => prev === cat.id ? '' : cat.id)}
+                        className={`group/cat px-3.5 py-1.5 text-sm font-medium rounded-full transition-all flex items-center gap-1.5 shadow-sm text-white border-2
                           ${isSelected ? 'border-white ring-2 ring-indigo-300' : 'border-transparent opacity-85 hover:opacity-100'}`}
                         style={{ backgroundColor: cat.hex_color || '#4f46e5', textShadow: '0 1px 2px rgba(0,0,0,0.5)' }}
                       >
                         {cat.name}
                         {isSelected && <X className="w-3.5 h-3.5" />}
+                        {!isSelected && !cat.is_default && (
+                          <span
+                            role="button"
+                            className="hidden group-hover/cat:inline-flex items-center justify-center w-4 h-4 rounded-full bg-white/30 hover:bg-red-500/80 transition-colors ml-0.5"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              if (window.confirm(`'${cat.name}' 카테고리를 삭제하시겠습니까?\n\n⚠️ 이 카테고리에 연결된 일정의 카테고리 정보가 해제됩니다.`)) {
+                                if (categoryId === cat.id) setCategoryId('')
+                                deleteCategory(cat.id)
+                              }
+                            }}
+                          >
+                            <Trash2 className="w-2.5 h-2.5" />
+                          </span>
+                        )}
                       </button>
                     )
                   })}
