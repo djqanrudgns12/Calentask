@@ -286,10 +286,9 @@ export function AddEventDialog({ children }: { children?: React.ReactNode }) {
     }
 
     // Extract final color logic
-    let finalHex = customColor
-    if (!finalHex && selectedCategories.length === 1) {
-      finalHex = categories.find(c => c.id === selectedCategories[0])?.hex_color || null
-    }
+    // customColor가 있으면 → 사용자가 팔레트에서 직접 지정한 것이므로 그대로 저장
+    // customColor가 null이면 → hex_color를 null로 저장하여 런타임에서 카테고리 최신 색상을 따르게 함
+    const finalHex = customColor
 
     const payloadData = {
       title,

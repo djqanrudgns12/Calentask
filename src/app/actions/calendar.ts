@@ -80,12 +80,23 @@ export async function deleteCategory(id: string) {
   return true
 }
 
-// 카테고리 수정
+// 카테고리 수정 (색상 변경 시 연관 일정/템플릿도 동기화)
 export async function updateCategory(id: string, name: string, hexColor: string) {
   const supabase = await createClient()
   const { data: userData } = await supabase.auth.getUser()
   if (!userData.user) throw new Error('Not authenticated')
 
+  // 1. 기존 카테고리의 색상 조회 (변경 전 색상 기억)
+  const { data: oldCategory } = await supabase
+    .from('categories')
+    .select('hex_color')
+    .eq('id', id)
+    .eq('user_id', userData.user.id)
+    .single()
+
+  const oldColor = oldCategory?.hex_color
+
+  // 2. 카테고리 업데이트
   const { data, error } = await supabase
     .from('categories')
     .update({ name, hex_color: hexColor })
@@ -95,6 +106,40 @@ export async function updateCategory(id: string, name: string, hexColor: string)
     .single()
 
   if (error) throw new Error(error.message)
+
+  // 3. 색상이 실제로 변경된 경우에만 연관 일정 동기화
+  if (oldColor && oldColor !== hexColor) {
+    // 이 카테고리에 연결된 모든 일정 ID 조회
+    const { data: linkedActivities } = await supabase
+      .from('activity_category_map')
+      .select('activity_id')
+      .eq('category_id', id)
+
+    if (linkedActivities && linkedActivities.length > 0) {
+      const activityIds = linkedActivities.map(a => a.activity_id)
+
+      // 기존 카테고리 색과 동일한 hex_color를 가진 일정만 null로 초기화
+      // → null이 되면 eventColor.ts에서 카테고리의 최신 색상을 런타임 참조
+      // → 사용자가 직접 다른 색을 선택한 일정은 영향 받지 않음
+      await supabase
+        .from('activities')
+        .update({ hex_color: null })
+        .in('id', activityIds)
+        .eq('hex_color', oldColor)
+
+      // hex_color가 이미 null인 일정은 이미 카테고리 색을 따르므로 추가 작업 불필요
+    }
+
+    // 4. 연관 템플릿의 색상도 동기화
+    // 템플릿의 hex_color가 이전 카테고리 색과 같으면 null로 초기화
+    await supabase
+      .from('activity_templates')
+      .update({ hex_color: null })
+      .eq('user_id', userData.user.id)
+      .eq('hex_color', oldColor)
+      .contains('category_ids', [id])
+  }
+
   return data as Category
 }
 
