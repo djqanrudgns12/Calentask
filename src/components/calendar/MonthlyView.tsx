@@ -7,8 +7,44 @@ import { getEventBarGradient, getEventBgColor } from '@/lib/eventColor'
 import { useCalendarStore } from '@/store/useCalendarStore'
 import { useSpecialDays } from '@/hooks/useSpecialDays'
 import { Pencil, Trash2 } from 'lucide-react'
+import { useDroppable, useDraggable } from '@dnd-kit/core'
 
 import React from 'react'
+
+function DraggableEventCard({ event, children }: { event: Activity, children: React.ReactNode }) {
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
+    id: event.id,
+    disabled: (event.type as string) === 'ANNIVERSARY_OVERLAY'
+  })
+  
+  return (
+    <div
+      ref={setNodeRef}
+      {...listeners}
+      {...attributes}
+      className={`w-full ${isDragging ? 'opacity-30 pointer-events-none' : ''}`}
+    >
+      {children}
+    </div>
+  )
+}
+
+function DayCell({ day, children, isCurrentMonth, onClick }: any) {
+  const dateStr = format(day, 'yyyy-MM-dd')
+  const { setNodeRef, isOver } = useDroppable({
+    id: dateStr
+  })
+  
+  return (
+    <div
+      ref={setNodeRef}
+      onClick={onClick}
+      className={`min-h-0 rounded-2xl p-4 transition-all cursor-pointer flex flex-col border border-[#EEEEEE] shadow-sm hover:shadow-md bg-white ${isCurrentMonth ? 'opacity-100' : 'opacity-40'} ${isOver ? 'ring-2 ring-indigo-400 bg-indigo-50/50' : ''}`}
+    >
+      {children}
+    </div>
+  )
+}
 
 interface MonthlyViewProps {
   currentDate: Date
@@ -69,11 +105,11 @@ export const MonthlyView = React.memo(function MonthlyView({ currentDate, events
           ].flat().join(', ')
 
           return (
-            <div
+            <DayCell
               key={idx}
+              day={day}
               onClick={() => openDaySummary(day)}
-              className={`min-h-0 rounded-2xl p-4 transition-all cursor-pointer flex flex-col border border-[#EEEEEE] shadow-sm hover:shadow-md bg-white ${isCurrentMonth ? 'opacity-100' : 'opacity-40'
-                }`}
+              isCurrentMonth={isCurrentMonth}
             >
               <div className="flex justify-between items-start mb-3">
                 <div className="flex flex-col gap-0.5 max-w-[70%]">
@@ -103,9 +139,9 @@ export const MonthlyView = React.memo(function MonthlyView({ currentDate, events
                 )}
                 {dayEvents.slice(0, (holidayName && showHolidaysAsTags) ? 2 : 3).map(event => {
                   return (
-                    <div
-                      key={event.id}
-                      onClick={(e) => { e.stopPropagation(); openEventDetail(event); }}
+                    <DraggableEventCard key={event.id} event={event}>
+                      <div
+                        onClick={(e) => { e.stopPropagation(); openEventDetail(event); }}
                       onDoubleClick={(e) => { e.stopPropagation(); openEditEvent(event); }}
                       className="group relative flex items-stretch rounded-r-lg text-xs transition-all hover:scale-[1.02] overflow-hidden cursor-pointer"
                       style={{ backgroundColor: getEventBgColor(event) }}
@@ -136,7 +172,8 @@ export const MonthlyView = React.memo(function MonthlyView({ currentDate, events
                           <Trash2 className="w-3 h-3" />
                         </button>
                       </div>
-                    </div>
+                      </div>
+                    </DraggableEventCard>
                   )
                 })}
 
@@ -149,7 +186,7 @@ export const MonthlyView = React.memo(function MonthlyView({ currentDate, events
                   </button>
                 )}
               </div>
-            </div>
+            </DayCell>
           )
         })}
       </div>

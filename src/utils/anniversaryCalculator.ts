@@ -105,6 +105,9 @@ export function calculateOverlays(anniversary: Anniversary, rangeStart: Date, ra
 
   if (rule.type === 'DAYS_COUNT') {
     // 1일부터 시작. base_date가 1일.
+    // 주년 이벤트가 생성된 날짜를 추적 (일수 마일스톤과 중복 방지)
+    const yearAnniversaryDates = new Set<string>();
+
     // 매년 1주년, 2주년 등도 계산 (range 내)
     if (rule.options?.show_years !== false) {
       for (let y = rangeStart.getFullYear() - 1; y <= rangeEnd.getFullYear() + 1; y++) {
@@ -113,6 +116,7 @@ export function calculateOverlays(anniversary: Anniversary, rangeStart: Date, ra
           const diffYears = y - baseDate.getFullYear();
           if (diffYears > 0) {
             events.push(createEvent(anniversaryYearDate, `${diffYears}주년`));
+            yearAnniversaryDates.add(format(anniversaryYearDate, 'yyyy-MM-dd'));
           }
         }
       }
@@ -124,7 +128,11 @@ export function calculateOverlays(anniversary: Anniversary, rangeStart: Date, ra
       milestones.forEach(m => {
         const milestoneDate = addDays(baseDate, m - 1);
         if (milestoneDate >= rangeStart && milestoneDate <= rangeEnd) {
-          events.push(createEvent(milestoneDate, `${m}일`));
+          // 같은 날짜에 이미 주년 이벤트가 있으면 일수 마일스톤은 스킵 (예: 365일 vs 1주년)
+          const dateKey = format(milestoneDate, 'yyyy-MM-dd');
+          if (!yearAnniversaryDates.has(dateKey)) {
+            events.push(createEvent(milestoneDate, `${m}일`));
+          }
         }
       });
     }

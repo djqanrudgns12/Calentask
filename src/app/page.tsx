@@ -9,6 +9,8 @@ import { Plus, Tags, Database, LogOut, Calendar as CalendarIcon, DownloadCloud, 
 import { motion, AnimatePresence } from 'framer-motion'
 
 import { startOfWeek, endOfWeek } from 'date-fns'
+import { DndContext, PointerSensor, useSensor, useSensors, DragOverlay } from '@dnd-kit/core'
+import { useEventDragDrop } from '@/hooks/useEventDragDrop'
 import { useActivities } from '@/hooks/useCalendarQueries'
 import type { Activity } from '@/app/actions/calendar'
 import { logout } from '@/app/actions/auth'
@@ -85,6 +87,21 @@ export default function CalendarPage() {
       event.categories?.some(cat => activeCategories.includes(cat.id))
     )
   }
+
+  const { activeEvent, handleDragStart, handleDragEnd, handleDragCancel } = useEventDragDrop({
+    viewMode: viewMode as any,
+    events,
+    startDateStr: queryStartDate.toISOString(),
+    endDateStr: queryEndDate.toISOString()
+  })
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 5,
+      }
+    })
+  )
 
   useEffect(() => {
     setMounted(true)
@@ -250,19 +267,33 @@ export default function CalendarPage() {
         }} />
 
         {/* Dynamic Views Area - Add padding for floating effect */}
-        <div className="flex-1 overflow-auto px-8 pb-8">
-          {viewMode === 'monthly' && <MonthlyView currentDate={currentDate} events={events} />}
-          {viewMode === 'weekly' && <WeeklyView currentDate={currentDate} events={events} />}
-          {viewMode === 'list' && <ListView currentDate={currentDate} events={events} />}
-          {viewMode === 'semester' && <SemesterView currentDate={currentDate} events={events} />}
-          {viewMode === 'nice_import' && <NiceImportView />}
-          {viewMode === 'anniversary' && <AnniversarySettingsView />}
-          {viewMode === 'insights' && (
-            <div className="min-h-full bg-[#FAFAFA] rounded-3xl p-6">
-              <InsightsClient />
-            </div>
-          )}
-        </div>
+        <DndContext
+          sensors={sensors}
+          onDragStart={handleDragStart}
+          onDragEnd={handleDragEnd}
+          onDragCancel={handleDragCancel}
+        >
+          <div className="flex-1 overflow-auto px-8 pb-8">
+            {viewMode === 'monthly' && <MonthlyView currentDate={currentDate} events={events} />}
+            {viewMode === 'weekly' && <WeeklyView currentDate={currentDate} events={events} />}
+            {viewMode === 'list' && <ListView currentDate={currentDate} events={events} />}
+            {viewMode === 'semester' && <SemesterView currentDate={currentDate} events={events} />}
+            {viewMode === 'nice_import' && <NiceImportView />}
+            {viewMode === 'anniversary' && <AnniversarySettingsView />}
+            {viewMode === 'insights' && (
+              <div className="min-h-full bg-[#FAFAFA] rounded-3xl p-6">
+                <InsightsClient />
+              </div>
+            )}
+          </div>
+          <DragOverlay>
+            {activeEvent ? (
+              <div className="bg-white rounded-md shadow-lg p-2 text-xs font-semibold border border-indigo-200 opacity-90 scale-105">
+                {activeEvent.title}
+              </div>
+            ) : null}
+          </DragOverlay>
+        </DndContext>
       </main>
 
       {/* Floating Action Button - Apple Style BIG Circle */}

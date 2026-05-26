@@ -8,6 +8,37 @@ import { Pencil, Trash2 } from 'lucide-react'
 import { useCalendarStore } from '@/store/useCalendarStore'
 import { useSpecialDays } from '@/hooks/useSpecialDays'
 import { useEffect, useRef, useState } from 'react'
+import { useDroppable, useDraggable } from '@dnd-kit/core'
+
+function DraggableTimeBlock({ event, children, style, className, ...props }: any) {
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
+    id: event.id,
+    disabled: (event.type as string) === 'ANNIVERSARY_OVERLAY'
+  })
+
+  return (
+    <div
+      ref={setNodeRef}
+      {...listeners}
+      {...attributes}
+      className={`${className} ${isDragging ? 'opacity-50 !z-[999] pointer-events-none' : ''}`}
+      style={style}
+      {...props}
+    >
+      {children}
+    </div>
+  )
+}
+
+function DroppableColumn({ day, children, ...props }: any) {
+  const dateStr = format(day, 'yyyy-MM-dd')
+  const { setNodeRef, isOver } = useDroppable({ id: dateStr })
+  return (
+    <div ref={setNodeRef} {...props} className={`${props.className} ${isOver ? 'bg-indigo-50/30' : ''}`}>
+      {children}
+    </div>
+  )
+}
 
 interface WeeklyViewProps {
   currentDate: Date
@@ -219,8 +250,9 @@ export const WeeklyView = React.memo(function WeeklyView({ currentDate, events }
               processCluster(currentCluster)
 
               return (
-                <div
+                <DroppableColumn
                   key={dayIdx}
+                  day={day}
                   className="relative border-r border-[#F1F5F9] last:border-r-0"
                   style={{ minHeight: PIXELS_PER_HOUR * 24 }}
                   onClick={() => openDaySummary(day)}
@@ -242,10 +274,11 @@ export const WeeklyView = React.memo(function WeeklyView({ currentDate, events }
                     const widthStr = `calc(${widthPercent}% - 4px)`
 
                     return (
-                      <div
+                      <DraggableTimeBlock
                         key={event.id}
-                        onClick={(e) => { e.stopPropagation(); openEventDetail(event); }}
-                        onDoubleClick={(e) => { e.stopPropagation(); openEditEvent(event); }}
+                        event={event}
+                        onClick={(e: React.MouseEvent) => { e.stopPropagation(); openEventDetail(event); }}
+                        onDoubleClick={(e: React.MouseEvent) => { e.stopPropagation(); openEditEvent(event); }}
                         className="group absolute rounded-md overflow-hidden flex items-stretch transition-all duration-200 hover:z-50 hover:scale-[1.02] hover:min-w-[140px] shadow-sm backdrop-blur-md cursor-pointer"
                         style={{
                           top: `${top}px`,
@@ -288,7 +321,7 @@ export const WeeklyView = React.memo(function WeeklyView({ currentDate, events }
                             <Trash2 className="w-3 h-3" />
                           </button>
                         </div>
-                      </div>
+                      </DraggableTimeBlock>
                     )
                   })}
 
@@ -302,7 +335,7 @@ export const WeeklyView = React.memo(function WeeklyView({ currentDate, events }
                       <div className="flex-1 h-[2px] bg-[#E11D48] shadow-[0_0_8px_rgba(225,29,72,0.8)]" />
                     </div>
                   )}
-                </div>
+                </DroppableColumn>
               )
             })}
           </div>
