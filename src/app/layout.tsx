@@ -3,6 +3,7 @@ import localFont from "next/font/local";
 import "./globals.css";
 import { QueryProvider } from "@/providers/QueryProvider";
 import { Toaster } from "sonner";
+import { GlobalShortcutsProvider } from "@/providers/GlobalShortcutsProvider";
 
 const customFont = localFont({
   src: "./fonts/RIDIBatang.otf",
@@ -33,6 +34,7 @@ export default function RootLayout({
         <QueryProvider>
           {children}
         </QueryProvider>
+        <GlobalShortcutsProvider />
         <Toaster position="bottom-center" richColors />
       </body>
     </html>

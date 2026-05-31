@@ -7,11 +7,14 @@ import { useUserProfile } from '@/hooks/useCalendarQueries'
 import { logout } from '@/app/actions/auth'
 import { useCalendarStore } from '@/store/useCalendarStore'
 import { useQueryClient } from '@tanstack/react-query'
+import { useGlobalUIStore } from '@/store/useGlobalUIStore'
+import { Keyboard } from 'lucide-react'
 
 export function ProfileDropdown({ onOpenSettings }: { onOpenSettings: () => void }) {
   const [isOpen, setIsOpen] = useState(false)
   const { data: profile, isLoading } = useUserProfile()
   const { resetStore } = useCalendarStore()
+  const { openShortcutsModal } = useGlobalUIStore()
   const queryClient = useQueryClient()
 
   const handleLogout = async () => {
@@ -69,6 +72,17 @@ export function ProfileDropdown({ onOpenSettings }: { onOpenSettings: () => void
         </div>
         
         <div className="flex flex-col gap-1">
+          <button
+            onClick={() => {
+              setIsOpen(false)
+              openShortcutsModal()
+            }}
+            className="flex items-center gap-3 px-3 py-2 text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-50 rounded-lg transition-colors text-left"
+          >
+            <Keyboard className="w-4 h-4 text-emerald-500" />
+            단축키 안내
+          </button>
+          
           <button
             onClick={() => {
               setIsOpen(false)

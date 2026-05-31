@@ -102,6 +102,11 @@ export function PinPadOverlay({ children }: { children: React.ReactNode }) {
   };
 
   const handleKeyPress = (num: string) => {
+    // Add haptic feedback for mobile devices
+    if (typeof window !== 'undefined' && window.navigator && window.navigator.vibrate) {
+      window.navigator.vibrate(30);
+    }
+    
     if (pin.length < 4 && lockoutTime === 0 && !isProcessing) {
       const newPin = pin + num;
       setPin(newPin);
@@ -134,10 +139,29 @@ export function PinPadOverlay({ children }: { children: React.ReactNode }) {
   };
 
   const handleDelete = () => {
+    if (typeof window !== 'undefined' && window.navigator && window.navigator.vibrate) {
+      window.navigator.vibrate(20);
+    }
     if (!isProcessing) {
       setPin(prev => prev.slice(0, -1));
     }
   };
+
+  // Add global keyboard support for desktop responsiveness
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Only handle if we're in a PIN input mode and not focused on an input field (like during setup_security)
+      if (['locked', 'setup_pin', 'setup_confirm'].includes(mode) && document.activeElement?.tagName !== 'INPUT') {
+        if (/^[0-9]$/.test(e.key)) {
+          handleKeyPress(e.key);
+        } else if (e.key === 'Backspace') {
+          handleDelete();
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [pin, mode, lockoutTime, isProcessing, firstPin]);
 
   const handleSetupSecurity = async () => {
     if (!answer.trim()) return;
@@ -257,7 +281,7 @@ export function PinPadOverlay({ children }: { children: React.ReactNode }) {
                         key={num}
                         onClick={() => handleKeyPress(num.toString())}
                         disabled={isProcessing}
-                        className="h-[60px] rounded-2xl bg-white/60 hover:bg-white text-slate-800 text-2xl font-medium transition-all shadow-sm hover:shadow-md border border-slate-100 disabled:opacity-50"
+                        className="h-[60px] md:h-[68px] rounded-2xl bg-white/60 hover:bg-white active:bg-slate-100 active:scale-95 text-slate-800 text-2xl font-medium transition-all shadow-sm hover:shadow-md border border-slate-100 disabled:opacity-50 touch-manipulation"
                       >
                         {num}
                       </button>
@@ -266,14 +290,14 @@ export function PinPadOverlay({ children }: { children: React.ReactNode }) {
                     <button
                       onClick={() => handleKeyPress('0')}
                       disabled={isProcessing}
-                      className="h-[60px] rounded-2xl bg-white/60 hover:bg-white text-slate-800 text-2xl font-medium transition-all shadow-sm hover:shadow-md border border-slate-100 disabled:opacity-50"
+                      className="h-[60px] md:h-[68px] rounded-2xl bg-white/60 hover:bg-white active:bg-slate-100 active:scale-95 text-slate-800 text-2xl font-medium transition-all shadow-sm hover:shadow-md border border-slate-100 disabled:opacity-50 touch-manipulation"
                     >
                       0
                     </button>
                     <button
                       onClick={handleDelete}
                       disabled={isProcessing}
-                      className="h-[60px] rounded-2xl flex items-center justify-center bg-white/60 hover:bg-white text-slate-500 hover:text-rose-500 transition-all shadow-sm hover:shadow-md border border-slate-100 disabled:opacity-50"
+                      className="h-[60px] md:h-[68px] rounded-2xl flex items-center justify-center bg-white/60 hover:bg-white active:bg-slate-100 active:scale-95 text-slate-500 hover:text-rose-500 transition-all shadow-sm hover:shadow-md border border-slate-100 disabled:opacity-50 touch-manipulation"
                     >
                       <Delete className="w-6 h-6" />
                     </button>
