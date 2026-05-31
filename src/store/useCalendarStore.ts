@@ -46,6 +46,7 @@ interface CalendarState {
   closeDaySummary: () => void
   openEventDetail: (event: Activity) => void
   closeEventDetail: () => void
+  updateTaskTime: (taskId: string, newStartTime: string, newEndTime: string) => void
   resetStore: () => void
 }
 
@@ -93,6 +94,20 @@ export const useCalendarStore = create<CalendarState>()(
       closeDaySummary: () => set({ selectedDaySummary: null }),
       openEventDetail: (event) => set({ selectedEventDetail: event, selectedDaySummary: null, isAddEventOpen: false }),
       closeEventDetail: () => set({ selectedEventDetail: null }),
+      updateTaskTime: (taskId, newStartTime, newEndTime) => set((state) => {
+        // 이 부분은 향후 로컬 캐싱이나 낙관적 업데이트(Optimistic Update)를 위한 자리입니다.
+        // 실제 DB 업데이트 로직은 컴포넌트 레벨에서 API를 호출하도록 설계됩니다.
+        if (state.selectedEventDetail?.id === taskId) {
+          return {
+            selectedEventDetail: {
+              ...state.selectedEventDetail,
+              start_time: newStartTime,
+              end_time: newEndTime
+            }
+          };
+        }
+        return state;
+      }),
       resetStore: () => set((state) => ({
         // 유지할 상태들 (localStorage에 저장되는 항목들)
         currentDate: state.currentDate,

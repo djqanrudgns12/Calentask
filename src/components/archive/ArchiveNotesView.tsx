@@ -13,6 +13,7 @@ import { GalleryBoard } from '@/components/archive/boards/GalleryBoard';
 import { Plus, LayoutGrid, LayoutList, Grip, Image as ImageIcon, Table, Columns, Clock, FolderOpen } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { AddNoteDialog } from './AddNoteDialog';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export function ArchiveNotesView() {
   const { tabs, activeTabId, setActiveTabId } = useArchiveStore();
@@ -100,26 +101,34 @@ export function ArchiveNotesView() {
                 </button>
               </div>
             ) : (
-              <>
-                {tabs.find((t: any) => t.id === activeTabId)?.board_type === 'list' && <ListBoard />}
-                {tabs.find((t: any) => t.id === activeTabId)?.board_type === 'canvas' && <CanvasBoard />}
-                {tabs.find((t: any) => t.id === activeTabId)?.board_type === 'masonry' && <MasonryBoard />}
-                {tabs.find((t: any) => t.id === activeTabId)?.board_type === 'table' && <TableBoard />}
-                {tabs.find((t: any) => t.id === activeTabId)?.board_type === 'kanban' && <KanbanBoard />}
-                {tabs.find((t: any) => t.id === activeTabId)?.board_type === 'journal' && <JournalBoard />}
-                {tabs.find((t: any) => t.id === activeTabId)?.board_type === 'gallery' && <GalleryBoard />}
-                
-                {/* 렌더링 타입이 매칭되지 않을 경우 폴백 UI */}
-                {activeTabId && !['list', 'canvas', 'masonry', 'table', 'kanban', 'journal', 'gallery'].includes(tabs.find((t: any) => t.id === activeTabId)?.board_type || '') && (
-                  <div className="flex flex-col items-center justify-center h-full text-center">
-                    <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-slate-100">
-                      <Grip className="w-8 h-8 text-slate-300" />
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={activeTabId || 'empty'}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0, transition: { type: 'spring', stiffness: 350, damping: 25 } }}
+                  exit={{ opacity: 0, y: -10, transition: { duration: 0.15 } }}
+                  className="w-full h-full relative"
+                >
+                  {tabs.find((t: any) => t.id === activeTabId)?.board_type === 'list' && <ListBoard />}
+                  {tabs.find((t: any) => t.id === activeTabId)?.board_type === 'canvas' && <CanvasBoard />}
+                  {tabs.find((t: any) => t.id === activeTabId)?.board_type === 'masonry' && <MasonryBoard />}
+                  {tabs.find((t: any) => t.id === activeTabId)?.board_type === 'table' && <TableBoard />}
+                  {tabs.find((t: any) => t.id === activeTabId)?.board_type === 'kanban' && <KanbanBoard />}
+                  {tabs.find((t: any) => t.id === activeTabId)?.board_type === 'journal' && <JournalBoard />}
+                  {tabs.find((t: any) => t.id === activeTabId)?.board_type === 'gallery' && <GalleryBoard />}
+                  
+                  {/* 렌더링 타입이 매칭되지 않을 경우 폴백 UI */}
+                  {activeTabId && !['list', 'canvas', 'masonry', 'table', 'kanban', 'journal', 'gallery'].includes(tabs.find((t: any) => t.id === activeTabId)?.board_type || '') && (
+                    <div className="flex flex-col items-center justify-center h-full text-center">
+                      <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-slate-100">
+                        <Grip className="w-8 h-8 text-slate-300" />
+                      </div>
+                      <h3 className="text-lg font-bold text-slate-700 mb-1">개발 중인 보드 타입</h3>
+                      <p className="text-slate-400 text-sm">해당 뷰는 현재 업데이트를 준비 중입니다.</p>
                     </div>
-                    <h3 className="text-lg font-bold text-slate-700 mb-1">개발 중인 보드 타입</h3>
-                    <p className="text-slate-400 text-sm">해당 뷰는 현재 업데이트를 준비 중입니다.</p>
-                  </div>
-                )}
-              </>
+                  )}
+                </motion.div>
+              </AnimatePresence>
             )}
           </div>
         </div>

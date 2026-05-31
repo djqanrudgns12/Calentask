@@ -41,6 +41,7 @@ import InsightsClient from '@/app/insights/InsightsClient'
 import { ArchiveNotesView } from '@/components/archive/ArchiveNotesView'
 import { ArchiveAgendaView } from '@/components/archive/ArchiveAgendaView'
 import { BottomNavigation } from '@/components/ui/BottomNavigation'
+import { CommandPalette } from '@/components/ui/CommandPalette'
 
 export default function CalendarPage() {
   const [mounted, setMounted] = useState(false)
@@ -444,6 +445,9 @@ export default function CalendarPage() {
       
       {/* Confetti Animation wrapper */}
       <AnniversaryConfetti />
+
+      {/* Global Command Palette */}
+      <CommandPalette />
     </div>
   )
 }
