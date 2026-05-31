@@ -55,12 +55,12 @@ export function ProfileTab() {
   }
 
   return (
-    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
+    <div className="space-y-6 md:space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
       
       {/* 기본 정보 섹션 */}
-      <section className="space-y-4">
-        <h3 className="text-lg font-bold text-slate-800">기본 정보</h3>
-        <div className="grid sm:grid-cols-2 gap-6">
+      <section className="space-y-3 md:space-y-4">
+        <h3 className="text-base md:text-lg font-bold text-slate-800">기본 정보</h3>
+        <div className="grid sm:grid-cols-2 gap-4 md:gap-6">
           <div className="space-y-2">
             <Label htmlFor="fullName" className="text-slate-600 font-medium">이름</Label>
             <Input 
@@ -111,9 +111,9 @@ export function ProfileTab() {
       </section>
 
       {/* 보안 섹션 (비밀번호 변경) */}
-      <section className="space-y-4 pt-6 border-t border-slate-100">
+      <section className="space-y-3 md:space-y-4 pt-4 md:pt-6 border-t border-slate-100">
         <div className="flex items-center justify-between">
-          <h3 className="text-lg font-bold text-slate-800">보안</h3>
+          <h3 className="text-base md:text-lg font-bold text-slate-800">보안</h3>
           {!isChangingPassword && (
             <Button 
               variant="outline" 

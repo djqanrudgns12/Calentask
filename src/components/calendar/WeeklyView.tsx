@@ -163,7 +163,7 @@ export const WeeklyView = React.memo(function WeeklyView({ currentDate, events }
               </div>
             )
           })}
-        </div>
+            </div>
           </div>
 
           {/* Body: Time Grid */}
@@ -343,6 +343,7 @@ export const WeeklyView = React.memo(function WeeklyView({ currentDate, events }
             })}
           </div>
         </div>
+      </div>
       </div>
     </div>
   )

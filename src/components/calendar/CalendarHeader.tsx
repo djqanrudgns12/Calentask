@@ -108,7 +108,7 @@ export function CalendarHeader({ onOpenSettings }: CalendarHeaderProps) {
   const isAnniversary = viewMode === 'anniversary'
   const isInsights = viewMode === 'insights'
 
-  let wrapperClassName = "flex-1 flex flex-col xl:flex-row items-center justify-between rounded-[2rem] px-3 py-2 md:px-4 md:py-2.5 gap-4 transition-all duration-500 overflow-hidden relative "
+  let wrapperClassName = "flex-1 flex flex-row items-center justify-between rounded-xl md:rounded-[2rem] px-2 py-1.5 md:px-4 md:py-2.5 gap-2 md:gap-4 transition-all duration-500 overflow-hidden relative "
 
   if (isCalendarView) {
     wrapperClassName += "bg-white shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] border border-slate-100"
@@ -129,7 +129,7 @@ export function CalendarHeader({ onOpenSettings }: CalendarHeaderProps) {
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
           exit={{ opacity: 0, x: -20 }}
-          className="flex items-center shrink-0 xl:border-r xl:border-slate-100 xl:pr-4 h-full"
+          className="hidden md:flex items-center shrink-0 xl:border-r xl:border-slate-100 xl:pr-4 h-full"
         >
           <GlobalCategoryFilter />
         </motion.div>
@@ -186,7 +186,7 @@ export function CalendarHeader({ onOpenSettings }: CalendarHeaderProps) {
             <BrainCircuit className="w-6 h-6 text-indigo-600 relative z-10" />
             <div className="absolute inset-0 bg-white/50 rounded-xl animate-pulse" />
           </div>
-          <div className="flex flex-col">
+          <div className="hidden md:flex flex-col">
             <h2 className="font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-indigo-700 to-purple-700 text-xl tracking-tight">인사이트 대시보드</h2>
             <div className="flex items-center gap-2 mt-0.5">
               <span className="relative flex w-2 h-2">
@@ -210,7 +210,7 @@ export function CalendarHeader({ onOpenSettings }: CalendarHeaderProps) {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -10 }}
-          className="flex-1 flex items-center justify-center gap-2 sm:gap-4 overflow-x-auto hide-scrollbar w-full"
+          className="flex-1 flex flex-row items-center justify-center gap-1 md:gap-4 overflow-x-auto hide-scrollbar w-full"
         >
           <div className="flex items-center space-x-1 sm:space-x-2 shrink-0">
             <button onClick={handlePrev} className="p-1.5 rounded-full hover:bg-slate-100 text-slate-500 transition-colors">
@@ -222,19 +222,21 @@ export function CalendarHeader({ onOpenSettings }: CalendarHeaderProps) {
             <button onClick={handleNext} className="p-1.5 rounded-full hover:bg-slate-100 text-slate-500 transition-colors">
               <ChevronRight className="w-5 h-5" />
             </button>
-            <button onClick={handleToday} className="px-3 py-1.5 rounded-full bg-slate-100 hover:bg-slate-200 text-xs font-bold text-slate-700 transition-colors ml-1">
+            <button onClick={handleToday} className="px-2 py-1 md:px-3 md:py-1.5 rounded-full bg-slate-100 hover:bg-slate-200 text-[10px] md:text-xs font-bold text-slate-700 transition-colors ml-1">
               오늘
             </button>
           </div>
 
           <div className="h-6 w-px bg-slate-200 mx-1 hidden sm:block"></div>
 
-          <div className="flex items-center bg-slate-100/80 p-1 rounded-full shrink-0">
+          <div className="flex items-center bg-slate-100/80 p-0.5 md:p-1 rounded-full shrink-0">
             {(['monthly', 'weekly', 'list', 'semester'] as const).map((mode) => (
               <button
                 key={mode}
                 onClick={() => setViewMode(mode)}
-                className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all whitespace-nowrap ${
+                className={`px-2 py-1 md:px-3 md:py-1.5 rounded-full text-[10px] md:text-xs font-bold transition-all whitespace-nowrap ${
+                  mode === 'semester' ? 'hidden md:block ' : ''
+                }${
                   viewMode === mode ? 'bg-white text-blue-600 shadow-sm ring-1 ring-slate-200/50' : 'text-slate-500 hover:text-slate-700'
                 }`}
               >
@@ -250,7 +252,7 @@ export function CalendarHeader({ onOpenSettings }: CalendarHeaderProps) {
 
   const renderRightSlot = () => {
     return (
-      <div className="flex items-center justify-end gap-1 sm:gap-2 shrink-0">
+      <div className="hidden md:flex items-center justify-end gap-1 sm:gap-2 shrink-0">
         <AnimatePresence mode="popLayout">
           {isCalendarView && (
             <motion.div
@@ -304,10 +306,9 @@ export function CalendarHeader({ onOpenSettings }: CalendarHeaderProps) {
 
   return (
     <>
-      <header className="px-4 sm:px-6 py-4 w-full z-20 relative">
+      <header className="px-2 sm:px-6 py-2 sm:py-4 w-full z-20 relative">
         <div className="flex w-full items-center gap-2">
-          {/* Mobile Menu Button */}
-          <button className="md:hidden p-2 text-slate-600 bg-white rounded-full shadow-[0_2px_10px_-2px_rgba(0,0,0,0.05)] border border-slate-100"><Menu className="w-5 h-5" /></button>
+          {/* Mobile Menu Button Removed */}
 
           {/* Unified Dynamic Wrapper */}
           <div className={wrapperClassName}>
@@ -325,7 +326,7 @@ export function CalendarHeader({ onOpenSettings }: CalendarHeaderProps) {
               </>
             )}
 
-            <div className="relative z-10 flex flex-col xl:flex-row w-full items-center justify-between gap-4">
+            <div className="relative z-10 flex flex-row w-full items-center justify-between gap-2 md:gap-4">
               <AnimatePresence mode="wait">
                 {renderLeftSlot()}
               </AnimatePresence>

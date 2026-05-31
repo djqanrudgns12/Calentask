@@ -35,7 +35,7 @@ export default function AnnualGoalWidget() {
       <div className="absolute right-0 top-0 w-32 h-32 bg-indigo-50 rounded-full blur-3xl opacity-50 -translate-y-1/2 translate-x-1/2"></div>
       
       <div className="flex flex-col z-10">
-        <div className="flex items-center gap-1.5 text-indigo-600 font-extrabold text-[12px] uppercase tracking-widest mb-1">
+        <div className="flex items-center gap-1.5 text-indigo-600 font-extrabold text-[12px] uppercase tracking-widest mb-1 whitespace-nowrap">
           <Trophy size={14} /> 2026 마스터 목표
         </div>
         <div className="text-[28px] font-black text-gray-900 tracking-tighter leading-none mt-1">

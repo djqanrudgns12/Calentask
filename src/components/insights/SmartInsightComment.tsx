@@ -159,7 +159,7 @@ export default function SmartInsightComment({ activities, prevActivities }: Smar
   }, [activities]);
 
   return (
-    <div className="flex gap-4 mb-6">
+    <div className="flex flex-col md:flex-row gap-4 mb-6">
       {/* AI Insight Comment */}
       <motion.div 
         initial={{ opacity: 0, y: 10 }}
@@ -183,7 +183,7 @@ export default function SmartInsightComment({ activities, prevActivities }: Smar
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.5, delay: 0.1 }}
-        className="shrink-0 w-32 rounded-[24px] bg-gray-900 p-5 flex flex-col items-center justify-center shadow-lg relative overflow-hidden"
+        className="shrink-0 w-full md:w-32 rounded-[24px] bg-gray-900 p-4 md:p-5 flex flex-row md:flex-col items-center justify-center md:justify-center gap-3 md:gap-0 shadow-lg relative overflow-hidden"
       >
         <div className="absolute top-0 right-0 w-16 h-16 bg-white/10 blur-2xl rounded-full translate-x-1/2 -translate-y-1/2"></div>
         <Flame className={insight.streak > 0 ? "text-orange-500 mb-2" : "text-gray-600 mb-2"} size={28} />

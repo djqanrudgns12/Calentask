@@ -74,17 +74,17 @@ export default function DashboardFilterBar({ categories }: DashboardFilterBarPro
   const isCustomActive = period === 'single' || period === 'custom';
 
   return (
-    <div className="flex flex-col gap-3 mb-8">
+    <div className="flex flex-row md:flex-col gap-2 md:gap-4 w-full overflow-x-auto md:overflow-visible hide-scroll pb-1 md:pb-0 -mx-1 px-1 md:mx-0 md:px-0">
       <style dangerouslySetInnerHTML={{__html: `
         .hide-scroll::-webkit-scrollbar { display: none; }
         .hide-scroll { -ms-overflow-style: none; scrollbar-width: none; }
       `}} />
 
-      {/* ── Row 1: Unified Date Filter Bar ── */}
-      <div className="flex items-center gap-2 flex-wrap">
+      {/* ── Row 1: Period Filters ── */}
+      <div className="flex items-center gap-2 shrink-0 md:shrink overflow-visible">
 
         {/* Preset period chips */}
-        <div className="flex items-center bg-white p-1 rounded-2xl border border-gray-200/80 shadow-sm">
+        <div className="flex items-center bg-white p-1 rounded-2xl border border-gray-200/80 shadow-sm shrink-0">
           {([
             { id: 'week', label: '이번 주' },
             { id: 'month', label: '이번 달' },
@@ -97,7 +97,7 @@ export default function DashboardFilterBar({ categories }: DashboardFilterBarPro
                 setCalendarMode('none');
               }}
               className={cn(
-                "px-4 py-2 rounded-xl text-[13px] font-bold transition-all whitespace-nowrap",
+                "px-3 py-1.5 md:px-4 md:py-2 rounded-xl text-[12px] md:text-[13px] font-bold transition-all whitespace-nowrap",
                 period === tab.id
                   ? "bg-gray-900 text-white shadow-md"
                   : "text-gray-500 hover:text-gray-900 hover:bg-gray-50"
@@ -116,7 +116,7 @@ export default function DashboardFilterBar({ categories }: DashboardFilterBarPro
           <button
             onClick={handleSingleClick}
             className={cn(
-              "flex items-center gap-2 px-4 py-2 rounded-xl text-[13px] font-bold transition-all whitespace-nowrap border",
+              "flex items-center gap-2 px-3 py-1.5 md:px-4 md:py-2 rounded-xl text-[12px] md:text-[13px] font-bold transition-all whitespace-nowrap border",
               period === 'single'
                 ? "bg-indigo-600 text-white border-indigo-600 shadow-lg shadow-indigo-600/20"
                 : "bg-white text-gray-500 border-gray-200/80 shadow-sm hover:border-indigo-300 hover:text-indigo-600 hover:bg-indigo-50/30"
@@ -166,7 +166,7 @@ export default function DashboardFilterBar({ categories }: DashboardFilterBarPro
           <button
             onClick={handleCustomClick}
             className={cn(
-              "flex items-center gap-2 px-4 py-2 rounded-xl text-[13px] font-bold transition-all whitespace-nowrap border",
+              "flex items-center gap-2 px-3 py-1.5 md:px-4 md:py-2 rounded-xl text-[12px] md:text-[13px] font-bold transition-all whitespace-nowrap border",
               period === 'custom'
                 ? "bg-gray-900 text-white border-gray-900 shadow-lg shadow-gray-900/20"
                 : "bg-white text-gray-500 border-gray-200/80 shadow-sm hover:border-gray-400 hover:text-gray-900 hover:bg-gray-50"
@@ -250,7 +250,7 @@ export default function DashboardFilterBar({ categories }: DashboardFilterBarPro
       </div>
 
       {/* ── Row 2: Advanced Filters (Type & Category) ── */}
-      <div className="flex items-center gap-2 overflow-x-auto hide-scroll pb-0.5">
+      <div className="flex items-center gap-2 shrink-0 md:shrink overflow-visible">
         {/* Type Filter */}
         <div className="flex items-center bg-white rounded-full border border-gray-200/80 shadow-sm p-0.5 shrink-0">
           {(['ALL', 'TASK', 'EVENT'] as const).map((type) => (
@@ -273,7 +273,7 @@ export default function DashboardFilterBar({ categories }: DashboardFilterBarPro
         <div className="relative" ref={categoryRef}>
           <button
             onClick={() => setIsCategoryOpen(!isCategoryOpen)}
-            className="flex items-center gap-2 rounded-full border border-gray-200/80 text-gray-600 shadow-sm h-[32px] px-3.5 shrink-0 text-xs font-bold bg-white hover:bg-gray-50 transition-colors"
+            className="flex items-center gap-2 rounded-full border border-gray-200/80 text-gray-600 shadow-sm h-[32px] px-3.5 shrink-0 text-xs font-bold bg-white hover:bg-gray-50 transition-colors whitespace-nowrap"
           >
             <Filter size={13} />
             {selectedCategoryIds.length === 0
