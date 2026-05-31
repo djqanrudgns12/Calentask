@@ -274,7 +274,7 @@ export default function InsightsClient() {
               />
             </div>
 
-            <div className="col-span-1 lg:col-span-12 flex overflow-x-auto lg:grid lg:grid-cols-12 gap-4 lg:gap-6 pb-2 hide-scrollbar snap-x snap-mandatory -mx-4 px-4 lg:mx-0 lg:px-0">
+            <div className="col-span-1 lg:col-span-12 flex overflow-x-auto lg:grid lg:grid-cols-12 gap-4 lg:gap-6 pb-2 hide-scrollbar snap-x snap-mandatory overscroll-x-contain touch-pan-x">
               <div className="min-w-[90vw] lg:min-w-0 lg:col-span-6 snap-center">
                 <ActivityHeatmap activities={insightsData?.rawData as any || []} />
               </div>

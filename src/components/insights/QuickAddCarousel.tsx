@@ -27,13 +27,7 @@ export default function QuickAddCarousel({ templates }: { templates: ActivityTem
         <h2 className="text-xs font-bold text-gray-400 uppercase tracking-widest">빠른 일정 등록</h2>
       </div>
       
-      {/* Hide scrollbar with inline styles */}
-      <style dangerouslySetInnerHTML={{__html: `
-        .hide-scroll::-webkit-scrollbar { display: none; }
-        .hide-scroll { -ms-overflow-style: none; scrollbar-width: none; }
-      `}} />
-      
-      <div className="flex overflow-x-auto gap-3 pb-4 hide-scroll -mx-6 px-6">
+      <div className="flex overflow-x-auto gap-3 pb-4 hide-scrollbar overscroll-x-contain touch-pan-x">
         {templates && templates.length > 0 ? (
           templates.map((item) => {
             const color = item.hex_color || '#4f46e5';

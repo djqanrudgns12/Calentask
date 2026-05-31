@@ -280,7 +280,7 @@ export default function CalendarPage() {
           onDragEnd={handleDragEnd}
           onDragCancel={handleDragCancel}
         >
-          <div className="flex-1 overflow-auto px-1 md:px-8 pb-8">
+          <div className="flex-1 overflow-y-auto overflow-x-hidden px-1 md:px-8 pb-8">
             {viewMode === 'monthly' && <MonthlyView currentDate={currentDate} events={events} />}
             {viewMode === 'weekly' && <WeeklyView currentDate={currentDate} events={events} />}
             {viewMode === 'list' && <ListView currentDate={currentDate} events={events} />}
@@ -288,7 +288,7 @@ export default function CalendarPage() {
             {viewMode === 'nice_import' && <NiceImportView />}
             {viewMode === 'anniversary' && <AnniversarySettingsView />}
             {viewMode === 'insights' && (
-              <div className="min-h-full bg-[#FAFAFA] rounded-xl md:rounded-3xl p-2 md:p-6">
+              <div className="min-h-full bg-[#FAFAFA] rounded-xl md:rounded-3xl p-2 md:p-6 overflow-x-hidden">
                 <InsightsClient />
               </div>
             )}

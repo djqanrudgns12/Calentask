@@ -89,7 +89,7 @@ export default function ActivityHeatmap({ activities }: ActivityHeatmapProps) {
         </div>
       </div>
 
-      <div className="overflow-x-auto pb-4 hide-scroll">
+      <div className="overflow-x-auto pb-4 hide-scrollbar overscroll-x-contain touch-pan-x">
         <div className="flex gap-1.5 min-w-max">
           {weeks.map((week, wIdx) => (
             <div key={wIdx} className="flex flex-col gap-1.5">

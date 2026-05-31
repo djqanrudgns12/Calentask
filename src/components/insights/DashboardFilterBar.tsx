@@ -74,11 +74,7 @@ export default function DashboardFilterBar({ categories }: DashboardFilterBarPro
   const isCustomActive = period === 'single' || period === 'custom';
 
   return (
-    <div className="flex flex-row md:flex-col gap-2 md:gap-4 w-full overflow-x-auto md:overflow-visible hide-scroll pb-1 md:pb-0 -mx-1 px-1 md:mx-0 md:px-0">
-      <style dangerouslySetInnerHTML={{__html: `
-        .hide-scroll::-webkit-scrollbar { display: none; }
-        .hide-scroll { -ms-overflow-style: none; scrollbar-width: none; }
-      `}} />
+    <div className="flex flex-row md:flex-col gap-2 md:gap-4 w-full overflow-x-auto md:overflow-visible hide-scrollbar pb-1 md:pb-0 overscroll-x-contain touch-pan-x">
 
       {/* ── Row 1: Period Filters ── */}
       <div className="flex items-center gap-2 shrink-0 md:shrink overflow-visible">
