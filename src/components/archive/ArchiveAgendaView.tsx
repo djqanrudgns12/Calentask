@@ -20,15 +20,23 @@ interface Task {
 }
 
 // Droppable Container Component
-function DroppableContainer({ id, title, icon: Icon, children, className }: any) {
+function DroppableContainer({ id, title, icon: Icon, children, className, isDark }: any) {
   const { setNodeRef, isOver } = useDroppable({ id });
   return (
-    <div ref={setNodeRef} className={cn("flex flex-col h-full bg-white rounded-3xl shadow-sm border p-6 transition-colors duration-300", isOver ? "border-indigo-400 bg-indigo-50/30" : "border-slate-200", className)}>
+    <div ref={setNodeRef} className={cn(
+      "flex flex-col h-full rounded-3xl shadow-sm border p-6 transition-colors duration-300", 
+      isDark ? "bg-slate-900 border-slate-800 shadow-xl" : "bg-white border-slate-200",
+      isOver ? (isDark ? "border-indigo-500 bg-slate-800" : "border-indigo-400 bg-indigo-50/30") : "",
+      className
+    )}>
       <div className="flex items-center gap-2 mb-6">
-        <div className="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center text-slate-600 border border-slate-100">
+        <div className={cn(
+          "w-10 h-10 rounded-xl flex items-center justify-center border",
+          isDark ? "bg-slate-800/80 text-indigo-400 border-slate-700/50" : "bg-slate-50 text-slate-600 border-slate-100"
+        )}>
           <Icon className="w-5 h-5" />
         </div>
-        <h2 className="text-xl font-extrabold text-slate-800">{title}</h2>
+        <h2 className={cn("text-xl font-extrabold", isDark ? "text-white" : "text-slate-800")}>{title}</h2>
       </div>
       <div className="flex-1 overflow-y-auto space-y-2 pr-2 hide-scrollbar">
         {children}
@@ -211,22 +219,28 @@ export function ArchiveAgendaView() {
                 <DraggableTask key={task.id} task={task} onToggle={handleToggle} />
               ))}
               {tasks.filter(t => t.status === 'inbox').length === 0 && (
-                <div className="h-full flex flex-col items-center justify-center text-slate-400">
-                  <Inbox className="w-12 h-12 mb-3 opacity-20 text-slate-500" />
-                  <p className="font-bold text-slate-500">보관함이 비어있습니다.</p>
+                <div className="h-full flex flex-col items-center justify-center">
+                  <div className="w-16 h-16 mb-4 rounded-2xl bg-slate-50 flex items-center justify-center border border-slate-100">
+                    <Inbox className="w-8 h-8 text-slate-400" />
+                  </div>
+                  <p className="font-bold text-slate-500 text-lg">보관함이 비어있습니다</p>
+                  <p className="text-sm text-slate-400 mt-2">새로운 할 일을 추가해보세요</p>
                 </div>
               )}
             </DroppableContainer>
 
             {/* Today's Focus */}
-            <DroppableContainer id="today" title="오늘의 포커스" icon={Calendar} className="bg-slate-900 border-slate-800 text-white shadow-xl">
+            <DroppableContainer id="today" title="오늘의 포커스" icon={Calendar} isDark>
               {tasks.filter(t => t.status === 'today').map(task => (
                 <DraggableTask key={task.id} task={task} onToggle={handleToggle} />
               ))}
               {tasks.filter(t => t.status === 'today').length === 0 && (
-                <div className="h-full flex flex-col items-center justify-center text-slate-400">
-                  <Calendar className="w-12 h-12 mb-3 opacity-20" />
-                  <p className="font-bold">여기에 할 일을 드래그하여 집중하세요!</p>
+                <div className="h-full flex flex-col items-center justify-center">
+                  <div className="w-16 h-16 mb-4 rounded-2xl bg-indigo-500/10 flex items-center justify-center border border-indigo-500/20">
+                    <Sparkles className="w-8 h-8 text-indigo-400" />
+                  </div>
+                  <p className="font-bold text-slate-300 text-lg">가장 중요한 일에 집중하세요</p>
+                  <p className="text-sm text-slate-500 mt-2">여기에 할 일을 드래그하세요</p>
                 </div>
               )}
             </DroppableContainer>

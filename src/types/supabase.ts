@@ -449,6 +449,8 @@ export type Database = {
           enabled: boolean | null
           hashed_pin: string
           id: string
+          security_answer: string | null
+          security_question: string | null
           updated_at: string | null
           user_id: string
         }
@@ -457,6 +459,8 @@ export type Database = {
           enabled?: boolean | null
           hashed_pin: string
           id?: string
+          security_answer?: string | null
+          security_question?: string | null
           updated_at?: string | null
           user_id: string
         }
@@ -465,6 +469,8 @@ export type Database = {
           enabled?: boolean | null
           hashed_pin?: string
           id?: string
+          security_answer?: string | null
+          security_question?: string | null
           updated_at?: string | null
           user_id?: string
         }

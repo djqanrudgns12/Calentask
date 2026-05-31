@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Loader2, KeyRound } from 'lucide-react'
+import { PinPadOverlay } from '@/components/archive/PinPadOverlay'
 
 export function ProfileTab() {
   const { data: profile } = useUserProfile()
@@ -55,6 +56,7 @@ export function ProfileTab() {
   }
 
   return (
+    <PinPadOverlay>
     <div className="space-y-6 md:space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
       
       {/* 기본 정보 섹션 */}
@@ -179,6 +181,7 @@ export function ProfileTab() {
       </section>
 
     </div>
+    </PinPadOverlay>
   )
 }
 

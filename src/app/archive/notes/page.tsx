@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react';
-import { PinPadOverlay } from '@/components/archive/PinPadOverlay';
 import { ListBoard } from '@/components/archive/boards/ListBoard';
 import { CanvasBoard } from '@/components/archive/boards/CanvasBoard';
 import { MasonryBoard } from '@/components/archive/boards/MasonryBoard';
@@ -27,7 +26,7 @@ export default function NotesPage() {
   const [activeTab, setActiveTab] = useState(mockTabs[0].id);
 
   return (
-    <PinPadOverlay>
+    <>
       <div className="flex flex-col h-full">
         {/* Header & Tabs */}
         <div className="px-8 pt-8 pb-4 border-b border-slate-200 bg-white/50 backdrop-blur-md sticky top-0 z-10">
@@ -88,6 +87,6 @@ export default function NotesPage() {
           </div>
         </div>
       </div>
-    </PinPadOverlay>
+    </>
   );
 }
