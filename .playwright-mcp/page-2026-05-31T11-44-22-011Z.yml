@@ -1,0 +1,100 @@
+- generic [ref=e1]:
+  - generic [ref=e2]:
+    - complementary [ref=e3]:
+      - generic [ref=e4]:
+        - generic [ref=e5]:
+          - img "Calentask Logo" [ref=e6]
+          - generic [ref=e7]: Calentask
+        - button "로그아웃" [ref=e8]:
+          - img [ref=e9]
+      - generic [ref=e12]:
+        - generic [ref=e13]:
+          - button "아카이브 관리" [active] [ref=e14]:
+            - generic [ref=e15]:
+              - img [ref=e16]
+              - generic [ref=e20]: 아카이브 관리
+            - img [ref=e21]
+          - generic [ref=e699]:
+            - button "아카이브 노트" [ref=e700]:
+              - img [ref=e701]
+              - text: 아카이브 노트
+            - button "오늘의 할 일 (아젠다)" [ref=e705]:
+              - img [ref=e706]
+              - text: 오늘의 할 일 (아젠다)
+          - button "인사이트 대시보드" [ref=e23]:
+            - generic [ref=e25]:
+              - img [ref=e26]
+              - generic [ref=e31]: 인사이트 대시보드
+        - button "캘린더 관리" [ref=e34]:
+          - generic [ref=e35]:
+            - img [ref=e36]
+            - generic [ref=e38]: 캘린더 관리
+          - img [ref=e39]
+      - generic [ref=e41]:
+        - generic [ref=e42]:
+          - button "오늘" [ref=e43]
+          - button "이번 주" [ref=e44]
+        - generic [ref=e46]:
+          - img [ref=e48]
+          - paragraph [ref=e51]: 예정된 일정이 없습니다
+          - paragraph [ref=e52]: 휴식을 즐기세요!
+      - generic [ref=e54]:
+        - button "태그 관리소" [ref=e55]:
+          - img
+          - text: 태그 관리소
+        - button "데이터 허브" [ref=e56]:
+          - img
+          - text: 데이터 허브
+        - button "전체 내용 초기화" [ref=e57]:
+          - img
+          - text: 전체 내용 초기화
+    - main [ref=e58]:
+      - button "테" [ref=e151]:
+        - generic [ref=e89]: 테
+        - img [ref=e91]
+      - generic [ref=e710]:
+        - generic:
+          - generic:
+            - generic:
+              - generic:
+                - generic:
+                  - heading "아카이브 노트" [level=1]
+                  - paragraph: 나만의 지식 보관소이자 창의력을 펼치는 캔버스입니다.
+                - button "새 노트 추가":
+                  - img
+                  - text: 새 노트 추가
+            - generic:
+              - generic:
+                - generic:
+                  - generic:
+                    - img
+                  - heading "아직 작성된 노트가 없습니다" [level=2]
+                  - paragraph:
+                    - text: 우측 상단의
+                    - strong: 새 노트 추가
+                    - text: 버튼을 눌러
+                    - text: 당신만의 첫 번째 캔버스를 만들어보세요!
+                  - button "새 노트 작성하기"
+        - generic [ref=e712]:
+          - img [ref=e714]
+          - heading "비밀번호 설정" [level=2] [ref=e716]
+          - paragraph [ref=e717]: 새로운 4자리 PIN을 입력하세요
+          - generic [ref=e723]:
+            - button "1" [ref=e724]
+            - button "2" [ref=e725]
+            - button "3" [ref=e726]
+            - button "4" [ref=e727]
+            - button "5" [ref=e728]
+            - button "6" [ref=e729]
+            - button "7" [ref=e730]
+            - button "8" [ref=e731]
+            - button "9" [ref=e732]
+            - button "0" [ref=e734]
+            - button [ref=e735]:
+              - img [ref=e736]
+      - status [ref=e140]
+  - region "Notifications alt+T"
+  - button "Open Next.js Dev Tools" [ref=e146] [cursor=pointer]:
+    - img [ref=e147]
+  - alert [ref=e150]
+  - generic [ref=e696]: 일

@@ -1,0 +1,86 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - complementary [ref=e3]:
+      - generic [ref=e4]:
+        - generic [ref=e5]:
+          - img "Calentask Logo" [ref=e6]
+          - generic [ref=e7]: Calentask
+        - button "로그아웃" [ref=e8]:
+          - img [ref=e9]
+      - generic [ref=e12]:
+        - generic [ref=e13]:
+          - button "아카이브 관리" [ref=e14]:
+            - generic [ref=e15]:
+              - img [ref=e16]
+              - generic [ref=e20]: 아카이브 관리
+            - img [ref=e21]
+          - button "인사이트 대시보드" [ref=e23]:
+            - generic [ref=e25]:
+              - img [ref=e26]
+              - generic [ref=e31]: 인사이트 대시보드
+        - button "캘린더 관리" [ref=e34]:
+          - generic [ref=e35]:
+            - img [ref=e36]
+            - generic [ref=e38]: 캘린더 관리
+          - img [ref=e39]
+      - generic [ref=e41]:
+        - generic [ref=e42]:
+          - button "오늘" [ref=e43]
+          - button "이번 주" [ref=e44]
+        - generic [ref=e46]:
+          - img [ref=e48]
+          - paragraph [ref=e51]: 예정된 일정이 없습니다
+          - paragraph [ref=e52]: 휴식을 즐기세요!
+      - generic [ref=e54]:
+        - button "태그 관리소" [ref=e55]:
+          - img
+          - text: 태그 관리소
+        - button "데이터 허브" [ref=e56]:
+          - img
+          - text: 데이터 허브
+        - button "전체 내용 초기화" [ref=e57]:
+          - img
+          - text: 전체 내용 초기화
+    - main [ref=e58]:
+      - generic [ref=e62]:
+        - generic [ref=e63]:
+          - img [ref=e65]
+          - generic [ref=e78]:
+            - heading "인사이트 대시보드" [level=2] [ref=e79]
+            - paragraph [ref=e84]: INSIGHT DASHBOARD ONLINE
+        - button [ref=e88]:
+          - img [ref=e91]
+      - generic [ref=e96]:
+        - generic [ref=e97]:
+          - generic [ref=e98]:
+            - generic [ref=e99]:
+              - button "이번 주" [ref=e100]
+              - button "이번 달" [ref=e101]
+              - button "올해" [ref=e102]
+            - button "특정 일자" [ref=e105]:
+              - img [ref=e106]
+              - text: 특정 일자
+            - button "기간 설정" [ref=e109]:
+              - img [ref=e110]
+              - text: 기간 설정
+          - generic [ref=e112]:
+            - generic [ref=e113]:
+              - button "전체 보기" [ref=e114]
+              - button "할 일" [ref=e115]
+              - button "일정" [ref=e116]
+            - button "모든 카테고리" [ref=e118]:
+              - img [ref=e119]
+              - text: 모든 카테고리
+              - img [ref=e121]
+        - generic [ref=e131]:
+          - heading "빠른 일정 등록" [level=2] [ref=e133]
+          - generic [ref=e134]:
+            - generic [ref=e135]: 템플릿을 등록해보세요
+            - button "관리" [ref=e136]:
+              - img [ref=e137]
+              - text: 관리
+      - status [ref=e140]
+  - region "Notifications alt+T"
+  - button "Open Next.js Dev Tools" [ref=e146] [cursor=pointer]:
+    - img [ref=e147]
+  - alert [ref=e150]

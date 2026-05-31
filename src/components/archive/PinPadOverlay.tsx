@@ -175,18 +175,22 @@ export function PinPadOverlay({ children }: { children: React.ReactNode }) {
       const hashedPin = await hashText(firstPin);
       const hashedAnswer = await hashText(answer.trim());
       
-      await setupMutation.mutateAsync({
+      const result = await setupMutation.mutateAsync({
         pin: hashedPin,
         question: finalQuestion,
         answer: hashedAnswer
       });
       
-      setPinLocked(false);
-      setMode('locked');
-      toast.success('보안 질문 및 비밀번호가 성공적으로 설정되었습니다.');
+      if (result.success) {
+        setPinLocked(false);
+        setMode('locked');
+        toast.success('보안 질문 및 비밀번호가 성공적으로 설정되었습니다.');
+      } else {
+        toast.error(result.error || '보안 설정에 실패했습니다. 다시 시도해주세요.');
+      }
     } catch (err: any) {
-      console.error(err);
-      toast.error(err.message || '보안 설정 중 오류가 발생했습니다. 다시 시도해주세요.');
+      console.error('handleSetupSecurity error:', err);
+      toast.error('보안 설정 중 오류가 발생했습니다. 다시 시도해주세요.');
     } finally {
       setIsProcessing(false);
     }
@@ -196,19 +200,26 @@ export function PinPadOverlay({ children }: { children: React.ReactNode }) {
     if (!answer.trim()) return;
     setIsProcessing(true);
     
-    const hashedAnswer = await hashText(answer.trim());
-    const result = await verifyAnswerMutation.mutateAsync(hashedAnswer);
-    
-    if (result.success) {
-      setFirstPin('');
-      setPin('');
-      setAnswer('');
-      setQuestionType('');
-      setMode('setup_pin');
-    } else {
-      alert("답변이 일치하지 않습니다.");
+    try {
+      const hashedAnswer = await hashText(answer.trim());
+      const result = await verifyAnswerMutation.mutateAsync(hashedAnswer);
+      
+      if (result.success) {
+        setFirstPin('');
+        setPin('');
+        setAnswer('');
+        setQuestionType('');
+        setMode('setup_pin');
+        toast.success('인증 성공! 새 비밀번호를 설정해주세요.');
+      } else {
+        toast.error('답변이 일치하지 않습니다.');
+      }
+    } catch (err: any) {
+      console.error('handleResetVerify error:', err);
+      toast.error('인증 중 오류가 발생했습니다. 다시 시도해주세요.');
+    } finally {
+      setIsProcessing(false);
     }
-    setIsProcessing(false);
   }
 
   let title = "아카이브 잠김";
