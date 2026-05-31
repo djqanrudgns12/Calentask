@@ -69,7 +69,7 @@ export function ListView({ currentDate, events }: ListViewProps) {
   }
 
   return (
-    <div className="flex-1 overflow-auto bg-[#FAFAFA] p-8 lg:p-12">
+    <div className="flex-1 overflow-auto bg-[#FAFAFA] p-4 md:p-8 lg:p-12 pb-24 md:pb-12">
       <div className="max-w-3xl mx-auto w-full relative">
         {/* Continuous Timeline Line */}
         <div className="hidden md:block absolute left-[128px] top-6 bottom-0 w-px bg-[#EEEEEE] -translate-x-1/2 z-0" />
@@ -82,7 +82,7 @@ export function ListView({ currentDate, events }: ListViewProps) {
             <div key={dateStr} className="flex flex-col md:flex-row mb-8 relative group">
               {/* Left: Typography Date */}
               <div className="md:w-32 flex-shrink-0 flex flex-col md:items-end md:pr-8 mb-3 md:mb-0 md:border-r border-transparent relative z-10">
-                <span className="text-3xl font-light text-slate-800 tracking-tight">
+                <span className="text-2xl md:text-3xl font-light text-slate-800 tracking-tight">
                   {format(date, 'dd')}
                 </span>
                 <span className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">

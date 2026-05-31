@@ -5,6 +5,7 @@ import { Activity } from '@/app/actions/calendar'
 import { isEventOnDay } from '@/lib/calendarUtils'
 import { X, Plus, Calendar } from 'lucide-react'
 import { getEventPrimaryColor } from '@/lib/eventColor'
+import { motion, AnimatePresence } from 'framer-motion'
 
 interface DaySummarySheetProps {
   events: Activity[]
@@ -13,34 +14,50 @@ interface DaySummarySheetProps {
 export function DaySummarySheet({ events }: DaySummarySheetProps) {
   const { selectedDaySummary, closeDaySummary, openEventDetail, openAddEvent } = useCalendarStore()
 
-  if (!selectedDaySummary) return null
-
   // Filter events for this specific day
-  const dayEvents = events.filter(e => isEventOnDay(e, selectedDaySummary))
+  const dayEvents = selectedDaySummary ? events.filter(e => isEventOnDay(e, selectedDaySummary)) : []
 
   // + 버튼 클릭 시: 바텀시트를 닫고, 선택된 날짜를 전달하여 일정 추가 다이얼로그를 열기
   const handleAddEvent = () => {
+    if (!selectedDaySummary) return
     const date = selectedDaySummary
     closeDaySummary()
     openAddEvent(date)
   }
 
   return (
-    <>
-      {/* Backdrop */}
-      <div 
-        className="fixed inset-0 z-[60] bg-slate-900/10 backdrop-blur-[2px] transition-opacity"
-        onClick={closeDaySummary}
-      />
-      
-      {/* Sheet */}
-      <div 
-        className="fixed bottom-0 left-0 right-0 z-[60] bg-white/95 backdrop-blur-2xl rounded-t-[2.5rem] shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.15)] border-t border-white flex flex-col max-h-[85vh] animate-in slide-in-from-bottom-full duration-300 md:bottom-8 md:left-1/2 md:-translate-x-1/2 md:w-[440px] md:rounded-[2rem] md:shadow-[0_20px_60px_-15px_rgba(0,0,0,0.2)] md:border"
-      >
-        {/* Drag Handle (Mobile) */}
-        <div className="w-full flex justify-center pt-3 pb-1 md:hidden">
-          <div className="w-12 h-1.5 bg-slate-200 rounded-full" />
-        </div>
+    <AnimatePresence>
+      {selectedDaySummary && (
+        <>
+          {/* Backdrop */}
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[60] bg-slate-900/10 backdrop-blur-[2px]"
+            onClick={closeDaySummary}
+          />
+          
+          {/* Sheet */}
+          <motion.div 
+            drag="y"
+            dragConstraints={{ top: 0, bottom: 0 }}
+            dragElastic={0.2}
+            onDragEnd={(e, info) => {
+              if (info.offset.y > 100 || info.velocity.y > 500) {
+                closeDaySummary()
+              }
+            }}
+            initial={{ y: '100%' }}
+            animate={{ y: 0 }}
+            exit={{ y: '100%' }}
+            transition={{ type: "spring", damping: 25, stiffness: 200 }}
+            className="fixed bottom-0 left-0 right-0 z-[60] bg-white/95 backdrop-blur-2xl rounded-t-[2.5rem] shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.15)] border-t border-white flex flex-col max-h-[85vh] md:bottom-8 md:left-1/2 md:-translate-x-1/2 md:w-[440px] md:rounded-[2rem] md:shadow-[0_20px_60px_-15px_rgba(0,0,0,0.2)] md:border"
+          >
+            {/* Drag Handle (Mobile) */}
+            <div className="w-full flex justify-center pt-3 pb-1 md:hidden">
+              <div className="w-12 h-1.5 bg-slate-200 rounded-full" />
+            </div>
 
         {/* Header */}
         <div className="flex items-center justify-between px-7 pt-6 pb-5 border-b border-slate-100/80">
@@ -125,7 +142,9 @@ export function DaySummarySheet({ events }: DaySummarySheetProps) {
             </div>
           )}
         </div>
-      </div>
-    </>
+      </motion.div>
+      </>
+      )}
+    </AnimatePresence>
   )
 }

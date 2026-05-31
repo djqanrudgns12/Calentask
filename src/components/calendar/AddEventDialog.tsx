@@ -341,7 +341,7 @@ export function AddEventDialog({ children }: { children?: React.ReactNode }) {
       {children && (
         <div onClick={() => openAddEvent()}>{children}</div>
       )}
-      <DialogContent ref={dialogRef} className="sm:max-w-[440px] p-0 overflow-hidden bg-[#f8f9ff] border-none shadow-2xl rounded-2xl flex flex-col">
+      <DialogContent ref={dialogRef} className="w-[95vw] max-w-[440px] sm:max-w-[440px] p-0 overflow-hidden bg-[#f8f9ff] border-none shadow-2xl rounded-2xl flex flex-col max-h-[90vh]">
         <DialogHeader className="px-6 py-4 border-b border-gray-100 bg-white flex flex-row items-center justify-between pr-10">
           <DialogTitle className="text-xl font-bold text-gray-900">{editingEvent ? '일정 수정' : '새 일정 추가'}</DialogTitle>
           <div className="flex items-center">

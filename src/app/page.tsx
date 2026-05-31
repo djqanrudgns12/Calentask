@@ -9,7 +9,7 @@ import { Plus, Tags, Database, LogOut, Calendar as CalendarIcon, DownloadCloud, 
 import { motion, AnimatePresence } from 'framer-motion'
 
 import { startOfWeek, endOfWeek } from 'date-fns'
-import { DndContext, PointerSensor, useSensor, useSensors, DragOverlay } from '@dnd-kit/core'
+import { DndContext, MouseSensor, TouchSensor, useSensor, useSensors, DragOverlay } from '@dnd-kit/core'
 import { useEventDragDrop } from '@/hooks/useEventDragDrop'
 import { useActivities } from '@/hooks/useCalendarQueries'
 import type { Activity } from '@/app/actions/calendar'
@@ -36,6 +36,7 @@ import { UpcomingAnniversaryWidget } from '@/components/anniversary/UpcomingAnni
 import { useAnniversaryOverlay } from '@/hooks/useAnniversaryOverlay'
 import { AnniversarySettingsView } from '@/components/anniversary/AnniversarySettingsView'
 import InsightsClient from '@/app/insights/InsightsClient'
+import { BottomNavigation } from '@/components/ui/BottomNavigation'
 
 export default function CalendarPage() {
   const [mounted, setMounted] = useState(false)
@@ -96,9 +97,15 @@ export default function CalendarPage() {
   })
 
   const sensors = useSensors(
-    useSensor(PointerSensor, {
+    useSensor(MouseSensor, {
       activationConstraint: {
         distance: 5,
+      }
+    }),
+    useSensor(TouchSensor, {
+      activationConstraint: {
+        delay: 250,
+        tolerance: 5,
       }
     })
   )
@@ -259,7 +266,7 @@ export default function CalendarPage() {
 
 
       {/* Main Content */}
-      <main className="flex-1 flex flex-col min-w-0 relative">
+      <main className="flex-1 flex flex-col min-w-0 relative pb-24 md:pb-0">
         {/* Unified Calendar Header */}
         <CalendarHeader onOpenSettings={() => {
           setSettingsTab('profile')
@@ -298,10 +305,17 @@ export default function CalendarPage() {
 
       {/* Floating Action Button - Apple Style BIG Circle */}
       <AddEventDialog>
-        <button className="absolute bottom-10 right-10 w-16 h-16 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-apple-float hover:scale-105 transition-transform flex items-center justify-center">
-          <Plus className="w-8 h-8" />
+        <button className="absolute bottom-24 md:bottom-10 right-6 md:right-10 w-14 h-14 md:w-16 md:h-16 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-apple-float hover:scale-105 transition-transform flex items-center justify-center z-50">
+          <Plus className="w-6 h-6 md:w-8 md:h-8" />
         </button>
       </AddEventDialog>
+
+      <BottomNavigation 
+        viewMode={viewMode} 
+        setViewMode={setViewMode} 
+        onOpenSettings={() => { setSettingsTab('profile'); setIsSettingsOpen(true); }} 
+        onOpenTags={() => setIsTagsModalOpen(true)} 
+      />
 
       {/* Settings Modal */}
       <SettingsModal 

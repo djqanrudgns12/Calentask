@@ -85,10 +85,14 @@ export const WeeklyView = React.memo(function WeeklyView({ currentDate, events }
 
   return (
     <div className="flex-1 flex flex-col h-full bg-[#FAFAFA] rounded-2xl border border-[#EEEEEE] overflow-hidden shadow-sm">
-      {/* Header: Days */}
-      <div className="flex border-b border-[#EEEEEE] bg-white">
-        <div className="w-16 shrink-0 border-r border-[#EEEEEE]" /> {/* Time axis spacer */}
-        <div className="flex-1 grid grid-cols-7">
+      {/* Body: Scrollable Area */}
+      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto overflow-x-auto snap-x snap-mandatory hide-scrollbar bg-white relative">
+        <div className="min-w-[700px] md:min-w-0 flex flex-col h-full">
+          
+          {/* Header: Days */}
+          <div className="flex border-b border-[#EEEEEE] bg-white sticky top-0 z-30">
+            <div className="w-12 md:w-16 shrink-0 border-r border-[#EEEEEE] bg-white sticky left-0 z-40" /> {/* Time axis spacer */}
+            <div className="flex-1 grid grid-cols-7">
           {days.map((day, idx) => {
             const isToday = isSameDay(day, now)
             
@@ -160,13 +164,12 @@ export const WeeklyView = React.memo(function WeeklyView({ currentDate, events }
             )
           })}
         </div>
-      </div>
+          </div>
 
-      {/* Body: Time Grid */}
-      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto relative bg-white no-scrollbar">
-        <div className="flex">
-          {/* Time Axis */}
-          <div className="w-16 shrink-0 flex flex-col border-r border-[#EEEEEE] bg-[#FAFAFA]">
+          {/* Body: Time Grid */}
+          <div className="flex-1 flex relative">
+            {/* Time Axis */}
+            <div className="w-12 md:w-16 shrink-0 flex flex-col border-r border-[#EEEEEE] bg-[#FAFAFA] sticky left-0 z-20">
             {HOURS.map(hour => (
               <div key={hour} className="relative text-[10px] font-medium text-slate-400 text-right pr-2" style={{ height: PIXELS_PER_HOUR }}>
                 <span className={`absolute right-2 bg-[#FAFAFA] px-1 ${hour === 0 ? 'top-1' : '-top-2'}`}>
@@ -253,7 +256,7 @@ export const WeeklyView = React.memo(function WeeklyView({ currentDate, events }
                 <DroppableColumn
                   key={dayIdx}
                   day={day}
-                  className="relative border-r border-[#F1F5F9] last:border-r-0"
+                  className="relative border-r border-[#F1F5F9] last:border-r-0 snap-start"
                   style={{ minHeight: PIXELS_PER_HOUR * 24 }}
                   onClick={() => openDaySummary(day)}
                 >

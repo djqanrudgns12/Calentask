@@ -39,7 +39,7 @@ function DayCell({ day, children, isCurrentMonth, onClick }: any) {
     <div
       ref={setNodeRef}
       onClick={onClick}
-      className={`min-h-0 rounded-2xl p-4 transition-all cursor-pointer flex flex-col border border-[#EEEEEE] shadow-sm hover:shadow-md bg-white ${isCurrentMonth ? 'opacity-100' : 'opacity-40'} ${isOver ? 'ring-2 ring-indigo-400 bg-indigo-50/50' : ''}`}
+      className={`min-h-[80px] md:min-h-0 rounded-xl md:rounded-2xl p-1 md:p-4 transition-all cursor-pointer flex flex-col border border-[#EEEEEE] shadow-sm hover:shadow-md bg-white ${isCurrentMonth ? 'opacity-100' : 'opacity-40'} ${isOver ? 'ring-2 ring-indigo-400 bg-indigo-50/50' : ''}`}
     >
       {children}
     </div>
@@ -111,18 +111,18 @@ export const MonthlyView = React.memo(function MonthlyView({ currentDate, events
               onClick={() => openDaySummary(day)}
               isCurrentMonth={isCurrentMonth}
             >
-              <div className="flex justify-between items-start mb-3">
+              <div className="flex justify-between items-start mb-1 md:mb-3">
                 <div className="flex flex-col gap-0.5 max-w-[70%]">
-                  <span className="text-xs font-semibold text-red-400 truncate">
+                  <span className="text-[10px] md:text-xs font-semibold text-red-400 truncate">
                     {holidayName && !showHolidaysAsTags && holidayName}
                   </span>
                   {otherTerms && (
-                    <span className="text-[10px] font-medium text-slate-400 truncate leading-tight">
+                    <span className="text-[9px] md:text-[10px] font-medium text-slate-400 truncate leading-tight">
                       {otherTerms}
                     </span>
                   )}
                 </div>
-                <span className={`text-sm font-bold w-8 h-8 flex items-center justify-center rounded-full shrink-0 ${isToday ? 'bg-[#312E81] text-white shadow-lg shadow-[#4338CA]/40' : isHolidayDay || day.getDay() === 0 ? 'text-red-500' : 'text-slate-700'
+                <span className={`text-xs md:text-sm font-bold w-5 h-5 md:w-8 md:h-8 flex items-center justify-center rounded-full shrink-0 ${isToday ? 'bg-[#312E81] text-white shadow-lg shadow-[#4338CA]/40' : isHolidayDay || day.getDay() === 0 ? 'text-red-500' : 'text-slate-700'
                   }`}>
                   {format(day, 'd')}
                 </span>
@@ -143,16 +143,16 @@ export const MonthlyView = React.memo(function MonthlyView({ currentDate, events
                       <div
                         onClick={(e) => { e.stopPropagation(); openEventDetail(event); }}
                       onDoubleClick={(e) => { e.stopPropagation(); openEditEvent(event); }}
-                      className="group relative flex items-stretch rounded-r-lg text-xs transition-all hover:scale-[1.02] overflow-hidden cursor-pointer"
+                      className="group relative flex items-stretch rounded-sm md:rounded-r-lg text-[9px] md:text-xs transition-all hover:scale-[1.02] overflow-hidden cursor-pointer"
                       style={{ backgroundColor: getEventBgColor(event) }}
                     >
                       {/* 좌측 accent bar: 멀티 카테고리일 경우 그라데이션으로 표시 */}
                       <div
-                        className="w-[3px] shrink-0 rounded-l-lg"
+                        className="w-[2px] md:w-[3px] shrink-0 rounded-l-sm md:rounded-l-lg"
                         style={{ background: getEventBarGradient(event) }}
                       />
-                      <div className="flex-1 flex flex-col px-2.5 py-1.5 min-w-0">
-                        <span className="font-medium text-slate-700 truncate pr-1 group-hover:pr-10">
+                      <div className="flex-1 flex flex-col px-0.5 py-[1px] md:px-2.5 md:py-1.5 min-w-0">
+                        <span className="font-medium text-slate-800 truncate pr-0.5 group-hover:pr-10 leading-none md:leading-normal">
                           {event.title}
                         </span>
                       </div>
@@ -180,9 +180,9 @@ export const MonthlyView = React.memo(function MonthlyView({ currentDate, events
                 {dayEvents.length > ((holidayName && showHolidaysAsTags) ? 2 : 3) && (
                   <button
                     onClick={(e) => { e.stopPropagation(); openDaySummary(day); }}
-                    className="w-full mt-1.5 text-center px-2 py-1 text-xs font-bold text-slate-500 bg-slate-50/80 hover:bg-slate-100 rounded-md transition-colors"
+                    className="w-full mt-0.5 md:mt-1.5 text-center px-1 py-0.5 md:px-2 md:py-1 text-[9px] md:text-xs font-bold text-slate-500 bg-slate-50/80 hover:bg-slate-100 rounded-sm md:rounded-md transition-colors"
                   >
-                    + {dayEvents.length - ((holidayName && showHolidaysAsTags) ? 2 : 3)}개 더보기
+                    + {dayEvents.length - ((holidayName && showHolidaysAsTags) ? 2 : 3)}
                   </button>
                 )}
               </div>

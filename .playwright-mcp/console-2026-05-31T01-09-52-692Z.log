@@ -1,0 +1,1327 @@
+[   51176ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:3000/login:0
+[   51207ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:3000/_next/static/chunks/node_modules_react-dom_0bruynb._.js:15305
+[   51235ms] Error: ./src/app/layout.tsx:5:1
+Module not found: Can't resolve 'sonner'
+  3 | import "./globals.css";
+  4 | import { QueryProvider } from "@/providers/QueryProvider";
+> 5 | import { Toaster } from "sonner";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 |
+  7 | const customFont = localFont({
+  8 |   src: "./fonts/RIDIBatang.otf",
+
+
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+    at <unknown> (Error: ./src/app/layout.tsx:5:1)
+    at <unknown> (https://nextjs.org/docs/messages/module-not-found)
+    at Object.getCompilationErrors (file:///Users/hallyo/Desktop/Calentask/node_modules/next/dist/server/dev/hot-reloader-turbopack.js:1186:59)
+    at DevBundlerService.getCompilationError (file:///Users/hallyo/Desktop/Calentask/node_modules/next/dist/server/lib/dev-bundler-service.js:44:55)
+    at DevServer.getCompilationError (file:///Users/hallyo/Desktop/Calentask/node_modules/next/dist/server/dev/next-dev-server.js:720:42)
+    at DevServer.findPageComponents (file:///Users/hallyo/Desktop/Calentask/node_modules/next/dist/server/dev/next-dev-server.js:690:43)
+    at async DevServer.renderErrorToResponseImpl (file:///Users/hallyo/Desktop/Calentask/node_modules/next/dist/server/base-server.js:1753:26)
+[   51233ms] [LOG] [HMR] connected @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1226
+[   51247ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3000/favicon.ico:0
+[   51315ms] [ERROR] ./src/app/layout.tsx:5:1
+Module not found: Can't resolve 'sonner'
+  3 | import "./globals.css";
+  4 | import { QueryProvider } from "@/providers/QueryProvider";
+> 5 | import { Toaster } from "sonner";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 |
+  7 | const customFont = localFont({
+  8 |   src: "./fonts/RIDIBatang.otf",
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[   51362ms] [ERROR] ./src/app/layout.tsx:5:1
+Module not found: Can't resolve 'sonner'
+  3 | import "./globals.css";
+  4 | import { QueryProvider } from "@/providers/QueryProvider";
+> 5 | import { Toaster } from "sonner";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 |
+  7 | const customFont = localFont({
+  8 |   src: "./fonts/RIDIBatang.otf",
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[   51429ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1226
+[   51487ms] [ERROR] ./src/app/layout.tsx:5:1
+Module not found: Can't resolve 'sonner'
+  3 | import "./globals.css";
+  4 | import { QueryProvider } from "@/providers/QueryProvider";
+> 5 | import { Toaster } from "sonner";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 |
+  7 | const customFont = localFont({
+  8 |   src: "./fonts/RIDIBatang.otf",
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[ 1117462ms] [ERROR] ./src/app/layout.tsx:5:1
+Module not found: Can't resolve 'sonner'
+  3 | import "./globals.css";
+  4 | import { QueryProvider } from "@/providers/QueryProvider";
+> 5 | import { Toaster } from "sonner";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 |
+  7 | const customFont = localFont({
+  8 |   src: "./fonts/RIDIBatang.otf",
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[ 1117491ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1226
+[ 1123823ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1226
+[ 1123830ms] [ERROR] ./src/app/layout.tsx:5:1
+Module not found: Can't resolve 'sonner'
+  3 | import "./globals.css";
+  4 | import { QueryProvider } from "@/providers/QueryProvider";
+> 5 | import { Toaster } from "sonner";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 |
+  7 | const customFont = localFont({
+  8 |   src: "./fonts/RIDIBatang.otf",
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[ 1123903ms] [ERROR] ./src/app/layout.tsx:5:1
+Module not found: Can't resolve 'sonner'
+  3 | import "./globals.css";
+  4 | import { QueryProvider } from "@/providers/QueryProvider";
+> 5 | import { Toaster } from "sonner";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 |
+  7 | const customFont = localFont({
+  8 |   src: "./fonts/RIDIBatang.otf",
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[ 1123973ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1226
+[ 1124104ms] [ERROR] ./src/app/layout.tsx:5:1
+Module not found: Can't resolve 'sonner'
+  3 | import "./globals.css";
+  4 | import { QueryProvider } from "@/providers/QueryProvider";
+> 5 | import { Toaster } from "sonner";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 |
+  7 | const customFont = localFont({
+  8 |   src: "./fonts/RIDIBatang.otf",
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[ 1124175ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1226
+[ 1124507ms] [ERROR] ./src/app/layout.tsx:5:1
+Module not found: Can't resolve 'sonner'
+  3 | import "./globals.css";
+  4 | import { QueryProvider } from "@/providers/QueryProvider";
+> 5 | import { Toaster } from "sonner";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 |
+  7 | const customFont = localFont({
+  8 |   src: "./fonts/RIDIBatang.otf",
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[ 1124577ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1226
+[ 1125312ms] [ERROR] ./src/app/layout.tsx:5:1
+Module not found: Can't resolve 'sonner'
+  3 | import "./globals.css";
+  4 | import { QueryProvider } from "@/providers/QueryProvider";
+> 5 | import { Toaster } from "sonner";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 |
+  7 | const customFont = localFont({
+  8 |   src: "./fonts/RIDIBatang.otf",
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[ 1125382ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1226
+[ 1126916ms] [ERROR] ./src/app/layout.tsx:5:1
+Module not found: Can't resolve 'sonner'
+  3 | import "./globals.css";
+  4 | import { QueryProvider } from "@/providers/QueryProvider";
+> 5 | import { Toaster } from "sonner";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 |
+  7 | const customFont = localFont({
+  8 |   src: "./fonts/RIDIBatang.otf",
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[ 1126986ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1226
+[ 1130120ms] [ERROR] ./src/app/layout.tsx:5:1
+Module not found: Can't resolve 'sonner'
+  3 | import "./globals.css";
+  4 | import { QueryProvider } from "@/providers/QueryProvider";
+> 5 | import { Toaster } from "sonner";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 |
+  7 | const customFont = localFont({
+  8 |   src: "./fonts/RIDIBatang.otf",
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[ 1130190ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1226
+[ 1136525ms] [ERROR] ./src/app/layout.tsx:5:1
+Module not found: Can't resolve 'sonner'
+  3 | import "./globals.css";
+  4 | import { QueryProvider } from "@/providers/QueryProvider";
+> 5 | import { Toaster } from "sonner";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 |
+  7 | const customFont = localFont({
+  8 |   src: "./fonts/RIDIBatang.otf",
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[ 1136595ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1226
+[ 1149364ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:3000/login:0
+[ 1149373ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:3000/_next/static/chunks/node_modules_react-dom_0bruynb._.js:15305
+[ 1149377ms] Error: ./src/app/layout.tsx:5:1
+Module not found: Can't resolve 'sonner'
+  3 | import "./globals.css";
+  4 | import { QueryProvider } from "@/providers/QueryProvider";
+> 5 | import { Toaster } from "sonner";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 |
+  7 | const customFont = localFont({
+  8 |   src: "./fonts/RIDIBatang.otf",
+
+
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+    at <unknown> (Error: ./src/app/layout.tsx:5:1)
+    at <unknown> (https://nextjs.org/docs/messages/module-not-found)
+    at Object.getCompilationErrors (file:///Users/hallyo/Desktop/Calentask/node_modules/next/dist/server/dev/hot-reloader-turbopack.js:1186:59)
+    at DevBundlerService.getCompilationError (file:///Users/hallyo/Desktop/Calentask/node_modules/next/dist/server/lib/dev-bundler-service.js:44:55)
+    at DevServer.getCompilationError (file:///Users/hallyo/Desktop/Calentask/node_modules/next/dist/server/dev/next-dev-server.js:720:42)
+    at DevServer.findPageComponents (file:///Users/hallyo/Desktop/Calentask/node_modules/next/dist/server/dev/next-dev-server.js:690:43)
+    at async DevServer.renderErrorToResponseImpl (file:///Users/hallyo/Desktop/Calentask/node_modules/next/dist/server/base-server.js:1753:26)
+[ 1149378ms] [LOG] [HMR] connected @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1226
+[ 1149378ms] [ERROR] ./src/app/layout.tsx:5:1
+Module not found: Can't resolve 'sonner'
+  3 | import "./globals.css";
+  4 | import { QueryProvider } from "@/providers/QueryProvider";
+> 5 | import { Toaster } from "sonner";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 |
+  7 | const customFont = localFont({
+  8 |   src: "./fonts/RIDIBatang.otf",
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[ 1149412ms] [ERROR] ./src/app/layout.tsx:5:1
+Module not found: Can't resolve 'sonner'
+  3 | import "./globals.css";
+  4 | import { QueryProvider } from "@/providers/QueryProvider";
+> 5 | import { Toaster } from "sonner";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 |
+  7 | const customFont = localFont({
+  8 |   src: "./fonts/RIDIBatang.otf",
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[ 1153228ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1226
+[ 1153229ms] [ERROR] ./src/app/layout.tsx:5:1
+Module not found: Can't resolve 'sonner'
+  3 | import "./globals.css";
+  4 | import { QueryProvider } from "@/providers/QueryProvider";
+> 5 | import { Toaster } from "sonner";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 |
+  7 | const customFont = localFont({
+  8 |   src: "./fonts/RIDIBatang.otf",
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[ 1155240ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1226
+[ 1155402ms] [ERROR] ./src/app/layout.tsx:5:1
+Module not found: Can't resolve 'sonner'
+  3 | import "./globals.css";
+  4 | import { QueryProvider } from "@/providers/QueryProvider";
+> 5 | import { Toaster } from "sonner";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 |
+  7 | const customFont = localFont({
+  8 |   src: "./fonts/RIDIBatang.otf",
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[ 1155463ms] [ERROR] ./src/app/layout.tsx:5:1
+Module not found: Can't resolve 'sonner'
+  3 | import "./globals.css";
+  4 | import { QueryProvider } from "@/providers/QueryProvider";
+> 5 | import { Toaster } from "sonner";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 |
+  7 | const customFont = localFont({
+  8 |   src: "./fonts/RIDIBatang.otf",
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[ 1155534ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1226
+[ 1155666ms] [ERROR] ./src/app/layout.tsx:5:1
+Module not found: Can't resolve 'sonner'
+  3 | import "./globals.css";
+  4 | import { QueryProvider } from "@/providers/QueryProvider";
+> 5 | import { Toaster } from "sonner";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 |
+  7 | const customFont = localFont({
+  8 |   src: "./fonts/RIDIBatang.otf",
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[ 1155734ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1226
+[ 1156068ms] [ERROR] ./src/app/layout.tsx:5:1
+Module not found: Can't resolve 'sonner'
+  3 | import "./globals.css";
+  4 | import { QueryProvider } from "@/providers/QueryProvider";
+> 5 | import { Toaster } from "sonner";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 |
+  7 | const customFont = localFont({
+  8 |   src: "./fonts/RIDIBatang.otf",
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[ 1156137ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1226
+[ 1156873ms] [ERROR] ./src/app/layout.tsx:5:1
+Module not found: Can't resolve 'sonner'
+  3 | import "./globals.css";
+  4 | import { QueryProvider } from "@/providers/QueryProvider";
+> 5 | import { Toaster } from "sonner";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 |
+  7 | const customFont = localFont({
+  8 |   src: "./fonts/RIDIBatang.otf",
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[ 1156943ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1226
+[ 1158478ms] [ERROR] ./src/app/layout.tsx:5:1
+Module not found: Can't resolve 'sonner'
+  3 | import "./globals.css";
+  4 | import { QueryProvider } from "@/providers/QueryProvider";
+> 5 | import { Toaster } from "sonner";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 |
+  7 | const customFont = localFont({
+  8 |   src: "./fonts/RIDIBatang.otf",
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[ 1158547ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1226
+[ 1161683ms] [ERROR] ./src/app/layout.tsx:5:1
+Module not found: Can't resolve 'sonner'
+  3 | import "./globals.css";
+  4 | import { QueryProvider } from "@/providers/QueryProvider";
+> 5 | import { Toaster } from "sonner";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 |
+  7 | const customFont = localFont({
+  8 |   src: "./fonts/RIDIBatang.otf",
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[ 1161753ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1226
+[ 1168089ms] [ERROR] ./src/app/layout.tsx:5:1
+Module not found: Can't resolve 'sonner'
+  3 | import "./globals.css";
+  4 | import { QueryProvider } from "@/providers/QueryProvider";
+> 5 | import { Toaster } from "sonner";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 |
+  7 | const customFont = localFont({
+  8 |   src: "./fonts/RIDIBatang.otf",
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[ 1168157ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1226
+[ 1180919ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:3000/login:0
+[ 1180930ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:3000/_next/static/chunks/node_modules_react-dom_0bruynb._.js:15305
+[ 1180935ms] Error: ./src/app/layout.tsx:5:1
+Module not found: Can't resolve 'sonner'
+  3 | import "./globals.css";
+  4 | import { QueryProvider } from "@/providers/QueryProvider";
+> 5 | import { Toaster } from "sonner";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 |
+  7 | const customFont = localFont({
+  8 |   src: "./fonts/RIDIBatang.otf",
+
+
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+    at <unknown> (Error: ./src/app/layout.tsx:5:1)
+    at <unknown> (https://nextjs.org/docs/messages/module-not-found)
+    at Object.getCompilationErrors (file:///Users/hallyo/Desktop/Calentask/node_modules/next/dist/server/dev/hot-reloader-turbopack.js:1186:59)
+    at DevBundlerService.getCompilationError (file:///Users/hallyo/Desktop/Calentask/node_modules/next/dist/server/lib/dev-bundler-service.js:44:55)
+    at DevServer.getCompilationError (file:///Users/hallyo/Desktop/Calentask/node_modules/next/dist/server/dev/next-dev-server.js:720:42)
+    at DevServer.findPageComponents (file:///Users/hallyo/Desktop/Calentask/node_modules/next/dist/server/dev/next-dev-server.js:690:43)
+    at async DevServer.renderErrorToResponseImpl (file:///Users/hallyo/Desktop/Calentask/node_modules/next/dist/server/base-server.js:1753:26)
+[ 1180935ms] [LOG] [HMR] connected @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1226
+[ 1180936ms] [ERROR] ./src/app/layout.tsx:5:1
+Module not found: Can't resolve 'sonner'
+  3 | import "./globals.css";
+  4 | import { QueryProvider } from "@/providers/QueryProvider";
+> 5 | import { Toaster } from "sonner";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 |
+  7 | const customFont = localFont({
+  8 |   src: "./fonts/RIDIBatang.otf",
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[ 1180969ms] [ERROR] ./src/app/layout.tsx:5:1
+Module not found: Can't resolve 'sonner'
+  3 | import "./globals.css";
+  4 | import { QueryProvider } from "@/providers/QueryProvider";
+> 5 | import { Toaster } from "sonner";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 |
+  7 | const customFont = localFont({
+  8 |   src: "./fonts/RIDIBatang.otf",
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[ 1235473ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1226
+[ 1235497ms] [ERROR] ./src/app/layout.tsx:5:1
+Module not found: Can't resolve 'sonner'
+  3 | import "./globals.css";
+  4 | import { QueryProvider } from "@/providers/QueryProvider";
+> 5 | import { Toaster } from "sonner";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 |
+  7 | const customFont = localFont({
+  8 |   src: "./fonts/RIDIBatang.otf",
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[ 1235553ms] [ERROR] ./src/app/layout.tsx:5:1
+Module not found: Can't resolve 'sonner'
+  3 | import "./globals.css";
+  4 | import { QueryProvider } from "@/providers/QueryProvider";
+> 5 | import { Toaster } from "sonner";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 |
+  7 | const customFont = localFont({
+  8 |   src: "./fonts/RIDIBatang.otf",
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[ 1235623ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1226
+[ 1235754ms] [ERROR] ./src/app/layout.tsx:5:1
+Module not found: Can't resolve 'sonner'
+  3 | import "./globals.css";
+  4 | import { QueryProvider } from "@/providers/QueryProvider";
+> 5 | import { Toaster } from "sonner";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 |
+  7 | const customFont = localFont({
+  8 |   src: "./fonts/RIDIBatang.otf",
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[ 1235824ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1226
+[ 1236160ms] [ERROR] ./src/app/layout.tsx:5:1
+Module not found: Can't resolve 'sonner'
+  3 | import "./globals.css";
+  4 | import { QueryProvider } from "@/providers/QueryProvider";
+> 5 | import { Toaster } from "sonner";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 |
+  7 | const customFont = localFont({
+  8 |   src: "./fonts/RIDIBatang.otf",
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[ 1236230ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1226
+[ 1236964ms] [ERROR] ./src/app/layout.tsx:5:1
+Module not found: Can't resolve 'sonner'
+  3 | import "./globals.css";
+  4 | import { QueryProvider } from "@/providers/QueryProvider";
+> 5 | import { Toaster } from "sonner";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 |
+  7 | const customFont = localFont({
+  8 |   src: "./fonts/RIDIBatang.otf",
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[ 1237034ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1226
+[ 1238568ms] [ERROR] ./src/app/layout.tsx:5:1
+Module not found: Can't resolve 'sonner'
+  3 | import "./globals.css";
+  4 | import { QueryProvider } from "@/providers/QueryProvider";
+> 5 | import { Toaster } from "sonner";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 |
+  7 | const customFont = localFont({
+  8 |   src: "./fonts/RIDIBatang.otf",
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[ 1238637ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1226
+[ 1241774ms] [ERROR] ./src/app/layout.tsx:5:1
+Module not found: Can't resolve 'sonner'
+  3 | import "./globals.css";
+  4 | import { QueryProvider } from "@/providers/QueryProvider";
+> 5 | import { Toaster } from "sonner";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 |
+  7 | const customFont = localFont({
+  8 |   src: "./fonts/RIDIBatang.otf",
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[ 1241842ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1226
+[ 1248183ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1226
+[ 1248211ms] [ERROR] ./src/app/layout.tsx:5:1
+Module not found: Can't resolve 'sonner'
+  3 | import "./globals.css";
+  4 | import { QueryProvider } from "@/providers/QueryProvider";
+> 5 | import { Toaster } from "sonner";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 |
+  7 | const customFont = localFont({
+  8 |   src: "./fonts/RIDIBatang.otf",
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[ 1248270ms] [ERROR] ./src/app/layout.tsx:5:1
+Module not found: Can't resolve 'sonner'
+  3 | import "./globals.css";
+  4 | import { QueryProvider } from "@/providers/QueryProvider";
+> 5 | import { Toaster } from "sonner";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 |
+  7 | const customFont = localFont({
+  8 |   src: "./fonts/RIDIBatang.otf",
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[ 1248340ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1226
+[ 1248473ms] [ERROR] ./src/app/layout.tsx:5:1
+Module not found: Can't resolve 'sonner'
+  3 | import "./globals.css";
+  4 | import { QueryProvider } from "@/providers/QueryProvider";
+> 5 | import { Toaster } from "sonner";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 |
+  7 | const customFont = localFont({
+  8 |   src: "./fonts/RIDIBatang.otf",
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[ 1248542ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1226
+[ 1248878ms] [ERROR] ./src/app/layout.tsx:5:1
+Module not found: Can't resolve 'sonner'
+  3 | import "./globals.css";
+  4 | import { QueryProvider } from "@/providers/QueryProvider";
+> 5 | import { Toaster } from "sonner";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 |
+  7 | const customFont = localFont({
+  8 |   src: "./fonts/RIDIBatang.otf",
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[ 1248947ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1226
+[ 1249681ms] [ERROR] ./src/app/layout.tsx:5:1
+Module not found: Can't resolve 'sonner'
+  3 | import "./globals.css";
+  4 | import { QueryProvider } from "@/providers/QueryProvider";
+> 5 | import { Toaster } from "sonner";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 |
+  7 | const customFont = localFont({
+  8 |   src: "./fonts/RIDIBatang.otf",
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[ 1249751ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1226
+[ 1251285ms] [ERROR] ./src/app/layout.tsx:5:1
+Module not found: Can't resolve 'sonner'
+  3 | import "./globals.css";
+  4 | import { QueryProvider } from "@/providers/QueryProvider";
+> 5 | import { Toaster } from "sonner";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 |
+  7 | const customFont = localFont({
+  8 |   src: "./fonts/RIDIBatang.otf",
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[ 1251355ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1226
+[ 1254488ms] [ERROR] ./src/app/layout.tsx:5:1
+Module not found: Can't resolve 'sonner'
+  3 | import "./globals.css";
+  4 | import { QueryProvider } from "@/providers/QueryProvider";
+> 5 | import { Toaster } from "sonner";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 |
+  7 | const customFont = localFont({
+  8 |   src: "./fonts/RIDIBatang.otf",
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[ 1254558ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1226
+[ 1260894ms] [ERROR] ./src/app/layout.tsx:5:1
+Module not found: Can't resolve 'sonner'
+  3 | import "./globals.css";
+  4 | import { QueryProvider } from "@/providers/QueryProvider";
+> 5 | import { Toaster } from "sonner";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 |
+  7 | const customFont = localFont({
+  8 |   src: "./fonts/RIDIBatang.otf",
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[ 1260963ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1226
+[ 1261008ms] [ERROR] ./src/app/layout.tsx:5:1
+Module not found: Can't resolve 'sonner'
+  3 | import "./globals.css";
+  4 | import { QueryProvider } from "@/providers/QueryProvider";
+> 5 | import { Toaster } from "sonner";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 |
+  7 | const customFont = localFont({
+  8 |   src: "./fonts/RIDIBatang.otf",
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[ 1261089ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1226
+[ 1261519ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1226
+[ 1261532ms] [ERROR] ./src/app/layout.tsx:5:1
+Module not found: Can't resolve 'sonner'
+  3 | import "./globals.css";
+  4 | import { QueryProvider } from "@/providers/QueryProvider";
+> 5 | import { Toaster } from "sonner";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 |
+  7 | const customFont = localFont({
+  8 |   src: "./fonts/RIDIBatang.otf",
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[ 1261589ms] [ERROR] ./src/app/layout.tsx:5:1
+Module not found: Can't resolve 'sonner'
+  3 | import "./globals.css";
+  4 | import { QueryProvider } from "@/providers/QueryProvider";
+> 5 | import { Toaster } from "sonner";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 |
+  7 | const customFont = localFont({
+  8 |   src: "./fonts/RIDIBatang.otf",
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[ 1261659ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1226
+[ 1261791ms] [ERROR] ./src/app/layout.tsx:5:1
+Module not found: Can't resolve 'sonner'
+  3 | import "./globals.css";
+  4 | import { QueryProvider } from "@/providers/QueryProvider";
+> 5 | import { Toaster } from "sonner";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 |
+  7 | const customFont = localFont({
+  8 |   src: "./fonts/RIDIBatang.otf",
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[ 1261861ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1226
+[ 1262197ms] [ERROR] ./src/app/layout.tsx:5:1
+Module not found: Can't resolve 'sonner'
+  3 | import "./globals.css";
+  4 | import { QueryProvider } from "@/providers/QueryProvider";
+> 5 | import { Toaster } from "sonner";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 |
+  7 | const customFont = localFont({
+  8 |   src: "./fonts/RIDIBatang.otf",
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[ 1262267ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1226
+[ 1263001ms] [ERROR] ./src/app/layout.tsx:5:1
+Module not found: Can't resolve 'sonner'
+  3 | import "./globals.css";
+  4 | import { QueryProvider } from "@/providers/QueryProvider";
+> 5 | import { Toaster } from "sonner";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 |
+  7 | const customFont = localFont({
+  8 |   src: "./fonts/RIDIBatang.otf",
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[ 1263071ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1226
+[ 1263553ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1226
+[ 1263566ms] [ERROR] ./src/app/layout.tsx:5:1
+Module not found: Can't resolve 'sonner'
+  3 | import "./globals.css";
+  4 | import { QueryProvider } from "@/providers/QueryProvider";
+> 5 | import { Toaster } from "sonner";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 |
+  7 | const customFont = localFont({
+  8 |   src: "./fonts/RIDIBatang.otf",
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[ 1263626ms] [ERROR] ./src/app/layout.tsx:5:1
+Module not found: Can't resolve 'sonner'
+  3 | import "./globals.css";
+  4 | import { QueryProvider } from "@/providers/QueryProvider";
+> 5 | import { Toaster } from "sonner";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 |
+  7 | const customFont = localFont({
+  8 |   src: "./fonts/RIDIBatang.otf",
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[ 1263695ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1226
+[ 1263828ms] [ERROR] ./src/app/layout.tsx:5:1
+Module not found: Can't resolve 'sonner'
+  3 | import "./globals.css";
+  4 | import { QueryProvider } from "@/providers/QueryProvider";
+> 5 | import { Toaster } from "sonner";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 |
+  7 | const customFont = localFont({
+  8 |   src: "./fonts/RIDIBatang.otf",
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[ 1263897ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1226
+[ 1264233ms] [ERROR] ./src/app/layout.tsx:5:1
+Module not found: Can't resolve 'sonner'
+  3 | import "./globals.css";
+  4 | import { QueryProvider } from "@/providers/QueryProvider";
+> 5 | import { Toaster } from "sonner";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 |
+  7 | const customFont = localFont({
+  8 |   src: "./fonts/RIDIBatang.otf",
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[ 1264302ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1226
+[ 1264605ms] [ERROR] ./src/app/layout.tsx:5:1
+Module not found: Can't resolve 'sonner'
+  3 | import "./globals.css";
+  4 | import { QueryProvider } from "@/providers/QueryProvider";
+> 5 | import { Toaster } from "sonner";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 |
+  7 | const customFont = localFont({
+  8 |   src: "./fonts/RIDIBatang.otf",
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[ 1264675ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1226
+[ 1265038ms] [ERROR] ./src/app/layout.tsx:5:1
+Module not found: Can't resolve 'sonner'
+  3 | import "./globals.css";
+  4 | import { QueryProvider } from "@/providers/QueryProvider";
+> 5 | import { Toaster } from "sonner";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 |
+  7 | const customFont = localFont({
+  8 |   src: "./fonts/RIDIBatang.otf",
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[ 1265107ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1226
+[ 1266640ms] [ERROR] ./src/app/layout.tsx:5:1
+Module not found: Can't resolve 'sonner'
+  3 | import "./globals.css";
+  4 | import { QueryProvider } from "@/providers/QueryProvider";
+> 5 | import { Toaster } from "sonner";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 |
+  7 | const customFont = localFont({
+  8 |   src: "./fonts/RIDIBatang.otf",
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[ 1266709ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1226
+[ 1267811ms] [ERROR] ./src/app/layout.tsx:5:1
+Module not found: Can't resolve 'sonner'
+  3 | import "./globals.css";
+  4 | import { QueryProvider } from "@/providers/QueryProvider";
+> 5 | import { Toaster } from "sonner";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 |
+  7 | const customFont = localFont({
+  8 |   src: "./fonts/RIDIBatang.otf",
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[ 1267879ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1226
+[ 1269843ms] [ERROR] ./src/app/layout.tsx:5:1
+Module not found: Can't resolve 'sonner'
+  3 | import "./globals.css";
+  4 | import { QueryProvider } from "@/providers/QueryProvider";
+> 5 | import { Toaster } from "sonner";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 |
+  7 | const customFont = localFont({
+  8 |   src: "./fonts/RIDIBatang.otf",
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[ 1269913ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1226
+[ 1273724ms] [ERROR] ./src/app/layout.tsx:5:1
+Module not found: Can't resolve 'sonner'
+  3 | import "./globals.css";
+  4 | import { QueryProvider } from "@/providers/QueryProvider";
+> 5 | import { Toaster } from "sonner";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 |
+  7 | const customFont = localFont({
+  8 |   src: "./fonts/RIDIBatang.otf",
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[ 1273806ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1226
+[ 1274218ms] [ERROR] ./src/app/layout.tsx:5:1
+Module not found: Can't resolve 'sonner'
+  3 | import "./globals.css";
+  4 | import { QueryProvider } from "@/providers/QueryProvider";
+> 5 | import { Toaster } from "sonner";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 |
+  7 | const customFont = localFont({
+  8 |   src: "./fonts/RIDIBatang.otf",
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[ 1274287ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1226
+[ 1276249ms] [ERROR] ./src/app/layout.tsx:5:1
+Module not found: Can't resolve 'sonner'
+  3 | import "./globals.css";
+  4 | import { QueryProvider } from "@/providers/QueryProvider";
+> 5 | import { Toaster } from "sonner";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 |
+  7 | const customFont = localFont({
+  8 |   src: "./fonts/RIDIBatang.otf",
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[ 1276318ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1226
+[ 1287043ms] [ERROR] ./src/app/layout.tsx:5:1
+Module not found: Can't resolve 'sonner'
+  3 | import "./globals.css";
+  4 | import { QueryProvider } from "@/providers/QueryProvider";
+> 5 | import { Toaster } from "sonner";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 |
+  7 | const customFont = localFont({
+  8 |   src: "./fonts/RIDIBatang.otf",
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[ 1287126ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1226
+[ 1289064ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:3000/login:0
+[ 1289075ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:3000/_next/static/chunks/node_modules_react-dom_0bruynb._.js:15305
+[ 1289080ms] Error: ./src/app/layout.tsx:5:1
+Module not found: Can't resolve 'sonner'
+  3 | import "./globals.css";
+  4 | import { QueryProvider } from "@/providers/QueryProvider";
+> 5 | import { Toaster } from "sonner";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 |
+  7 | const customFont = localFont({
+  8 |   src: "./fonts/RIDIBatang.otf",
+
+
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+    at <unknown> (Error: ./src/app/layout.tsx:5:1)
+    at <unknown> (https://nextjs.org/docs/messages/module-not-found)
+    at Object.getCompilationErrors (file:///Users/hallyo/Desktop/Calentask/node_modules/next/dist/server/dev/hot-reloader-turbopack.js:1186:59)
+    at DevBundlerService.getCompilationError (file:///Users/hallyo/Desktop/Calentask/node_modules/next/dist/server/lib/dev-bundler-service.js:44:55)
+    at DevServer.getCompilationError (file:///Users/hallyo/Desktop/Calentask/node_modules/next/dist/server/dev/next-dev-server.js:720:42)
+    at DevServer.findPageComponents (file:///Users/hallyo/Desktop/Calentask/node_modules/next/dist/server/dev/next-dev-server.js:690:43)
+    at async DevServer.renderErrorToResponseImpl (file:///Users/hallyo/Desktop/Calentask/node_modules/next/dist/server/base-server.js:1753:26)
+[ 1289081ms] [LOG] [HMR] connected @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1226
+[ 1289082ms] [ERROR] ./src/app/layout.tsx:5:1
+Module not found: Can't resolve 'sonner'
+  3 | import "./globals.css";
+  4 | import { QueryProvider } from "@/providers/QueryProvider";
+> 5 | import { Toaster } from "sonner";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 |
+  7 | const customFont = localFont({
+  8 |   src: "./fonts/RIDIBatang.otf",
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[ 1289115ms] [ERROR] ./src/app/layout.tsx:5:1
+Module not found: Can't resolve 'sonner'
+  3 | import "./globals.css";
+  4 | import { QueryProvider } from "@/providers/QueryProvider";
+> 5 | import { Toaster } from "sonner";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 |
+  7 | const customFont = localFont({
+  8 |   src: "./fonts/RIDIBatang.otf",
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[ 1339566ms] [ERROR] ./src/app/layout.tsx:5:1
+Module not found: Can't resolve 'sonner'
+  3 | import "./globals.css";
+  4 | import { QueryProvider } from "@/providers/QueryProvider";
+> 5 | import { Toaster } from "sonner";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 |
+  7 | const customFont = localFont({
+  8 |   src: "./fonts/RIDIBatang.otf",
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[ 1339573ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1226
+[ 1339642ms] [ERROR] ./src/app/layout.tsx:5:1
+Module not found: Can't resolve 'sonner'
+  3 | import "./globals.css";
+  4 | import { QueryProvider } from "@/providers/QueryProvider";
+> 5 | import { Toaster } from "sonner";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 |
+  7 | const customFont = localFont({
+  8 |   src: "./fonts/RIDIBatang.otf",
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[ 1339711ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1226
+[ 1339844ms] [ERROR] ./src/app/layout.tsx:5:1
+Module not found: Can't resolve 'sonner'
+  3 | import "./globals.css";
+  4 | import { QueryProvider } from "@/providers/QueryProvider";
+> 5 | import { Toaster } from "sonner";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 |
+  7 | const customFont = localFont({
+  8 |   src: "./fonts/RIDIBatang.otf",
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[ 1339912ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1226
+[ 1340251ms] [ERROR] ./src/app/layout.tsx:5:1
+Module not found: Can't resolve 'sonner'
+  3 | import "./globals.css";
+  4 | import { QueryProvider } from "@/providers/QueryProvider";
+> 5 | import { Toaster } from "sonner";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 |
+  7 | const customFont = localFont({
+  8 |   src: "./fonts/RIDIBatang.otf",
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[ 1340320ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1226
+[ 1341055ms] [ERROR] ./src/app/layout.tsx:5:1
+Module not found: Can't resolve 'sonner'
+  3 | import "./globals.css";
+  4 | import { QueryProvider } from "@/providers/QueryProvider";
+> 5 | import { Toaster } from "sonner";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 |
+  7 | const customFont = localFont({
+  8 |   src: "./fonts/RIDIBatang.otf",
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[ 1341125ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1226
+[ 1342657ms] [ERROR] ./src/app/layout.tsx:5:1
+Module not found: Can't resolve 'sonner'
+  3 | import "./globals.css";
+  4 | import { QueryProvider } from "@/providers/QueryProvider";
+> 5 | import { Toaster } from "sonner";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 |
+  7 | const customFont = localFont({
+  8 |   src: "./fonts/RIDIBatang.otf",
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[ 1342726ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1226
+[ 1345861ms] [ERROR] ./src/app/layout.tsx:5:1
+Module not found: Can't resolve 'sonner'
+  3 | import "./globals.css";
+  4 | import { QueryProvider } from "@/providers/QueryProvider";
+> 5 | import { Toaster } from "sonner";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 |
+  7 | const customFont = localFont({
+  8 |   src: "./fonts/RIDIBatang.otf",
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[ 1345932ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1226
+[ 1347452ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1226
+[ 1347480ms] [ERROR] ./src/app/layout.tsx:5:1
+Module not found: Can't resolve 'sonner'
+  3 | import "./globals.css";
+  4 | import { QueryProvider } from "@/providers/QueryProvider";
+> 5 | import { Toaster } from "sonner";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 |
+  7 | const customFont = localFont({
+  8 |   src: "./fonts/RIDIBatang.otf",
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[ 1347535ms] [ERROR] ./src/app/layout.tsx:5:1
+Module not found: Can't resolve 'sonner'
+  3 | import "./globals.css";
+  4 | import { QueryProvider } from "@/providers/QueryProvider";
+> 5 | import { Toaster } from "sonner";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 |
+  7 | const customFont = localFont({
+  8 |   src: "./fonts/RIDIBatang.otf",
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[ 1347605ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1226
+[ 1347738ms] [ERROR] ./src/app/layout.tsx:5:1
+Module not found: Can't resolve 'sonner'
+  3 | import "./globals.css";
+  4 | import { QueryProvider } from "@/providers/QueryProvider";
+> 5 | import { Toaster } from "sonner";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 |
+  7 | const customFont = localFont({
+  8 |   src: "./fonts/RIDIBatang.otf",
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[ 1347807ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1226
+[ 1348143ms] [ERROR] ./src/app/layout.tsx:5:1
+Module not found: Can't resolve 'sonner'
+  3 | import "./globals.css";
+  4 | import { QueryProvider } from "@/providers/QueryProvider";
+> 5 | import { Toaster } from "sonner";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 |
+  7 | const customFont = localFont({
+  8 |   src: "./fonts/RIDIBatang.otf",
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[ 1348212ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1226
+[ 1348947ms] [ERROR] ./src/app/layout.tsx:5:1
+Module not found: Can't resolve 'sonner'
+  3 | import "./globals.css";
+  4 | import { QueryProvider } from "@/providers/QueryProvider";
+> 5 | import { Toaster } from "sonner";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 |
+  7 | const customFont = localFont({
+  8 |   src: "./fonts/RIDIBatang.otf",
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[ 1349017ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1226
+[ 1350552ms] [ERROR] ./src/app/layout.tsx:5:1
+Module not found: Can't resolve 'sonner'
+  3 | import "./globals.css";
+  4 | import { QueryProvider } from "@/providers/QueryProvider";
+> 5 | import { Toaster } from "sonner";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 |
+  7 | const customFont = localFont({
+  8 |   src: "./fonts/RIDIBatang.otf",
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[ 1350621ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1226
+[ 1352264ms] [ERROR] ./src/app/layout.tsx:5:1
+Module not found: Can't resolve 'sonner'
+  3 | import "./globals.css";
+  4 | import { QueryProvider } from "@/providers/QueryProvider";
+> 5 | import { Toaster } from "sonner";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 |
+  7 | const customFont = localFont({
+  8 |   src: "./fonts/RIDIBatang.otf",
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[ 1352334ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1226
+[ 1353756ms] [ERROR] ./src/app/layout.tsx:5:1
+Module not found: Can't resolve 'sonner'
+  3 | import "./globals.css";
+  4 | import { QueryProvider } from "@/providers/QueryProvider";
+> 5 | import { Toaster } from "sonner";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 |
+  7 | const customFont = localFont({
+  8 |   src: "./fonts/RIDIBatang.otf",
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[ 1353826ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1226
+[ 1360162ms] [ERROR] ./src/app/layout.tsx:5:1
+Module not found: Can't resolve 'sonner'
+  3 | import "./globals.css";
+  4 | import { QueryProvider } from "@/providers/QueryProvider";
+> 5 | import { Toaster } from "sonner";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 |
+  7 | const customFont = localFont({
+  8 |   src: "./fonts/RIDIBatang.otf",
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[ 1360232ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1226
+[ 1360574ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1226
+[ 1360593ms] [ERROR] ./src/app/layout.tsx:5:1
+Module not found: Can't resolve 'sonner'
+  3 | import "./globals.css";
+  4 | import { QueryProvider } from "@/providers/QueryProvider";
+> 5 | import { Toaster } from "sonner";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 |
+  7 | const customFont = localFont({
+  8 |   src: "./fonts/RIDIBatang.otf",
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[ 1360651ms] [ERROR] ./src/app/layout.tsx:5:1
+Module not found: Can't resolve 'sonner'
+  3 | import "./globals.css";
+  4 | import { QueryProvider } from "@/providers/QueryProvider";
+> 5 | import { Toaster } from "sonner";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 |
+  7 | const customFont = localFont({
+  8 |   src: "./fonts/RIDIBatang.otf",
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[ 1360719ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1226
+[ 1360853ms] [ERROR] ./src/app/layout.tsx:5:1
+Module not found: Can't resolve 'sonner'
+  3 | import "./globals.css";
+  4 | import { QueryProvider } from "@/providers/QueryProvider";
+> 5 | import { Toaster } from "sonner";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 |
+  7 | const customFont = localFont({
+  8 |   src: "./fonts/RIDIBatang.otf",
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[ 1360923ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1226
+[ 1361257ms] [ERROR] ./src/app/layout.tsx:5:1
+Module not found: Can't resolve 'sonner'
+  3 | import "./globals.css";
+  4 | import { QueryProvider } from "@/providers/QueryProvider";
+> 5 | import { Toaster } from "sonner";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 |
+  7 | const customFont = localFont({
+  8 |   src: "./fonts/RIDIBatang.otf",
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[ 1361326ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1226
+[ 1362062ms] [ERROR] ./src/app/layout.tsx:5:1
+Module not found: Can't resolve 'sonner'
+  3 | import "./globals.css";
+  4 | import { QueryProvider } from "@/providers/QueryProvider";
+> 5 | import { Toaster } from "sonner";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 |
+  7 | const customFont = localFont({
+  8 |   src: "./fonts/RIDIBatang.otf",
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[ 1362132ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1226
+[ 1363666ms] [ERROR] ./src/app/layout.tsx:5:1
+Module not found: Can't resolve 'sonner'
+  3 | import "./globals.css";
+  4 | import { QueryProvider } from "@/providers/QueryProvider";
+> 5 | import { Toaster } from "sonner";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 |
+  7 | const customFont = localFont({
+  8 |   src: "./fonts/RIDIBatang.otf",
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[ 1363736ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1226
+[ 1365096ms] [ERROR] ./src/app/layout.tsx:5:1
+Module not found: Can't resolve 'sonner'
+  3 | import "./globals.css";
+  4 | import { QueryProvider } from "@/providers/QueryProvider";
+> 5 | import { Toaster } from "sonner";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 |
+  7 | const customFont = localFont({
+  8 |   src: "./fonts/RIDIBatang.otf",
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[ 1365178ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1226
+[ 1366872ms] [ERROR] ./src/app/layout.tsx:5:1
+Module not found: Can't resolve 'sonner'
+  3 | import "./globals.css";
+  4 | import { QueryProvider } from "@/providers/QueryProvider";
+> 5 | import { Toaster } from "sonner";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 |
+  7 | const customFont = localFont({
+  8 |   src: "./fonts/RIDIBatang.otf",
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[ 1366941ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1226
+[ 1372987ms] [ERROR] ./src/app/layout.tsx:5:1
+Module not found: Can't resolve 'sonner'
+  3 | import "./globals.css";
+  4 | import { QueryProvider } from "@/providers/QueryProvider";
+> 5 | import { Toaster } from "sonner";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 |
+  7 | const customFont = localFont({
+  8 |   src: "./fonts/RIDIBatang.otf",
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[ 1373069ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1226
+[ 1373275ms] [ERROR] ./src/app/layout.tsx:5:1
+Module not found: Can't resolve 'sonner'
+  3 | import "./globals.css";
+  4 | import { QueryProvider } from "@/providers/QueryProvider";
+> 5 | import { Toaster } from "sonner";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 |
+  7 | const customFont = localFont({
+  8 |   src: "./fonts/RIDIBatang.otf",
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[ 1373345ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1226
+[ 1386093ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:3000/login:0
+[ 1386104ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:3000/_next/static/chunks/node_modules_react-dom_0bruynb._.js:15305
+[ 1386109ms] Error: ./src/app/layout.tsx:5:1
+Module not found: Can't resolve 'sonner'
+  3 | import "./globals.css";
+  4 | import { QueryProvider } from "@/providers/QueryProvider";
+> 5 | import { Toaster } from "sonner";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 |
+  7 | const customFont = localFont({
+  8 |   src: "./fonts/RIDIBatang.otf",
+
+
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+    at <unknown> (Error: ./src/app/layout.tsx:5:1)
+    at <unknown> (https://nextjs.org/docs/messages/module-not-found)
+    at Object.getCompilationErrors (file:///Users/hallyo/Desktop/Calentask/node_modules/next/dist/server/dev/hot-reloader-turbopack.js:1186:59)
+    at DevBundlerService.getCompilationError (file:///Users/hallyo/Desktop/Calentask/node_modules/next/dist/server/lib/dev-bundler-service.js:44:55)
+    at DevServer.getCompilationError (file:///Users/hallyo/Desktop/Calentask/node_modules/next/dist/server/dev/next-dev-server.js:720:42)
+    at DevServer.findPageComponents (file:///Users/hallyo/Desktop/Calentask/node_modules/next/dist/server/dev/next-dev-server.js:690:43)
+    at async DevServer.renderErrorToResponseImpl (file:///Users/hallyo/Desktop/Calentask/node_modules/next/dist/server/base-server.js:1753:26)
+[ 1386109ms] [LOG] [HMR] connected @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1226
+[ 1386111ms] [ERROR] ./src/app/layout.tsx:5:1
+Module not found: Can't resolve 'sonner'
+  3 | import "./globals.css";
+  4 | import { QueryProvider } from "@/providers/QueryProvider";
+> 5 | import { Toaster } from "sonner";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 |
+  7 | const customFont = localFont({
+  8 |   src: "./fonts/RIDIBatang.otf",
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[ 1386142ms] [ERROR] ./src/app/layout.tsx:5:1
+Module not found: Can't resolve 'sonner'
+  3 | import "./globals.css";
+  4 | import { QueryProvider } from "@/providers/QueryProvider";
+> 5 | import { Toaster } from "sonner";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 |
+  7 | const customFont = localFont({
+  8 |   src: "./fonts/RIDIBatang.otf",
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[ 1427988ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1226
+[ 1428020ms] [ERROR] ./src/app/layout.tsx:5:1
+Module not found: Can't resolve 'sonner'
+  3 | import "./globals.css";
+  4 | import { QueryProvider } from "@/providers/QueryProvider";
+> 5 | import { Toaster } from "sonner";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 |
+  7 | const customFont = localFont({
+  8 |   src: "./fonts/RIDIBatang.otf",
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[ 1428079ms] [ERROR] ./src/app/layout.tsx:5:1
+Module not found: Can't resolve 'sonner'
+  3 | import "./globals.css";
+  4 | import { QueryProvider } from "@/providers/QueryProvider";
+> 5 | import { Toaster } from "sonner";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 |
+  7 | const customFont = localFont({
+  8 |   src: "./fonts/RIDIBatang.otf",
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[ 1428147ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1226
+[ 1428281ms] [ERROR] ./src/app/layout.tsx:5:1
+Module not found: Can't resolve 'sonner'
+  3 | import "./globals.css";
+  4 | import { QueryProvider } from "@/providers/QueryProvider";
+> 5 | import { Toaster } from "sonner";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 |
+  7 | const customFont = localFont({
+  8 |   src: "./fonts/RIDIBatang.otf",
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[ 1428349ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1226
+[ 1428684ms] [ERROR] ./src/app/layout.tsx:5:1
+Module not found: Can't resolve 'sonner'
+  3 | import "./globals.css";
+  4 | import { QueryProvider } from "@/providers/QueryProvider";
+> 5 | import { Toaster } from "sonner";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 |
+  7 | const customFont = localFont({
+  8 |   src: "./fonts/RIDIBatang.otf",
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[ 1428754ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1226
+[ 1429492ms] [ERROR] ./src/app/layout.tsx:5:1
+Module not found: Can't resolve 'sonner'
+  3 | import "./globals.css";
+  4 | import { QueryProvider } from "@/providers/QueryProvider";
+> 5 | import { Toaster } from "sonner";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 |
+  7 | const customFont = localFont({
+  8 |   src: "./fonts/RIDIBatang.otf",
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[ 1429560ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1226
+[ 1431095ms] [ERROR] ./src/app/layout.tsx:5:1
+Module not found: Can't resolve 'sonner'
+  3 | import "./globals.css";
+  4 | import { QueryProvider } from "@/providers/QueryProvider";
+> 5 | import { Toaster } from "sonner";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 |
+  7 | const customFont = localFont({
+  8 |   src: "./fonts/RIDIBatang.otf",
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[ 1431164ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1226
+[ 1434301ms] [ERROR] ./src/app/layout.tsx:5:1
+Module not found: Can't resolve 'sonner'
+  3 | import "./globals.css";
+  4 | import { QueryProvider } from "@/providers/QueryProvider";
+> 5 | import { Toaster } from "sonner";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 |
+  7 | const customFont = localFont({
+  8 |   src: "./fonts/RIDIBatang.otf",
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[ 1434370ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1226
+[ 1440707ms] [ERROR] ./src/app/layout.tsx:5:1
+Module not found: Can't resolve 'sonner'
+  3 | import "./globals.css";
+  4 | import { QueryProvider } from "@/providers/QueryProvider";
+> 5 | import { Toaster } from "sonner";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 |
+  7 | const customFont = localFont({
+  8 |   src: "./fonts/RIDIBatang.otf",
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[ 1440776ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1226
+[ 1453545ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:3000/login:0
+[ 1453556ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:3000/_next/static/chunks/node_modules_react-dom_0bruynb._.js:15305
+[ 1453560ms] Error: ./src/app/layout.tsx:5:1
+Module not found: Can't resolve 'sonner'
+  3 | import "./globals.css";
+  4 | import { QueryProvider } from "@/providers/QueryProvider";
+> 5 | import { Toaster } from "sonner";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 |
+  7 | const customFont = localFont({
+  8 |   src: "./fonts/RIDIBatang.otf",
+
+
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+    at <unknown> (Error: ./src/app/layout.tsx:5:1)
+    at <unknown> (https://nextjs.org/docs/messages/module-not-found)
+    at Object.getCompilationErrors (file:///Users/hallyo/Desktop/Calentask/node_modules/next/dist/server/dev/hot-reloader-turbopack.js:1186:59)
+    at DevBundlerService.getCompilationError (file:///Users/hallyo/Desktop/Calentask/node_modules/next/dist/server/lib/dev-bundler-service.js:44:55)
+    at DevServer.getCompilationError (file:///Users/hallyo/Desktop/Calentask/node_modules/next/dist/server/dev/next-dev-server.js:720:42)
+    at DevServer.findPageComponents (file:///Users/hallyo/Desktop/Calentask/node_modules/next/dist/server/dev/next-dev-server.js:690:43)
+    at async DevServer.renderErrorToResponseImpl (file:///Users/hallyo/Desktop/Calentask/node_modules/next/dist/server/base-server.js:1753:26)
+[ 1453561ms] [LOG] [HMR] connected @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1226
+[ 1453562ms] [ERROR] ./src/app/layout.tsx:5:1
+Module not found: Can't resolve 'sonner'
+  3 | import "./globals.css";
+  4 | import { QueryProvider } from "@/providers/QueryProvider";
+> 5 | import { Toaster } from "sonner";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 |
+  7 | const customFont = localFont({
+  8 |   src: "./fonts/RIDIBatang.otf",
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[ 1453594ms] [ERROR] ./src/app/layout.tsx:5:1
+Module not found: Can't resolve 'sonner'
+  3 | import "./globals.css";
+  4 | import { QueryProvider } from "@/providers/QueryProvider";
+> 5 | import { Toaster } from "sonner";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 |
+  7 | const customFont = localFont({
+  8 |   src: "./fonts/RIDIBatang.otf",
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945

@@ -31,7 +31,7 @@ export const SemesterView = React.memo(function SemesterView({ events }: Semeste
   const months = Array.from({ length: 6 }, (_, i) => addMonths(semesterStartDate, i))
 
   return (
-    <div className="flex-1 overflow-y-auto bg-[#FAFAFA] p-6 no-scrollbar">
+    <div className="flex-1 overflow-y-auto bg-[#FAFAFA] p-4 md:p-6 no-scrollbar pb-24 md:pb-6">
       <div className="max-w-[1400px] mx-auto w-full">
         {/* 2x3 Grid for the 6 months */}
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 pb-12">
@@ -43,7 +43,7 @@ export const SemesterView = React.memo(function SemesterView({ events }: Semeste
             const days = eachDayOfInterval({ start: gridStart, end: gridEnd })
 
             return (
-              <div key={monthIdx} className="bg-white rounded-[1.5rem] shadow-sm border border-[#EEEEEE] flex flex-col overflow-hidden hover:shadow-md transition-shadow">
+              <div key={monthIdx} className="bg-white rounded-2xl md:rounded-[1.5rem] shadow-sm border border-[#EEEEEE] flex flex-col overflow-hidden hover:shadow-md transition-shadow">
                 {/* Month Header */}
                 <div className="px-6 py-5 border-b border-[#EEEEEE] flex items-center justify-between bg-white">
                   <h3 className="text-xl font-bold text-slate-800 tracking-tight">
@@ -91,7 +91,7 @@ export const SemesterView = React.memo(function SemesterView({ events }: Semeste
                       <div
                         key={dayIdx}
                         onClick={() => openDaySummary(day)}
-                        className={`min-h-[110px] border-b border-r border-[#F1F5F9] p-2 flex flex-col cursor-pointer transition-colors hover:bg-[#FAFAFA] ${isCurrentMonth ? 'bg-white' : 'bg-[#F8FAFC] opacity-40'
+                        className={`min-h-[80px] md:min-h-[110px] border-b border-r border-[#F1F5F9] p-1 md:p-2 flex flex-col cursor-pointer transition-colors hover:bg-[#FAFAFA] ${isCurrentMonth ? 'bg-white' : 'bg-[#F8FAFC] opacity-40'
                           }`}
                       >
                         <div className="flex justify-between items-start mb-2">
