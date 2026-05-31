@@ -2,10 +2,11 @@
 
 import { Calendar, Sparkles, Tags, Settings } from 'lucide-react'
 import { motion } from 'framer-motion'
+import { ViewMode } from '@/store/useCalendarStore'
 
 interface BottomNavigationProps {
-  viewMode: string
-  setViewMode: (mode: string) => void
+  viewMode: ViewMode
+  setViewMode: (mode: ViewMode) => void
   onOpenSettings: () => void
   onOpenTags: () => void
 }
@@ -24,7 +25,7 @@ export function BottomNavigation({ viewMode, setViewMode, onOpenSettings, onOpen
     } else if (id === 'tags') {
       onOpenTags()
     } else {
-      setViewMode(id)
+      setViewMode(id as ViewMode)
     }
   }
 
