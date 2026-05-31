@@ -71,8 +71,8 @@ export function CanvasBoard() {
           className="absolute top-32 left-32 w-56 h-48 bg-yellow-200/95 backdrop-blur-sm shadow-lg p-5 rounded-xl cursor-pointer hover:shadow-xl transition-shadow"
         >
           <div className="w-12 h-1.5 bg-yellow-400/60 rounded-full mb-3" />
-          <h3 className="font-bold text-slate-800 text-lg mb-2">Define MVPs</h3>
-          <p className="font-medium text-slate-700 text-sm leading-relaxed">Define core features and target audience for Project Alpha.</p>
+          <h3 className="font-bold text-slate-800 text-lg mb-2">MVP 정의</h3>
+          <p className="font-medium text-slate-700 text-sm leading-relaxed">프로젝트 알파의 핵심 기능 및 타겟 유저를 정의합니다.</p>
         </motion.div>
 
         {/* Sticky Note 2 */}
@@ -83,10 +83,10 @@ export function CanvasBoard() {
           className="absolute top-20 left-[420px] w-64 h-32 bg-emerald-200/95 backdrop-blur-sm shadow-lg p-5 rounded-xl cursor-pointer hover:shadow-xl transition-shadow"
         >
           <div className="flex justify-between items-start mb-2">
-            <h3 className="font-bold text-slate-800 text-lg">Tech Stack</h3>
-            <span className="px-2 py-1 bg-emerald-300/50 rounded-md text-[10px] font-bold text-emerald-800">#Dev</span>
+            <h3 className="font-bold text-slate-800 text-lg">기술 스택</h3>
+            <span className="px-2 py-1 bg-emerald-300/50 rounded-md text-[10px] font-bold text-emerald-800">#개발</span>
           </div>
-          <p className="font-medium text-slate-700 text-sm">React, Next.js, Framer Motion, and Tailwind CSS.</p>
+          <p className="font-medium text-slate-700 text-sm">React, Next.js, Framer Motion, 그리고 Tailwind CSS.</p>
         </motion.div>
       </motion.div>
 

@@ -87,7 +87,7 @@ export function PinPadOverlay({ children }: { children: React.ReactNode }) {
               <div className="w-14 h-14 bg-gradient-to-tr from-slate-800 to-slate-900 text-white rounded-2xl flex items-center justify-center mb-6 shadow-xl shadow-slate-900/20">
                 <Lock className="w-7 h-7" />
               </div>
-              <h2 className="text-xl font-bold text-slate-800 mb-2">Archive Locked</h2>
+              <h2 className="text-xl font-bold text-slate-800 mb-2">아카이브가 잠겨있습니다</h2>
               <p className="text-sm text-slate-500 mb-8 font-medium">
                 {lockoutTime > 0 
                   ? <span className="text-rose-500 font-bold">{lockoutTime}초 후 다시 시도하세요</span>

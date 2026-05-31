@@ -26,7 +26,6 @@ export async function getActivityTemplates() {
       id,
       title,
       category_id,
-      category_ids,
       duration_minutes,
       hex_color,
       memo,
@@ -59,7 +58,6 @@ export async function createActivityTemplate(payload: Omit<ActivityTemplate, 'id
     user_id: userData.user.id,
     title: payload.title,
     category_id: payload.category_ids?.[0] || payload.category_id || null,
-    category_ids: payload.category_ids || (payload.category_id ? [payload.category_id] : []),
     duration_minutes: payload.duration_minutes,
   }
   if (payload.hex_color) insertPayload.hex_color = payload.hex_color
@@ -84,7 +82,6 @@ export async function updateActivityTemplate(id: string, payload: Partial<Omit<A
   const updatePayload: Record<string, unknown> = {}
   if (payload.title !== undefined) updatePayload.title = payload.title
   if (payload.category_ids !== undefined) {
-    updatePayload.category_ids = payload.category_ids
     updatePayload.category_id = payload.category_ids[0] || null
   } else if (payload.category_id !== undefined) {
     updatePayload.category_id = payload.category_id
@@ -205,10 +202,8 @@ export async function createActivityFromTemplate(templateId: string, customStart
 
   if (activityError) throw new Error(activityError.message)
 
-  // 2. Map categories
-  const categoryIdsToMap = template.category_ids && template.category_ids.length > 0 
-    ? template.category_ids 
-    : (template.category_id ? [template.category_id] : [])
+  // 2. Map categories (category_ids 컬럼은 DB에 없으므로 category_id를 사용)
+  const categoryIdsToMap = template.category_id ? [template.category_id] : []
 
   if (categoryIdsToMap.length > 0) {
     const mappings = categoryIdsToMap.map((id: string) => ({

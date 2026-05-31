@@ -3,6 +3,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { useCalendarStore } from '@/store/useCalendarStore'
 import { useArchiveStore } from '@/store/useArchiveStore'
 import { Button } from '@/components/ui/button'
@@ -37,6 +38,8 @@ import { UpcomingAnniversaryWidget } from '@/components/anniversary/UpcomingAnni
 import { useAnniversaryOverlay } from '@/hooks/useAnniversaryOverlay'
 import { AnniversarySettingsView } from '@/components/anniversary/AnniversarySettingsView'
 import InsightsClient from '@/app/insights/InsightsClient'
+import { ArchiveNotesView } from '@/components/archive/ArchiveNotesView'
+import { ArchiveAgendaView } from '@/components/archive/ArchiveAgendaView'
 import { BottomNavigation } from '@/components/ui/BottomNavigation'
 
 export default function CalendarPage() {
@@ -46,6 +49,7 @@ export default function CalendarPage() {
   const [isTagsModalOpen, setIsTagsModalOpen] = useState(false)
   const [isDataHubModalOpen, setIsDataHubModalOpen] = useState(false)
   const queryClient = useQueryClient()
+  const router = useRouter()
   
   const { 
     currentDate, viewMode, setViewMode,
@@ -54,6 +58,7 @@ export default function CalendarPage() {
 
   const isCalendarMenuOpen = ['monthly', 'weekly', 'list', 'semester', 'nice_import', 'anniversary'].includes(viewMode)
   const isMyCalendarActive = ['monthly', 'weekly', 'list', 'semester'].includes(viewMode)
+  const isArchiveMenuOpen = ['archive_notes', 'archive_agenda'].includes(viewMode)
 
   const handleLogout = async () => {
     resetStore()
@@ -82,21 +87,23 @@ export default function CalendarPage() {
   const agendaEvents = optimisticAgendaTasks
     // @ts-ignore
     .filter(task => task.status === 'today' && task.date && !task.completed)
-    .map(task => ({
+    .map(task => {
       // @ts-ignore
-      id: task.id,
-      // @ts-ignore
-      title: task.title,
-      // @ts-ignore
-      startTime: task.date.toISOString(),
-      // @ts-ignore
-      endTime: new Date(task.date.getTime() + 60 * 60 * 1000).toISOString(),
-      categoryId: 'agenda-category',
-      // @ts-ignore
-      isAllDay: !task.hasTime,
-      memo: 'From Archive Agenda',
-      color: '#3b82f6', // Blue color for Agenda
-    })) as unknown as Activity[]
+      const taskDate = new Date(task.date);
+      return {
+        // @ts-ignore
+        id: task.id,
+        // @ts-ignore
+        title: task.title,
+        startTime: taskDate.toISOString(),
+        endTime: new Date(taskDate.getTime() + 60 * 60 * 1000).toISOString(),
+        categories: [{ id: 'agenda-category', name: 'Agenda', color: '#3b82f6' }],
+        // @ts-ignore
+        isAllDay: !task.hasTime,
+        memo: 'From Archive Agenda',
+        color: '#3b82f6', // Blue color for Agenda
+      };
+    }) as unknown as Activity[]
 
   let events = [
     ...(activitiesData || []),
@@ -107,7 +114,7 @@ export default function CalendarPage() {
   // 글로벌 카테고리 필터 적용
   if (activeCategories.length > 0) {
     events = events.filter(event => 
-      event.categories?.some(cat => activeCategories.includes(cat.id))
+      event.categories?.some(cat => activeCategories.includes(cat.id) || cat.id === 'agenda-category')
     )
   }
 
@@ -163,6 +170,64 @@ export default function CalendarPage() {
           <UpcomingAnniversaryWidget />
 
           <div className="pb-3 mb-2 relative">
+            <button 
+              onClick={() => {
+                if (!isArchiveMenuOpen) setViewMode('archive_notes')
+              }}
+              className={`group relative w-full text-left px-4 py-3.5 rounded-2xl text-[15px] transition-all duration-300 overflow-hidden flex items-center justify-between ${
+                isArchiveMenuOpen 
+                ? 'bg-gradient-to-r from-slate-100 to-white text-slate-800 font-bold shadow-sm border border-slate-200' 
+                : 'font-medium text-slate-500 hover:bg-white hover:shadow-sm hover:text-slate-800 border border-transparent'
+              } mb-2`}
+            >
+              {isArchiveMenuOpen && (
+                <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-slate-500 rounded-r-full" />
+              )}
+              <div className="relative z-10 flex items-center gap-3">
+                <Database className={`w-5 h-5 transition-colors ${isArchiveMenuOpen ? 'text-slate-600' : 'text-slate-300 group-hover:text-slate-600'}`} />
+                <span>아카이브 관리</span>
+              </div>
+              <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${isArchiveMenuOpen ? 'rotate-180 text-slate-600' : 'text-slate-400'}`} />
+            </button>
+
+            <AnimatePresence initial={false}>
+              {isArchiveMenuOpen && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: 'auto', opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.3, ease: 'easeInOut' }}
+                  className="overflow-hidden"
+                >
+                  <div className="flex flex-col space-y-1 mt-1 pb-3 mb-2 border-b border-slate-100/50">
+                    <button 
+                      onClick={() => setViewMode('archive_notes')}
+                      className={`w-[calc(100%-1.25rem)] ml-5 text-left px-4 py-2.5 rounded-xl text-sm transition-all duration-300 flex items-center gap-2.5 ${
+                        viewMode === 'archive_notes'
+                        ? 'bg-slate-100/80 text-slate-800 font-bold shadow-sm border border-slate-200/50' 
+                        : 'bg-transparent text-slate-400 hover:bg-white hover:shadow-sm hover:text-slate-700 border border-transparent'
+                      }`}
+                    >
+                      <Database className={`w-4 h-4 ${viewMode === 'archive_notes' ? 'text-slate-600' : 'text-slate-300'}`} />
+                      아카이브 노트
+                    </button>
+
+                    <button 
+                      onClick={() => setViewMode('archive_agenda')}
+                      className={`w-[calc(100%-1.25rem)] ml-5 text-left px-4 py-2.5 rounded-xl text-sm transition-all duration-300 flex items-center gap-2.5 ${
+                        viewMode === 'archive_agenda'
+                        ? 'bg-indigo-50/80 text-indigo-700 font-bold shadow-sm border border-indigo-100/50' 
+                        : 'bg-transparent text-slate-400 hover:bg-white hover:shadow-sm hover:text-slate-700 border border-transparent'
+                      }`}
+                    >
+                      <Sparkles className={`w-4 h-4 ${viewMode === 'archive_agenda' ? 'text-indigo-500' : 'text-slate-300'}`} />
+                      오늘의 할 일 (아젠다)
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
             <button 
               onClick={() => setViewMode('insights')}
               className={`group relative w-full text-left px-4 py-3.5 rounded-2xl text-[15px] transition-all duration-300 overflow-hidden flex items-center justify-between ${
@@ -312,6 +377,16 @@ export default function CalendarPage() {
             {viewMode === 'insights' && (
               <div className="min-h-full bg-[#FAFAFA] rounded-xl md:rounded-3xl p-2 md:p-6 overflow-x-hidden">
                 <InsightsClient />
+              </div>
+            )}
+            {viewMode === 'archive_notes' && (
+              <div className="h-full bg-[#FAFAFA] rounded-xl md:rounded-3xl overflow-hidden shadow-sm border border-slate-100">
+                <ArchiveNotesView />
+              </div>
+            )}
+            {viewMode === 'archive_agenda' && (
+              <div className="h-full bg-[#FAFAFA] rounded-xl md:rounded-3xl overflow-hidden shadow-sm border border-slate-100">
+                <ArchiveAgendaView />
               </div>
             )}
           </div>

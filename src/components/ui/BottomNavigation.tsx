@@ -1,6 +1,7 @@
 'use client'
 
-import { Calendar, Sparkles, Tags, Settings } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { Calendar, Sparkles, Tags, Settings, Database } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { ViewMode } from '@/store/useCalendarStore'
 
@@ -12,8 +13,10 @@ interface BottomNavigationProps {
 }
 
 export function BottomNavigation({ viewMode, setViewMode, onOpenSettings, onOpenTags }: BottomNavigationProps) {
+  const router = useRouter()
   const tabs = [
     { id: 'monthly', icon: Calendar, label: '캘린더' },
+    { id: 'archive', icon: Database, label: '아카이브' },
     { id: 'insights', icon: Sparkles, label: '인사이트' },
     { id: 'tags', icon: Tags, label: '태그/허브' },
     { id: 'settings', icon: Settings, label: '설정' },
@@ -24,6 +27,8 @@ export function BottomNavigation({ viewMode, setViewMode, onOpenSettings, onOpen
       onOpenSettings()
     } else if (id === 'tags') {
       onOpenTags()
+    } else if (id === 'archive') {
+      setViewMode('archive_notes' as ViewMode)
     } else {
       setViewMode(id as ViewMode)
     }
@@ -33,7 +38,10 @@ export function BottomNavigation({ viewMode, setViewMode, onOpenSettings, onOpen
     <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/80 backdrop-blur-xl border-t border-slate-200/50 pb-[env(safe-area-inset-bottom)]">
       <div className="flex items-center justify-around px-2 h-16">
         {tabs.map((tab) => {
-          const isActive = viewMode === tab.id || (tab.id === 'monthly' && ['weekly', 'list', 'semester'].includes(viewMode))
+          const isActive = 
+            (tab.id === 'archive' && ['archive_notes', 'archive_agenda'].includes(viewMode)) ||
+            (viewMode === tab.id) || 
+            (tab.id === 'monthly' && ['weekly', 'list', 'semester', 'nice_import', 'anniversary'].includes(viewMode))
           const Icon = tab.icon
 
           return (

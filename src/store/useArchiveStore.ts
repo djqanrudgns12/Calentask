@@ -45,7 +45,10 @@ export const useArchiveStore = create<ArchiveState>()(
     }),
     {
       name: 'archive-storage',
-      partialize: (state) => ({ tabs: state.tabs }), // Only persist tabs, keep security state ephemeral
+      partialize: (state) => ({ 
+        tabs: state.tabs, 
+        optimisticAgendaTasks: state.optimisticAgendaTasks 
+      }), // Persist tabs and agenda tasks, keep security state ephemeral
     }
   )
 );

@@ -12,10 +12,10 @@ export function JournalBoard() {
           </div>
           <div className="w-[calc(100%-4rem)] md:w-[calc(50%-3rem)] p-6 rounded-3xl shadow-sm border border-slate-100 bg-white hover:shadow-md transition-shadow">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="font-extrabold text-slate-900 text-xl">Weekly Reflection</h3>
-              <span className="text-xs font-bold text-blue-500 uppercase tracking-wider">Today, 10:00 AM</span>
+              <h3 className="font-extrabold text-slate-900 text-xl">주간 회고</h3>
+              <span className="text-xs font-bold text-blue-500 uppercase tracking-wider">오늘, 오전 10:00</span>
             </div>
-            <p className="text-slate-600 leading-relaxed font-medium">Productivity was extremely high this week. Finished all pending QA tasks and successfully deployed the new Archive feature. Next step: User interviews.</p>
+            <p className="text-slate-600 leading-relaxed font-medium">이번 주 생산성이 매우 높았습니다. 밀린 QA 작업을 모두 마치고 아카이브 기능을 성공적으로 배포했습니다. 다음 단계: 유저 인터뷰.</p>
           </div>
         </div>
 
@@ -26,10 +26,10 @@ export function JournalBoard() {
           </div>
           <div className="w-[calc(100%-4rem)] md:w-[calc(50%-3rem)] p-6 rounded-3xl shadow-sm border border-slate-100 bg-white hover:shadow-md transition-shadow">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="font-extrabold text-slate-900 text-xl">Design Sync</h3>
-              <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Yesterday, 3:30 PM</span>
+              <h3 className="font-extrabold text-slate-900 text-xl">디자인 동기화 회의</h3>
+              <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">어제, 오후 3:30</span>
             </div>
-            <p className="text-slate-600 leading-relaxed font-medium">Aligned with the design team on the new dark mode aesthetics. Decided to postpone implementation until Q3 to focus on core stability.</p>
+            <p className="text-slate-600 leading-relaxed font-medium">새로운 다크 모드 미학에 대해 디자인 팀과 방향성을 맞췄습니다. 코어 안정성에 집중하기 위해 3분기까지 구현을 연기하기로 결정했습니다.</p>
           </div>
         </div>
 

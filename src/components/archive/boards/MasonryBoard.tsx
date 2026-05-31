@@ -5,11 +5,11 @@ import { cn } from '@/lib/utils';
 
 // Mock data to simulate URL OpenGraph parsed results
 const mockCards = [
-  { id: '1', title: 'Minimalist Architecture', image: 'https://images.unsplash.com/photo-1600607688969-a5bfcd64bd28?auto=format&fit=crop&q=80&w=800', height: 320, source: 'unsplash.com' },
-  { id: '2', title: 'Typography Inspiration', image: 'https://images.unsplash.com/photo-1550757750-4ce187a65014?auto=format&fit=crop&q=80&w=800', height: 240, source: 'awwwards.com' },
-  { id: '3', title: 'Framer Motion Examples', height: 180, source: 'framer.com', description: 'Great examples of spring physics.' },
-  { id: '4', title: 'Color Palettes 2024', image: 'https://images.unsplash.com/photo-1502691876148-a84978e59af8?auto=format&fit=crop&q=80&w=800', height: 400, source: 'dribbble.com' },
-  { id: '5', title: 'Grid Layout Ideas', image: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&q=80&w=800', height: 200, source: 'behance.net' },
+  { id: '1', title: '미니멀리스트 아키텍처', image: 'https://images.unsplash.com/photo-1600607688969-a5bfcd64bd28?auto=format&fit=crop&q=80&w=800', height: 320, source: 'unsplash.com' },
+  { id: '2', title: '타이포그래피 영감', image: 'https://images.unsplash.com/photo-1550757750-4ce187a65014?auto=format&fit=crop&q=80&w=800', height: 240, source: 'awwwards.com' },
+  { id: '3', title: 'Framer Motion 예제', height: 180, source: 'framer.com', description: '스프링 물리 효과의 훌륭한 예시 모음입니다.' },
+  { id: '4', title: '2024년 컬러 팔레트', image: 'https://images.unsplash.com/photo-1502691876148-a84978e59af8?auto=format&fit=crop&q=80&w=800', height: 400, source: 'dribbble.com' },
+  { id: '5', title: '그리드 레이아웃 아이디어', image: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&q=80&w=800', height: 200, source: 'behance.net' },
 ];
 
 export function MasonryBoard() {
