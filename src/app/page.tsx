@@ -4,6 +4,7 @@
 
 import { useState, useEffect } from 'react'
 import { useCalendarStore } from '@/store/useCalendarStore'
+import { useArchiveStore } from '@/store/useArchiveStore'
 import { Button } from '@/components/ui/button'
 import { Plus, Tags, Database, LogOut, Calendar as CalendarIcon, DownloadCloud, Gift, Sparkles, ChevronDown } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -76,10 +77,31 @@ export default function CalendarPage() {
   const { data: activitiesData } = useActivities(queryStartDate.toISOString(), queryEndDate.toISOString())
   const { data: anniversaryEvents } = useAnniversaryOverlay(queryStartDate.toISOString(), queryEndDate.toISOString())
   
-  // 가상 기념일 배열과 기존 일정을 스프레드 병합 (클린 아키텍처)
+  // 가상 기념일 배열과 아젠다 낙관적 업데이트를 스프레드 병합 (클린 아키텍처)
+  const { optimisticAgendaTasks } = useArchiveStore()
+  const agendaEvents = optimisticAgendaTasks
+    // @ts-ignore
+    .filter(task => task.status === 'today' && task.date && !task.completed)
+    .map(task => ({
+      // @ts-ignore
+      id: task.id,
+      // @ts-ignore
+      title: task.title,
+      // @ts-ignore
+      startTime: task.date.toISOString(),
+      // @ts-ignore
+      endTime: new Date(task.date.getTime() + 60 * 60 * 1000).toISOString(),
+      categoryId: 'agenda-category',
+      // @ts-ignore
+      isAllDay: !task.hasTime,
+      memo: 'From Archive Agenda',
+      color: '#3b82f6', // Blue color for Agenda
+    })) as unknown as Activity[]
+
   let events = [
     ...(activitiesData || []),
-    ...((anniversaryEvents || []) as unknown as Activity[])
+    ...((anniversaryEvents || []) as unknown as Activity[]),
+    ...agendaEvents
   ]
 
   // 글로벌 카테고리 필터 적용

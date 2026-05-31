@@ -43,7 +43,11 @@ export function parseNLPDate(input: string): { title: string; date: Date | null;
     title = title.replace(timeMatch[0], '');
   }
 
-  // 3. 다듬기
+  // 3. 다듬기 및 과거시간 제한
+  if (date && date.getTime() < today.getTime()) {
+    date = today;
+  }
+  
   title = title.trim().replace(/\s+/g, ' '); // 다중 공백 제거
 
   return { title: title || input, date, hasTime };

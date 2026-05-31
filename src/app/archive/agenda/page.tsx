@@ -7,6 +7,7 @@ import { Sparkles, Circle, CheckCircle2, GripVertical, Inbox, Calendar, Plus } f
 import confetti from 'canvas-confetti';
 import { cn } from '@/lib/utils';
 import { DndContext, useSensor, useSensors, PointerSensor, DragEndEvent, useDraggable, useDroppable } from '@dnd-kit/core';
+import { useArchiveStore } from '@/store/useArchiveStore';
 
 interface Task {
   id: string;
@@ -14,6 +15,7 @@ interface Task {
   status: 'inbox' | 'today';
   completed: boolean;
   date: Date | null;
+  hasTime?: boolean;
 }
 
 // Droppable Container Component
@@ -95,51 +97,57 @@ export default function AgendaPage() {
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
   );
 
+  const { setOptimisticAgendaTasks } = useArchiveStore();
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
     setInputValue(val);
     setParsedData(parseNLPDate(val));
   };
 
+  const syncTasks = (newTasks: Task[]) => {
+    setTasks(newTasks);
+    // @ts-ignore
+    setOptimisticAgendaTasks(newTasks);
+  };
+
   const handleAddTask = (e: React.FormEvent) => {
     e.preventDefault();
     if (!parsedData.title.trim()) return;
 
-    setTasks(prev => [{
+    syncTasks([{
       id: Date.now().toString(),
       title: parsedData.title,
       status: parsedData.date ? 'today' : 'inbox',
       completed: false,
-      date: parsedData.date
-    }, ...prev]);
+      date: parsedData.date,
+      hasTime: parsedData.hasTime
+    }, ...tasks]);
     
     setInputValue('');
-    setParsedData({ title: '', date: null });
+    setParsedData({ title: '', date: null, hasTime: false });
   };
 
   const handleToggle = (id: string) => {
-    setTasks(prev => {
-      const taskIndex = prev.findIndex(t => t.id === id);
-      if (taskIndex === -1) return prev;
-      
-      const newTasks = [...prev];
-      const isCompleting = !newTasks[taskIndex].completed;
-      newTasks[taskIndex] = { ...newTasks[taskIndex], completed: isCompleting };
-      
-      if (isCompleting) {
-        // Haptic Feedback & Confetti
-        if (typeof window !== 'undefined' && window.navigator && window.navigator.vibrate) {
-          window.navigator.vibrate(50);
-        }
-        confetti({
-          particleCount: 80,
-          spread: 60,
-          origin: { y: 0.8 },
-          colors: ['#3b82f6', '#10b981', '#f59e0b']
-        });
+    const newTasks = [...tasks];
+    const taskIndex = newTasks.findIndex(t => t.id === id);
+    if (taskIndex === -1) return;
+    
+    const isCompleting = !newTasks[taskIndex].completed;
+    newTasks[taskIndex] = { ...newTasks[taskIndex], completed: isCompleting };
+    
+    if (isCompleting) {
+      if (typeof window !== 'undefined' && window.navigator && window.navigator.vibrate) {
+        window.navigator.vibrate(50);
       }
-      return newTasks;
-    });
+      confetti({
+        particleCount: 80,
+        spread: 60,
+        origin: { y: 0.8 },
+        colors: ['#3b82f6', '#10b981', '#f59e0b']
+      });
+    }
+    syncTasks(newTasks);
   };
 
   const handleDragEnd = (event: DragEndEvent) => {
@@ -147,14 +155,12 @@ export default function AgendaPage() {
     if (!over) return;
 
     if (active.id !== over.id) {
-      setTasks(prev => {
-        const newTasks = [...prev];
-        const taskIndex = newTasks.findIndex(t => t.id === active.id);
-        if (taskIndex !== -1) {
-          newTasks[taskIndex] = { ...newTasks[taskIndex], status: over.id as 'inbox' | 'today' };
-        }
-        return newTasks;
-      });
+      const newTasks = [...tasks];
+      const taskIndex = newTasks.findIndex(t => t.id === active.id);
+      if (taskIndex !== -1) {
+        newTasks[taskIndex] = { ...newTasks[taskIndex], status: over.id as 'inbox' | 'today' };
+        syncTasks(newTasks);
+      }
     }
   };
 

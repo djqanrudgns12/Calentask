@@ -39,6 +39,7 @@ export function CanvasBoard() {
       className="w-full h-full bg-[#fafafa] overflow-hidden relative cursor-grab active:cursor-grabbing rounded-3xl"
       style={{
         touchAction: 'none',
+        overscrollBehavior: 'none',
         backgroundImage: 'radial-gradient(#cbd5e1 1px, transparent 1px)',
         backgroundSize: `${30 * scale}px ${30 * scale}px`,
         backgroundPosition: `${position.x}px ${position.y}px`

@@ -6,7 +6,7 @@ export function TableBoard() {
   return (
     <div className="w-full h-full bg-white p-8">
       <div className="overflow-x-auto border border-slate-200 rounded-xl shadow-sm">
-        <table className="w-full text-left text-sm text-slate-600">
+        <table className="w-full text-left text-sm text-slate-600 min-w-[600px]">
           <thead className="bg-slate-50 border-b border-slate-200">
             <tr>
               <th className="px-6 py-4 font-semibold text-slate-900">Name</th>
