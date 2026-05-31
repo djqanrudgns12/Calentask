@@ -88,10 +88,10 @@ export default function AgendaPage() {
   const [tasks, setTasks] = useState<Task[]>([
     { id: '1', title: 'Buy groceries', status: 'inbox', completed: false, date: null },
     { id: '2', title: 'Draft final PRD', status: 'inbox', completed: false, date: null },
-    { id: '3', title: 'Team sync meeting', status: 'today', completed: false, date: new Date() },
+    { id: '3', title: 'Team sync meeting', status: 'today', completed: false, date: new Date(), hasTime: true },
   ]);
   const [inputValue, setInputValue] = useState('');
-  const [parsedData, setParsedData] = useState<{ title: string; date: Date | null }>({ title: '', date: null });
+  const [parsedData, setParsedData] = useState<{ title: string; date: Date | null; hasTime: boolean }>({ title: '', date: null, hasTime: false });
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
