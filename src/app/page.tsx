@@ -401,12 +401,14 @@ export default function CalendarPage() {
         </DndContext>
       </main>
 
-      {/* Floating Action Button - Apple Style BIG Circle */}
-      <AddEventDialog>
-        <button className="absolute bottom-24 md:bottom-10 right-6 md:right-10 w-14 h-14 md:w-16 md:h-16 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-apple-float hover:scale-105 transition-transform flex items-center justify-center z-50">
-          <Plus className="w-6 h-6 md:w-8 md:h-8" />
-        </button>
-      </AddEventDialog>
+      {/* Floating Action Button - Apple Style BIG Circle (Only in Calendar views) */}
+      {isMyCalendarActive && (
+        <AddEventDialog>
+          <button className="absolute bottom-24 md:bottom-10 right-6 md:right-10 w-14 h-14 md:w-16 md:h-16 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-apple-float hover:scale-105 transition-transform flex items-center justify-center z-50">
+            <Plus className="w-6 h-6 md:w-8 md:h-8" />
+          </button>
+        </AddEventDialog>
+      )}
 
       <BottomNavigation 
         viewMode={viewMode} 
