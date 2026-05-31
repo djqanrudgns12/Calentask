@@ -45,7 +45,7 @@ export async function setupSecurityPin(hashedPin: string, question: string, hash
       security_answer: hashedAnswer,
       enabled: true,
       updated_at: new Date().toISOString()
-    })
+    }, { onConflict: 'user_id' })
 
   if (error) {
     console.error('Failed to setup pin:', error)

@@ -9,6 +9,7 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { toast } from 'sonner';
 
 const PRESET_QUESTIONS = [
   "졸업한 초등학교 이름은?",
@@ -169,18 +170,26 @@ export function PinPadOverlay({ children }: { children: React.ReactNode }) {
     if (!finalQuestion.trim()) return;
 
     setIsProcessing(true);
-    const hashedPin = await hashText(firstPin);
-    const hashedAnswer = await hashText(answer.trim());
     
-    await setupMutation.mutateAsync({
-      pin: hashedPin,
-      question: finalQuestion,
-      answer: hashedAnswer
-    });
-    
-    setPinLocked(false);
-    setIsProcessing(false);
-    setMode('locked');
+    try {
+      const hashedPin = await hashText(firstPin);
+      const hashedAnswer = await hashText(answer.trim());
+      
+      await setupMutation.mutateAsync({
+        pin: hashedPin,
+        question: finalQuestion,
+        answer: hashedAnswer
+      });
+      
+      setPinLocked(false);
+      setMode('locked');
+      toast.success('보안 질문 및 비밀번호가 성공적으로 설정되었습니다.');
+    } catch (err) {
+      console.error(err);
+      toast.error('보안 설정 중 오류가 발생했습니다. 다시 시도해주세요.');
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   const handleResetVerify = async () => {
