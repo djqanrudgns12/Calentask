@@ -184,9 +184,9 @@ export function PinPadOverlay({ children }: { children: React.ReactNode }) {
       setPinLocked(false);
       setMode('locked');
       toast.success('보안 질문 및 비밀번호가 성공적으로 설정되었습니다.');
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      toast.error('보안 설정 중 오류가 발생했습니다. 다시 시도해주세요.');
+      toast.error(err.message || '보안 설정 중 오류가 발생했습니다. 다시 시도해주세요.');
     } finally {
       setIsProcessing(false);
     }

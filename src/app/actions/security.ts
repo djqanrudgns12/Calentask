@@ -49,7 +49,7 @@ export async function setupSecurityPin(hashedPin: string, question: string, hash
 
   if (error) {
     console.error('Failed to setup pin:', error)
-    throw new Error('Failed to setup pin')
+    throw new Error(error.message)
   }
 
   revalidatePath('/archive')
