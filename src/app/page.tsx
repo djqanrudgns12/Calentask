@@ -6,6 +6,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useCalendarStore } from '@/store/useCalendarStore'
 import { useArchiveStore } from '@/store/useArchiveStore'
+import { useAgendaStore } from '@/store/useAgendaStore'
 import { Button } from '@/components/ui/button'
 import { Plus, Tags, Database, LogOut, Calendar as CalendarIcon, DownloadCloud, Gift, Sparkles, ChevronDown, Archive, NotebookPen } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -83,26 +84,32 @@ export default function CalendarPage() {
   const { data: activitiesData } = useActivities(queryStartDate.toISOString(), queryEndDate.toISOString())
   const { data: anniversaryEvents } = useAnniversaryOverlay(queryStartDate.toISOString(), queryEndDate.toISOString())
   
-  // 가상 기념일 배열과 아젠다 낙관적 업데이트를 스프레드 병합 (클린 아키텍처)
-  const { optimisticAgendaTasks } = useArchiveStore()
-  const agendaEvents = optimisticAgendaTasks
-    // @ts-ignore
-    .filter(task => task.status === 'today' && task.date && !task.completed)
+  // 가상 기념일 배열과 아젠다 스토어 연동 (Desktop 작업 내용과 맥북 작업 내용 호환)
+  const { tasks: agendaTasksStore, fetchTasks: fetchAgendaTasks, isInitialized: isAgendaInitialized } = useAgendaStore()
+
+  useEffect(() => {
+    if (!isAgendaInitialized) {
+      fetchAgendaTasks()
+    }
+  }, [isAgendaInitialized, fetchAgendaTasks])
+
+  const agendaEvents = agendaTasksStore
+    .filter(task => task.status !== 'trash' && task.status !== 'done' && task.deadline)
     .map(task => {
-      // @ts-ignore
-      const taskDate = new Date(task.date);
+      const taskDate = new Date(task.deadline!);
       return {
-        // @ts-ignore
         id: task.id,
-        // @ts-ignore
         title: task.title,
-        startTime: taskDate.toISOString(),
-        endTime: new Date(taskDate.getTime() + 60 * 60 * 1000).toISOString(),
-        categories: [{ id: 'agenda-category', name: 'Agenda', color: '#3b82f6' }],
-        // @ts-ignore
-        isAllDay: !task.hasTime,
-        memo: 'From Archive Agenda',
-        color: '#3b82f6', // Blue color for Agenda
+        start_time: taskDate.toISOString(),
+        end_time: new Date(taskDate.getTime() + 60 * 60 * 1000).toISOString(),
+        startTime: taskDate.toISOString(), // for legacy compatibility
+        endTime: new Date(taskDate.getTime() + 60 * 60 * 1000).toISOString(), // for legacy compatibility
+        categories: [{ id: 'agenda-category', name: 'Agenda', color: '#3b82f6', hex_color: '#3b82f6' }],
+        is_all_day: false,
+        isAllDay: false, // for legacy compatibility
+        memo: task.memo || 'From Archive Agenda',
+        color: '#3b82f6',
+        hex_color: '#3b82f6'
       };
     }) as unknown as Activity[]
 
