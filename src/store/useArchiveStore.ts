@@ -16,6 +16,7 @@ export interface BoardItem {
   createdAt: string;
   updatedAt: string;
   position: number;
+  data?: Record<string, any>; // 다양한 보드(좌표, 서식, 썸네일 등)의 커스텀 데이터를 저장하는 필드
 }
 
 interface ArchiveState {
@@ -39,6 +40,8 @@ interface ArchiveState {
 
   // Board Data Items
   items: Record<string, BoardItem[]>;
+  boardConfigs: Record<string, any>;
+  setBoardConfig: (boardId: string, config: any) => void;
   addItem: (boardId: string, item: Partial<BoardItem>) => void;
   updateItem: (boardId: string, itemId: string, updates: Partial<BoardItem>) => void;
   deleteItem: (boardId: string, itemId: string) => void;
@@ -63,6 +66,10 @@ export const useArchiveStore = create<ArchiveState>()(
       setOptimisticAgendaTasks: (tasks) => set({ optimisticAgendaTasks: tasks }),
 
       items: {},
+      boardConfigs: {},
+      setBoardConfig: (boardId, config) => set((state) => ({
+        boardConfigs: { ...state.boardConfigs, [boardId]: { ...(state.boardConfigs[boardId] || {}), ...config } }
+      })),
       addItem: (boardId, item) => set((state) => {
         const boardItems = state.items[boardId] || [];
         const newItem: BoardItem = {
@@ -75,6 +82,7 @@ export const useArchiveStore = create<ArchiveState>()(
           createdAt: item.createdAt || new Date().toISOString(),
           updatedAt: item.updatedAt || new Date().toISOString(),
           position: item.position !== undefined ? item.position : boardItems.length,
+          data: item.data || {},
           ...item
         };
         return { items: { ...state.items, [boardId]: [...boardItems, newItem] } };
@@ -117,8 +125,9 @@ export const useArchiveStore = create<ArchiveState>()(
       partialize: (state) => ({ 
         tabs: state.tabs, 
         optimisticAgendaTasks: state.optimisticAgendaTasks,
-        items: state.items
-      }), // Persist tabs, items and agenda tasks
+        items: state.items,
+        boardConfigs: state.boardConfigs
+      }), // Persist tabs, items, configs and agenda tasks
     }
   )
 );

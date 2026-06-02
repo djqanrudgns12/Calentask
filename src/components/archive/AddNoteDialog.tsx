@@ -5,13 +5,15 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, LayoutList, Image as ImageIcon, LayoutGrid, Table, Columns, Clock, Check } from 'lucide-react';
 import { useArchiveStore } from '@/store/useArchiveStore';
 
+import { Youtube, FileText } from 'lucide-react'; // 아이콘 추가 임포트 필요할 수 있으나 lucide-react에서 가져온다고 가정.
+
 const BOARD_TYPES = [
-  { id: 'list', name: '리스트', icon: LayoutList, desc: '텍스트 기반의 줄글 노트' },
+  { id: 'list', name: '문서 (Doc)', icon: FileText, desc: '텍스트 기반의 자유로운 줄글 노트' },
   { id: 'canvas', name: '캔버스', icon: LayoutGrid, desc: '무한한 자유도의 화이트보드' },
-  { id: 'masonry', name: '메이슨리', icon: ImageIcon, desc: '비대칭 카드 형태의 영감 보드' },
-  { id: 'table', name: '테이블', icon: Table, desc: '스프레드시트 형태의 데이터베이스' },
-  { id: 'kanban', name: '칸반', icon: Columns, desc: '상태 기반의 파이프라인 보드' },
-  { id: 'journal', name: '저널', icon: Clock, desc: '시간 순으로 기록하는 개발 일지' },
+  { id: 'masonry', name: '비주얼 갤러리', icon: ImageIcon, desc: '이미지 및 파일 기반 영감 보드' },
+  { id: 'table', name: '데이터베이스', icon: Table, desc: '자유도 높은 스프레드시트' },
+  { id: 'kanban', name: '미디어 라이브러리', icon: Youtube, desc: '유튜브 등 미디어 시청 및 아카이브' },
+  { id: 'journal', name: '저널', icon: Clock, desc: '시간 순으로 기록하는 다이어리' },
 ];
 
 export function AddNoteDialog({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {

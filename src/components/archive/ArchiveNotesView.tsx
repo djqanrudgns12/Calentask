@@ -3,14 +3,13 @@
 import { useState } from 'react';
 import { useArchiveStore } from '@/store/useArchiveStore';
 import { PinPadOverlay } from '@/components/archive/PinPadOverlay';
-import { ListBoard } from '@/components/archive/boards/ListBoard';
+import { DocumentBoard } from '@/components/archive/boards/DocumentBoard';
 import { CanvasBoard } from '@/components/archive/boards/CanvasBoard';
 import { MasonryBoard } from '@/components/archive/boards/MasonryBoard';
 import { TableBoard } from '@/components/archive/boards/TableBoard';
-import { KanbanBoard } from '@/components/archive/boards/KanbanBoard';
+import { MediaBoard } from '@/components/archive/boards/MediaBoard';
 import { JournalBoard } from '@/components/archive/boards/JournalBoard';
-import { GalleryBoard } from '@/components/archive/boards/GalleryBoard';
-import { Plus, LayoutGrid, LayoutList, Grip, Image as ImageIcon, Table, Columns, Clock, FolderOpen } from 'lucide-react';
+import { Plus, LayoutGrid, LayoutList, Grip, Image as ImageIcon, Table, Columns, Clock, FolderOpen, Youtube, FileText } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { AddNoteDialog } from './AddNoteDialog';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -25,13 +24,12 @@ export function ArchiveNotesView() {
 
   const getIconForType = (type: string) => {
     switch (type) {
-      case 'list': return LayoutList;
+      case 'list': return FileText;
       case 'masonry': return ImageIcon;
       case 'canvas': return LayoutGrid;
       case 'table': return Table;
-      case 'kanban': return Columns;
+      case 'kanban': return Youtube;
       case 'journal': return Clock;
-      case 'gallery': return ImageIcon;
       default: return LayoutGrid;
     }
   };
@@ -109,16 +107,15 @@ export function ArchiveNotesView() {
                   exit={{ opacity: 0, y: -10, transition: { duration: 0.15 } }}
                   className="w-full h-full relative"
                 >
-                  {tabs.find((t: any) => t.id === activeTabId)?.board_type === 'list' && <ListBoard />}
+                  {tabs.find((t: any) => t.id === activeTabId)?.board_type === 'list' && <DocumentBoard />}
                   {tabs.find((t: any) => t.id === activeTabId)?.board_type === 'canvas' && <CanvasBoard />}
                   {tabs.find((t: any) => t.id === activeTabId)?.board_type === 'masonry' && <MasonryBoard />}
                   {tabs.find((t: any) => t.id === activeTabId)?.board_type === 'table' && <TableBoard />}
-                  {tabs.find((t: any) => t.id === activeTabId)?.board_type === 'kanban' && <KanbanBoard />}
+                  {tabs.find((t: any) => t.id === activeTabId)?.board_type === 'kanban' && <MediaBoard />}
                   {tabs.find((t: any) => t.id === activeTabId)?.board_type === 'journal' && <JournalBoard />}
-                  {tabs.find((t: any) => t.id === activeTabId)?.board_type === 'gallery' && <GalleryBoard />}
                   
                   {/* 렌더링 타입이 매칭되지 않을 경우 폴백 UI */}
-                  {activeTabId && !['list', 'canvas', 'masonry', 'table', 'kanban', 'journal', 'gallery'].includes(tabs.find((t: any) => t.id === activeTabId)?.board_type || '') && (
+                  {activeTabId && !['list', 'canvas', 'masonry', 'table', 'kanban', 'journal'].includes(tabs.find((t: any) => t.id === activeTabId)?.board_type || '') && (
                     <div className="flex flex-col items-center justify-center h-full text-center">
                       <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-slate-100">
                         <Grip className="w-8 h-8 text-slate-300" />
