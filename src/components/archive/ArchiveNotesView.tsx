@@ -9,7 +9,7 @@ import { MasonryBoard } from '@/components/archive/boards/MasonryBoard';
 import { TableBoard } from '@/components/archive/boards/TableBoard';
 import { MediaBoard } from '@/components/archive/boards/MediaBoard';
 import { JournalBoard } from '@/components/archive/boards/JournalBoard';
-import { Plus, LayoutGrid, LayoutList, Grip, Image as ImageIcon, Table, Columns, Clock, FolderOpen, Youtube, FileText } from 'lucide-react';
+import { Plus, LayoutGrid, LayoutList, Grip, Image as ImageIcon, Table, Columns, Clock, FolderOpen, Video, FileText } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { AddNoteDialog } from './AddNoteDialog';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -28,7 +28,7 @@ export function ArchiveNotesView() {
       case 'masonry': return ImageIcon;
       case 'canvas': return LayoutGrid;
       case 'table': return Table;
-      case 'kanban': return Youtube;
+      case 'kanban': return Video;
       case 'journal': return Clock;
       default: return LayoutGrid;
     }

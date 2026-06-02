@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react';
-import { Plus, Youtube, Play, X, Clock, Tag as TagIcon, MoreVertical, LayoutGrid, List as ListIcon, Maximize2 } from 'lucide-react';
+import { Plus, Video, Play, X, Clock, Tag as TagIcon, MoreVertical, LayoutGrid, List as ListIcon, Maximize2 } from 'lucide-react';
 import { useArchiveStore, BoardItem } from '@/store/useArchiveStore';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -129,7 +129,7 @@ export function MediaBoard() {
         {items.length === 0 && !isAdding ? (
           <div className="text-center py-20 flex flex-col items-center">
             <div className="w-20 h-20 bg-red-50 rounded-full flex items-center justify-center mb-4">
-              <Youtube className="w-10 h-10 text-red-500" />
+              <Video className="w-10 h-10 text-red-500" />
             </div>
             <h3 className="text-xl font-bold text-slate-800 mb-2">아카이빙된 미디어가 없습니다</h3>
             <p className="text-slate-500">유튜브 영상을 추가하고 영감을 기록해보세요.</p>
@@ -149,7 +149,7 @@ export function MediaBoard() {
                     <img src={item.data.thumbnail} alt={item.title} className="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity" />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center">
-                      <Youtube className="w-12 h-12 text-slate-700" />
+                      <Video className="w-12 h-12 text-slate-700" />
                     </div>
                   )}
                   <div className="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-colors flex items-center justify-center">
