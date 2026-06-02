@@ -1,6 +1,7 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { persist, createJSONStorage } from 'zustand/middleware';
 import { Database } from '@/types/supabase';
+import { dexieStorage } from '@/lib/dexie';
 
 type ArchiveTab = Database['public']['Tables']['archive_tabs']['Row'];
 type Note = Database['public']['Tables']['notes']['Row'];
@@ -122,6 +123,7 @@ export const useArchiveStore = create<ArchiveState>()(
     }),
     {
       name: 'archive-storage',
+      storage: createJSONStorage(() => dexieStorage),
       partialize: (state) => ({ 
         tabs: state.tabs, 
         optimisticAgendaTasks: state.optimisticAgendaTasks,

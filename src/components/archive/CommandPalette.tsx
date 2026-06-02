@@ -73,7 +73,7 @@ export function CommandPalette() {
                   className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer aria-selected:bg-indigo-50 aria-selected:text-indigo-600 text-sm font-medium text-slate-600 hover:bg-slate-50 transition-colors"
                 >
                   <div className="w-6 h-6 rounded-md bg-slate-100 flex items-center justify-center shrink-0">
-                    {getIconForType(tab.type)}
+                    {getIconForType(tab.board_type)}
                   </div>
                   {tab.name}
                 </Command.Item>

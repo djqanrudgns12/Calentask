@@ -9,16 +9,25 @@ import { MasonryBoard } from '@/components/archive/boards/MasonryBoard';
 import { TableBoard } from '@/components/archive/boards/TableBoard';
 import { MediaBoard } from '@/components/archive/boards/MediaBoard';
 import { JournalBoard } from '@/components/archive/boards/JournalBoard';
-import { Plus, LayoutGrid, LayoutList, Grip, Image as ImageIcon, Table, Columns, Clock, FolderOpen, Video, FileText } from 'lucide-react';
+import { GraphBoard } from '@/components/archive/boards/GraphBoard';
+import { CalendarBoard } from '@/components/archive/boards/CalendarBoard';
+import { Plus, LayoutGrid, LayoutList, Grip, Image as ImageIcon, Table, Columns, Clock, FolderOpen, Video, FileText, Network, Calendar } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { AddNoteDialog } from './AddNoteDialog';
 import { CommandPalette } from './CommandPalette';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useHotkeys } from 'react-hotkeys-hook';
+import { initYjsSync } from '@/lib/yjs-sync';
+import { useEffect } from 'react';
 
 export function ArchiveNotesView() {
   const { tabs, activeTabId, setActiveTabId, setCommandPaletteOpen } = useArchiveStore();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+
+  useEffect(() => {
+    // Initialize WebRTC P2P Sync
+    initYjsSync();
+  }, []);
 
   const handleAddNewTab = () => {
     setIsAddDialogOpen(true);
@@ -36,6 +45,8 @@ export function ArchiveNotesView() {
       case 'table': return Table;
       case 'kanban': return Video;
       case 'journal': return Clock;
+      case 'graph': return Network;
+      case 'calendar': return Calendar;
       default: return LayoutGrid;
     }
   };
@@ -119,9 +130,11 @@ export function ArchiveNotesView() {
                   {tabs.find((t: any) => t.id === activeTabId)?.board_type === 'table' && <TableBoard />}
                   {tabs.find((t: any) => t.id === activeTabId)?.board_type === 'kanban' && <MediaBoard />}
                   {tabs.find((t: any) => t.id === activeTabId)?.board_type === 'journal' && <JournalBoard />}
+                  {tabs.find((t: any) => t.id === activeTabId)?.board_type === 'graph' && <GraphBoard />}
+                  {tabs.find((t: any) => t.id === activeTabId)?.board_type === 'calendar' && <CalendarBoard />}
                   
                   {/* 렌더링 타입이 매칭되지 않을 경우 폴백 UI */}
-                  {activeTabId && !['list', 'canvas', 'masonry', 'table', 'kanban', 'journal'].includes(tabs.find((t: any) => t.id === activeTabId)?.board_type || '') && (
+                  {activeTabId && !['list', 'canvas', 'masonry', 'table', 'kanban', 'journal', 'graph', 'calendar'].includes(tabs.find((t: any) => t.id === activeTabId)?.board_type || '') && (
                     <div className="flex flex-col items-center justify-center h-full text-center">
                       <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-slate-100">
                         <Grip className="w-8 h-8 text-slate-300" />

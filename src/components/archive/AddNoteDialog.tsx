@@ -2,10 +2,10 @@
 
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, LayoutList, Image as ImageIcon, LayoutGrid, Table, Columns, Clock, Check } from 'lucide-react';
+import { X, LayoutList, Image as ImageIcon, LayoutGrid, Table, Columns, Clock, Check, Network, Calendar } from 'lucide-react';
 import { useArchiveStore } from '@/store/useArchiveStore';
 
-import { Video, FileText } from 'lucide-react'; // 아이콘 추가 임포트 필요할 수 있으나 lucide-react에서 가져온다고 가정.
+import { Video, FileText } from 'lucide-react';
 
 const BOARD_TYPES = [
   { id: 'list', name: '문서 (Doc)', icon: FileText, desc: '텍스트 기반의 자유로운 줄글 노트' },
@@ -14,6 +14,8 @@ const BOARD_TYPES = [
   { id: 'table', name: '데이터베이스', icon: Table, desc: '자유도 높은 스프레드시트' },
   { id: 'kanban', name: '미디어 라이브러리', icon: Video, desc: '유튜브 등 미디어 시청 및 아카이브' },
   { id: 'journal', name: '저널', icon: Clock, desc: '시간 순으로 기록하는 다이어리' },
+  { id: 'graph', name: '지식 그래프', icon: Network, desc: '지식 우주망 연결 보드' },
+  { id: 'calendar', name: '캘린더', icon: Calendar, desc: '드래그 앤 드롭 타임블로킹' },
 ];
 
 export function AddNoteDialog({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
