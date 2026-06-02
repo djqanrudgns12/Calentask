@@ -1,119 +1,47 @@
 'use client'
 
 import { useState, useEffect } from 'react';
-import { parseNLPDate } from '@/lib/nlp';
-import { format } from 'date-fns';
+import { format, differenceInDays } from 'date-fns';
 import { ko } from 'date-fns/locale';
-import { Sparkles, Circle, CheckCircle2, GripVertical, Inbox, Calendar, Plus } from 'lucide-react';
-import confetti from 'canvas-confetti';
+import { 
+  CheckCircle2, Circle, Clock, Trash2, 
+  Archive as ArchiveIcon, Calendar, 
+  Plus, Check, ChevronRight, CheckSquare, AlignLeft, Tag
+} from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { DndContext, useSensor, useSensors, PointerSensor, DragEndEvent, useDraggable, useDroppable } from '@dnd-kit/core';
-import { useArchiveStore } from '@/store/useArchiveStore';
+import { parseNLPDate } from '@/lib/nlp';
 
-interface Task {
-  id: string;
-  title: string;
-  status: 'inbox' | 'today';
-  completed: boolean;
-  date: Date | null;
-  hasTime?: boolean;
-}
+import { useAgendaStore, TaskStatus, AgendaTask } from '@/store/useAgendaStore';
+import { useCategories } from '@/hooks/useCalendarQueries';
+import { useCalendarStore } from '@/store/useCalendarStore';
 
-// Droppable Container Component
-function DroppableContainer({ id, title, icon: Icon, children, className, isDark }: any) {
-  const { setNodeRef, isOver } = useDroppable({ id });
-  return (
-    <div ref={setNodeRef} className={cn(
-      "flex flex-col h-full rounded-3xl shadow-sm border p-6 transition-colors duration-300", 
-      isDark ? "bg-slate-900 border-slate-800 shadow-xl" : "bg-white border-slate-200",
-      isOver ? (isDark ? "border-indigo-500 bg-slate-800" : "border-indigo-400 bg-indigo-50/30") : "",
-      className
-    )}>
-      <div className="flex items-center gap-2 mb-6">
-        <div className={cn(
-          "w-10 h-10 rounded-xl flex items-center justify-center border",
-          isDark ? "bg-slate-800/80 text-indigo-400 border-slate-700/50" : "bg-slate-50 text-slate-600 border-slate-100"
-        )}>
-          <Icon className="w-5 h-5" />
-        </div>
-        <h2 className={cn("text-xl font-extrabold", isDark ? "text-white" : "text-slate-800")}>{title}</h2>
-      </div>
-      <div className="flex-1 overflow-y-auto space-y-2 pr-2 hide-scrollbar">
-        {children}
-      </div>
-    </div>
-  );
-}
-
-// Draggable Task Component
-function DraggableTask({ task, onToggle }: { task: Task, onToggle: (id: string) => void }) {
-  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
-    id: task.id,
-    data: task
-  });
-
-  const style = transform ? {
-    transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
-    zIndex: isDragging ? 50 : 1,
-  } : undefined;
-
-  // task.date가 string으로 내려올 수 있으므로 Date 객체로 변환 보장
-  const taskDate = task.date ? new Date(task.date) : null;
-
-  return (
-    <div 
-      ref={setNodeRef} 
-      style={style}
-      className={cn(
-        "group flex items-center gap-3 p-4 bg-white rounded-2xl border transition-all duration-200 cursor-grab active:cursor-grabbing hover:shadow-md",
-        isDragging ? "shadow-2xl border-indigo-200 scale-105 opacity-90" : "border-slate-200",
-        task.completed && "opacity-50 bg-slate-50"
-      )}
-    >
-      <button 
-        onClick={() => onToggle(task.id)}
-        className="flex-shrink-0 text-slate-300 hover:text-indigo-500 transition-colors"
-      >
-        {task.completed ? <CheckCircle2 className="w-6 h-6 text-indigo-500" /> : <Circle className="w-6 h-6" />}
-      </button>
-      
-      <div className="flex-1 min-w-0" {...listeners} {...attributes}>
-        <p className={cn("text-[15px] font-bold truncate transition-all", task.completed ? "line-through text-slate-400" : "text-slate-700")}>
-          {task.title}
-        </p>
-        {taskDate && !task.completed && (
-          <p className="text-[11px] font-extrabold text-indigo-500 mt-1 uppercase tracking-wider flex items-center gap-1">
-            <Calendar className="w-3 h-3" />
-            {format(taskDate, 'MMM d, a h:mm', { locale: ko })}
-          </p>
-        )}
-      </div>
-
-      <div className="flex-shrink-0 text-slate-200 opacity-0 group-hover:opacity-100 transition-opacity" {...listeners} {...attributes}>
-        <GripVertical className="w-5 h-5" />
-      </div>
-    </div>
-  );
-}
+const TABS: { id: TaskStatus; label: string; icon: any }[] = [
+  { id: 'inbox', label: '진행 대기', icon: Circle },
+  { id: 'done', label: '완료', icon: CheckCircle2 },
+  { id: 'archive', label: '보관함', icon: ArchiveIcon },
+  { id: 'trash', label: '휴지통', icon: Trash2 },
+];
 
 export function ArchiveAgendaView() {
-  const { optimisticAgendaTasks, setOptimisticAgendaTasks } = useArchiveStore();
+  const [activeTab, setActiveTab] = useState<TaskStatus>('inbox');
   
-  // Zustand 스토어의 데이터를 초기값으로 사용하되, 더미 데이터를 원할 경우 빈 배열로 둡니다.
-  // @ts-ignore
-  const [tasks, setTasks] = useState<Task[]>(optimisticAgendaTasks || []);
+  const { tasks, fetchTasks, isInitialized, addTask, updateTask, setTaskStatus, addSubtask, updateSubtask, deleteSubtask } = useAgendaStore();
+  const { data: categories = [] } = useCategories();
+  const { openAddEvent } = useCalendarStore();
+
+  useEffect(() => {
+    if (!isInitialized) {
+      fetchTasks();
+    }
+  }, [isInitialized, fetchTasks]);
+
   const [inputValue, setInputValue] = useState('');
   const [parsedData, setParsedData] = useState<{ title: string; date: Date | null; hasTime: boolean }>({ title: '', date: null, hasTime: false });
 
-  // Store가 변경될 때 로컬 상태 동기화
-  useEffect(() => {
-    // @ts-ignore
-    setTasks(optimisticAgendaTasks);
-  }, [optimisticAgendaTasks]);
-
-  const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
-  );
+  // Detail Modal State
+  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
+  const [editForm, setEditForm] = useState<Partial<AgendaTask> | null>(null);
+  const [newSubtaskTitle, setNewSubtaskTitle] = useState('');
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
@@ -121,132 +49,338 @@ export function ArchiveAgendaView() {
     setParsedData(parseNLPDate(val));
   };
 
-  const syncTasks = (newTasks: Task[]) => {
-    setTasks(newTasks);
-    // @ts-ignore
-    setOptimisticAgendaTasks(newTasks);
-  };
-
   const handleAddTask = (e: React.FormEvent) => {
     e.preventDefault();
     if (!parsedData.title.trim()) return;
 
-    syncTasks([{
-      id: Date.now().toString(),
+    addTask({
       title: parsedData.title,
-      status: parsedData.date ? 'today' : 'inbox',
-      completed: false,
-      date: parsedData.date,
-      hasTime: parsedData.hasTime
-    }, ...tasks]);
+      memo: null,
+      deadline: parsedData.date ? parsedData.date.toISOString() : null,
+      category_id: null,
+    });
     
     setInputValue('');
     setParsedData({ title: '', date: null, hasTime: false });
   };
 
-  const handleToggle = (id: string) => {
-    const newTasks = [...tasks];
-    const taskIndex = newTasks.findIndex(t => t.id === id);
-    if (taskIndex === -1) return;
-    
-    const isCompleting = !newTasks[taskIndex].completed;
-    newTasks[taskIndex] = { ...newTasks[taskIndex], completed: isCompleting };
-    
-    if (isCompleting) {
-      if (typeof window !== 'undefined' && window.navigator && window.navigator.vibrate) {
-        window.navigator.vibrate(50);
-      }
-      confetti({
-        particleCount: 100,
-        spread: 70,
-        origin: { y: 0.6 },
-        colors: ['#4f46e5', '#10b981', '#f59e0b']
-      });
-    }
-    syncTasks(newTasks);
+  const openDetail = (task: AgendaTask) => {
+    setSelectedTaskId(task.id);
+    setEditForm(task);
   };
 
-  const handleDragEnd = (event: DragEndEvent) => {
-    const { active, over } = event;
-    if (!over) return;
-
-    if (active.id !== over.id) {
-      const newTasks = [...tasks];
-      const taskIndex = newTasks.findIndex(t => t.id === active.id);
-      if (taskIndex !== -1) {
-        newTasks[taskIndex] = { ...newTasks[taskIndex], status: over.id as 'inbox' | 'today' };
-        syncTasks(newTasks);
-      }
+  const saveDetail = () => {
+    if (selectedTaskId && editForm) {
+      updateTask(selectedTaskId, editForm);
     }
+    setSelectedTaskId(null);
+    setEditForm(null);
+  };
+
+  const handleAddSubtask = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newSubtaskTitle.trim() || !selectedTaskId) return;
+    addSubtask(selectedTaskId, newSubtaskTitle);
+    setNewSubtaskTitle('');
+  };
+
+  const filteredTasks = tasks.filter(t => t.status === activeTab);
+  const selectedTaskData = tasks.find(t => t.id === selectedTaskId);
+
+  const getDeadlineInfo = (isoDate: string) => {
+    const date = new Date(isoDate);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const target = new Date(date);
+    target.setHours(0, 0, 0, 0);
+    const diffDays = differenceInDays(target, today);
+
+    if (diffDays < 0) return { label: '지연됨', color: 'bg-purple-100 text-purple-700 border-purple-200' };
+    if (diffDays === 0) return { label: '오늘 마감', color: 'bg-red-100 text-red-700 border-red-200' };
+    if (diffDays <= 3) return { label: `D-${diffDays}`, color: 'bg-orange-100 text-orange-700 border-orange-200' };
+    if (diffDays <= 6) return { label: `D-${diffDays}`, color: 'bg-emerald-100 text-emerald-700 border-emerald-200' };
+    return { label: `D-${diffDays}`, color: 'bg-blue-100 text-blue-700 border-blue-200' };
   };
 
   return (
-    <div className="flex flex-col h-full bg-[#f7f9fb]">
-      {/* Header & NLP Input */}
-      <div className="px-8 pt-10 pb-6 shrink-0">
-        <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight mb-2">오늘의 할 일</h1>
-        <p className="text-slate-500 text-sm mb-8 font-medium">자연어로 일정을 입력하거나 카드를 드래그하여 하루를 타임블록 해보세요.</p>
-        
-        <form onSubmit={handleAddTask} className="relative group max-w-3xl">
+    <div className="relative flex flex-col h-full bg-slate-50 overflow-hidden">
+      {/* Decorative Gradients */}
+      <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-indigo-200/40 rounded-full blur-[120px] pointer-events-none" />
+      <div className="absolute bottom-[-20%] right-[-10%] w-[50%] h-[50%] bg-purple-200/40 rounded-full blur-[120px] pointer-events-none" />
+      <div className="absolute top-[20%] right-[10%] w-[30%] h-[30%] bg-emerald-200/20 rounded-full blur-[100px] pointer-events-none" />
+
+      {/* Main Container */}
+      <div className="relative z-10 flex flex-col h-full max-w-5xl mx-auto w-full px-6 py-10 md:px-12">
+        {/* Header */}
+        <div className="shrink-0 mb-8">
+          <h1 className="text-4xl font-extrabold text-slate-900 tracking-tight mb-3">아젠다</h1>
+          <p className="text-slate-500 font-medium text-lg">자연어로 새로운 할 일을 입력하고 체계적으로 관리하세요.</p>
+        </div>
+
+        {/* Input Form */}
+        <form onSubmit={handleAddTask} className="relative group shrink-0 mb-10">
           <div className="absolute inset-y-0 left-5 flex items-center pointer-events-none">
-            <Plus className="w-5 h-5 text-slate-400 group-focus-within:text-indigo-600 transition-colors" />
+            <Plus className="w-6 h-6 text-slate-400 group-focus-within:text-indigo-600 transition-colors" />
           </div>
           <input 
             type="text"
             value={inputValue}
             onChange={handleInputChange}
             placeholder="예: '내일 오후 3시 팀 미팅 준비'"
-            className="w-full h-14 pl-12 pr-6 bg-white rounded-2xl shadow-sm border border-slate-200 outline-none focus:border-indigo-600 focus:ring-4 focus:ring-indigo-600/10 transition-all text-slate-800 font-bold text-lg placeholder:text-slate-400 placeholder:font-medium"
+            className="w-full h-16 pl-14 pr-6 bg-white/60 backdrop-blur-xl rounded-2xl shadow-sm border border-white/60 outline-none focus:border-indigo-400 focus:bg-white/90 focus:ring-4 focus:ring-indigo-500/10 transition-all text-slate-800 font-bold text-xl placeholder:text-slate-400 placeholder:font-medium"
           />
           {parsedData.date && (
-            <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 rounded-lg">
-              <Sparkles className="w-4 h-4 text-indigo-600" />
-              <span className="text-xs font-extrabold text-indigo-700 uppercase tracking-wide">
+            <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-2 px-4 py-2 bg-indigo-500 rounded-xl shadow-md">
+              <Clock className="w-4 h-4 text-white" />
+              <span className="text-sm font-extrabold text-white uppercase tracking-wide">
                 {format(parsedData.date, 'MMM d, a h:mm', { locale: ko })}
               </span>
             </div>
           )}
         </form>
+
+        {/* Tabs */}
+        <div className="flex items-center gap-2 mb-6 shrink-0 bg-white/40 p-1.5 rounded-2xl backdrop-blur-md border border-white/50 w-max">
+          {TABS.map(tab => {
+            const Icon = tab.icon;
+            const isActive = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={cn(
+                  "flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-all duration-300",
+                  isActive 
+                    ? "bg-white text-indigo-700 shadow-sm border border-white/80" 
+                    : "text-slate-500 hover:text-slate-700 hover:bg-white/50"
+                )}
+              >
+                <Icon className={cn("w-4 h-4", isActive ? "text-indigo-600" : "text-slate-400")} />
+                {tab.label}
+              </button>
+            )
+          })}
+        </div>
+
+        {/* Task List */}
+        <div className="flex-1 overflow-y-auto hide-scrollbar space-y-3 pb-20">
+          {filteredTasks.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-64 bg-white/40 backdrop-blur-md rounded-3xl border border-white/60 shadow-sm">
+              <div className="w-16 h-16 mb-4 rounded-2xl bg-white/80 flex items-center justify-center border border-slate-100 shadow-sm">
+                <CheckCircle2 className="w-8 h-8 text-slate-300" />
+              </div>
+              <p className="font-bold text-slate-600 text-lg">해당 항목이 없습니다</p>
+              <p className="text-sm text-slate-500 mt-1">이곳은 깨끗하네요!</p>
+            </div>
+          ) : (
+            filteredTasks.map(task => {
+              const category = categories.find(c => c.id === task.category_id);
+              const deadlineInfo = task.deadline ? getDeadlineInfo(task.deadline) : null;
+              
+              return (
+                <div 
+                  key={task.id}
+                  className="group relative flex items-center gap-4 p-4 md:p-5 bg-white/60 backdrop-blur-md hover:bg-white/80 border border-white/80 rounded-2xl shadow-sm hover:shadow-md transition-all duration-300 cursor-pointer"
+                  onClick={() => openDetail(task)}
+                >
+                  {/* Status Toggle Button */}
+                  <button 
+                    className="flex-shrink-0 text-slate-300 hover:text-indigo-500 transition-colors"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setTaskStatus(task.id, task.status === 'done' ? 'inbox' : 'done');
+                    }}
+                  >
+                    {task.status === 'done' ? (
+                      <CheckCircle2 className="w-7 h-7 text-indigo-500" />
+                    ) : (
+                      <Circle className="w-7 h-7" />
+                    )}
+                  </button>
+
+                  {/* Task Content */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-3 mb-1">
+                      <h3 className={cn("text-[17px] font-extrabold truncate transition-all", task.status === 'done' ? "text-slate-400 line-through" : "text-slate-800")}>
+                        {task.title}
+                      </h3>
+                    </div>
+                    
+                    {/* Metadata Badges */}
+                    <div className="flex items-center gap-2 mt-2">
+                      {category && (
+                        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/80 border border-slate-100 shadow-sm">
+                          <div className="w-2.5 h-2.5 rounded-full shadow-sm" style={{ backgroundColor: category.hex_color }} />
+                          <span className="text-xs font-bold text-slate-600">{category.name}</span>
+                        </div>
+                      )}
+                      
+                      {deadlineInfo && (
+                        <div className={cn("flex items-center gap-1.5 px-2.5 py-1 rounded-lg border shadow-sm", deadlineInfo.color)}>
+                          <Clock className="w-3.5 h-3.5" />
+                          <span className="text-xs font-extrabold tracking-wide">{deadlineInfo.label}</span>
+                        </div>
+                      )}
+                      
+                      {task.memo && (
+                        <div className="flex items-center gap-1 px-2 py-1 text-slate-400 bg-white/50 rounded-lg shadow-sm border border-slate-100">
+                          <AlignLeft className="w-3.5 h-3.5" />
+                        </div>
+                      )}
+
+                      {task.subtasks?.length > 0 && (
+                        <div className="flex items-center gap-1 px-2 py-1 text-slate-500 bg-white/50 rounded-lg shadow-sm border border-slate-100">
+                          <CheckSquare className="w-3 h-3" />
+                          <span className="text-[11px] font-bold">{task.subtasks.filter(s => s.is_completed).length}/{task.subtasks.length}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Hover Quick Actions */}
+                  <div className="flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-2 absolute right-5 top-1/2 -translate-y-1/2 bg-white/90 backdrop-blur-xl px-2 py-1.5 rounded-xl border border-slate-100 shadow-sm z-10">
+                    {task.status !== 'done' && (
+                      <button 
+                        title="완료 처리"
+                        onClick={(e) => { e.stopPropagation(); setTaskStatus(task.id, 'done'); }}
+                        className="p-1.5 text-emerald-500 hover:bg-emerald-50 rounded-lg transition-colors"
+                      >
+                        <Check className="w-5 h-5" />
+                      </button>
+                    )}
+                    <button 
+                      title="캘린더로 보내기"
+                      onClick={(e) => { 
+                        e.stopPropagation(); 
+                        openAddEvent(task.deadline ? new Date(task.deadline) : new Date()); 
+                      }}
+                      className="p-1.5 text-indigo-500 hover:bg-indigo-50 rounded-lg transition-colors"
+                    >
+                      <Calendar className="w-5 h-5" />
+                    </button>
+                    {task.status !== 'trash' && (
+                      <button 
+                        title="휴지통으로"
+                        onClick={(e) => { e.stopPropagation(); setTaskStatus(task.id, 'trash'); }}
+                        className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                      >
+                        <Trash2 className="w-5 h-5" />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )
+            })
+          )}
+        </div>
       </div>
+      
+      {/* Detail Modal (Phase 2) */}
+      {selectedTaskId && selectedTaskData && editForm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
+          <div className="absolute inset-0 bg-slate-900/20 backdrop-blur-sm transition-opacity" onClick={saveDetail} />
+          <div className="relative w-full max-w-2xl bg-white/80 backdrop-blur-2xl rounded-3xl shadow-2xl border border-white/60 flex flex-col max-h-[85vh] overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            <div className="px-8 py-6 border-b border-white/40 flex items-center justify-between bg-white/40">
+              <h2 className="text-2xl font-extrabold text-slate-800">할 일 상세</h2>
+              <button onClick={saveDetail} className="p-2 text-slate-400 hover:text-slate-600 bg-white/50 hover:bg-white rounded-full transition-colors shadow-sm border border-slate-100">
+                <ChevronRight className="w-6 h-6 rotate-180" />
+              </button>
+            </div>
+            <div className="p-8 overflow-y-auto flex-1 hide-scrollbar">
+              {/* 제목 수정 영역 */}
+              <div className="mb-8">
+                <label className="block text-sm font-bold text-slate-600 mb-2">제목</label>
+                <input 
+                  type="text" 
+                  value={editForm.title || ''}
+                  onChange={e => setEditForm({ ...editForm, title: e.target.value })}
+                  className="w-full bg-white/60 border border-slate-200 shadow-sm rounded-xl px-4 py-3 font-bold text-lg focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-400 transition-all"
+                />
+              </div>
 
-      {/* Dnd Layout */}
-      <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
-        <div className="flex-1 overflow-hidden px-8 pb-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 h-full max-w-6xl">
-            {/* Inbox */}
-            <DroppableContainer id="inbox" title="보관함" icon={Inbox}>
-              {tasks.filter(t => t.status === 'inbox').map(task => (
-                <DraggableTask key={task.id} task={task} onToggle={handleToggle} />
-              ))}
-              {tasks.filter(t => t.status === 'inbox').length === 0 && (
-                <div className="h-full flex flex-col items-center justify-center">
-                  <div className="w-16 h-16 mb-4 rounded-2xl bg-slate-50 flex items-center justify-center border border-slate-100">
-                    <Inbox className="w-8 h-8 text-slate-400" />
-                  </div>
-                  <p className="font-bold text-slate-500 text-lg">보관함이 비어있습니다</p>
-                  <p className="text-sm text-slate-400 mt-2">새로운 할 일을 추가해보세요</p>
+              {/* 속성 영역 (카테고리, 데드라인) */}
+              <div className="grid grid-cols-2 gap-4 mb-8">
+                <div>
+                  <label className="block text-sm font-bold text-slate-600 mb-2 flex items-center gap-1"><Tag className="w-4 h-4"/> 카테고리</label>
+                  <select 
+                    value={editForm.category_id || ''}
+                    onChange={e => setEditForm({ ...editForm, category_id: e.target.value || null })}
+                    className="w-full bg-white/60 border border-slate-200 shadow-sm rounded-xl px-4 py-3 font-bold text-sm text-slate-700 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-400 transition-all"
+                  >
+                    <option value="">카테고리 없음</option>
+                    {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                  </select>
                 </div>
-              )}
-            </DroppableContainer>
+                <div>
+                  <label className="block text-sm font-bold text-slate-600 mb-2 flex items-center gap-1"><Clock className="w-4 h-4"/> 데드라인</label>
+                  <input 
+                    type="datetime-local" 
+                    value={editForm.deadline ? new Date(editForm.deadline).toISOString().slice(0, 16) : ''}
+                    onChange={e => {
+                      const dt = e.target.value;
+                      setEditForm({ ...editForm, deadline: dt ? new Date(dt).toISOString() : null });
+                    }}
+                    className="w-full bg-white/60 border border-slate-200 shadow-sm rounded-xl px-4 py-3 font-bold text-sm text-slate-700 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-400 transition-all" 
+                  />
+                </div>
+              </div>
 
-            {/* Today's Focus */}
-            <DroppableContainer id="today" title="오늘의 포커스" icon={Calendar} isDark>
-              {tasks.filter(t => t.status === 'today').map(task => (
-                <DraggableTask key={task.id} task={task} onToggle={handleToggle} />
-              ))}
-              {tasks.filter(t => t.status === 'today').length === 0 && (
-                <div className="h-full flex flex-col items-center justify-center">
-                  <div className="w-16 h-16 mb-4 rounded-2xl bg-indigo-500/10 flex items-center justify-center border border-indigo-500/20">
-                    <Sparkles className="w-8 h-8 text-indigo-400" />
-                  </div>
-                  <p className="font-bold text-slate-300 text-lg">가장 중요한 일에 집중하세요</p>
-                  <p className="text-sm text-slate-500 mt-2">여기에 할 일을 드래그하세요</p>
+              {/* 체크리스트 영역 */}
+              <div className="mb-8">
+                <label className="block text-sm font-bold text-slate-600 mb-2 flex items-center gap-1"><CheckSquare className="w-4 h-4"/> 하위 체크리스트</label>
+                <div className="space-y-2">
+                  {selectedTaskData.subtasks?.map(sub => (
+                    <div key={sub.id} className="flex items-center gap-3 p-3 bg-white/50 border border-white/60 shadow-sm rounded-xl group cursor-pointer hover:bg-white/70 transition-colors">
+                      <button onClick={() => updateSubtask(selectedTaskId, sub.id, { is_completed: !sub.is_completed })}>
+                        {sub.is_completed ? (
+                          <CheckCircle2 className="w-5 h-5 text-indigo-400" />
+                        ) : (
+                          <Circle className="w-5 h-5 text-slate-300 group-hover:text-indigo-400" />
+                        )}
+                      </button>
+                      <span className={cn("font-bold flex-1", sub.is_completed ? "text-slate-400 line-through" : "text-slate-700")}>{sub.title}</span>
+                      <button onClick={() => deleteSubtask(selectedTaskId, sub.id)} className="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-red-500 transition-opacity">
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ))}
+                  <form onSubmit={handleAddSubtask} className="relative mt-2">
+                    <input 
+                      type="text" 
+                      value={newSubtaskTitle}
+                      onChange={e => setNewSubtaskTitle(e.target.value)}
+                      placeholder="하위 작업 추가 후 엔터..."
+                      className="w-full bg-white/50 border border-transparent shadow-sm rounded-xl px-4 py-3 pl-10 font-bold text-sm focus:outline-none focus:border-indigo-300 focus:bg-white transition-all text-slate-700 placeholder:text-slate-400"
+                    />
+                    <Plus className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                  </form>
                 </div>
-              )}
-            </DroppableContainer>
+              </div>
+
+              {/* 메모 영역 */}
+              <div>
+                <label className="block text-sm font-bold text-slate-600 mb-2 flex items-center gap-1"><AlignLeft className="w-4 h-4"/> 메모</label>
+                <textarea 
+                  rows={4}
+                  value={editForm.memo || ''}
+                  onChange={e => setEditForm({ ...editForm, memo: e.target.value })}
+                  className="w-full bg-white/60 border border-slate-200 shadow-sm rounded-xl px-4 py-3 font-medium text-sm text-slate-700 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-400 resize-none transition-all"
+                  placeholder="추가적인 메모나 참고사항을 자유롭게 적어주세요."
+                />
+              </div>
+            </div>
+            {/* Modal Footer */}
+            <div className="px-8 py-5 border-t border-white/40 bg-white/40 flex justify-end gap-3 shrink-0">
+              <button 
+                onClick={saveDetail}
+                className="px-8 py-2.5 rounded-xl font-bold text-white bg-indigo-600 hover:bg-indigo-700 shadow-sm transition-all active:scale-95"
+              >
+                저장하기
+              </button>
+            </div>
           </div>
         </div>
-      </DndContext>
+      )}
     </div>
   );
 }
