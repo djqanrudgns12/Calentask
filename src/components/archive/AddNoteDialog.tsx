@@ -60,7 +60,7 @@ export function AddNoteDialog({ isOpen, onClose }: { isOpen: boolean; onClose: (
             className="relative w-full max-w-2xl bg-white rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
           >
             {/* Header */}
-            <div className="px-8 py-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+            <div className="px-8 py-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50 shrink-0">
               <div>
                 <h2 className="text-2xl font-extrabold text-slate-800">새 노트 추가</h2>
                 <p className="text-slate-500 text-sm font-medium mt-1">어떤 형태의 캔버스가 필요하신가요?</p>
@@ -71,7 +71,7 @@ export function AddNoteDialog({ isOpen, onClose }: { isOpen: boolean; onClose: (
             </div>
 
             {/* Content */}
-            <div className="p-8 overflow-y-auto">
+            <div className="p-8 overflow-y-auto flex-1 min-h-0">
               <div className="mb-8">
                 <label className="block text-sm font-bold text-slate-700 mb-2">노트 제목</label>
                 <input 
@@ -124,7 +124,7 @@ export function AddNoteDialog({ isOpen, onClose }: { isOpen: boolean; onClose: (
             </div>
 
             {/* Footer */}
-            <div className="px-8 py-5 border-t border-slate-100 bg-slate-50 flex justify-end gap-3">
+            <div className="px-8 py-5 border-t border-slate-100 bg-slate-50 flex justify-end gap-3 shrink-0">
               <button 
                 onClick={onClose}
                 className="px-6 py-3 rounded-xl font-bold text-slate-600 hover:bg-slate-200/50 transition-colors"
