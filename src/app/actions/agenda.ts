@@ -81,7 +81,7 @@ export async function updateAgendaTask(id: string, payload: Partial<Omit<AgendaT
   // 만약 status가 trash로 변경된다면 deleted_at도 업데이트
   if (payload.status === 'trash') {
     payload.deleted_at = new Date().toISOString()
-  } else if (payload.status && payload.status !== 'trash') {
+  } else if (payload.status) {
     payload.deleted_at = null
   }
 
