@@ -10,6 +10,8 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { parseNLPDate } from '@/lib/nlp';
+import { AgendaTaskContextMenu } from './AgendaTaskContextMenu';
+import { EditAgendaTaskDialog } from './EditAgendaTaskDialog';
 
 import { useAgendaStore, TaskStatus, AgendaTask } from '@/store/useAgendaStore';
 import { useCategories } from '@/hooks/useCalendarQueries';
@@ -239,34 +241,11 @@ export function ArchiveAgendaView() {
 
                   {/* Hover Quick Actions */}
                   <div className="flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-2 absolute right-5 top-1/2 -translate-y-1/2 bg-white/90 backdrop-blur-xl px-2 py-1.5 rounded-xl border border-slate-100 shadow-sm z-10">
-                    {task.status !== 'done' && (
-                      <button 
-                        title="완료 처리"
-                        onClick={(e) => { e.stopPropagation(); setTaskStatus(task.id, 'done'); }}
-                        className="p-1.5 text-emerald-500 hover:bg-emerald-50 rounded-lg transition-colors"
-                      >
-                        <Check className="w-5 h-5" />
-                      </button>
-                    )}
-                    <button 
-                      title="캘린더로 보내기"
-                      onClick={(e) => { 
-                        e.stopPropagation(); 
-                        openAddEvent(task.deadline ? new Date(task.deadline) : new Date()); 
-                      }}
-                      className="p-1.5 text-indigo-500 hover:bg-indigo-50 rounded-lg transition-colors"
-                    >
-                      <Calendar className="w-5 h-5" />
-                    </button>
-                    {task.status !== 'trash' && (
-                      <button 
-                        title="휴지통으로"
-                        onClick={(e) => { e.stopPropagation(); setTaskStatus(task.id, 'trash'); }}
-                        className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                      >
-                        <Trash2 className="w-5 h-5" />
-                      </button>
-                    )}
+                    <AgendaTaskContextMenu 
+                      status={task.status} 
+                      onEdit={() => openDetail(task)} 
+                      onChangeStatus={(s) => setTaskStatus(task.id, s)} 
+                    />
                   </div>
                 </div>
               )
@@ -275,112 +254,19 @@ export function ArchiveAgendaView() {
         </div>
       </div>
       
-      {/* Detail Modal (Phase 2) */}
-      {selectedTaskId && selectedTaskData && editForm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
-          <div className="absolute inset-0 bg-slate-900/20 backdrop-blur-sm transition-opacity" onClick={saveDetail} />
-          <div className="relative w-full max-w-2xl bg-white/80 backdrop-blur-2xl rounded-3xl shadow-2xl border border-white/60 flex flex-col max-h-[85vh] overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-            <div className="px-8 py-6 border-b border-white/40 flex items-center justify-between bg-white/40">
-              <h2 className="text-2xl font-extrabold text-slate-800">할 일 상세</h2>
-              <button onClick={saveDetail} className="p-2 text-slate-400 hover:text-slate-600 bg-white/50 hover:bg-white rounded-full transition-colors shadow-sm border border-slate-100">
-                <ChevronRight className="w-6 h-6 rotate-180" />
-              </button>
-            </div>
-            <div className="p-8 overflow-y-auto flex-1 hide-scrollbar">
-              {/* 제목 수정 영역 */}
-              <div className="mb-8">
-                <label className="block text-sm font-bold text-slate-600 mb-2">제목</label>
-                <input 
-                  type="text" 
-                  value={editForm.title || ''}
-                  onChange={e => setEditForm({ ...editForm, title: e.target.value })}
-                  className="w-full bg-white/60 border border-slate-200 shadow-sm rounded-xl px-4 py-3 font-bold text-lg focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-400 transition-all"
-                />
-              </div>
-
-              {/* 속성 영역 (카테고리, 데드라인) */}
-              <div className="grid grid-cols-2 gap-4 mb-8">
-                <div>
-                  <label className="block text-sm font-bold text-slate-600 mb-2 flex items-center gap-1"><Tag className="w-4 h-4"/> 카테고리</label>
-                  <select 
-                    value={editForm.category_id || ''}
-                    onChange={e => setEditForm({ ...editForm, category_id: e.target.value || null })}
-                    className="w-full bg-white/60 border border-slate-200 shadow-sm rounded-xl px-4 py-3 font-bold text-sm text-slate-700 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-400 transition-all"
-                  >
-                    <option value="">카테고리 없음</option>
-                    {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-bold text-slate-600 mb-2 flex items-center gap-1"><Clock className="w-4 h-4"/> 데드라인</label>
-                  <input 
-                    type="datetime-local" 
-                    value={editForm.deadline ? new Date(editForm.deadline).toISOString().slice(0, 16) : ''}
-                    onChange={e => {
-                      const dt = e.target.value;
-                      setEditForm({ ...editForm, deadline: dt ? new Date(dt).toISOString() : null });
-                    }}
-                    className="w-full bg-white/60 border border-slate-200 shadow-sm rounded-xl px-4 py-3 font-bold text-sm text-slate-700 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-400 transition-all" 
-                  />
-                </div>
-              </div>
-
-              {/* 체크리스트 영역 */}
-              <div className="mb-8">
-                <label className="block text-sm font-bold text-slate-600 mb-2 flex items-center gap-1"><CheckSquare className="w-4 h-4"/> 하위 체크리스트</label>
-                <div className="space-y-2">
-                  {selectedTaskData.subtasks?.map(sub => (
-                    <div key={sub.id} className="flex items-center gap-3 p-3 bg-white/50 border border-white/60 shadow-sm rounded-xl group cursor-pointer hover:bg-white/70 transition-colors">
-                      <button onClick={() => updateSubtask(selectedTaskId, sub.id, { is_completed: !sub.is_completed })}>
-                        {sub.is_completed ? (
-                          <CheckCircle2 className="w-5 h-5 text-indigo-400" />
-                        ) : (
-                          <Circle className="w-5 h-5 text-slate-300 group-hover:text-indigo-400" />
-                        )}
-                      </button>
-                      <span className={cn("font-bold flex-1", sub.is_completed ? "text-slate-400 line-through" : "text-slate-700")}>{sub.title}</span>
-                      <button onClick={() => deleteSubtask(selectedTaskId, sub.id)} className="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-red-500 transition-opacity">
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  ))}
-                  <form onSubmit={handleAddSubtask} className="relative mt-2">
-                    <input 
-                      type="text" 
-                      value={newSubtaskTitle}
-                      onChange={e => setNewSubtaskTitle(e.target.value)}
-                      placeholder="하위 작업 추가 후 엔터..."
-                      className="w-full bg-white/50 border border-transparent shadow-sm rounded-xl px-4 py-3 pl-10 font-bold text-sm focus:outline-none focus:border-indigo-300 focus:bg-white transition-all text-slate-700 placeholder:text-slate-400"
-                    />
-                    <Plus className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                  </form>
-                </div>
-              </div>
-
-              {/* 메모 영역 */}
-              <div>
-                <label className="block text-sm font-bold text-slate-600 mb-2 flex items-center gap-1"><AlignLeft className="w-4 h-4"/> 메모</label>
-                <textarea 
-                  rows={4}
-                  value={editForm.memo || ''}
-                  onChange={e => setEditForm({ ...editForm, memo: e.target.value })}
-                  className="w-full bg-white/60 border border-slate-200 shadow-sm rounded-xl px-4 py-3 font-medium text-sm text-slate-700 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-400 resize-none transition-all"
-                  placeholder="추가적인 메모나 참고사항을 자유롭게 적어주세요."
-                />
-              </div>
-            </div>
-            {/* Modal Footer */}
-            <div className="px-8 py-5 border-t border-white/40 bg-white/40 flex justify-end gap-3 shrink-0">
-              <button 
-                onClick={saveDetail}
-                className="px-8 py-2.5 rounded-xl font-bold text-white bg-indigo-600 hover:bg-indigo-700 shadow-sm transition-all active:scale-95"
-              >
-                저장하기
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <EditAgendaTaskDialog 
+        task={selectedTaskData || null}
+        isOpen={!!selectedTaskId}
+        onClose={() => {
+          setSelectedTaskId(null);
+          setEditForm(null);
+        }}
+        categories={categories}
+        onSave={updateTask}
+        onAddSubtask={addSubtask}
+        onUpdateSubtask={updateSubtask}
+        onDeleteSubtask={deleteSubtask}
+      />
     </div>
   );
 }
