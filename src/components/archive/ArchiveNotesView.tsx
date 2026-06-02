@@ -12,15 +12,21 @@ import { JournalBoard } from '@/components/archive/boards/JournalBoard';
 import { Plus, LayoutGrid, LayoutList, Grip, Image as ImageIcon, Table, Columns, Clock, FolderOpen, Video, FileText } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { AddNoteDialog } from './AddNoteDialog';
+import { CommandPalette } from './CommandPalette';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useHotkeys } from 'react-hotkeys-hook';
 
 export function ArchiveNotesView() {
-  const { tabs, activeTabId, setActiveTabId } = useArchiveStore();
+  const { tabs, activeTabId, setActiveTabId, setCommandPaletteOpen } = useArchiveStore();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
 
   const handleAddNewTab = () => {
     setIsAddDialogOpen(true);
   };
+
+  // Global Hotkeys
+  useHotkeys('mod+k', (e) => { e.preventDefault(); setCommandPaletteOpen(true); }, { enableOnFormTags: true });
+  useHotkeys('mod+n', (e) => { e.preventDefault(); handleAddNewTab(); }, { enableOnFormTags: true });
 
   const getIconForType = (type: string) => {
     switch (type) {
@@ -131,6 +137,7 @@ export function ArchiveNotesView() {
         </div>
       </div>
       <AddNoteDialog isOpen={isAddDialogOpen} onClose={() => setIsAddDialogOpen(false)} />
+      <CommandPalette />
     </PinPadOverlay>
   );
 }
