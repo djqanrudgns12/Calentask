@@ -18,3 +18,48 @@
 [  180674ms] [LOG] [Fast Refresh] done in 116ms @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2477
 [  202805ms] [ERROR] WebSocket connection to 'wss://y-webrtc-eu.fly.dev/' failed: Error during WebSocket handshake: Unexpected response code: 503 @ http://localhost:3000/_next/static/chunks/node_modules_lib0_0zigw_o._.js:4696
 [  243840ms] [ERROR] WebSocket connection to 'wss://y-webrtc-eu.fly.dev/' failed: Error during WebSocket handshake: Unexpected response code: 503 @ http://localhost:3000/_next/static/chunks/node_modules_lib0_0zigw_o._.js:4696
+[  285031ms] [ERROR] WebSocket connection to 'wss://y-webrtc-eu.fly.dev/' failed: Error during WebSocket handshake: Unexpected response code: 503 @ http://localhost:3000/_next/static/chunks/node_modules_lib0_0zigw_o._.js:4696
+[  326297ms] [ERROR] WebSocket connection to 'wss://y-webrtc-eu.fly.dev/' failed: Error during WebSocket handshake: Unexpected response code: 503 @ http://localhost:3000/_next/static/chunks/node_modules_lib0_0zigw_o._.js:4696
+[  367974ms] [ERROR] WebSocket connection to 'wss://y-webrtc-eu.fly.dev/' failed: Error during WebSocket handshake: Unexpected response code: 503 @ http://localhost:3000/_next/static/chunks/node_modules_lib0_0zigw_o._.js:4696
+[  408842ms] [ERROR] WebSocket connection to 'wss://y-webrtc-eu.fly.dev/' failed: Error during WebSocket handshake: Unexpected response code: 503 @ http://localhost:3000/_next/static/chunks/node_modules_lib0_0zigw_o._.js:4696
+[  450202ms] [ERROR] WebSocket connection to 'wss://y-webrtc-eu.fly.dev/' failed: Error during WebSocket handshake: Unexpected response code: 503 @ http://localhost:3000/_next/static/chunks/node_modules_lib0_0zigw_o._.js:4696
+[  491982ms] [ERROR] WebSocket connection to 'wss://y-webrtc-eu.fly.dev/' failed: Error during WebSocket handshake: Unexpected response code: 503 @ http://localhost:3000/_next/static/chunks/node_modules_lib0_0zigw_o._.js:4696
+[  533146ms] [ERROR] WebSocket connection to 'wss://y-webrtc-eu.fly.dev/' failed: Error during WebSocket handshake: Unexpected response code: 503 @ http://localhost:3000/_next/static/chunks/node_modules_lib0_0zigw_o._.js:4696
+[  574414ms] [ERROR] WebSocket connection to 'wss://y-webrtc-eu.fly.dev/' failed: Error during WebSocket handshake: Unexpected response code: 503 @ http://localhost:3000/_next/static/chunks/node_modules_lib0_0zigw_o._.js:4696
+[  616090ms] [ERROR] WebSocket connection to 'wss://y-webrtc-eu.fly.dev/' failed: Error during WebSocket handshake: Unexpected response code: 503 @ http://localhost:3000/_next/static/chunks/node_modules_lib0_0zigw_o._.js:4696
+[  657664ms] [ERROR] WebSocket connection to 'wss://y-webrtc-eu.fly.dev/' failed: Error during WebSocket handshake: Unexpected response code: 503 @ http://localhost:3000/_next/static/chunks/node_modules_lib0_0zigw_o._.js:4696
+[  699341ms] [ERROR] WebSocket connection to 'wss://y-webrtc-eu.fly.dev/' failed: Error during WebSocket handshake: Unexpected response code: 503 @ http://localhost:3000/_next/static/chunks/node_modules_lib0_0zigw_o._.js:4696
+[  741017ms] [ERROR] WebSocket connection to 'wss://y-webrtc-eu.fly.dev/' failed: Error during WebSocket handshake: Unexpected response code: 503 @ http://localhost:3000/_next/static/chunks/node_modules_lib0_0zigw_o._.js:4696
+[  782698ms] [ERROR] WebSocket connection to 'wss://y-webrtc-eu.fly.dev/' failed: Error during WebSocket handshake: Unexpected response code: 503 @ http://localhost:3000/_next/static/chunks/node_modules_lib0_0zigw_o._.js:4696
+[  824406ms] [ERROR] WebSocket connection to 'wss://y-webrtc-eu.fly.dev/' failed: Error during WebSocket handshake: Unexpected response code: 503 @ http://localhost:3000/_next/static/chunks/node_modules_lib0_0zigw_o._.js:4696
+[  826551ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2477
+[  826605ms] [LOG] [Fast Refresh] done in 131ms @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2477
+[  866075ms] [ERROR] WebSocket connection to 'wss://y-webrtc-eu.fly.dev/' failed: Error during WebSocket handshake: Unexpected response code: 503 @ http://localhost:3000/_next/static/chunks/node_modules_lib0_0zigw_o._.js:4696
+[  891693ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2477
+[  891727ms] [LOG] [Fast Refresh] done in 93ms @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2477
+[  907891ms] [ERROR] WebSocket connection to 'wss://y-webrtc-eu.fly.dev/' failed: Error during WebSocket handshake: Unexpected response code: 503 @ http://localhost:3000/_next/static/chunks/node_modules_lib0_0zigw_o._.js:4696
+[  949622ms] [ERROR] WebSocket connection to 'wss://y-webrtc-eu.fly.dev/' failed: Error during WebSocket handshake: Unexpected response code: 503 @ http://localhost:3000/_next/static/chunks/node_modules_lib0_0zigw_o._.js:4696
+[  975824ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2477
+[  975871ms] [ERROR] ./src/components/archive/ArchiveAgendaView.tsx:545:1
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+  543 |     </div>
+  544 |   );
+> 545 | }
+      | ^
+  546 |
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/components/archive/ArchiveAgendaView.tsx [Client Component Browser]
+    ./src/app/page.tsx [Client Component Browser]
+    ./src/app/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/archive/ArchiveAgendaView.tsx [Client Component SSR]
+    ./src/app/page.tsx [Client Component SSR]
+    ./src/app/page.tsx [Server Component] @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:3318
+[  991266ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2477
+[  991303ms] [LOG] [Fast Refresh] done in 64ms @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2477
+[  991410ms] [ERROR] WebSocket connection to 'wss://y-webrtc-eu.fly.dev/' failed: Error during WebSocket handshake: Unexpected response code: 503 @ http://localhost:3000/_next/static/chunks/node_modules_lib0_0zigw_o._.js:4696

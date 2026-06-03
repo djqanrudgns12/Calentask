@@ -187,7 +187,8 @@ const [selectedTaskIds, setSelectedTaskIds] = useState<Set<string>>(new Set());
       <div className="absolute top-0 left-0 w-full h-64 bg-gradient-to-b from-purple-50/50 to-transparent pointer-events-none" />
 
       {/* Main Container */}
-      <div className="relative z-10 flex flex-col h-full max-w-5xl mx-auto w-full px-4 md:px-8 py-6">
+      <div className="relative z-10 flex-1 overflow-y-auto hide-scrollbar w-full">
+        <div className="flex flex-col min-h-full max-w-5xl mx-auto w-full px-4 md:px-8 py-6">
 
 
         {/* Quick Add Form (Minimalist & Professional) */}
@@ -247,11 +248,11 @@ const [selectedTaskIds, setSelectedTaskIds] = useState<Set<string>>(new Set());
                 transition={{ duration: 0.3, ease: 'easeInOut' }}
                 className="overflow-hidden"
               >
-                <div className="p-6 pt-2 border-t border-slate-100/60 space-y-5">
+                <div className="p-5 pt-3 border-t border-slate-100/60 space-y-4">
                   {/* Category Chips */}
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Category</label>
-                    <div className="flex flex-wrap gap-2">
+                  <div className="flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-4">
+                    <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider shrink-0 w-20 pt-1">Category</label>
+                    <div className="flex flex-wrap gap-1.5">
                       {categories.map(cat => {
                         const isSelected = quickCategoryId === cat.id;
                         return (
@@ -260,12 +261,12 @@ const [selectedTaskIds, setSelectedTaskIds] = useState<Set<string>>(new Set());
                             type="button"
                             onClick={() => setQuickCategoryId(isSelected ? null : cat.id)}
                             className={cn(
-                              "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-semibold transition-all border shadow-sm",
+                              "flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold transition-all border shadow-sm",
                               isSelected ? "bg-white border-transparent" : "bg-slate-50 border-slate-200 text-slate-500 hover:bg-slate-100"
                             )}
                             style={isSelected ? { color: cat.hex_color, borderColor: cat.hex_color, boxShadow: `0 0 0 1px ${cat.hex_color}20` } : {}}
                           >
-                            <div className="w-2 h-2 rounded-full" style={{ backgroundColor: cat.hex_color }} />
+                            <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: cat.hex_color }} />
                             {cat.name}
                           </button>
                         );
@@ -274,18 +275,18 @@ const [selectedTaskIds, setSelectedTaskIds] = useState<Set<string>>(new Set());
                   </div>
 
                   {/* Custom DateTime Picker (Expanded View) */}
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Deadline</label>
+                  <div className="flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-4">
+                    <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider shrink-0 w-20 pt-1.5">Deadline</label>
                     <DateTimePickerPopover 
                       date={parsedData.date} 
                       setDate={(d: Date | null) => setParsedData(prev => ({ ...prev, date: d, hasTime: true }))}
                       align="start"
                     >
-                      <div className="flex items-center gap-3 px-4 py-2.5 bg-slate-50 hover:bg-white rounded-xl border border-slate-200 hover:border-indigo-300 hover:shadow-sm transition-all w-full sm:w-auto cursor-pointer">
-                        <Clock className="w-4 h-4 text-slate-400" />
+                      <div className="flex items-center gap-1.5 px-2.5 py-1 bg-slate-50 hover:bg-white rounded-md border border-slate-200 hover:border-indigo-300 hover:shadow-sm transition-all w-max cursor-pointer">
+                        <Clock className="w-3 h-3 text-slate-400" />
                         <span className={cn(
-                          "flex-1 text-sm font-bold text-left",
-                          parsedData.date ? "text-slate-700" : "text-slate-400"
+                          "text-[11px] font-bold text-left whitespace-nowrap",
+                          parsedData.date ? "text-slate-700" : "text-slate-500"
                         )}>
                           {parsedData.date ? format(parsedData.date, 'yyyy년 M월 d일 a h:mm', { locale: ko }) : '마감일 설정'}
                         </span>
@@ -294,60 +295,62 @@ const [selectedTaskIds, setSelectedTaskIds] = useState<Set<string>>(new Set());
                   </div>
 
                   {/* Subtasks */}
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Subtasks</label>
-                    <div className="space-y-2">
+                  <div className="flex flex-col sm:flex-row gap-2 sm:gap-4">
+                    <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider shrink-0 w-20 pt-2">Subtasks</label>
+                    <div className="flex-1 space-y-2 max-w-xl">
                       {quickSubtasks.map((st, idx) => (
-                        <div key={idx} className="flex items-center gap-3 px-3 py-2 bg-slate-50 rounded-xl group border border-transparent hover:border-slate-200 transition-colors">
-                          <CheckSquare className="w-4 h-4 text-slate-400" />
-                          <span className="flex-1 text-sm text-slate-700 font-medium">{st}</span>
+                        <div key={idx} className="flex items-center gap-2 p-2 bg-slate-50/80 rounded-lg border border-slate-100 group">
+                          <Circle className="w-3 h-3 text-slate-300" />
+                          <span className="flex-1 text-[12px] font-bold text-slate-700">{st}</span>
                           <button 
                             type="button"
                             onClick={() => setQuickSubtasks(prev => prev.filter((_, i) => i !== idx))}
-                            className="opacity-0 group-hover:opacity-100 p-1 text-slate-400 hover:text-red-500 transition-all"
+                            className="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-red-500 transition-opacity p-0.5"
                           >
-                            <X className="w-4 h-4" />
+                            <Trash2 className="w-3 h-3" />
                           </button>
                         </div>
                       ))}
-                      <div className="flex items-center gap-3 px-3 py-2 border-b border-slate-200 focus-within:border-indigo-400 transition-colors">
-                        <Plus className="w-4 h-4 text-slate-400" />
-                        <input
+                      <div className="relative">
+                        <Plus className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-400" />
+                        <input 
                           type="text"
                           value={quickSubtaskInput}
-                          onChange={(e) => setQuickSubtaskInput(e.target.value)}
+                          onChange={e => setQuickSubtaskInput(e.target.value)}
                           onKeyDown={handleQuickSubtaskKeyDown}
                           placeholder="하위 작업을 입력하고 엔터..."
-                          className="flex-1 bg-transparent text-sm outline-none placeholder:text-slate-400"
+                          className="w-full bg-slate-50/50 border border-transparent shadow-sm rounded-lg py-1.5 pl-7 pr-3 text-[12px] font-bold text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:bg-white transition-all"
                         />
                       </div>
                     </div>
                   </div>
 
                   {/* Memo */}
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Memo</label>
-                    <textarea 
-                      value={quickMemo}
-                      onChange={(e) => setQuickMemo(e.target.value)}
-                      placeholder="추가적인 메모..."
-                      className="w-full bg-slate-50 focus:bg-white p-3 rounded-xl border border-slate-200 focus:border-indigo-400 outline-none text-sm text-slate-700 resize-none transition-colors h-20"
-                    />
+                  <div className="flex flex-col sm:flex-row gap-2 sm:gap-4">
+                    <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider shrink-0 w-20 pt-2">Memo</label>
+                    <div className="flex-1 max-w-xl">
+                      <textarea 
+                        rows={1}
+                        value={quickMemo}
+                        onChange={e => setQuickMemo(e.target.value)}
+                        placeholder="추가적인 메모..."
+                        className="w-full bg-slate-50/50 border border-transparent shadow-sm rounded-lg p-2 text-[12px] font-medium text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:bg-white resize-y min-h-[40px] transition-all"
+                      />
+                    </div>
                   </div>
-                  
-                  {/* Action Footer */}
-                  <div className="flex items-center justify-end gap-3 pt-2">
+
+                  <div className="flex justify-end gap-2 pt-1">
                     <button 
                       type="button"
                       onClick={() => setIsQuickAddExpanded(false)}
-                      className="px-4 py-2 text-sm font-bold text-slate-500 hover:text-slate-800 transition-colors"
+                      className="px-4 py-1.5 text-slate-500 hover:text-slate-700 hover:bg-slate-100 text-[13px] font-bold rounded-lg transition-colors"
                     >
                       취소
                     </button>
                     <button 
                       type="button"
                       onClick={() => handleAddTask()}
-                      className="px-5 py-2 bg-slate-900 hover:bg-slate-800 text-white text-sm font-bold rounded-xl shadow-sm transition-colors"
+                      className="px-4 py-1.5 bg-slate-900 hover:bg-slate-800 text-white text-[13px] font-bold rounded-lg shadow-sm transition-colors"
                     >
                       추가하기
                     </button>
@@ -419,7 +422,7 @@ const [selectedTaskIds, setSelectedTaskIds] = useState<Set<string>>(new Set());
         </div>
 
         {/* Task List */}
-        <div className="flex-1 overflow-y-auto hide-scrollbar space-y-3 pb-20">
+        <div className="flex-1 space-y-3 pb-20">
           {filteredTasks.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-64 bg-white/40 backdrop-blur-md rounded-3xl border border-white/60 shadow-sm">
               <div className="w-16 h-16 mb-4 rounded-2xl bg-white/80 flex items-center justify-center border border-slate-100 shadow-sm">
@@ -522,6 +525,7 @@ const [selectedTaskIds, setSelectedTaskIds] = useState<Set<string>>(new Set());
             })
           )}
         </div>
+      </div>
       </div>
       
       <EditAgendaTaskDialog 
