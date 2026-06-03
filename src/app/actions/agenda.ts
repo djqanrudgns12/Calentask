@@ -47,12 +47,12 @@ export async function getAgendaTasks() {
 }
 
 // 할 일 생성
-export async function createAgendaTask(payload: { title: string; memo?: string | null; deadline?: string | null; category_id?: string | null }) {
+export async function createAgendaTask(payload: { title: string; memo?: string | null; deadline?: string | null; category_id?: string | null; subtasks?: string[] }) {
   const supabase = await createClient()
   const { data: userData } = await supabase.auth.getUser()
   if (!userData.user) throw new Error('Not authenticated')
 
-  const { data, error } = await supabase
+  const { data: taskData, error: taskError } = await supabase
     .from('agenda_tasks')
     .insert([{ 
       user_id: userData.user.id, 
@@ -62,14 +62,37 @@ export async function createAgendaTask(payload: { title: string; memo?: string |
       category_id: payload.category_id || null,
       status: 'inbox'
     }])
+    .select()
+    .single()
+
+  if (taskError) throw new Error(taskError.message)
+
+  if (payload.subtasks && payload.subtasks.length > 0) {
+    const subtaskInserts = payload.subtasks.map(title => ({
+      task_id: taskData.id,
+      title
+    }))
+    
+    const { error: subtaskError } = await supabase
+      .from('agenda_subtasks')
+      .insert(subtaskInserts)
+      
+    if (subtaskError) {
+      console.error('Failed to create subtasks:', subtaskError)
+    }
+  }
+
+  const { data: finalData, error: finalError } = await supabase
+    .from('agenda_tasks')
     .select(`
       *,
       subtasks:agenda_subtasks(*)
     `)
+    .eq('id', taskData.id)
     .single()
 
-  if (error) throw new Error(error.message)
-  return data as AgendaTask
+  if (finalError) throw new Error(finalError.message)
+  return finalData as AgendaTask
 }
 
 // 할 일 수정 (상태 변경 포함)
