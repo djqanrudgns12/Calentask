@@ -4,8 +4,10 @@ import { useState, useEffect, useRef } from 'react';
 import { Plus, Video, Play, X, Clock, Tag as TagIcon, LayoutGrid, List as ListIcon, Link as LinkIcon, Palette } from 'lucide-react';
 import { useArchiveStore } from '@/store/useArchiveStore';
 import { motion, AnimatePresence } from 'framer-motion';
-import ReactPlayer from 'react-player';
+import dynamic from 'next/dynamic';
 import { FastAverageColor } from 'fast-average-color';
+
+const ReactPlayer = dynamic(() => import('react-player'), { ssr: false }) as any;
 
 // Extracts a thumbnail and standardizes URL if possible
 function extractMediaMetadata(url: string) {
@@ -248,19 +250,15 @@ export function MediaBoard() {
                 >
                   <X className="w-5 h-5" />
                 </button>
-                <div className="w-full aspect-video">
-                  {(() => {
-                    const Player = ReactPlayer as any;
-                    return (
-                      <Player 
-                        url={activeMedia.data?.url as string} 
-                        width="100%" 
-                        height="100%"
-                        controls={true}
-                        playing={true}
-                      />
-                    );
-                  })()}
+                <div className="w-full aspect-video flex items-center justify-center bg-black">
+                  <ReactPlayer 
+                    url={activeMedia.data?.url as string} 
+                    width="100%" 
+                    height="100%"
+                    controls={true}
+                    playing={true}
+                    style={{ position: 'absolute', top: 0, left: 0 }}
+                  />
                 </div>
               </div>
 

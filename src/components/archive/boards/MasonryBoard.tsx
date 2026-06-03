@@ -4,6 +4,7 @@ import { useState, useRef } from 'react';
 import { Upload, X, Maximize2, Image as ImageIcon, Trash2, Heart, Search } from 'lucide-react';
 import { useArchiveStore } from '@/store/useArchiveStore';
 import { motion, AnimatePresence } from 'framer-motion';
+import { createClient } from '@/lib/supabase/client';
 
 const EMPTY_ARRAY: any[] = [];
 
@@ -18,32 +19,49 @@ export function MasonryBoard() {
 
   const activeImage = items.find(i => i.id === activeImageId);
 
-  // 로컬 파일을 Base64로 변환하여 스토어에 저장
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
+  // Supabase Storage로 파일 업로드 후 public URL 저장
+  const processFiles = async (files: FileList | null) => {
     if (!files || !activeTabId) return;
-
-    Array.from(files).forEach(file => {
-      if (!file.type.startsWith('image/')) return;
-      
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const base64 = event.target?.result as string;
-        addItem(activeTabId, {
-          title: file.name.split('.')[0],
-          data: {
-            image: base64,
-            likes: 0,
-            originalName: file.name
-          }
-        });
-      };
-      reader.readAsDataURL(file);
-    });
+    setIsUploading(true);
     
-    // reset input
+    const supabase = createClient();
+
+    for (const file of Array.from(files)) {
+      if (!file.type.startsWith('image/')) continue;
+      
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Math.random().toString(36).substring(2, 15)}_${Date.now()}.${fileExt}`;
+      const filePath = `${activeTabId}/${fileName}`;
+
+      const { data, error } = await supabase.storage
+        .from('archive_media')
+        .upload(filePath, file);
+
+      if (error) {
+        console.error('Error uploading image:', error);
+        continue;
+      }
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('archive_media')
+        .getPublicUrl(filePath);
+
+      addItem(activeTabId, {
+        title: file.name.split('.')[0],
+        data: {
+          image: publicUrl,
+          likes: 0,
+          originalName: file.name
+        }
+      });
+    }
+    
     if (fileInputRef.current) fileInputRef.current.value = '';
     setIsUploading(false);
+  };
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    processFiles(e.target.files);
   };
 
   const handleDragOver = (e: React.DragEvent) => {
@@ -59,27 +77,7 @@ export function MasonryBoard() {
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     setIsUploading(false);
-    
-    const files = e.dataTransfer.files;
-    if (!files || !activeTabId) return;
-
-    Array.from(files).forEach(file => {
-      if (!file.type.startsWith('image/')) return;
-      
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const base64 = event.target?.result as string;
-        addItem(activeTabId, {
-          title: file.name.split('.')[0],
-          data: {
-            image: base64,
-            likes: 0,
-            originalName: file.name
-          }
-        });
-      };
-      reader.readAsDataURL(file);
-    });
+    processFiles(e.dataTransfer.files);
   };
 
   const handleLike = (e: React.MouseEvent, id: string, currentLikes: number = 0) => {
