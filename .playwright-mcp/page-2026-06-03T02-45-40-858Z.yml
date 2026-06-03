@@ -1,0 +1,183 @@
+- generic [ref=e1]:
+  - generic [ref=e2]:
+    - complementary [ref=e3]:
+      - generic [ref=e4]:
+        - generic [ref=e5]:
+          - img [ref=e279]
+          - generic [ref=e7]: Calentask
+        - button [ref=e280]:
+          - img [ref=e9]
+      - generic [ref=e12]:
+        - generic [ref=e13]:
+          - button [ref=e281]:
+            - generic [ref=e16]:
+              - img [ref=e17]
+              - generic [ref=e20]: 아카이브 관리
+            - img [ref=e21]
+          - generic [ref=e24]:
+            - button [ref=e282]:
+              - img [ref=e26]
+              - text: 아카이브 노트
+            - button [ref=e283]:
+              - img [ref=e30]
+              - text: 오늘의 할 일 (아젠다)
+          - button [ref=e284]:
+            - generic [ref=e35]:
+              - img [ref=e36]
+              - generic [ref=e39]: 인사이트 대시보드
+        - button [ref=e285]:
+          - generic [ref=e43]:
+            - img [ref=e44]
+            - generic [ref=e46]: 캘린더 관리
+          - img [ref=e47]
+      - generic [ref=e49]:
+        - generic [ref=e50]:
+          - button [ref=e286]: 오늘
+          - button [ref=e287]: 이번 주
+        - generic [ref=e141] [cursor=pointer]:
+          - generic [ref=e142]:
+            - img [ref=e143]
+            - generic [ref=e146]: 오후 3:00
+          - heading [level=4] [ref=e288]: 팀 미팅 준비
+          - generic [ref=e149]: Agenda
+      - generic [ref=e62]:
+        - button [ref=e289]:
+          - img
+          - text: 태그 관리소
+        - button [ref=e290]:
+          - img
+          - text: 데이터 허브
+        - button [ref=e291]:
+          - img
+          - text: 전체 내용 초기화
+    - main [ref=e66]:
+      - generic [ref=e70]:
+        - generic [ref=e71]:
+          - img [ref=e73]
+          - generic [ref=e77]:
+            - heading [level=2] [ref=e292]: Agenda Center
+            - paragraph [ref=e83]: MANAGE YOUR TASKS
+        - button [ref=e293]:
+          - generic [ref=e88]: 테
+          - img [ref=e90]
+      - generic [ref=e95]:
+        - generic [ref=e97]:
+          - img [ref=e98]
+          - textbox [ref=e294]:
+            - /placeholder: "예: '내일 오후 3시 팀 미팅 준비'"
+          - button [ref=e295]: + 상세
+        - generic [ref=e103]:
+          - button [ref=e296]:
+            - img [ref=e105]
+            - text: Inbox
+          - button [ref=e297]:
+            - img [ref=e108]
+            - text: Done
+          - button [ref=e298]:
+            - img [ref=e112]
+            - text: Archive
+          - button [ref=e299]:
+            - img [ref=e116]
+            - text: Bin
+        - generic [ref=e119]:
+          - generic [ref=e257] [cursor=pointer]:
+            - button [ref=e258]:
+              - img [ref=e259]
+            - generic [ref=e261]:
+              - heading [level=3] [ref=e300]: 플레이테스트 일정
+              - generic [ref=e264]:
+                - generic [ref=e265]:
+                  - img [ref=e266]
+                  - generic [ref=e267]: 메모 있음
+                - generic [ref=e268]:
+                  - img [ref=e269]
+                  - generic [ref=e272]: 0/1 서브태스크
+            - button [ref=e274]:
+              - img [ref=e275]
+          - generic [ref=e151] [cursor=pointer]:
+            - button [ref=e152]:
+              - img [ref=e153]
+            - generic [ref=e155]:
+              - heading [level=3] [ref=e301]: 새로운 기능 기획안 작성하기
+              - generic [ref=e159]:
+                - img [ref=e160]
+                - generic [ref=e163]: 0/1 서브태스크
+            - button [ref=e165]:
+              - img [ref=e166]
+          - generic [ref=e170] [cursor=pointer]:
+            - button [ref=e171]:
+              - img [ref=e172]
+            - generic [ref=e174]:
+              - heading [level=3] [ref=e302]: 팀 미팅 준비
+              - generic [ref=e177]:
+                - generic [ref=e178]:
+                  - img [ref=e179]
+                  - generic [ref=e181]: D-1
+                - generic [ref=e182]:
+                  - img [ref=e183]
+                  - generic [ref=e186]: 0/1 서브태스크
+            - button [ref=e188]:
+              - img [ref=e189]
+          - generic [ref=e193] [cursor=pointer]:
+            - button [ref=e194]:
+              - img [ref=e195]
+            - generic [ref=e197]:
+              - heading [level=3] [ref=e303]: 팀 미팅 준비
+              - generic [ref=e201]:
+                - img [ref=e202]
+                - generic [ref=e204]: 오늘 마감
+            - button [ref=e206]:
+              - img [ref=e207]
+      - status [ref=e127]
+  - region "Notifications alt+T"
+  - button "Open Next.js Dev Tools" [ref=e133] [cursor=pointer]:
+    - img [ref=e134]
+  - alert [ref=e137]
+  - dialog "할 일 상세" [ref=e307]:
+    - heading "할 일 상세" [level=2] [ref=e309]
+    - generic [ref=e310]:
+      - generic [ref=e311]:
+        - generic [ref=e312]: 제목
+        - textbox [active] [ref=e313]: 플레이테스트 일정
+      - generic [ref=e314]:
+        - generic [ref=e315]:
+          - generic [ref=e316]:
+            - img [ref=e317]
+            - text: 카테고리
+          - combobox [ref=e320]:
+            - option "카테고리 없음" [selected]
+            - option "업무"
+            - option "개인"
+            - option "개발"
+            - option "운동"
+            - option "독서"
+            - option "회의"
+            - option "기념일"
+        - generic [ref=e321]:
+          - generic [ref=e322]:
+            - img [ref=e323]
+            - text: 데드라인
+          - textbox [ref=e326]
+      - generic [ref=e327]:
+        - generic [ref=e328]:
+          - img [ref=e329]
+          - text: 하위 체크리스트
+        - generic [ref=e332]:
+          - generic [ref=e333]:
+            - button [ref=e334]:
+              - img [ref=e335]
+            - generic [ref=e337]: 테스트 서브태스크
+            - button [ref=e338]:
+              - img [ref=e339]
+          - generic [ref=e342]:
+            - textbox "하위 작업 추가 후 엔터..." [ref=e343]
+            - img [ref=e344]
+      - generic [ref=e345]:
+        - generic [ref=e346]:
+          - img [ref=e347]
+          - text: 메모
+        - textbox "추가적인 메모나 참고사항을 자유롭게 적어주세요." [ref=e348]: 테스트 메모입니다
+    - button "저장하기" [ref=e350]
+    - button "Close" [ref=e351]:
+      - img
+      - generic [ref=e352]: Close

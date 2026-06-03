@@ -108,9 +108,12 @@ export async function updateAgendaTask(id: string, payload: Partial<Omit<AgendaT
     payload.deleted_at = null
   }
 
+  // subtasks는 조인된 테이블이므로 업데이트 페이로드에서 제거해야 합니다.
+  const { subtasks, ...sanitizedPayload } = payload as any;
+
   const { data, error } = await supabase
     .from('agenda_tasks')
-    .update({ ...payload, updated_at: new Date().toISOString() })
+    .update({ ...sanitizedPayload, updated_at: new Date().toISOString() })
     .eq('id', id)
     .eq('user_id', userData.user.id)
     .select(`

@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { parseNLPDate } from '@/lib/nlp';
+import { DateTimePickerPopover } from '@/components/ui/DateTimePickerPopover';
 import { AgendaTaskContextMenu } from './AgendaTaskContextMenu';
 import { EditAgendaTaskDialog } from './EditAgendaTaskDialog';
 
@@ -272,21 +273,24 @@ const [selectedTaskIds, setSelectedTaskIds] = useState<Set<string>>(new Set());
                     </div>
                   </div>
 
-                  {/* Deadline Date Picker (Expanded View) */}
+                  {/* Custom DateTime Picker (Expanded View) */}
                   <div className="space-y-2">
                     <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Deadline</label>
-                    <div className="flex items-center gap-3 px-4 py-2.5 bg-slate-50 focus-within:bg-white rounded-xl border border-slate-200 focus-within:border-indigo-400 focus-within:shadow-sm transition-all w-full sm:w-max">
-                      <Clock className="w-4 h-4 text-slate-400" />
-                      <input 
-                        type="datetime-local" 
-                        value={parsedData.date ? format(parsedData.date, "yyyy-MM-dd'T'HH:mm") : ''}
-                        onChange={(e) => {
-                          const date = e.target.value ? new Date(e.target.value) : null;
-                          setParsedData(prev => ({ ...prev, date, hasTime: true }));
-                        }}
-                        className="flex-1 bg-transparent text-sm font-bold text-slate-700 outline-none w-full"
-                      />
-                    </div>
+                    <DateTimePickerPopover 
+                      date={parsedData.date} 
+                      setDate={(d: Date | null) => setParsedData(prev => ({ ...prev, date: d, hasTime: true }))}
+                      align="start"
+                    >
+                      <div className="flex items-center gap-3 px-4 py-2.5 bg-slate-50 hover:bg-white rounded-xl border border-slate-200 hover:border-indigo-300 hover:shadow-sm transition-all w-full sm:w-auto cursor-pointer">
+                        <Clock className="w-4 h-4 text-slate-400" />
+                        <span className={cn(
+                          "flex-1 text-sm font-bold text-left",
+                          parsedData.date ? "text-slate-700" : "text-slate-400"
+                        )}>
+                          {parsedData.date ? format(parsedData.date, 'yyyy년 M월 d일 a h:mm', { locale: ko }) : '마감일 설정'}
+                        </span>
+                      </div>
+                    </DateTimePickerPopover>
                   </div>
 
                   {/* Subtasks */}
