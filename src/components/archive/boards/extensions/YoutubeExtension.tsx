@@ -1,8 +1,8 @@
 import { Node, mergeAttributes } from '@tiptap/core';
 import { ReactNodeViewRenderer, NodeViewWrapper } from '@tiptap/react';
-import { Youtube } from 'lucide-react';
+import { Film as YoutubeIcon } from 'lucide-react';
 import { useState } from 'react';
-import ReactPlayer from 'react-player/youtube';
+import ReactPlayer from 'react-player';
 
 const YoutubeComponent = (props: any) => {
   const src = props.node.attrs.src || '';
@@ -20,7 +20,7 @@ const YoutubeComponent = (props: any) => {
     <NodeViewWrapper className="my-4" data-type="custom-youtube">
       {isEditing ? (
         <div className="flex gap-2 p-3 bg-slate-50 border border-slate-200 rounded-lg">
-          <Youtube className="w-5 h-5 text-slate-400 mt-0.5" />
+          <YoutubeIcon className="w-5 h-5 text-slate-400 mt-0.5" />
           <input 
             autoFocus
             type="url"
