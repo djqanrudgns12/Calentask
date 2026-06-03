@@ -25,7 +25,10 @@ export function DocumentBoard() {
 
   // Initialize document if not exists (with guard against double-calls)
   useEffect(() => {
-    if (activeTabId && items.length === 0 && initRef.current !== activeTabId) {
+    const existingItems = useArchiveStore.getState().items[activeTabId || ''];
+    const hasItems = existingItems && existingItems.length > 0;
+    
+    if (activeTabId && !hasItems && items.length === 0 && initRef.current !== activeTabId) {
       initRef.current = activeTabId;
       addItem(activeTabId, { title: currentTab?.name || '새 문서', content: '' });
     }
@@ -160,8 +163,18 @@ export function DocumentBoard() {
       </div>
 
       {/* Editor Area */}
-      <div className="flex-1 overflow-y-auto pb-32 cursor-text" onClick={() => editor.commands.focus()}>
-        <div className="max-w-3xl mx-auto px-8 py-16">
+      <div 
+        className="flex-1 overflow-y-auto pb-32 cursor-text" 
+        onClick={(e) => {
+          if (e.target === e.currentTarget) editor.commands.focus();
+        }}
+      >
+        <div 
+          className="max-w-3xl mx-auto px-8 py-16"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) editor.commands.focus();
+          }}
+        >
           <input 
             type="text"
             value={localTitle}
@@ -174,7 +187,16 @@ export function DocumentBoard() {
             
             {/* Floating Menu (Slash command like) */}
             {editor && (
-              <FloatingMenu editor={editor} className="flex bg-white shadow-xl border border-slate-100 rounded-xl overflow-hidden p-1 gap-1">
+              <FloatingMenu 
+                editor={editor} 
+                tippyOptions={{ placement: 'bottom-start', offset: [0, 8] }}
+                shouldShow={({ state, view }) => {
+                  if (view.composing) return false;
+                  const { $anchor } = state.selection;
+                  return $anchor.parent.content.size === 0 && $anchor.parent.type.name === 'paragraph';
+                }}
+                className="flex bg-white shadow-xl border border-slate-100 rounded-xl overflow-hidden p-1 gap-1"
+              >
                 <button
                   onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
                   className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 rounded-lg transition-colors"

@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { CheckCircle2, Circle, Clock, Trash2, Plus, ChevronRight, CheckSquare, AlignLeft, Tag, NotebookTabs } from 'lucide-react';
+import { CheckCircle2, Circle, Clock, Trash2, Plus, ChevronRight, CheckSquare, AlignLeft, Tag, NotebookTabs, Pencil } from 'lucide-react';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { DateTimePickerPopover } from '@/components/ui/DateTimePickerPopover';
@@ -39,6 +39,8 @@ export function EditAgendaTaskDialog({
 }: EditAgendaTaskDialogProps) {
   const [editForm, setEditForm] = useState<Partial<AgendaTask>>({});
   const [newSubtaskTitle, setNewSubtaskTitle] = useState('');
+  const [editingSubtaskId, setEditingSubtaskId] = useState<string | null>(null);
+  const [editSubtaskTitle, setEditSubtaskTitle] = useState('');
 
   useEffect(() => {
     if (task) {
@@ -126,10 +128,49 @@ export function EditAgendaTaskDialog({
                       <Circle className="w-5 h-5 text-slate-300 group-hover:text-indigo-400" />
                     )}
                   </button>
-                  <span className={cn("font-bold flex-1", sub.is_completed ? "text-slate-400 line-through" : "text-slate-700")}>{sub.title}</span>
-                  <button onClick={() => onDeleteSubtask(task.id, sub.id)} className="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-red-500 transition-opacity">
-                    <Trash2 className="w-4 h-4" />
-                  </button>
+                  {editingSubtaskId === sub.id ? (
+                    <Input 
+                      autoFocus
+                      value={editSubtaskTitle}
+                      onChange={e => setEditSubtaskTitle(e.target.value)}
+                      onBlur={() => {
+                        if (editSubtaskTitle.trim() !== sub.title) {
+                          onUpdateSubtask(task.id, sub.id, { title: editSubtaskTitle.trim() });
+                        }
+                        setEditingSubtaskId(null);
+                      }}
+                      onKeyDown={e => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          if (editSubtaskTitle.trim() !== sub.title) {
+                            onUpdateSubtask(task.id, sub.id, { title: editSubtaskTitle.trim() });
+                          }
+                          setEditingSubtaskId(null);
+                        } else if (e.key === 'Escape') {
+                          setEditingSubtaskId(null);
+                        }
+                      }}
+                      className="flex-1 h-8 text-sm font-bold bg-white border-indigo-200 focus-visible:ring-indigo-500/30 px-2"
+                    />
+                  ) : (
+                    <span 
+                      onDoubleClick={() => { setEditingSubtaskId(sub.id); setEditSubtaskTitle(sub.title); }}
+                      className={cn("font-bold flex-1 select-none", sub.is_completed ? "text-slate-400 line-through" : "text-slate-700")}
+                    >
+                      {sub.title}
+                    </span>
+                  )}
+                  
+                  {editingSubtaskId !== sub.id && (
+                    <div className="opacity-0 group-hover:opacity-100 flex items-center gap-1 transition-opacity">
+                      <button onClick={() => { setEditingSubtaskId(sub.id); setEditSubtaskTitle(sub.title); }} className="p-1 text-slate-400 hover:text-indigo-500 transition-colors" title="수정">
+                        <Pencil className="w-4 h-4" />
+                      </button>
+                      <button onClick={() => onDeleteSubtask(task.id, sub.id)} className="p-1 text-slate-400 hover:text-red-500 transition-colors" title="삭제">
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  )}
                 </div>
               ))}
               <form onSubmit={handleAddSubtaskSubmit} className="relative mt-2">
