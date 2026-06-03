@@ -4,7 +4,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { CheckCircle2, Circle, Clock, Trash2, Plus, ChevronRight, CheckSquare, AlignLeft, Tag } from 'lucide-react';
+import { CheckCircle2, Circle, Clock, Trash2, Plus, ChevronRight, CheckSquare, AlignLeft, Tag, NotebookTabs } from 'lucide-react';
+import { format } from 'date-fns';
+import { ko } from 'date-fns/locale';
+import { DateTimePickerPopover } from '@/components/ui/DateTimePickerPopover';
 import { cn } from '@/lib/utils';
 import { AgendaTask, AgendaSubtask } from '@/store/useAgendaStore';
 
@@ -61,7 +64,10 @@ export function EditAgendaTaskDialog({
     <Dialog open={isOpen} onOpenChange={(open) => !open && handleSave()}>
       <DialogContent className="max-w-2xl bg-white/95 backdrop-blur-2xl rounded-3xl shadow-2xl border border-white/60 p-0 overflow-hidden hide-scrollbar">
         <div className="px-8 py-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
-          <DialogTitle className="text-2xl font-extrabold text-slate-800">할 일 상세</DialogTitle>
+          <DialogTitle className="text-2xl font-extrabold text-slate-800 flex items-center gap-2">
+            <NotebookTabs className="w-6 h-6 text-indigo-500" />
+            Agenda Info
+          </DialogTitle>
         </div>
         
         <div className="p-8 max-h-[70vh] overflow-y-auto hide-scrollbar">
@@ -90,15 +96,20 @@ export function EditAgendaTaskDialog({
             </div>
             <div>
               <Label className="block text-sm font-bold text-slate-600 mb-2 flex items-center gap-1"><Clock className="w-4 h-4"/> 데드라인</Label>
-              <Input 
-                type="datetime-local" 
-                value={editForm.deadline ? new Date(editForm.deadline).toISOString().slice(0, 16) : ''}
-                onChange={e => {
-                  const dt = e.target.value;
-                  setEditForm({ ...editForm, deadline: dt ? new Date(dt).toISOString() : null });
-                }}
-                className="w-full h-12 bg-white/60 border border-slate-200 shadow-sm rounded-xl px-4 font-bold text-sm text-slate-700 focus-visible:ring-indigo-500/30" 
-              />
+              <DateTimePickerPopover 
+                date={editForm.deadline ? new Date(editForm.deadline) : null} 
+                setDate={(d: Date | null) => setEditForm({ ...editForm, deadline: d ? d.toISOString() : null })}
+                align="start"
+              >
+                <div className="flex items-center gap-2 px-4 h-12 bg-white/60 hover:bg-white rounded-xl border border-slate-200 hover:border-indigo-300 hover:shadow-sm transition-all w-full cursor-pointer">
+                  <span className={cn(
+                    "flex-1 text-sm font-bold text-left whitespace-nowrap",
+                    editForm.deadline ? "text-slate-700" : "text-slate-400"
+                  )}>
+                    {editForm.deadline ? format(new Date(editForm.deadline), 'yyyy년 M월 d일 a h:mm', { locale: ko }) : '마감일 설정'}
+                  </span>
+                </div>
+              </DateTimePickerPopover>
             </div>
           </div>
 
