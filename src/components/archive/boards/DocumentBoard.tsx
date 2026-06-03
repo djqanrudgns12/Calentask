@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState, useRef } from 'react';
-import { FileText, MoreHorizontal, Clock, AlignLeft, Bold, Italic, Type, Plus, Heading1, Heading2, Heading3, List, ListOrdered, Quote, Trash2, Palette, Highlighter, AlignCenter, AlignRight, Table as TableIcon, SquareCheckBig, Minus, Lightbulb, ChevronRight, Bookmark as BookmarkIcon, ImageIcon, Film as YoutubeIcon, Code, Wand2 } from 'lucide-react';
+import { FileText, MoreHorizontal, Clock, AlignLeft, Bold, Italic, Type, Plus, Heading1, Heading2, Heading3, List, ListOrdered, Quote, Trash2, Palette, Highlighter, AlignCenter, AlignRight, Table as TableIcon, SquareCheckBig, Minus, Lightbulb, ChevronRight, Bookmark as BookmarkIcon, ImageIcon, Film as YoutubeIcon, Code, Wand2, ArrowUp, ArrowDown, ArrowLeft, ArrowRight, Grip, PanelTop, PanelLeft, Trash, Grid3X3 } from 'lucide-react';
 import { useArchiveStore } from '@/store/useArchiveStore';
 import { useEditor, EditorContent } from '@tiptap/react';
 import { BubbleMenu, FloatingMenu } from '@tiptap/react/menus';
@@ -17,6 +17,7 @@ import { Table } from '@tiptap/extension-table';
 import { TableRow } from '@tiptap/extension-table-row';
 import { TableCell } from '@tiptap/extension-table-cell';
 import { TableHeader } from '@tiptap/extension-table-header';
+import { CustomTableCell } from './extensions/CustomTableCell';
 import { CustomImage } from './extensions/ImageExtension';
 import { CustomYoutube } from './extensions/YoutubeExtension';
 import { Callout } from './extensions/CalloutExtension';
@@ -96,7 +97,7 @@ export function DocumentBoard() {
       }),
       TableRow,
       TableHeader,
-      TableCell,
+      CustomTableCell,
       Callout,
       Toggle,
       Bookmark,
@@ -186,6 +187,12 @@ export function DocumentBoard() {
           ><List className="w-4 h-4" /></button>
           <div className="w-px h-4 bg-slate-200 mx-1" />
           <button 
+            onClick={() => editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()}
+            className={cn("p-2 rounded-lg transition-all text-slate-500 hover:text-slate-800")}
+            title="표 만들기"
+          ><TableIcon className="w-4 h-4" /></button>
+          <div className="w-px h-4 bg-slate-200 mx-1" />
+          <button 
             onClick={() => editor.chain().focus().setTextAlign('left').run()}
             className={cn("p-2 rounded-lg transition-all", editor.isActive({ textAlign: 'left' }) ? "bg-white shadow-sm text-slate-800" : "text-slate-500 hover:text-slate-800")}
           ><AlignLeft className="w-4 h-4" /></button>
@@ -268,9 +275,16 @@ export function DocumentBoard() {
               <SlashMenuWrapper editor={editor} />
             )}
 
-            {/* Bubble Menu (Highlight text formatting) */}
+            {/* Regular Bubble Menu (Highlight text formatting, hidden when table is active) */}
             {editor && (
-              <BubbleMenu editor={editor} className="flex items-center bg-slate-900 text-white shadow-xl rounded-xl overflow-hidden p-1 gap-1">
+              <BubbleMenu 
+                editor={editor} 
+                shouldShow={({ editor, view, state, from, to }) => {
+                  const hasSelection = from !== to;
+                  return hasSelection && !editor.isActive('table');
+                }}
+                className="flex items-center bg-slate-900 text-white shadow-xl rounded-xl overflow-hidden p-1 gap-1"
+              >
                 <button
                   onClick={() => editor.chain().focus().toggleBold().run()}
                   className={cn("p-2 rounded-lg transition-colors", editor.isActive('bold') ? "bg-white/20" : "hover:bg-white/10")}
@@ -320,6 +334,56 @@ export function DocumentBoard() {
                   title="초록색 형광펜"
                 >
                   <Highlighter className="w-4 h-4" />
+                </button>
+              </BubbleMenu>
+            )}
+
+            {/* Integrated Table Bubble Menu */}
+            {editor && (
+              <BubbleMenu 
+                editor={editor}
+                shouldShow={({ editor }) => editor.isActive('table')}
+                // @ts-ignore
+                tippyOptions={{ placement: 'top', duration: 100 }}
+                className="flex items-center bg-slate-900 text-white shadow-xl rounded-xl overflow-hidden p-1.5 gap-1.5 z-50 flex-wrap max-w-sm"
+              >
+                {/* 1. Basic Text Formatting */}
+                <div className="flex items-center bg-slate-800/50 rounded-lg p-0.5">
+                  <button onClick={() => editor.chain().focus().toggleBold().run()} className={cn("p-1.5 rounded-md transition-colors", editor.isActive('bold') ? "bg-white/20" : "hover:bg-white/10")} title="굵게"><Bold className="w-3.5 h-3.5" /></button>
+                  <button onClick={() => editor.chain().focus().toggleItalic().run()} className={cn("p-1.5 rounded-md transition-colors", editor.isActive('italic') ? "bg-white/20" : "hover:bg-white/10")} title="기울임"><Italic className="w-3.5 h-3.5" /></button>
+                </div>
+                
+                {/* 2. Cell Colors */}
+                <div className="flex items-center bg-slate-800/50 rounded-lg p-0.5">
+                  <button onClick={() => editor.chain().focus().setCellAttribute('backgroundColor', '#fef2f2').run()} className="p-1.5 rounded-md text-rose-400 hover:bg-white/10" title="빨간색 배경"><Palette className="w-3.5 h-3.5" /></button>
+                  <button onClick={() => editor.chain().focus().setCellAttribute('backgroundColor', '#eff6ff').run()} className="p-1.5 rounded-md text-blue-400 hover:bg-white/10" title="파란색 배경"><Palette className="w-3.5 h-3.5" /></button>
+                  <button onClick={() => editor.chain().focus().setCellAttribute('backgroundColor', '#f0fdf4').run()} className="p-1.5 rounded-md text-green-400 hover:bg-white/10" title="초록색 배경"><Palette className="w-3.5 h-3.5" /></button>
+                  <button onClick={() => editor.chain().focus().setCellAttribute('backgroundColor', null).run()} className="p-1.5 rounded-md text-slate-400 hover:bg-white/10" title="배경 지우기"><Trash2 className="w-3.5 h-3.5" /></button>
+                </div>
+                
+                {/* 3. Header Toggle & Merge */}
+                <div className="flex items-center bg-slate-800/50 rounded-lg p-0.5">
+                  <button onClick={() => editor.chain().focus().toggleHeaderRow().run()} className="p-1.5 rounded-md hover:bg-white/10" title="제목 행 전환"><PanelTop className="w-3.5 h-3.5" /></button>
+                  <button onClick={() => editor.chain().focus().toggleHeaderColumn().run()} className="p-1.5 rounded-md hover:bg-white/10" title="제목 열 전환"><PanelLeft className="w-3.5 h-3.5" /></button>
+                  <button onClick={() => editor.chain().focus().mergeCells().run()} className="p-1.5 rounded-md hover:bg-white/10" title="셀 병합"><Grip className="w-3.5 h-3.5" /></button>
+                  <button onClick={() => editor.chain().focus().splitCell().run()} className="p-1.5 rounded-md hover:bg-white/10" title="셀 분할"><Grid3X3 className="w-3.5 h-3.5" /></button>
+                </div>
+
+                {/* 4. Row/Col Insert & Delete */}
+                <div className="flex items-center bg-slate-800/50 rounded-lg p-0.5">
+                  <button onClick={() => editor.chain().focus().addRowBefore().run()} className="p-1.5 rounded-md text-indigo-300 hover:bg-white/10" title="위에 행 추가"><ArrowUp className="w-3.5 h-3.5" /></button>
+                  <button onClick={() => editor.chain().focus().addRowAfter().run()} className="p-1.5 rounded-md text-indigo-300 hover:bg-white/10" title="아래에 행 추가"><ArrowDown className="w-3.5 h-3.5" /></button>
+                  <button onClick={() => editor.chain().focus().deleteRow().run()} className="p-1.5 rounded-md text-rose-300 hover:bg-white/10" title="현재 행 삭제"><Minus className="w-3.5 h-3.5" /></button>
+                </div>
+                <div className="flex items-center bg-slate-800/50 rounded-lg p-0.5">
+                  <button onClick={() => editor.chain().focus().addColumnBefore().run()} className="p-1.5 rounded-md text-indigo-300 hover:bg-white/10" title="왼쪽에 열 추가"><ArrowLeft className="w-3.5 h-3.5" /></button>
+                  <button onClick={() => editor.chain().focus().addColumnAfter().run()} className="p-1.5 rounded-md text-indigo-300 hover:bg-white/10" title="오른쪽에 열 추가"><ArrowRight className="w-3.5 h-3.5" /></button>
+                  <button onClick={() => editor.chain().focus().deleteColumn().run()} className="p-1.5 rounded-md text-rose-300 hover:bg-white/10" title="현재 열 삭제"><Minus className="w-3.5 h-3.5" /></button>
+                </div>
+
+                {/* 5. Delete Table */}
+                <button onClick={() => editor.chain().focus().deleteTable().run()} className="p-1.5 rounded-lg bg-rose-500/20 text-rose-400 hover:bg-rose-500/40 ml-1" title="표 전체 삭제">
+                  <Trash className="w-3.5 h-3.5" />
                 </button>
               </BubbleMenu>
             )}
