@@ -7,9 +7,10 @@ interface AgendaTaskContextMenuProps {
   status: TaskStatus;
   onEdit: () => void;
   onChangeStatus: (status: TaskStatus) => void;
+  onPermanentDelete?: () => void;
 }
 
-export function AgendaTaskContextMenu({ status, onEdit, onChangeStatus }: AgendaTaskContextMenuProps) {
+export function AgendaTaskContextMenu({ status, onEdit, onChangeStatus, onPermanentDelete }: AgendaTaskContextMenuProps) {
   return (
     <Popover>
       <PopoverTrigger 
@@ -27,7 +28,17 @@ export function AgendaTaskContextMenu({ status, onEdit, onChangeStatus }: Agenda
           상세 수정하기
         </button>
         
-        {status !== 'done' && (
+        {status === 'trash' && (
+          <button 
+            onClick={() => onChangeStatus('inbox')}
+            className="w-full flex items-center gap-2 px-3 py-2 text-sm text-indigo-600 hover:bg-indigo-50 rounded-md transition-colors"
+          >
+            <ArchiveIcon className="w-4 h-4" />
+            Inbox로 복구
+          </button>
+        )}
+
+        {status !== 'done' && status !== 'trash' && (
           <button 
             onClick={() => onChangeStatus('done')}
             className="w-full flex items-center gap-2 px-3 py-2 text-sm text-emerald-600 hover:bg-emerald-50 rounded-md transition-colors"
@@ -37,7 +48,7 @@ export function AgendaTaskContextMenu({ status, onEdit, onChangeStatus }: Agenda
           </button>
         )}
         
-        {status !== 'archive' && (
+        {status !== 'archive' && status !== 'trash' && (
           <button 
             onClick={() => onChangeStatus('archive')}
             className="w-full flex items-center gap-2 px-3 py-2 text-sm text-indigo-600 hover:bg-indigo-50 rounded-md transition-colors"
@@ -54,6 +65,20 @@ export function AgendaTaskContextMenu({ status, onEdit, onChangeStatus }: Agenda
           >
             <Trash2 className="w-4 h-4" />
             휴지통으로 이동
+          </button>
+        )}
+
+        {status === 'trash' && onPermanentDelete && (
+          <button 
+            onClick={() => {
+              if(confirm('정말 이 항목을 영구 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.')) {
+                onPermanentDelete();
+              }
+            }}
+            className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-md transition-colors"
+          >
+            <Trash2 className="w-4 h-4" />
+            영구 삭제
           </button>
         )}
       </PopoverContent>

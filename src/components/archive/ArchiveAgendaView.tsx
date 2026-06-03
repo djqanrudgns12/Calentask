@@ -27,10 +27,47 @@ const TABS = [
 
 export function ArchiveAgendaView() {
   const [activeTab, setActiveTab] = useState<TaskStatus>('inbox');
-  
-  const { tasks, fetchTasks, isInitialized, addTask, updateTask, setTaskStatus, addSubtask, updateSubtask, deleteSubtask } = useAgendaStore();
+const [selectedTaskIds, setSelectedTaskIds] = useState<Set<string>>(new Set());
+
+  const handleTabChange = (tabId: TaskStatus) => {
+    setActiveTab(tabId);
+    setSelectedTaskIds(new Set());
+  };
+
+  const { tasks, fetchTasks, isInitialized, addTask, updateTask, setTaskStatus, addSubtask, updateSubtask, deleteSubtask, deleteTask } = useAgendaStore();
   const { data: categories = [] } = useCategories();
   const { openAddEvent } = useCalendarStore();
+
+
+  const filteredTasks = tasks.filter(t => t.status === activeTab);
+  
+  const handleSelectAll = () => {
+    if (selectedTaskIds.size === filteredTasks.length) {
+      setSelectedTaskIds(new Set());
+    } else {
+      setSelectedTaskIds(new Set(filteredTasks.map(t => t.id)));
+    }
+  };
+
+  const toggleTaskSelection = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const newSet = new Set(selectedTaskIds);
+    if (newSet.has(id)) newSet.delete(id);
+    else newSet.add(id);
+    setSelectedTaskIds(newSet);
+  };
+
+  const handleBulkDelete = () => {
+    if (confirm(`선택한 ${selectedTaskIds.size}개 항목을 영구 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.`)) {
+      selectedTaskIds.forEach(id => deleteTask(id));
+      setSelectedTaskIds(new Set());
+    }
+  };
+  
+  const handleBulkRestore = () => {
+    selectedTaskIds.forEach(id => setTaskStatus(id, 'inbox'));
+    setSelectedTaskIds(new Set());
+  };
 
   useEffect(() => {
     if (!isInitialized) {
@@ -126,7 +163,6 @@ export function ArchiveAgendaView() {
     setNewSubtaskTitle('');
   };
 
-  const filteredTasks = tasks.filter(t => t.status === activeTab);
   const selectedTaskData = tasks.find(t => t.id === selectedTaskId);
 
   const getDeadlineInfo = (isoDate: string) => {
@@ -153,10 +189,21 @@ export function ArchiveAgendaView() {
 
       {/* Main Container */}
       <div className="relative z-10 flex flex-col h-full max-w-5xl mx-auto w-full px-6 py-10 md:px-12">
-        {/* Header */}
-        <div className="shrink-0 mb-8">
-          <h1 className="text-4xl font-extrabold text-slate-900 tracking-tight mb-3">아젠다</h1>
-          <p className="text-slate-500 font-medium text-lg">자연어로 새로운 할 일을 입력하고 체계적으로 관리하세요.</p>
+        {/* Agenda Center Banner */}
+        <div className="shrink-0 mb-8 relative overflow-hidden rounded-[2.5rem] bg-slate-900 shadow-xl border border-white/10">
+          <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/40 via-purple-500/30 to-slate-900/90 z-0" />
+          <div className="absolute top-[-50%] left-[-20%] w-[70%] h-[150%] bg-blue-400/20 rounded-full blur-[100px] pointer-events-none z-0" />
+          <div className="absolute bottom-[-50%] right-[-20%] w-[70%] h-[150%] bg-purple-500/20 rounded-full blur-[100px] pointer-events-none z-0" />
+          
+          <div className="relative z-10 px-8 py-14 md:py-16 flex flex-col items-center justify-center text-center">
+            <div className="w-14 h-14 mb-5 bg-white/10 rounded-2xl backdrop-blur-xl flex items-center justify-center border border-white/20 shadow-lg">
+              <Calendar className="w-7 h-7 text-white" />
+            </div>
+            <h1 className="text-4xl md:text-5xl font-extrabold text-white tracking-tight mb-3 drop-shadow-sm">Agenda Center</h1>
+            <p className="text-indigo-100/80 font-medium text-lg max-w-md mx-auto">
+              자연어로 오늘의 목표를 입력하고,<br className="hidden md:block" /> 체계적으로 완벽하게 달성하세요.
+            </p>
+          </div>
         </div>
 
         {/* Quick Add Form (Minimalist & Professional) */}
@@ -164,7 +211,7 @@ export function ArchiveAgendaView() {
           animate={showTitleError ? { x: [-10, 10, -10, 10, 0] } : {}}
           transition={{ duration: 0.4 }}
           className={cn(
-            "relative shrink-0 mb-10 bg-white/80 backdrop-blur-2xl shadow-sm border transition-all duration-300",
+            "relative z-20 shrink-0 -mt-16 mb-10 mx-4 md:mx-10 bg-white/90 backdrop-blur-3xl shadow-xl border transition-all duration-300",
             isQuickAddExpanded ? "rounded-3xl border-slate-200/60 shadow-lg" : "rounded-full border-white/80",
             showTitleError && "border-red-400 ring-4 ring-red-500/10"
           )}
@@ -321,14 +368,15 @@ export function ArchiveAgendaView() {
         </motion.div>
 
         {/* Tabs */}
-        <div className="flex items-center gap-2 mb-6 shrink-0 bg-white/40 p-1.5 rounded-2xl backdrop-blur-md border border-white/50 w-max">
-          {TABS.map(tab => {
+        <div className="flex items-center justify-between mb-6 shrink-0">
+          <div className="flex items-center gap-2 bg-white/40 p-1.5 rounded-2xl backdrop-blur-md border border-white/50 w-max">
+            {TABS.map(tab => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
             return (
               <button
                 key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
+                onClick={() => handleTabChange(tab.id)}
                 className={cn(
                   "flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-all duration-300",
                   isActive 
@@ -341,6 +389,34 @@ export function ArchiveAgendaView() {
               </button>
             )
           })}
+          </div>
+          
+          {activeTab === 'trash' && filteredTasks.length > 0 && (
+            <div className="flex items-center gap-3">
+              <button
+                onClick={handleSelectAll}
+                className="text-sm font-bold text-slate-500 hover:text-slate-800 transition-colors"
+              >
+                {selectedTaskIds.size === filteredTasks.length ? '선택 해제' : '전체 선택'}
+              </button>
+              {selectedTaskIds.size > 0 && (
+                <div className="flex items-center gap-2 animate-in fade-in zoom-in duration-200">
+                  <button
+                    onClick={handleBulkRestore}
+                    className="px-3 py-1.5 text-sm font-bold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-lg transition-colors"
+                  >
+                    선택 복구
+                  </button>
+                  <button
+                    onClick={handleBulkDelete}
+                    className="px-3 py-1.5 text-sm font-bold text-white bg-red-500 hover:bg-red-600 rounded-lg shadow-sm transition-colors"
+                  >
+                    선택 영구삭제
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Task List */}
@@ -361,23 +437,35 @@ export function ArchiveAgendaView() {
               return (
                 <div 
                   key={task.id}
-                  className="group relative flex items-center gap-4 p-4 md:p-5 bg-white/60 backdrop-blur-md hover:bg-white/80 border border-white/80 rounded-2xl shadow-sm hover:shadow-md transition-all duration-300 cursor-pointer"
+                  className="group relative flex items-center gap-4 p-4 md:p-5 bg-white/70 backdrop-blur-xl hover:bg-white border border-white/60 rounded-3xl shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 cursor-pointer"
                   onClick={() => openDetail(task)}
                 >
                   {/* Status Toggle Button */}
-                  <button 
-                    className="flex-shrink-0 text-slate-300 hover:text-indigo-500 transition-colors"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setTaskStatus(task.id, task.status === 'done' ? 'inbox' : 'done');
-                    }}
-                  >
-                    {task.status === 'done' ? (
-                      <CheckCircle2 className="w-7 h-7 text-indigo-500" />
-                    ) : (
-                      <Circle className="w-7 h-7" />
-                    )}
-                  </button>
+                  {activeTab === 'trash' ? (
+                    <button 
+                      className={cn(
+                        "flex-shrink-0 w-6 h-6 rounded-md border-2 flex items-center justify-center transition-colors",
+                        selectedTaskIds.has(task.id) ? "bg-indigo-500 border-indigo-500" : "border-slate-300 hover:border-indigo-400"
+                      )}
+                      onClick={(e) => toggleTaskSelection(task.id, e)}
+                    >
+                      {selectedTaskIds.has(task.id) && <Check className="w-4 h-4 text-white" />}
+                    </button>
+                  ) : (
+                    <button 
+                      className="flex-shrink-0 text-slate-300 hover:text-indigo-500 transition-colors"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setTaskStatus(task.id, task.status === 'done' ? 'inbox' : 'done');
+                      }}
+                    >
+                      {task.status === 'done' ? (
+                        <CheckCircle2 className="w-7 h-7 text-indigo-500" />
+                      ) : (
+                        <Circle className="w-7 h-7" />
+                      )}
+                    </button>
+                  )}
 
                   {/* Task Content */}
                   <div className="flex-1 min-w-0">
@@ -388,31 +476,34 @@ export function ArchiveAgendaView() {
                     </div>
                     
                     {/* Metadata Badges */}
-                    <div className="flex items-center gap-2 mt-2">
+                    <div className="flex flex-wrap items-center gap-2 mt-2.5">
                       {category && (
-                        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/80 border border-slate-100 shadow-sm">
+                        <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-white border border-slate-200 shadow-sm hover:border-slate-300 transition-colors">
                           <div className="w-2.5 h-2.5 rounded-full shadow-sm" style={{ backgroundColor: category.hex_color }} />
-                          <span className="text-xs font-bold text-slate-600">{category.name}</span>
+                          <span className="text-[12px] font-bold text-slate-700">{category.name}</span>
                         </div>
                       )}
                       
                       {deadlineInfo && (
-                        <div className={cn("flex items-center gap-1.5 px-2.5 py-1 rounded-lg border shadow-sm", deadlineInfo.color)}>
-                          <Clock className="w-3.5 h-3.5" />
-                          <span className="text-xs font-extrabold tracking-wide">{deadlineInfo.label}</span>
+                        <div className={cn("flex items-center gap-1.5 px-3 py-1 rounded-full border shadow-sm bg-white", deadlineInfo.color.replace('bg-', 'text-').replace('text-', 'border-').replace('100', '200'))}>
+                          <Calendar className={cn("w-3.5 h-3.5", deadlineInfo.color.replace('bg-', 'text-').split(' ')[1])} />
+                          <span className={cn("text-[12px] font-bold", deadlineInfo.color.replace('bg-', 'text-').split(' ')[1])}>{deadlineInfo.label}</span>
                         </div>
                       )}
                       
                       {task.memo && (
-                        <div className="flex items-center gap-1 px-2 py-1 text-slate-400 bg-white/50 rounded-lg shadow-sm border border-slate-100">
+                        <div className="flex items-center gap-1 px-3 py-1 text-slate-500 bg-slate-50 rounded-full shadow-sm border border-slate-200 hover:bg-slate-100 transition-colors">
                           <AlignLeft className="w-3.5 h-3.5" />
+                          <span className="text-[12px] font-bold">메모 있음</span>
                         </div>
                       )}
 
-                      {task.subtasks?.length > 0 && (
-                        <div className="flex items-center gap-1 px-2 py-1 text-slate-500 bg-white/50 rounded-lg shadow-sm border border-slate-100">
-                          <CheckSquare className="w-3 h-3" />
-                          <span className="text-[11px] font-bold">{task.subtasks.filter(s => s.is_completed).length}/{task.subtasks.length}</span>
+                      {task.subtasks && task.subtasks.length > 0 && (
+                        <div className="flex items-center gap-1.5 px-3 py-1 rounded-full border border-blue-200 bg-blue-50 text-blue-700 shadow-sm hover:bg-blue-100 transition-colors">
+                          <CheckSquare className="w-3.5 h-3.5" />
+                          <span className="text-[12px] font-bold">
+                            {task.subtasks.filter((s: any) => s.is_completed).length}/{task.subtasks.length} 서브태스크
+                          </span>
                         </div>
                       )}
                     </div>
@@ -424,6 +515,7 @@ export function ArchiveAgendaView() {
                       status={task.status} 
                       onEdit={() => openDetail(task)} 
                       onChangeStatus={(s) => setTaskStatus(task.id, s)} 
+                      onPermanentDelete={() => deleteTask(task.id)}
                     />
                   </div>
                 </div>
