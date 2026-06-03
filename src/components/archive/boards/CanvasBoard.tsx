@@ -79,9 +79,11 @@ const nodeTypes = {
   sticky: StickyNode,
 };
 
+const EMPTY_ARRAY: any[] = [];
+
 export function CanvasBoard() {
   const { activeTabId, items: storeItems, updateItem, addItem, boardConfigs, setBoardConfig } = useArchiveStore();
-  const items = activeTabId ? (storeItems[activeTabId] || []) : [];
+  const items = activeTabId ? (storeItems[activeTabId] || EMPTY_ARRAY) : EMPTY_ARRAY;
   const config = activeTabId ? boardConfigs[activeTabId] : null;
 
   // ReactFlow States

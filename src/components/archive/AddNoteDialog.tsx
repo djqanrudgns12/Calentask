@@ -21,22 +21,16 @@ const BOARD_TYPES = [
 export function AddNoteDialog({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
   const [name, setName] = useState('');
   const [selectedType, setSelectedType] = useState('list');
-  const { tabs, setTabs, setActiveTabId } = useArchiveStore();
+  const { addTab } = useArchiveStore();
 
-  const handleAdd = () => {
+  const handleAdd = async () => {
     if (!name.trim()) return;
-    const newId = Date.now().toString();
-    setTabs([...tabs, { 
-      id: newId, 
+    
+    await addTab({ 
       name: name.trim(), 
       board_type: selectedType, 
-      created_at: new Date().toISOString(),
-      user_id: 'local',
-      position: tabs.length,
-      icon: null,
-      is_secure: false
-    }]);
-    setActiveTabId(newId);
+    });
+    
     onClose();
     setName('');
     setSelectedType('list');

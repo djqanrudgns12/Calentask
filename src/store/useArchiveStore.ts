@@ -1,7 +1,12 @@
 import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
 import { Database } from '@/types/supabase';
-import { dexieStorage } from '@/lib/dexie';
+import { 
+  getArchiveTabs, createArchiveTab, updateArchiveTab, deleteArchiveTab,
+  getArchiveNotes, createArchiveNote, updateArchiveNote, deleteArchiveNote 
+} from '@/app/actions/archive';
+
+// Debounce timers for updateItem to avoid flooding the server during typing
+const updateTimers: Record<string, ReturnType<typeof setTimeout>> = {};
 
 type ArchiveTab = Database['public']['Tables']['archive_tabs']['Row'];
 type Note = Database['public']['Tables']['notes']['Row'];
@@ -29,6 +34,12 @@ interface ArchiveState {
   activeTabId: string | null;
   setActiveTabId: (id: string | null) => void;
   tabs: ArchiveTab[];
+  fetchTabs: () => Promise<void>;
+  addTab: (tab: Partial<ArchiveTab>) => Promise<void>;
+  updateTab: (id: string, updates: Partial<ArchiveTab>) => Promise<void>;
+  deleteTab: (id: string) => Promise<void>;
+  
+  // Legacy setTabs for compatibility
   setTabs: (tabs: ArchiveTab[]) => void;
 
   // Global Command Palette (Cmd + K)
@@ -43,93 +54,257 @@ interface ArchiveState {
   items: Record<string, BoardItem[]>;
   boardConfigs: Record<string, any>;
   setBoardConfig: (boardId: string, config: any) => void;
-  addItem: (boardId: string, item: Partial<BoardItem>) => void;
-  updateItem: (boardId: string, itemId: string, updates: Partial<BoardItem>) => void;
-  deleteItem: (boardId: string, itemId: string) => void;
-  reorderItems: (boardId: string, startIndex: number, endIndex: number) => void;
+  
+  fetchItems: (boardId: string) => Promise<void>;
+  addItem: (boardId: string, item: Partial<BoardItem>) => Promise<void>;
+  updateItem: (boardId: string, itemId: string, updates: Partial<BoardItem>) => Promise<void>;
+  deleteItem: (boardId: string, itemId: string) => Promise<void>;
+  reorderItems: (boardId: string, startIndex: number, endIndex: number) => Promise<void>;
 }
 
-export const useArchiveStore = create<ArchiveState>()(
-  persist(
-    (set) => ({
-      isPinLocked: true, // Secure by default
-      setPinLocked: (locked) => set({ isPinLocked: locked }),
+export const useArchiveStore = create<ArchiveState>()((set, get) => ({
+  isPinLocked: false, // Secure by default
+  setPinLocked: (locked) => set({ isPinLocked: locked }),
 
-      activeTabId: null,
-      setActiveTabId: (id) => set({ activeTabId: id }),
-      tabs: [],
-      setTabs: (tabs) => set({ tabs }),
-
-      isCommandPaletteOpen: false,
-      setCommandPaletteOpen: (open) => set({ isCommandPaletteOpen: open }),
-
-      optimisticAgendaTasks: [],
-      setOptimisticAgendaTasks: (tasks) => set({ optimisticAgendaTasks: tasks }),
-
-      items: {},
-      boardConfigs: {},
-      setBoardConfig: (boardId, config) => set((state) => ({
-        boardConfigs: { ...state.boardConfigs, [boardId]: { ...(state.boardConfigs[boardId] || {}), ...config } }
-      })),
-      addItem: (boardId, item) => set((state) => {
-        const boardItems = state.items[boardId] || [];
-        const newItem: BoardItem = {
-          id: item.id || Date.now().toString(),
-          boardId,
-          title: item.title || '',
-          content: item.content || '',
-          status: item.status || 'todo',
-          tags: item.tags || [],
-          createdAt: item.createdAt || new Date().toISOString(),
-          updatedAt: item.updatedAt || new Date().toISOString(),
-          position: item.position !== undefined ? item.position : boardItems.length,
-          data: item.data || {},
-          ...item
-        };
-        return { items: { ...state.items, [boardId]: [...boardItems, newItem] } };
-      }),
-      updateItem: (boardId, itemId, updates) => set((state) => {
-        const boardItems = state.items[boardId] || [];
-        return {
-          items: {
-            ...state.items,
-            [boardId]: boardItems.map(item => item.id === itemId ? { ...item, ...updates, updatedAt: new Date().toISOString() } : item)
-          }
-        };
-      }),
-      deleteItem: (boardId, itemId) => set((state) => {
-        const boardItems = state.items[boardId] || [];
-        return {
-          items: {
-            ...state.items,
-            [boardId]: boardItems.filter(item => item.id !== itemId)
-          }
-        };
-      }),
-      reorderItems: (boardId, startIndex, endIndex) => set((state) => {
-        const boardItems = Array.from(state.items[boardId] || []);
-        const [removed] = boardItems.splice(startIndex, 1);
-        boardItems.splice(endIndex, 0, removed);
-        
-        // Update positions
-        const reordered = boardItems.map((item, idx) => ({ ...item, position: idx }));
-        return {
-          items: {
-            ...state.items,
-            [boardId]: reordered
-          }
-        };
-      }),
-    }),
-    {
-      name: 'archive-storage',
-      storage: createJSONStorage(() => dexieStorage),
-      partialize: (state) => ({ 
-        tabs: state.tabs, 
-        optimisticAgendaTasks: state.optimisticAgendaTasks,
-        items: state.items,
-        boardConfigs: state.boardConfigs
-      }), // Persist tabs, items, configs and agenda tasks
+  activeTabId: null,
+  setActiveTabId: (id) => set({ activeTabId: id }),
+  tabs: [],
+  
+  fetchTabs: async () => {
+    try {
+      const data = await getArchiveTabs();
+      set({ tabs: data });
+      if (data.length > 0 && !get().activeTabId) {
+        set({ activeTabId: data[0].id });
+      }
+    } catch (error) {
+      console.error('Failed to fetch archive tabs:', error);
     }
-  )
-);
+  },
+
+  addTab: async (tab) => {
+    try {
+      const created = await createArchiveTab({
+        name: tab.name || '새 노트',
+        board_type: tab.board_type || 'list',
+        position: get().tabs.length,
+        icon: tab.icon || null,
+        is_secure: tab.is_secure || false
+      });
+      set(state => ({
+        tabs: [...state.tabs, created],
+        activeTabId: created.id
+      }));
+    } catch (error) {
+      console.error('Failed to create tab:', error);
+    }
+  },
+
+  updateTab: async (id, updates) => {
+    const prevTabs = get().tabs;
+    set(state => ({
+      tabs: state.tabs.map(t => t.id === id ? { ...t, ...updates } : t)
+    }));
+    try {
+      await updateArchiveTab(id, updates);
+    } catch (error) {
+      console.error('Failed to update tab:', error);
+      set({ tabs: prevTabs }); // Rollback
+    }
+  },
+
+  deleteTab: async (id) => {
+    const prevTabs = get().tabs;
+    set(state => ({
+      tabs: state.tabs.filter(t => t.id !== id),
+      activeTabId: state.activeTabId === id ? (state.tabs.find(t => t.id !== id)?.id || null) : state.activeTabId
+    }));
+    try {
+      await deleteArchiveTab(id);
+    } catch (error) {
+      console.error('Failed to delete tab:', error);
+      set({ tabs: prevTabs }); // Rollback
+    }
+  },
+
+  setTabs: (tabs) => set({ tabs }),
+
+  isCommandPaletteOpen: false,
+  setCommandPaletteOpen: (open) => set({ isCommandPaletteOpen: open }),
+
+  optimisticAgendaTasks: [],
+  setOptimisticAgendaTasks: (tasks) => set({ optimisticAgendaTasks: tasks }),
+
+  items: {},
+  boardConfigs: {},
+  setBoardConfig: (boardId, config) => set((state) => ({
+    boardConfigs: { ...state.boardConfigs, [boardId]: { ...(state.boardConfigs[boardId] || {}), ...config } }
+  })),
+
+  fetchItems: async (boardId) => {
+    try {
+      const data = await getArchiveNotes(boardId);
+      const parsedItems: BoardItem[] = data.map((note: any) => {
+        const content = note.content_data as any || {};
+        return {
+          id: note.id,
+          boardId: note.tab_id,
+          title: content.title || '무제',
+          content: content.content || '',
+          status: content.status || 'todo',
+          tags: note.tags || [],
+          createdAt: note.created_at || new Date().toISOString(),
+          updatedAt: note.updated_at || new Date().toISOString(),
+          position: content.position || 0,
+          data: content.data || {}
+        };
+      });
+      parsedItems.sort((a, b) => a.position - b.position);
+      set(state => ({ items: { ...state.items, [boardId]: parsedItems } }));
+    } catch (error) {
+      console.error('Failed to fetch items:', error);
+    }
+  },
+
+  addItem: async (boardId, item) => {
+    const tempId = item.id || Date.now().toString();
+    const boardItems = get().items[boardId] || [];
+    const newItem: BoardItem = {
+      id: tempId,
+      boardId,
+      title: item.title || '',
+      content: item.content || '',
+      status: item.status || 'todo',
+      tags: item.tags || [],
+      createdAt: item.createdAt || new Date().toISOString(),
+      updatedAt: item.updatedAt || new Date().toISOString(),
+      position: item.position !== undefined ? item.position : boardItems.length,
+      data: item.data || {},
+      ...item
+    };
+    
+    set(state => ({ items: { ...state.items, [boardId]: [...(state.items[boardId] || []), newItem] } }));
+    
+    try {
+      const created = await createArchiveNote({
+        tab_id: boardId,
+        tags: newItem.tags,
+        is_pinned: false,
+        content_data: {
+          title: newItem.title,
+          content: newItem.content,
+          status: newItem.status,
+          position: newItem.position,
+          data: newItem.data
+        }
+      });
+      
+      const createdItem: BoardItem = { ...newItem, id: created.id };
+      set(state => ({
+        items: {
+          ...state.items,
+          [boardId]: (state.items[boardId] || []).map(i => i.id === tempId ? createdItem : i)
+        }
+      }));
+    } catch (error) {
+      console.error('Failed to create item:', error);
+      set(state => ({
+        items: {
+          ...state.items,
+          [boardId]: (state.items[boardId] || []).filter(i => i.id !== tempId)
+        }
+      }));
+    }
+  },
+
+  updateItem: async (boardId, itemId, updates) => {
+    // 1. Optimistic local update (instant)
+    set(state => {
+      const boardItems = state.items[boardId] || [];
+      return {
+        items: {
+          ...state.items,
+          [boardId]: boardItems.map(item => item.id === itemId ? { ...item, ...updates, updatedAt: new Date().toISOString() } : item)
+        }
+      };
+    });
+
+    // 2. Debounced server sync (500ms after last call)
+    const timerKey = `${boardId}:${itemId}`;
+    if (updateTimers[timerKey]) clearTimeout(updateTimers[timerKey]);
+    
+    updateTimers[timerKey] = setTimeout(async () => {
+      try {
+        const updatedItem = get().items[boardId]?.find(i => i.id === itemId);
+        if (updatedItem) {
+          await updateArchiveNote(itemId, {
+            tags: updatedItem.tags,
+            content_data: {
+              title: updatedItem.title,
+              content: updatedItem.content,
+              status: updatedItem.status,
+              position: updatedItem.position,
+              data: updatedItem.data
+            }
+          });
+        }
+      } catch (error) {
+        console.error('Failed to update item:', error);
+      }
+      delete updateTimers[timerKey];
+    }, 500);
+  },
+
+  deleteItem: async (boardId, itemId) => {
+    const prevItems = get().items;
+    set(state => ({
+      items: {
+        ...state.items,
+        [boardId]: (state.items[boardId] || []).filter(item => item.id !== itemId)
+      }
+    }));
+
+    try {
+      await deleteArchiveNote(itemId);
+    } catch (error) {
+      console.error('Failed to delete item:', error);
+      set({ items: prevItems });
+    }
+  },
+
+  reorderItems: async (boardId, startIndex, endIndex) => {
+    const prevItems = get().items;
+    let reordered: BoardItem[] = [];
+    
+    set(state => {
+      const boardItems = Array.from(state.items[boardId] || []);
+      const [removed] = boardItems.splice(startIndex, 1);
+      boardItems.splice(endIndex, 0, removed);
+      
+      reordered = boardItems.map((item, idx) => ({ ...item, position: idx }));
+      return {
+        items: { ...state.items, [boardId]: reordered }
+      };
+    });
+
+    try {
+      // In a real production app, we might want a bulk update endpoint, 
+      // but for now we update one by one or rely on local state ordering mostly.
+      // We will loop and update position in background
+      for (const item of reordered) {
+        await updateArchiveNote(item.id, {
+          content_data: {
+            title: item.title,
+            content: item.content,
+            status: item.status,
+            position: item.position,
+            data: item.data
+          }
+        });
+      }
+    } catch (error) {
+      console.error('Failed to reorder items:', error);
+      set({ items: prevItems });
+    }
+  },
+}));

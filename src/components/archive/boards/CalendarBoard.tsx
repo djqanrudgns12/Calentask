@@ -10,9 +10,11 @@ import { Calendar as CalendarIcon, Clock, Move } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { format } from 'date-fns';
 
+const EMPTY_ARRAY: any[] = [];
+
 export function CalendarBoard() {
   const { activeTabId, items: storeItems, updateItem, addItem, deleteItem } = useArchiveStore();
-  const items = activeTabId ? (storeItems[activeTabId] || []) : [];
+  const items = activeTabId ? (storeItems[activeTabId] || EMPTY_ARRAY) : EMPTY_ARRAY;
 
   // Transform store items into FullCalendar Event Objects
   const events = items.map(item => ({

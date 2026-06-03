@@ -21,13 +21,20 @@ import { initYjsSync } from '@/lib/yjs-sync';
 import { useEffect } from 'react';
 
 export function ArchiveNotesView() {
-  const { tabs, activeTabId, setActiveTabId, setCommandPaletteOpen } = useArchiveStore();
+  const { tabs, activeTabId, setActiveTabId, setCommandPaletteOpen, fetchTabs, fetchItems } = useArchiveStore();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
 
   useEffect(() => {
     // Initialize WebRTC P2P Sync
     initYjsSync();
+    fetchTabs();
   }, []);
+
+  useEffect(() => {
+    if (activeTabId) {
+      fetchItems(activeTabId);
+    }
+  }, [activeTabId]);
 
   const handleAddNewTab = () => {
     setIsAddDialogOpen(true);

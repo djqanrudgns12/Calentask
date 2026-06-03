@@ -1,0 +1,141 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - complementary [ref=e3]:
+      - generic [ref=e4]:
+        - generic [ref=e5]:
+          - img "Calentask Logo" [ref=e6]
+          - generic [ref=e7]: Calentask
+        - button "로그아웃" [ref=e8]:
+          - img [ref=e9]
+      - generic [ref=e12]:
+        - generic [ref=e13]:
+          - button "아카이브 관리" [ref=e14]:
+            - generic [ref=e16]:
+              - img [ref=e17]
+              - generic [ref=e20]: 아카이브 관리
+            - img [ref=e21]
+          - generic [ref=e24]:
+            - button "아카이브 노트" [ref=e25]:
+              - img [ref=e26]
+              - text: 아카이브 노트
+            - button "오늘의 할 일 (아젠다)" [ref=e29]:
+              - img [ref=e30]
+              - text: 오늘의 할 일 (아젠다)
+          - button "인사이트 대시보드" [ref=e33]:
+            - generic [ref=e35]:
+              - img [ref=e36]
+              - generic [ref=e39]: 인사이트 대시보드
+        - button "캘린더 관리" [ref=e42]:
+          - generic [ref=e43]:
+            - img [ref=e44]
+            - generic [ref=e46]: 캘린더 관리
+          - img [ref=e47]
+      - generic [ref=e49]:
+        - generic [ref=e50]:
+          - button "오늘" [ref=e51]
+          - button "이번 주" [ref=e52]
+        - generic [ref=e115] [cursor=pointer]:
+          - generic [ref=e116]:
+            - img [ref=e117]
+            - generic [ref=e120]: 오후 3:00
+          - heading "팀 미팅 준비" [level=4] [ref=e121]
+          - generic [ref=e123]: Agenda
+      - generic [ref=e62]:
+        - button "태그 관리소" [ref=e63]:
+          - img
+          - text: 태그 관리소
+        - button "데이터 허브" [ref=e64]:
+          - img
+          - text: 데이터 허브
+        - button "전체 내용 초기화" [ref=e65]:
+          - img
+          - text: 전체 내용 초기화
+    - main [ref=e66]:
+      - button "테" [ref=e124]:
+        - generic [ref=e75]: 테
+        - img [ref=e77]
+      - generic [ref=e83]:
+        - generic [ref=e84]:
+          - generic [ref=e85]:
+            - generic [ref=e86]:
+              - heading "아카이브 노트" [level=1] [ref=e87]
+              - paragraph [ref=e88]: 나만의 지식 보관소이자 창의력을 펼치는 캔버스입니다.
+            - button "새 노트 추가" [ref=e89]:
+              - img [ref=e90]
+              - text: 새 노트 추가
+          - generic [ref=e216]:
+            - button "테스트 문서" [ref=e217]:
+              - img [ref=e218]
+              - text: 테스트 문서
+            - button "테스트 캔버스" [ref=e358]:
+              - img [ref=e359]
+              - text: 테스트 캔버스
+            - button "테스트 비주얼" [ref=e509]:
+              - img [ref=e510]
+              - text: 테스트 비주얼
+            - button "테스트 DB" [ref=e626]:
+              - img [ref=e627]
+              - text: 테스트 DB
+        - generic [ref=e630]:
+          - generic [ref=e631]:
+            - generic [ref=e632]:
+              - generic [ref=e633]:
+                - img [ref=e634]
+                - textbox "전체 컬럼 대상 스마트 검색..." [ref=e637]
+              - button "보기 옵션" [ref=e638]:
+                - img [ref=e639]
+                - text: 보기 옵션
+            - button "CSV 내보내기" [ref=e643]:
+              - img [ref=e644]
+              - text: CSV 내보내기
+          - table [ref=e649]:
+            - rowgroup [ref=e650]:
+              - row "이름 상태 태그 생성일" [ref=e651]:
+                - columnheader [ref=e652]:
+                  - checkbox [ref=e653] [cursor=pointer]
+                - columnheader "이름" [ref=e654]:
+                  - generic [ref=e655] [cursor=pointer]:
+                    - text: 이름
+                    - img [ref=e656]
+                - columnheader "상태" [ref=e659]:
+                  - generic [ref=e660] [cursor=pointer]:
+                    - text: 상태
+                    - img [ref=e661]
+                - columnheader "태그" [ref=e664]:
+                  - generic [ref=e665] [cursor=pointer]:
+                    - img [ref=e666]
+                    - text: 태그
+                    - img [ref=e669]
+                - columnheader "생성일" [ref=e672]:
+                  - generic [ref=e673] [cursor=pointer]:
+                    - text: 생성일
+                    - img [ref=e674]
+                - columnheader [ref=e677]:
+                  - img [ref=e679] [cursor=pointer]
+            - rowgroup [ref=e680]:
+              - row "새 항목 진행 전 2026. 6. 3." [ref=e693]:
+                - cell [ref=e694]:
+                  - checkbox [ref=e695] [cursor=pointer]
+                - cell "새 항목" [ref=e696]:
+                  - textbox "입력..." [ref=e697]: 새 항목
+                - cell "진행 전" [ref=e698]:
+                  - combobox [ref=e699] [cursor=pointer]:
+                    - option "진행 전" [selected]
+                    - option "진행 중"
+                    - option "완료"
+                - cell [ref=e700]:
+                  - textbox "태그 입력..." [ref=e701]
+                - cell "2026. 6. 3." [ref=e702]
+                - cell [ref=e703]:
+                  - button [ref=e705]:
+                    - img [ref=e706]
+              - row "새 항목 추가..." [ref=e681] [cursor=pointer]:
+                - cell [ref=e682]:
+                  - img [ref=e683]
+                - cell "새 항목 추가..." [ref=e684]:
+                  - generic [ref=e685]: 새 항목 추가...
+      - status [ref=e101]
+  - region "Notifications alt+T"
+  - button "Open Next.js Dev Tools" [ref=e107] [cursor=pointer]:
+    - img [ref=e108]
+  - alert [ref=e111]

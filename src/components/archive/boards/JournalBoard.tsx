@@ -19,9 +19,11 @@ const WEATHER = [
   { id: 'night', icon: Moon, label: '밤' }
 ];
 
+const EMPTY_ARRAY: any[] = [];
+
 export function JournalBoard() {
   const { activeTabId, items: storeItems, addItem, deleteItem } = useArchiveStore();
-  const items = activeTabId ? (storeItems[activeTabId] || []) : [];
+  const items = activeTabId ? (storeItems[activeTabId] || EMPTY_ARRAY) : EMPTY_ARRAY;
   
   // Create Form State
   const [isComposing, setIsComposing] = useState(false);

@@ -10,6 +10,8 @@ import { motion } from 'framer-motion';
 // because it relies on window and canvas API which are not available on server
 const ForceGraph2D = dynamic(() => import('react-force-graph-2d'), { ssr: false });
 
+const EMPTY_ARRAY: any[] = [];
+
 export function GraphBoard() {
   const { items, tabs, activeTabId, setActiveTabId } = useArchiveStore();
   const [dimensions, setDimensions] = useState({ width: 800, height: 600 });

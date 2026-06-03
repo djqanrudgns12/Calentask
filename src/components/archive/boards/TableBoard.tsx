@@ -28,9 +28,11 @@ const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'createdAt', name: '생성일', type: 'date' }
 ];
 
+const EMPTY_ARRAY: any[] = [];
+
 export function TableBoard() {
   const { activeTabId, items: storeItems, boardConfigs, setBoardConfig, updateItem, addItem } = useArchiveStore();
-  const items = activeTabId ? (storeItems[activeTabId] || []) : [];
+  const items = activeTabId ? (storeItems[activeTabId] || EMPTY_ARRAY) : EMPTY_ARRAY;
   const config = activeTabId ? boardConfigs[activeTabId] : null;
   const columnsConfig: ColumnConfig[] = config?.columns || DEFAULT_COLUMNS;
   

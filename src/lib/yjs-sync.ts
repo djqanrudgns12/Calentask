@@ -17,47 +17,9 @@ export const yItems = ydoc.getMap('items');
 let isSyncing = false;
 
 export function initYjsSync() {
-  // Subscribe to Zustand changes -> Push to Yjs
-  useArchiveStore.subscribe((state, prevState) => {
-    if (isSyncing) return;
-    
-    // Only push if there's a difference to avoid infinite loops
-    if (state.tabs !== prevState.tabs) {
-      isSyncing = true;
-      ydoc.transact(() => {
-        yTabs.set('data', JSON.stringify(state.tabs));
-      });
-      isSyncing = false;
-    }
-
-    if (state.items !== prevState.items) {
-      isSyncing = true;
-      ydoc.transact(() => {
-        yItems.set('data', JSON.stringify(state.items));
-      });
-      isSyncing = false;
-    }
-  });
-
-  // Subscribe to Yjs changes -> Push to Zustand
-  yTabs.observe(() => {
-    if (isSyncing) return;
-    const data = yTabs.get('data') as string;
-    if (data) {
-      isSyncing = true;
-      useArchiveStore.getState().setTabs(JSON.parse(data));
-      isSyncing = false;
-    }
-  });
-
-  yItems.observe(() => {
-    if (isSyncing) return;
-    const data = yItems.get('data') as string;
-    if (data) {
-      isSyncing = true;
-      // We don't have a bulk setItems action, but we can update the store directly
-      useArchiveStore.setState({ items: JSON.parse(data) });
-      isSyncing = false;
-    }
-  });
+  // P2P sync is disabled.
+  // Archive data is now persisted to Supabase (server) and fetched on mount,
+  // so WebRTC-based local sync is no longer the source of truth.
+  // Re-enable this only after implementing conflict resolution between
+  // server data and P2P-received data.
 }

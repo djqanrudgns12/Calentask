@@ -20,9 +20,11 @@ function extractMediaMetadata(url: string) {
   return { thumbnail, url };
 }
 
+const EMPTY_ARRAY: any[] = [];
+
 export function MediaBoard() {
   const { activeTabId, items: storeItems, updateItem, addItem, deleteItem } = useArchiveStore();
-  const items = activeTabId ? (storeItems[activeTabId] || []) : [];
+  const items = activeTabId ? (storeItems[activeTabId] || EMPTY_ARRAY) : EMPTY_ARRAY;
   
   const [viewMode, setViewMode] = useState<'masonry' | 'list'>('masonry');
   const [isAdding, setIsAdding] = useState(false);

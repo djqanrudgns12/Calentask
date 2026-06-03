@@ -51,36 +51,25 @@
     - main [ref=e66]:
       - button [ref=e74]:
         - img [ref=e77]
-      - generic [ref=e82]:
+      - generic [ref=e83]:
         - generic [ref=e85]:
-          - img [ref=e87]
-          - heading "Agenda Center" [level=1] [ref=e89]
-          - paragraph [ref=e90]:
-            - text: 자연어로 오늘의 목표를 입력하고,
-            - text: 체계적으로 완벽하게 달성하세요.
-        - generic [ref=e92]:
-          - img [ref=e93]
-          - 'textbox "예: ''내일 오후 3시 팀 미팅 준비''" [ref=e94]'
-          - button "+ 상세" [ref=e96]
-        - generic [ref=e98]:
-          - button "Inbox" [ref=e99]:
-            - img [ref=e100]
-            - text: Inbox
-          - button "Done" [ref=e102]:
-            - img [ref=e103]
-            - text: Done
-          - button "Archive" [ref=e106]:
-            - img [ref=e107]
-            - text: Archive
-          - button "Bin" [ref=e110]:
-            - img [ref=e111]
-            - text: Bin
-        - generic [ref=e115]:
-          - img [ref=e117]
-          - paragraph [ref=e120]: 해당 항목이 없습니다
-          - paragraph [ref=e121]: 이곳은 깨끗하네요!
-      - status [ref=e122]
+          - generic [ref=e86]:
+            - heading "아카이브 노트" [level=1] [ref=e87]
+            - paragraph [ref=e88]: 나만의 지식 보관소이자 창의력을 펼치는 캔버스입니다.
+          - button "새 노트 추가" [ref=e89]:
+            - img [ref=e90]
+            - text: 새 노트 추가
+        - generic [ref=e93]:
+          - img [ref=e95]
+          - heading "아직 작성된 노트가 없습니다" [level=2] [ref=e97]
+          - paragraph [ref=e98]:
+            - text: 우측 상단의
+            - strong [ref=e99]: 새 노트 추가
+            - text: 버튼을 눌러
+            - text: 당신만의 첫 번째 캔버스를 만들어보세요!
+          - button "새 노트 작성하기" [ref=e100]
+      - status [ref=e101]
   - region "Notifications alt+T"
-  - button "Open Next.js Dev Tools" [ref=e128] [cursor=pointer]:
-    - img [ref=e129]
-  - alert [ref=e132]
+  - button "Open Next.js Dev Tools" [ref=e107] [cursor=pointer]:
+    - img [ref=e108]
+  - alert [ref=e111]

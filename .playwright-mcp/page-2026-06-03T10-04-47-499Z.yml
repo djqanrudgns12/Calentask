@@ -1,0 +1,153 @@
+- generic [ref=e1]:
+  - generic [ref=e2]:
+    - complementary [ref=e3]:
+      - generic [ref=e4]:
+        - generic [ref=e5]:
+          - img "Calentask Logo" [ref=e6]
+          - generic [ref=e7]: Calentask
+        - button "로그아웃" [ref=e8]:
+          - img [ref=e9]
+      - generic [ref=e12]:
+        - generic [ref=e13]:
+          - button "아카이브 관리" [ref=e14]:
+            - generic [ref=e16]:
+              - img [ref=e17]
+              - generic [ref=e20]: 아카이브 관리
+            - img [ref=e21]
+          - generic [ref=e24]:
+            - button "아카이브 노트" [ref=e25]:
+              - img [ref=e26]
+              - text: 아카이브 노트
+            - button "오늘의 할 일 (아젠다)" [ref=e29]:
+              - img [ref=e30]
+              - text: 오늘의 할 일 (아젠다)
+          - button "인사이트 대시보드" [ref=e33]:
+            - generic [ref=e35]:
+              - img [ref=e36]
+              - generic [ref=e39]: 인사이트 대시보드
+        - button "캘린더 관리" [ref=e42]:
+          - generic [ref=e43]:
+            - img [ref=e44]
+            - generic [ref=e46]: 캘린더 관리
+          - img [ref=e47]
+      - generic [ref=e49]:
+        - generic [ref=e50]:
+          - button "오늘" [ref=e51]
+          - button "이번 주" [ref=e52]
+        - generic [ref=e115] [cursor=pointer]:
+          - generic [ref=e116]:
+            - img [ref=e117]
+            - generic [ref=e120]: 오후 3:00
+          - heading "팀 미팅 준비" [level=4] [ref=e121]
+          - generic [ref=e123]: Agenda
+      - generic [ref=e62]:
+        - button "태그 관리소" [ref=e63]:
+          - img
+          - text: 태그 관리소
+        - button "데이터 허브" [ref=e64]:
+          - img
+          - text: 데이터 허브
+        - button "전체 내용 초기화" [ref=e65]:
+          - img
+          - text: 전체 내용 초기화
+    - main [ref=e66]:
+      - button "테" [ref=e124]:
+        - generic [ref=e75]: 테
+        - img [ref=e77]
+      - generic [ref=e82]:
+        - generic [ref=e83]:
+          - generic [ref=e84]:
+            - generic [ref=e85]:
+              - generic [ref=e86]:
+                - heading "아카이브 노트" [level=1] [ref=e87]
+                - paragraph [ref=e88]: 나만의 지식 보관소이자 창의력을 펼치는 캔버스입니다.
+              - button "새 노트 추가" [ref=e89]:
+                - img [ref=e90]
+                - text: 새 노트 추가
+            - generic [ref=e216]:
+              - button "테스트 문서" [ref=e217]:
+                - img [ref=e218]
+                - text: 테스트 문서
+              - button "테스트 캔버스" [ref=e358]:
+                - img [ref=e359]
+                - text: 테스트 캔버스
+              - button "테스트 비주얼" [ref=e509]:
+                - img [ref=e510]
+                - text: 테스트 비주얼
+          - generic [ref=e516]:
+            - generic [ref=e517]:
+              - generic [ref=e518]:
+                - img [ref=e519]
+                - textbox "이미지 검색..." [ref=e522]
+              - button "업로드" [ref=e523]:
+                - img [ref=e524]
+                - text: 업로드
+            - generic [ref=e527]:
+              - img [ref=e529]
+              - heading "영감을 업로드하세요" [level=3] [ref=e533]
+              - paragraph [ref=e534]:
+                - text: 파일을 드래그 앤 드롭하거나 업로드 버튼을 눌러
+                - text: 나만의 핀터레스트 보드를 만들어보세요.
+        - generic [ref=e537]:
+          - generic [ref=e538]:
+            - generic [ref=e539]:
+              - heading "새 노트 추가" [level=2] [ref=e540]
+              - paragraph [ref=e541]: 어떤 형태의 캔버스가 필요하신가요?
+            - button [ref=e542]:
+              - img [ref=e543]
+          - generic [ref=e546]:
+            - generic [ref=e547]:
+              - generic [ref=e548]: 노트 제목
+              - 'textbox "예: 프로젝트 알파 아키텍처 구상" [ref=e549]': 테스트 DB
+            - generic [ref=e550]:
+              - generic [ref=e551]: 보드 템플릿 선택
+              - generic [ref=e552]:
+                - button "문서 (Doc) 텍스트 기반의 자유로운 줄글 노트" [ref=e553]:
+                  - img [ref=e555]
+                  - generic [ref=e558]:
+                    - heading "문서 (Doc)" [level=3] [ref=e559]
+                    - paragraph [ref=e560]: 텍스트 기반의 자유로운 줄글 노트
+                - button "캔버스 무한한 자유도의 화이트보드" [ref=e561]:
+                  - img [ref=e563]
+                  - generic [ref=e568]:
+                    - heading "캔버스" [level=3] [ref=e569]
+                    - paragraph [ref=e570]: 무한한 자유도의 화이트보드
+                - button "비주얼 갤러리 이미지 및 파일 기반 영감 보드" [ref=e571]:
+                  - img [ref=e573]
+                  - generic [ref=e577]:
+                    - heading "비주얼 갤러리" [level=3] [ref=e578]
+                    - paragraph [ref=e579]: 이미지 및 파일 기반 영감 보드
+                - button "데이터베이스 자유도 높은 스프레드시트" [active] [ref=e580]:
+                  - img [ref=e582]
+                  - generic [ref=e584]:
+                    - heading "데이터베이스" [level=3] [ref=e585]
+                    - paragraph [ref=e586]: 자유도 높은 스프레드시트
+                  - img [ref=e588]
+                - button "미디어 라이브러리 유튜브 등 미디어 시청 및 아카이브" [ref=e590]:
+                  - img [ref=e592]
+                  - generic [ref=e595]:
+                    - heading "미디어 라이브러리" [level=3] [ref=e596]
+                    - paragraph [ref=e597]: 유튜브 등 미디어 시청 및 아카이브
+                - button "저널 시간 순으로 기록하는 다이어리" [ref=e598]:
+                  - img [ref=e600]
+                  - generic [ref=e603]:
+                    - heading "저널" [level=3] [ref=e604]
+                    - paragraph [ref=e605]: 시간 순으로 기록하는 다이어리
+                - button "지식 그래프 지식 우주망 연결 보드" [ref=e606]:
+                  - img [ref=e608]
+                  - generic [ref=e613]:
+                    - heading "지식 그래프" [level=3] [ref=e614]
+                    - paragraph [ref=e615]: 지식 우주망 연결 보드
+                - button "캘린더 드래그 앤 드롭 타임블로킹" [ref=e616]:
+                  - img [ref=e618]
+                  - generic [ref=e620]:
+                    - heading "캘린더" [level=3] [ref=e621]
+                    - paragraph [ref=e622]: 드래그 앤 드롭 타임블로킹
+          - generic [ref=e623]:
+            - button "취소" [ref=e624]
+            - button "생성하기" [ref=e625]
+      - status [ref=e101]
+  - region "Notifications alt+T"
+  - button "Open Next.js Dev Tools" [ref=e107] [cursor=pointer]:
+    - img [ref=e108]
+  - alert [ref=e111]

@@ -5,9 +5,11 @@ import { Upload, X, Maximize2, Image as ImageIcon, Trash2, Heart, Search } from 
 import { useArchiveStore } from '@/store/useArchiveStore';
 import { motion, AnimatePresence } from 'framer-motion';
 
+const EMPTY_ARRAY: any[] = [];
+
 export function MasonryBoard() {
   const { activeTabId, items: storeItems, updateItem, addItem, deleteItem } = useArchiveStore();
-  const items = activeTabId ? (storeItems[activeTabId] || []) : [];
+  const items = activeTabId ? (storeItems[activeTabId] || EMPTY_ARRAY) : EMPTY_ARRAY;
   
   const [isUploading, setIsUploading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');

@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { FileText, MoreHorizontal, Clock, AlignLeft, Bold, Italic, Type, Plus, Heading1, Heading2, Heading3, List, ListOrdered, Quote } from 'lucide-react';
 import { useArchiveStore } from '@/store/useArchiveStore';
 import { useEditor, EditorContent } from '@tiptap/react';
@@ -8,18 +8,21 @@ import { BubbleMenu, FloatingMenu } from '@tiptap/react/menus';
 import StarterKit from '@tiptap/starter-kit';
 import Placeholder from '@tiptap/extension-placeholder';
 import { cn } from '@/lib/utils';
+const EMPTY_ARRAY: any[] = [];
 
 export function DocumentBoard() {
-  const { activeTabId, tabs, items: storeItems, updateItem, addItem, setTabs } = useArchiveStore();
+  const { activeTabId, tabs, items: storeItems, updateItem, addItem, updateTab } = useArchiveStore();
   const currentTab = tabs.find(t => t.id === activeTabId);
-  const items = activeTabId ? (storeItems[activeTabId] || []) : [];
+  const items = activeTabId ? (storeItems[activeTabId] || EMPTY_ARRAY) : EMPTY_ARRAY;
+  const initRef = useRef<string | null>(null);
   
   // Use the first item as the document content
   const docItem = items[0];
 
-  // Initialize document if not exists
+  // Initialize document if not exists (with guard against double-calls)
   useEffect(() => {
-    if (activeTabId && items.length === 0) {
+    if (activeTabId && items.length === 0 && initRef.current !== activeTabId) {
+      initRef.current = activeTabId;
       addItem(activeTabId, { title: currentTab?.name || '새 문서', content: '' });
     }
   }, [activeTabId, items.length, addItem, currentTab?.name]);
@@ -30,8 +33,7 @@ export function DocumentBoard() {
     const newTitle = e.target.value;
     updateItem(activeTabId, docItem.id, { title: newTitle });
     // Update tab name as well
-    const updatedTabs = tabs.map(t => t.id === activeTabId ? { ...t, name: newTitle || '제목 없음' } : t);
-    setTabs(updatedTabs);
+    updateTab(activeTabId, { name: newTitle || '제목 없음' });
   };
 
   // Setup Tiptap Editor
