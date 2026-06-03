@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState, useRef } from 'react';
-import { FileText, MoreHorizontal, Clock, AlignLeft, Bold, Italic, Type, Plus, Heading1, Heading2, Heading3, List, ListOrdered, Quote, Trash2, Palette, Highlighter, AlignCenter, AlignRight } from 'lucide-react';
+import { FileText, MoreHorizontal, Clock, AlignLeft, Bold, Italic, Type, Plus, Heading1, Heading2, Heading3, List, ListOrdered, Quote, Trash2, Palette, Highlighter, AlignCenter, AlignRight, Table as TableIcon, SquareCheckBig, Minus, Lightbulb, ChevronRight, Bookmark as BookmarkIcon, ImageIcon, Film as YoutubeIcon, Code, Wand2 } from 'lucide-react';
 import { useArchiveStore } from '@/store/useArchiveStore';
 import { useEditor, EditorContent } from '@tiptap/react';
 import { BubbleMenu, FloatingMenu } from '@tiptap/react/menus';
@@ -11,6 +11,18 @@ import { TextStyle } from '@tiptap/extension-text-style';
 import { Color } from '@tiptap/extension-color';
 import Highlight from '@tiptap/extension-highlight';
 import TextAlign from '@tiptap/extension-text-align';
+import { TaskList } from '@tiptap/extension-task-list';
+import { TaskItem } from '@tiptap/extension-task-item';
+import { Table } from '@tiptap/extension-table';
+import { TableRow } from '@tiptap/extension-table-row';
+import { TableCell } from '@tiptap/extension-table-cell';
+import { TableHeader } from '@tiptap/extension-table-header';
+import Image from '@tiptap/extension-image';
+import Youtube from '@tiptap/extension-youtube';
+import { Callout } from './extensions/CalloutExtension';
+import { Toggle } from './extensions/ToggleExtension';
+import { Bookmark } from './extensions/BookmarkExtension';
+import { SlashGuideModal } from '../SlashGuideModal';
 import { cn } from '@/lib/utils';
 const EMPTY_ARRAY: any[] = [];
 
@@ -36,6 +48,8 @@ export function DocumentBoard() {
 
   // 로컬 타이틀 상태로 제어 컴포넌트 프리징 현상 방지
   const [localTitle, setLocalTitle] = useState(docItem?.title || '');
+  const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
+  const [isGuideModalOpen, setIsGuideModalOpen] = useState(false);
 
   useEffect(() => {
     setLocalTitle(docItem?.title || '');
@@ -62,6 +76,27 @@ export function DocumentBoard() {
       Highlight.configure({ multicolor: true }),
       TextAlign.configure({
         types: ['heading', 'paragraph'],
+      }),
+      TaskList,
+      TaskItem.configure({
+        nested: true,
+      }),
+      Table.configure({
+        resizable: true,
+      }),
+      TableRow,
+      TableHeader,
+      TableCell,
+      Callout,
+      Toggle,
+      Bookmark,
+      Image.configure({
+        inline: true,
+        allowBase64: true,
+      }),
+      Youtube.configure({
+        controls: true,
+        nocookie: true,
       }),
     ],
     content: docItem?.data?.contentJSON || docItem?.content || '',
@@ -158,7 +193,30 @@ export function DocumentBoard() {
           >
             <Trash2 className="w-5 h-5" />
           </button>
-          <button className="p-2 hover:bg-slate-50 rounded-full transition-colors"><MoreHorizontal className="w-5 h-5 text-slate-400" /></button>
+          <div className="relative">
+            <button 
+              onClick={() => setIsMoreMenuOpen(!isMoreMenuOpen)}
+              className="p-2 hover:bg-slate-50 rounded-full transition-colors"
+            >
+              <MoreHorizontal className="w-5 h-5 text-slate-400" />
+            </button>
+            {isMoreMenuOpen && (
+              <>
+                <div className="fixed inset-0 z-40" onClick={() => setIsMoreMenuOpen(false)} />
+                <div className="absolute right-0 mt-2 w-56 bg-white border border-slate-200 rounded-xl shadow-xl overflow-hidden z-50">
+                  <button 
+                    onClick={() => {
+                      setIsMoreMenuOpen(false);
+                      setIsGuideModalOpen(true);
+                    }}
+                    className="w-full text-left px-4 py-3 text-sm font-bold text-slate-700 hover:bg-indigo-50 hover:text-indigo-600 flex items-center gap-2 transition-colors"
+                  >
+                    <Wand2 className="w-4 h-4" /> 슬래시 명령어 가이드
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
         </div>
       </div>
 
@@ -192,30 +250,258 @@ export function DocumentBoard() {
                 // @ts-ignore
                 tippyOptions={{ placement: 'bottom-start', offset: [0, 8] }}
                 shouldShow={({ state, view }) => {
-                  if (view.composing) return false;
+                  if (!view.hasFocus || view.composing) return false;
                   const { $anchor } = state.selection;
-                  return $anchor.parent.content.size === 0 && $anchor.parent.type.name === 'paragraph';
+                  const node = $anchor.parent;
+                  return node.type.name === 'paragraph' && node.textContent === '/';
                 }}
                 className="flex bg-white shadow-xl border border-slate-100 rounded-xl overflow-hidden p-1 gap-1"
               >
-                <button
-                  onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
-                  className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 rounded-lg transition-colors"
-                >
-                  <Heading1 className="w-4 h-4" /> 큰 제목
-                </button>
-                <button
-                  onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
-                  className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 rounded-lg transition-colors"
-                >
-                  <Heading2 className="w-4 h-4" /> 중간 제목
-                </button>
-                <button
-                  onClick={() => editor.chain().focus().toggleBulletList().run()}
-                  className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 rounded-lg transition-colors"
-                >
-                  <List className="w-4 h-4" /> 목록
-                </button>
+                <div className="max-h-64 overflow-y-auto hide-scrollbar flex flex-col p-1">
+                  <div className="px-2 py-1.5 text-xs font-bold text-slate-400">기본 블록</div>
+                  <button
+                    onClick={() => {
+                      const { $anchor } = editor.state.selection;
+                      editor.chain().focus()
+                        .deleteRange({ from: $anchor.start(), to: $anchor.end() })
+                        .toggleHeading({ level: 1 })
+                        .run();
+                    }}
+                    className="flex items-center gap-3 px-3 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50 hover:text-indigo-600 rounded-lg transition-colors"
+                  >
+                    <Heading1 className="w-4 h-4 shrink-0 text-slate-400" /> 큰 제목
+                  </button>
+                  <button
+                    onClick={() => {
+                      const { $anchor } = editor.state.selection;
+                      editor.chain().focus()
+                        .deleteRange({ from: $anchor.start(), to: $anchor.end() })
+                        .toggleHeading({ level: 2 })
+                        .run();
+                    }}
+                    className="flex items-center gap-3 px-3 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50 hover:text-indigo-600 rounded-lg transition-colors"
+                  >
+                    <Heading2 className="w-4 h-4 shrink-0 text-slate-400" /> 중간 제목
+                  </button>
+                  <button
+                    onClick={() => {
+                      const { $anchor } = editor.state.selection;
+                      editor.chain().focus()
+                        .deleteRange({ from: $anchor.start(), to: $anchor.end() })
+                        .toggleHeading({ level: 3 })
+                        .run();
+                    }}
+                    className="flex items-center gap-3 px-3 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50 hover:text-indigo-600 rounded-lg transition-colors"
+                  >
+                    <Heading3 className="w-4 h-4 shrink-0 text-slate-400" /> 작은 제목
+                  </button>
+                  <button
+                    onClick={() => {
+                      const { $anchor } = editor.state.selection;
+                      editor.chain().focus()
+                        .deleteRange({ from: $anchor.start(), to: $anchor.end() })
+                        .toggleTaskList()
+                        .run();
+                    }}
+                    className="flex items-center gap-3 px-3 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50 hover:text-indigo-600 rounded-lg transition-colors"
+                  >
+                    <SquareCheckBig className="w-4 h-4 shrink-0 text-slate-400" /> 할 일 목록
+                  </button>
+                  <button
+                    onClick={() => {
+                      const { $anchor } = editor.state.selection;
+                      editor.chain().focus()
+                        .deleteRange({ from: $anchor.start(), to: $anchor.end() })
+                        .toggleBulletList()
+                        .run();
+                    }}
+                    className="flex items-center gap-3 px-3 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50 hover:text-indigo-600 rounded-lg transition-colors"
+                  >
+                    <List className="w-4 h-4 shrink-0 text-slate-400" /> 글머리 기호 목록
+                  </button>
+                  <button
+                    onClick={() => {
+                      const { $anchor } = editor.state.selection;
+                      editor.chain().focus()
+                        .deleteRange({ from: $anchor.start(), to: $anchor.end() })
+                        .toggleOrderedList()
+                        .run();
+                    }}
+                    className="flex items-center gap-3 px-3 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50 hover:text-indigo-600 rounded-lg transition-colors"
+                  >
+                    <ListOrdered className="w-4 h-4 shrink-0 text-slate-400" /> 번호 매기기 목록
+                  </button>
+                  <button
+                    onClick={() => {
+                      const { $anchor } = editor.state.selection;
+                      editor.chain().focus()
+                        .deleteRange({ from: $anchor.start(), to: $anchor.end() })
+                        .toggleBlockquote()
+                        .run();
+                    }}
+                    className="flex items-center gap-3 px-3 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50 hover:text-indigo-600 rounded-lg transition-colors"
+                  >
+                    <Quote className="w-4 h-4 shrink-0 text-slate-400" /> 인용구
+                  </button>
+                  <button
+                    onClick={() => {
+                      const { $anchor } = editor.state.selection;
+                      editor.chain().focus()
+                        .deleteRange({ from: $anchor.start(), to: $anchor.end() })
+                        .setHorizontalRule()
+                        .run();
+                    }}
+                    className="flex items-center gap-3 px-3 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50 hover:text-indigo-600 rounded-lg transition-colors"
+                  >
+                    <Minus className="w-4 h-4 shrink-0 text-slate-400" /> 구분선
+                  </button>
+                  
+                  <div className="px-2 py-1.5 mt-2 text-xs font-bold text-slate-400 border-t border-slate-100 pt-3">커스텀 및 고급 블록</div>
+                  <button
+                    onClick={() => {
+                      const { $anchor } = editor.state.selection;
+                      // @ts-ignore
+                      editor.chain().focus()
+                        .deleteRange({ from: $anchor.start(), to: $anchor.end() })
+                        // @ts-ignore
+                        .setCallout()
+                        .run();
+                    }}
+                    className="flex items-center gap-3 px-3 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50 hover:text-indigo-600 rounded-lg transition-colors"
+                  >
+                    <Lightbulb className="w-4 h-4 shrink-0 text-slate-400" /> 콜아웃 (알림 박스)
+                  </button>
+                  <button
+                    onClick={() => {
+                      const { $anchor } = editor.state.selection;
+                      // @ts-ignore
+                      editor.chain().focus()
+                        .deleteRange({ from: $anchor.start(), to: $anchor.end() })
+                        // @ts-ignore
+                        .setToggle()
+                        .run();
+                    }}
+                    className="flex items-center gap-3 px-3 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50 hover:text-indigo-600 rounded-lg transition-colors"
+                  >
+                    <ChevronRight className="w-4 h-4 shrink-0 text-slate-400" /> 토글 목록
+                  </button>
+                  
+                  <div className="px-2 py-1.5 mt-2 text-xs font-bold text-slate-400 border-t border-slate-100 pt-3">데이터 및 미디어</div>
+                  <button
+                    onClick={() => {
+                      const { $anchor } = editor.state.selection;
+                      // @ts-ignore
+                      editor.chain().focus()
+                        .deleteRange({ from: $anchor.start(), to: $anchor.end() })
+                        // @ts-ignore
+                        .setBookmark()
+                        .run();
+                    }}
+                    className="flex items-center gap-3 px-3 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50 hover:text-indigo-600 rounded-lg transition-colors"
+                  >
+                    <BookmarkIcon className="w-4 h-4 shrink-0 text-slate-400" /> 웹 북마크
+                  </button>
+                  <button
+                    onClick={() => {
+                      const { $anchor } = editor.state.selection;
+                      const url = window.prompt('이미지 URL을 입력하세요 (또는 복사/붙여넣기를 사용하세요):');
+                      if (url) {
+                        editor.chain().focus()
+                          .deleteRange({ from: $anchor.start(), to: $anchor.end() })
+                          .setImage({ src: url })
+                          .run();
+                      } else {
+                        editor.chain().focus()
+                          .deleteRange({ from: $anchor.start(), to: $anchor.end() })
+                          .run();
+                      }
+                    }}
+                    className="flex items-center gap-3 px-3 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50 hover:text-indigo-600 rounded-lg transition-colors"
+                  >
+                    <ImageIcon className="w-4 h-4 shrink-0 text-slate-400" /> 이미지
+                  </button>
+                  <button
+                    onClick={() => {
+                      const { $anchor } = editor.state.selection;
+                      const url = window.prompt('유튜브 영상 링크를 입력하세요:');
+                      if (url) {
+                        editor.chain().focus()
+                          .deleteRange({ from: $anchor.start(), to: $anchor.end() })
+                          .setYoutubeVideo({ src: url })
+                          .run();
+                      } else {
+                        editor.chain().focus()
+                          .deleteRange({ from: $anchor.start(), to: $anchor.end() })
+                          .run();
+                      }
+                    }}
+                    className="flex items-center gap-3 px-3 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50 hover:text-indigo-600 rounded-lg transition-colors"
+                  >
+                    <YoutubeIcon className="w-4 h-4 shrink-0 text-slate-400" /> 유튜브
+                  </button>
+                  <button
+                    onClick={() => {
+                      const { $anchor } = editor.state.selection;
+                      editor.chain().focus()
+                        .deleteRange({ from: $anchor.start(), to: $anchor.end() })
+                        .toggleCodeBlock()
+                        .run();
+                    }}
+                    className="flex items-center gap-3 px-3 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50 hover:text-indigo-600 rounded-lg transition-colors"
+                  >
+                    <Code className="w-4 h-4 shrink-0 text-slate-400" /> 코드 블록
+                  </button>
+                  <button
+                    onClick={() => {
+                      const { $anchor } = editor.state.selection;
+                      editor.chain().focus()
+                        .deleteRange({ from: $anchor.start(), to: $anchor.end() })
+                        .insertTable({ rows: 3, cols: 3, withHeaderRow: true })
+                        .run();
+                    }}
+                    className="flex items-center gap-3 px-3 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50 hover:text-indigo-600 rounded-lg transition-colors"
+                  >
+                    <TableIcon className="w-4 h-4 shrink-0 text-slate-400" /> 표(Table)
+                  </button>
+                  
+                  <div className="px-2 py-1.5 mt-2 text-xs font-bold text-slate-400 border-t border-slate-100 pt-3">색상 및 효과</div>
+                  <button
+                    onClick={() => {
+                      const { $anchor } = editor.state.selection;
+                      editor.chain().focus()
+                        .deleteRange({ from: $anchor.start(), to: $anchor.end() })
+                        .setColor('#ef4444')
+                        .run();
+                    }}
+                    className="flex items-center gap-3 px-3 py-2 text-sm font-bold text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                  >
+                    <div className="w-4 h-4 rounded-full bg-red-500 shrink-0" /> 빨간색 글자
+                  </button>
+                  <button
+                    onClick={() => {
+                      const { $anchor } = editor.state.selection;
+                      editor.chain().focus()
+                        .deleteRange({ from: $anchor.start(), to: $anchor.end() })
+                        .setColor('#3b82f6')
+                        .run();
+                    }}
+                    className="flex items-center gap-3 px-3 py-2 text-sm font-bold text-blue-500 hover:bg-blue-50 rounded-lg transition-colors"
+                  >
+                    <div className="w-4 h-4 rounded-full bg-blue-500 shrink-0" /> 파란색 글자
+                  </button>
+                  <button
+                    onClick={() => {
+                      const { $anchor } = editor.state.selection;
+                      editor.chain().focus()
+                        .deleteRange({ from: $anchor.start(), to: $anchor.end() })
+                        .toggleHighlight({ color: '#fef08a' })
+                        .run();
+                    }}
+                    className="flex items-center gap-3 px-3 py-2 text-sm font-bold text-yellow-600 hover:bg-yellow-50 rounded-lg transition-colors"
+                  >
+                    <Highlighter className="w-4 h-4 shrink-0 text-yellow-500" /> 노란색 형광펜
+                  </button>
+                </div>
               </FloatingMenu>
             )}
 
@@ -279,6 +565,11 @@ export function DocumentBoard() {
           </div>
         </div>
       </div>
+      
+      <SlashGuideModal 
+        isOpen={isGuideModalOpen} 
+        onClose={() => setIsGuideModalOpen(false)} 
+      />
     </div>
   );
 }

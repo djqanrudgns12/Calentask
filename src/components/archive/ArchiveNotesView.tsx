@@ -11,7 +11,7 @@ import { MediaBoard } from '@/components/archive/boards/MediaBoard';
 import { JournalBoard } from '@/components/archive/boards/JournalBoard';
 import { GraphBoard } from '@/components/archive/boards/GraphBoard';
 import { CalendarBoard } from '@/components/archive/boards/CalendarBoard';
-import { Plus, LayoutGrid, LayoutList, Grip, Image as ImageIcon, Table, Columns, Clock, FolderOpen, Video, FileText, Network, Calendar } from 'lucide-react';
+import { Plus, LayoutGrid, LayoutList, Grip, Image as ImageIcon, Table, Columns, Clock, FolderOpen, Video, FileText, Network, Calendar, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { AddNoteDialog } from './AddNoteDialog';
 import { CommandPalette } from './CommandPalette';
@@ -21,8 +21,10 @@ import { initYjsSync } from '@/lib/yjs-sync';
 import { useEffect } from 'react';
 
 export function ArchiveNotesView() {
-  const { tabs, activeTabId, setActiveTabId, setCommandPaletteOpen, fetchTabs, fetchItems } = useArchiveStore();
+  const { tabs, activeTabId, setActiveTabId, setCommandPaletteOpen, fetchTabs, fetchItems, updateTab, deleteTab } = useArchiveStore();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [editingTabId, setEditingTabId] = useState<string | null>(null);
+  const [editingTabName, setEditingTabName] = useState('');
 
   useEffect(() => {
     // Initialize WebRTC P2P Sync
@@ -83,20 +85,68 @@ export function ArchiveNotesView() {
               {tabs.map((tab: any) => {
                 const Icon = getIconForType(tab.board_type);
                 const isActive = activeTabId === tab.id;
+                const isEditing = editingTabId === tab.id;
+                
                 return (
-                  <button
-                    key={tab.id}
-                    onClick={() => setActiveTabId(tab.id)}
-                    className={cn(
-                      "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all whitespace-nowrap",
-                      isActive 
-                        ? "bg-white text-indigo-600 shadow-sm border border-slate-200" 
-                        : "text-slate-500 hover:bg-white/60 hover:text-slate-700 border border-transparent"
+                  <div key={tab.id} className="relative group flex items-center">
+                    <button
+                      onClick={() => !isEditing && setActiveTabId(tab.id)}
+                      onDoubleClick={() => {
+                        setEditingTabId(tab.id);
+                        setEditingTabName(tab.name);
+                      }}
+                      className={cn(
+                        "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all whitespace-nowrap",
+                        isActive 
+                          ? "bg-white text-indigo-600 shadow-sm border border-slate-200" 
+                          : "text-slate-500 hover:bg-white/60 hover:text-slate-700 border border-transparent"
+                      )}
+                    >
+                      <Icon className={cn("w-4 h-4 shrink-0", isActive ? "text-indigo-600" : "text-slate-400")} />
+                      
+                      {isEditing ? (
+                        <input 
+                          autoFocus
+                          value={editingTabName}
+                          onChange={(e) => setEditingTabName(e.target.value)}
+                          onBlur={() => {
+                            if (editingTabName.trim() && editingTabName !== tab.name) {
+                              updateTab(tab.id, { name: editingTabName.trim() });
+                            }
+                            setEditingTabId(null);
+                          }}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              if (editingTabName.trim() && editingTabName !== tab.name) {
+                                updateTab(tab.id, { name: editingTabName.trim() });
+                              }
+                              setEditingTabId(null);
+                            } else if (e.key === 'Escape') {
+                              setEditingTabId(null);
+                            }
+                          }}
+                          className="w-24 bg-indigo-50/50 border-none outline-none focus:ring-2 focus:ring-indigo-500/30 rounded px-1 -mx-1 text-indigo-700"
+                        />
+                      ) : (
+                        <span className="select-none">{tab.name}</span>
+                      )}
+                    </button>
+                    
+                    {!isEditing && (
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (confirm(`'${tab.name}' 노트를 정말 삭제하시겠습니까?`)) {
+                            deleteTab(tab.id);
+                          }
+                        }}
+                        className="absolute right-1 opacity-0 group-hover:opacity-100 p-1 text-slate-400 hover:text-rose-500 transition-opacity bg-white/80 backdrop-blur rounded"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
                     )}
-                  >
-                    <Icon className={cn("w-4 h-4", isActive ? "text-indigo-600" : "text-slate-400")} />
-                    {tab.name}
-                  </button>
+                  </div>
                 );
               })}
             </div>
