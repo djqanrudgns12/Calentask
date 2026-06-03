@@ -17,8 +17,8 @@ import { Table } from '@tiptap/extension-table';
 import { TableRow } from '@tiptap/extension-table-row';
 import { TableCell } from '@tiptap/extension-table-cell';
 import { TableHeader } from '@tiptap/extension-table-header';
-import Image from '@tiptap/extension-image';
-import Youtube from '@tiptap/extension-youtube';
+import { CustomImage } from './extensions/ImageExtension';
+import { CustomYoutube } from './extensions/YoutubeExtension';
 import { Callout } from './extensions/CalloutExtension';
 import { Toggle } from './extensions/ToggleExtension';
 import { Bookmark } from './extensions/BookmarkExtension';
@@ -90,14 +90,8 @@ export function DocumentBoard() {
       Callout,
       Toggle,
       Bookmark,
-      Image.configure({
-        inline: true,
-        allowBase64: true,
-      }),
-      Youtube.configure({
-        controls: true,
-        nocookie: true,
-      }),
+      CustomImage,
+      CustomYoutube,
     ],
     content: docItem?.data?.contentJSON || docItem?.content || '',
     onUpdate: ({ editor }) => {
@@ -118,6 +112,22 @@ export function DocumentBoard() {
       attributes: {
         class: 'prose prose-slate prose-lg max-w-none focus:outline-none min-h-[500px]',
       },
+      handleKeyDown: (view, event) => {
+        // If floating menu is active, intercept arrow keys and enter
+        const { state } = view;
+        const { $anchor } = state.selection;
+        const node = $anchor.parent;
+        
+        if (node.type.name === 'paragraph' && node.textContent.startsWith('/')) {
+          if (event.key === 'ArrowDown' || event.key === 'ArrowUp' || event.key === 'Enter') {
+            // We will emit a custom event that our component will listen to
+            const customEvent = new CustomEvent('slash-menu-keydown', { detail: { key: event.key } });
+            window.dispatchEvent(customEvent);
+            return true; // Prevent default Tiptap behavior
+          }
+        }
+        return false;
+      }
     },
   });
 
@@ -245,264 +255,7 @@ export function DocumentBoard() {
             
             {/* Floating Menu (Slash command like) */}
             {editor && (
-              <FloatingMenu 
-                editor={editor} 
-                // @ts-ignore
-                tippyOptions={{ placement: 'bottom-start', offset: [0, 8] }}
-                shouldShow={({ state, view }) => {
-                  if (!view.hasFocus || view.composing) return false;
-                  const { $anchor } = state.selection;
-                  const node = $anchor.parent;
-                  return node.type.name === 'paragraph' && node.textContent === '/';
-                }}
-                className="flex bg-white shadow-xl border border-slate-100 rounded-xl overflow-hidden p-1 gap-1"
-              >
-                <div className="max-h-64 overflow-y-auto hide-scrollbar flex flex-col p-1">
-                  <div className="px-2 py-1.5 text-xs font-bold text-slate-400">기본 블록</div>
-                  <button
-                    onClick={() => {
-                      const { $anchor } = editor.state.selection;
-                      editor.chain().focus()
-                        .deleteRange({ from: $anchor.start(), to: $anchor.end() })
-                        .toggleHeading({ level: 1 })
-                        .run();
-                    }}
-                    className="flex items-center gap-3 px-3 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50 hover:text-indigo-600 rounded-lg transition-colors"
-                  >
-                    <Heading1 className="w-4 h-4 shrink-0 text-slate-400" /> 큰 제목
-                  </button>
-                  <button
-                    onClick={() => {
-                      const { $anchor } = editor.state.selection;
-                      editor.chain().focus()
-                        .deleteRange({ from: $anchor.start(), to: $anchor.end() })
-                        .toggleHeading({ level: 2 })
-                        .run();
-                    }}
-                    className="flex items-center gap-3 px-3 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50 hover:text-indigo-600 rounded-lg transition-colors"
-                  >
-                    <Heading2 className="w-4 h-4 shrink-0 text-slate-400" /> 중간 제목
-                  </button>
-                  <button
-                    onClick={() => {
-                      const { $anchor } = editor.state.selection;
-                      editor.chain().focus()
-                        .deleteRange({ from: $anchor.start(), to: $anchor.end() })
-                        .toggleHeading({ level: 3 })
-                        .run();
-                    }}
-                    className="flex items-center gap-3 px-3 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50 hover:text-indigo-600 rounded-lg transition-colors"
-                  >
-                    <Heading3 className="w-4 h-4 shrink-0 text-slate-400" /> 작은 제목
-                  </button>
-                  <button
-                    onClick={() => {
-                      const { $anchor } = editor.state.selection;
-                      editor.chain().focus()
-                        .deleteRange({ from: $anchor.start(), to: $anchor.end() })
-                        .toggleTaskList()
-                        .run();
-                    }}
-                    className="flex items-center gap-3 px-3 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50 hover:text-indigo-600 rounded-lg transition-colors"
-                  >
-                    <SquareCheckBig className="w-4 h-4 shrink-0 text-slate-400" /> 할 일 목록
-                  </button>
-                  <button
-                    onClick={() => {
-                      const { $anchor } = editor.state.selection;
-                      editor.chain().focus()
-                        .deleteRange({ from: $anchor.start(), to: $anchor.end() })
-                        .toggleBulletList()
-                        .run();
-                    }}
-                    className="flex items-center gap-3 px-3 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50 hover:text-indigo-600 rounded-lg transition-colors"
-                  >
-                    <List className="w-4 h-4 shrink-0 text-slate-400" /> 글머리 기호 목록
-                  </button>
-                  <button
-                    onClick={() => {
-                      const { $anchor } = editor.state.selection;
-                      editor.chain().focus()
-                        .deleteRange({ from: $anchor.start(), to: $anchor.end() })
-                        .toggleOrderedList()
-                        .run();
-                    }}
-                    className="flex items-center gap-3 px-3 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50 hover:text-indigo-600 rounded-lg transition-colors"
-                  >
-                    <ListOrdered className="w-4 h-4 shrink-0 text-slate-400" /> 번호 매기기 목록
-                  </button>
-                  <button
-                    onClick={() => {
-                      const { $anchor } = editor.state.selection;
-                      editor.chain().focus()
-                        .deleteRange({ from: $anchor.start(), to: $anchor.end() })
-                        .toggleBlockquote()
-                        .run();
-                    }}
-                    className="flex items-center gap-3 px-3 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50 hover:text-indigo-600 rounded-lg transition-colors"
-                  >
-                    <Quote className="w-4 h-4 shrink-0 text-slate-400" /> 인용구
-                  </button>
-                  <button
-                    onClick={() => {
-                      const { $anchor } = editor.state.selection;
-                      editor.chain().focus()
-                        .deleteRange({ from: $anchor.start(), to: $anchor.end() })
-                        .setHorizontalRule()
-                        .run();
-                    }}
-                    className="flex items-center gap-3 px-3 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50 hover:text-indigo-600 rounded-lg transition-colors"
-                  >
-                    <Minus className="w-4 h-4 shrink-0 text-slate-400" /> 구분선
-                  </button>
-                  
-                  <div className="px-2 py-1.5 mt-2 text-xs font-bold text-slate-400 border-t border-slate-100 pt-3">커스텀 및 고급 블록</div>
-                  <button
-                    onClick={() => {
-                      const { $anchor } = editor.state.selection;
-                      // @ts-ignore
-                      editor.chain().focus()
-                        .deleteRange({ from: $anchor.start(), to: $anchor.end() })
-                        // @ts-ignore
-                        .setCallout()
-                        .run();
-                    }}
-                    className="flex items-center gap-3 px-3 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50 hover:text-indigo-600 rounded-lg transition-colors"
-                  >
-                    <Lightbulb className="w-4 h-4 shrink-0 text-slate-400" /> 콜아웃 (알림 박스)
-                  </button>
-                  <button
-                    onClick={() => {
-                      const { $anchor } = editor.state.selection;
-                      // @ts-ignore
-                      editor.chain().focus()
-                        .deleteRange({ from: $anchor.start(), to: $anchor.end() })
-                        // @ts-ignore
-                        .setToggle()
-                        .run();
-                    }}
-                    className="flex items-center gap-3 px-3 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50 hover:text-indigo-600 rounded-lg transition-colors"
-                  >
-                    <ChevronRight className="w-4 h-4 shrink-0 text-slate-400" /> 토글 목록
-                  </button>
-                  
-                  <div className="px-2 py-1.5 mt-2 text-xs font-bold text-slate-400 border-t border-slate-100 pt-3">데이터 및 미디어</div>
-                  <button
-                    onClick={() => {
-                      const { $anchor } = editor.state.selection;
-                      // @ts-ignore
-                      editor.chain().focus()
-                        .deleteRange({ from: $anchor.start(), to: $anchor.end() })
-                        // @ts-ignore
-                        .setBookmark()
-                        .run();
-                    }}
-                    className="flex items-center gap-3 px-3 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50 hover:text-indigo-600 rounded-lg transition-colors"
-                  >
-                    <BookmarkIcon className="w-4 h-4 shrink-0 text-slate-400" /> 웹 북마크
-                  </button>
-                  <button
-                    onClick={() => {
-                      const { $anchor } = editor.state.selection;
-                      const url = window.prompt('이미지 URL을 입력하세요 (또는 복사/붙여넣기를 사용하세요):');
-                      if (url) {
-                        editor.chain().focus()
-                          .deleteRange({ from: $anchor.start(), to: $anchor.end() })
-                          .setImage({ src: url })
-                          .run();
-                      } else {
-                        editor.chain().focus()
-                          .deleteRange({ from: $anchor.start(), to: $anchor.end() })
-                          .run();
-                      }
-                    }}
-                    className="flex items-center gap-3 px-3 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50 hover:text-indigo-600 rounded-lg transition-colors"
-                  >
-                    <ImageIcon className="w-4 h-4 shrink-0 text-slate-400" /> 이미지
-                  </button>
-                  <button
-                    onClick={() => {
-                      const { $anchor } = editor.state.selection;
-                      const url = window.prompt('유튜브 영상 링크를 입력하세요:');
-                      if (url) {
-                        editor.chain().focus()
-                          .deleteRange({ from: $anchor.start(), to: $anchor.end() })
-                          .setYoutubeVideo({ src: url })
-                          .run();
-                      } else {
-                        editor.chain().focus()
-                          .deleteRange({ from: $anchor.start(), to: $anchor.end() })
-                          .run();
-                      }
-                    }}
-                    className="flex items-center gap-3 px-3 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50 hover:text-indigo-600 rounded-lg transition-colors"
-                  >
-                    <YoutubeIcon className="w-4 h-4 shrink-0 text-slate-400" /> 유튜브
-                  </button>
-                  <button
-                    onClick={() => {
-                      const { $anchor } = editor.state.selection;
-                      editor.chain().focus()
-                        .deleteRange({ from: $anchor.start(), to: $anchor.end() })
-                        .toggleCodeBlock()
-                        .run();
-                    }}
-                    className="flex items-center gap-3 px-3 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50 hover:text-indigo-600 rounded-lg transition-colors"
-                  >
-                    <Code className="w-4 h-4 shrink-0 text-slate-400" /> 코드 블록
-                  </button>
-                  <button
-                    onClick={() => {
-                      const { $anchor } = editor.state.selection;
-                      editor.chain().focus()
-                        .deleteRange({ from: $anchor.start(), to: $anchor.end() })
-                        .insertTable({ rows: 3, cols: 3, withHeaderRow: true })
-                        .run();
-                    }}
-                    className="flex items-center gap-3 px-3 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50 hover:text-indigo-600 rounded-lg transition-colors"
-                  >
-                    <TableIcon className="w-4 h-4 shrink-0 text-slate-400" /> 표(Table)
-                  </button>
-                  
-                  <div className="px-2 py-1.5 mt-2 text-xs font-bold text-slate-400 border-t border-slate-100 pt-3">색상 및 효과</div>
-                  <button
-                    onClick={() => {
-                      const { $anchor } = editor.state.selection;
-                      editor.chain().focus()
-                        .deleteRange({ from: $anchor.start(), to: $anchor.end() })
-                        .setColor('#ef4444')
-                        .run();
-                    }}
-                    className="flex items-center gap-3 px-3 py-2 text-sm font-bold text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                  >
-                    <div className="w-4 h-4 rounded-full bg-red-500 shrink-0" /> 빨간색 글자
-                  </button>
-                  <button
-                    onClick={() => {
-                      const { $anchor } = editor.state.selection;
-                      editor.chain().focus()
-                        .deleteRange({ from: $anchor.start(), to: $anchor.end() })
-                        .setColor('#3b82f6')
-                        .run();
-                    }}
-                    className="flex items-center gap-3 px-3 py-2 text-sm font-bold text-blue-500 hover:bg-blue-50 rounded-lg transition-colors"
-                  >
-                    <div className="w-4 h-4 rounded-full bg-blue-500 shrink-0" /> 파란색 글자
-                  </button>
-                  <button
-                    onClick={() => {
-                      const { $anchor } = editor.state.selection;
-                      editor.chain().focus()
-                        .deleteRange({ from: $anchor.start(), to: $anchor.end() })
-                        .toggleHighlight({ color: '#fef08a' })
-                        .run();
-                    }}
-                    className="flex items-center gap-3 px-3 py-2 text-sm font-bold text-yellow-600 hover:bg-yellow-50 rounded-lg transition-colors"
-                  >
-                    <Highlighter className="w-4 h-4 shrink-0 text-yellow-500" /> 노란색 형광펜
-                  </button>
-                </div>
-              </FloatingMenu>
+              <SlashMenuWrapper editor={editor} />
             )}
 
             {/* Bubble Menu (Highlight text formatting) */}
@@ -571,5 +324,153 @@ export function DocumentBoard() {
         onClose={() => setIsGuideModalOpen(false)} 
       />
     </div>
+  );
+}
+
+function SlashMenuWrapper({ editor }: { editor: any }) {
+  const [query, setQuery] = useState('');
+  const [selectedIndex, setSelectedIndex] = useState(0);
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  const SLASH_COMMANDS = [
+    { id: 'h1', icon: Heading1, title: '큰 제목', category: '기본 블록', action: (e: any, r: any) => e.chain().focus().deleteRange(r).toggleHeading({ level: 1 }).run() },
+    { id: 'h2', icon: Heading2, title: '중간 제목', category: '기본 블록', action: (e: any, r: any) => e.chain().focus().deleteRange(r).toggleHeading({ level: 2 }).run() },
+    { id: 'h3', icon: Heading3, title: '작은 제목', category: '기본 블록', action: (e: any, r: any) => e.chain().focus().deleteRange(r).toggleHeading({ level: 3 }).run() },
+    { id: 'todo', icon: SquareCheckBig, title: '할 일 목록', category: '기본 블록', action: (e: any, r: any) => e.chain().focus().deleteRange(r).toggleTaskList().run() },
+    { id: 'bullet', icon: List, title: '글머리 기호 목록', category: '기본 블록', action: (e: any, r: any) => e.chain().focus().deleteRange(r).toggleBulletList().run() },
+    { id: 'num', icon: ListOrdered, title: '번호 매기기 목록', category: '기본 블록', action: (e: any, r: any) => e.chain().focus().deleteRange(r).toggleOrderedList().run() },
+    { id: 'quote', icon: Quote, title: '인용구', category: '기본 블록', action: (e: any, r: any) => e.chain().focus().deleteRange(r).toggleBlockquote().run() },
+    { id: 'div', icon: Minus, title: '구분선', category: '기본 블록', action: (e: any, r: any) => e.chain().focus().deleteRange(r).setHorizontalRule().run() },
+    
+    { id: 'callout', icon: Lightbulb, title: '콜아웃 (알림 박스)', category: '커스텀 및 고급 블록', action: (e: any, r: any) => e.chain().focus().deleteRange(r).setCallout().run() },
+    { id: 'toggle', icon: ChevronRight, title: '토글 목록', category: '커스텀 및 고급 블록', action: (e: any, r: any) => e.chain().focus().deleteRange(r).setToggle().run() },
+    
+    { id: 'bookmark', icon: BookmarkIcon, title: '웹 북마크', category: '데이터 및 미디어', action: (e: any, r: any) => e.chain().focus().deleteRange(r).setBookmark().run() },
+    { id: 'image', icon: ImageIcon, title: '이미지', category: '데이터 및 미디어', action: (e: any, r: any) => e.chain().focus().deleteRange(r).setCustomImage().run() },
+    { id: 'youtube', icon: YoutubeIcon, title: '유튜브', category: '데이터 및 미디어', action: (e: any, r: any) => e.chain().focus().deleteRange(r).setCustomYoutube().run() },
+    { id: 'code', icon: Code, title: '코드 블록', category: '데이터 및 미디어', action: (e: any, r: any) => e.chain().focus().deleteRange(r).toggleCodeBlock().run() },
+    { id: 'table', icon: TableIcon, title: '표(Table)', category: '데이터 및 미디어', action: (e: any, r: any) => e.chain().focus().deleteRange(r).insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run() },
+    
+    { id: 'red', icon: Palette, isColor: true, colorCls: 'bg-red-500', title: '빨간색 글자', category: '색상 및 효과', action: (e: any, r: any) => e.chain().focus().deleteRange(r).setColor('#ef4444').run() },
+    { id: 'blue', icon: Palette, isColor: true, colorCls: 'bg-blue-500', title: '파란색 글자', category: '색상 및 효과', action: (e: any, r: any) => e.chain().focus().deleteRange(r).setColor('#3b82f6').run() },
+    { id: 'hl', icon: Highlighter, isColor: false, title: '노란색 형광펜', category: '색상 및 효과', action: (e: any, r: any) => e.chain().focus().deleteRange(r).toggleHighlight({ color: '#fef08a' }).run() },
+  ];
+
+  // Keep track of the current text to extract query
+  useEffect(() => {
+    const updateQuery = () => {
+      const { $anchor } = editor.state.selection;
+      const node = $anchor.parent;
+      if (node.type.name === 'paragraph' && node.textContent.startsWith('/')) {
+        setQuery(node.textContent.slice(1).toLowerCase());
+      }
+    };
+    editor.on('selectionUpdate', updateQuery);
+    editor.on('update', updateQuery);
+    return () => {
+      editor.off('selectionUpdate', updateQuery);
+      editor.off('update', updateQuery);
+    };
+  }, [editor]);
+
+  const filteredCommands = SLASH_COMMANDS.filter(cmd => 
+    cmd.id.includes(query) || cmd.title.includes(query)
+  );
+
+  // Group by category
+  const groupedCommands = filteredCommands.reduce((acc, cmd) => {
+    if (!acc[cmd.category]) acc[cmd.category] = [];
+    acc[cmd.category].push(cmd);
+    return acc;
+  }, {} as Record<string, typeof SLASH_COMMANDS>);
+
+  // Flatten for keyboard navigation mapping
+  const flatCommands = Object.values(groupedCommands).flat();
+
+  useEffect(() => {
+    setSelectedIndex(0); // Reset selection when query changes
+  }, [query]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: Event) => {
+      const event = (e as CustomEvent).detail;
+      if (flatCommands.length === 0) return;
+
+      if (event.key === 'ArrowDown') {
+        setSelectedIndex((prev) => (prev + 1) % flatCommands.length);
+        scrollRef.current?.children[selectedIndex + 1]?.scrollIntoView({ block: 'nearest' });
+      } else if (event.key === 'ArrowUp') {
+        setSelectedIndex((prev) => (prev - 1 + flatCommands.length) % flatCommands.length);
+        scrollRef.current?.children[selectedIndex - 1]?.scrollIntoView({ block: 'nearest' });
+      } else if (event.key === 'Enter') {
+        const cmd = flatCommands[selectedIndex];
+        if (cmd) {
+          const { $anchor } = editor.state.selection;
+          // Delete from start of block (where / is) to current anchor (end of query)
+          const range = { from: $anchor.start(), to: $anchor.pos };
+          cmd.action(editor, range);
+        }
+      }
+    };
+    window.addEventListener('slash-menu-keydown', handleKeyDown);
+    return () => window.removeEventListener('slash-menu-keydown', handleKeyDown);
+  }, [editor, flatCommands, selectedIndex]);
+
+  return (
+    <FloatingMenu 
+      editor={editor} 
+      // @ts-ignore
+      tippyOptions={{ placement: 'bottom-start', offset: [0, 8] }}
+      shouldShow={({ state, view }) => {
+        if (!view.hasFocus || view.composing) return false;
+        const { $anchor } = state.selection;
+        const node = $anchor.parent;
+        // Only trigger if starting with / and no spaces (space indicates end of command intent)
+        return node.type.name === 'paragraph' && node.textContent.startsWith('/') && !node.textContent.includes(' ');
+      }}
+      className="flex bg-white shadow-xl border border-slate-100 rounded-xl overflow-hidden p-1 gap-1"
+    >
+      <div className="max-h-64 overflow-y-auto hide-scrollbar flex flex-col p-1 w-64" ref={scrollRef}>
+        {filteredCommands.length === 0 && (
+          <div className="px-3 py-4 text-sm text-center text-slate-500">결과가 없습니다</div>
+        )}
+        
+        {Object.entries(groupedCommands).map(([category, cmds]) => (
+          <div key={category}>
+            <div className="px-2 py-1.5 mt-2 first:mt-0 text-xs font-bold text-slate-400 border-t first:border-t-0 border-slate-100 pt-3 first:pt-1">
+              {category}
+            </div>
+            {cmds.map((cmd) => {
+              const index = flatCommands.indexOf(cmd);
+              const isSelected = index === selectedIndex;
+              const Icon = cmd.icon;
+              
+              return (
+                <button
+                  key={cmd.id}
+                  onClick={() => {
+                    const { $anchor } = editor.state.selection;
+                    const range = { from: $anchor.start(), to: $anchor.pos };
+                    cmd.action(editor, range);
+                  }}
+                  onMouseEnter={() => setSelectedIndex(index)}
+                  className={cn(
+                    "w-full flex items-center gap-3 px-3 py-2 text-sm font-bold rounded-lg transition-colors text-left",
+                    isSelected ? "bg-slate-100 text-indigo-600" : "text-slate-700 hover:bg-slate-50"
+                  )}
+                >
+                  {cmd.isColor ? (
+                    <div className={cn("w-4 h-4 rounded-full shrink-0", cmd.colorCls)} />
+                  ) : (
+                    <Icon className={cn("w-4 h-4 shrink-0", isSelected ? "text-indigo-500" : "text-slate-400")} />
+                  )}
+                  {cmd.title}
+                </button>
+              );
+            })}
+          </div>
+        ))}
+      </div>
+    </FloatingMenu>
   );
 }
