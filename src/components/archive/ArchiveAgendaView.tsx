@@ -28,7 +28,30 @@ const TABS = [
 
 export function ArchiveAgendaView() {
   const [activeTab, setActiveTab] = useState<TaskStatus>('inbox');
-const [selectedTaskIds, setSelectedTaskIds] = useState<Set<string>>(new Set());
+  const [selectedTaskIds, setSelectedTaskIds] = useState<Set<string>>(new Set());
+  const [expandedTasks, setExpandedTasks] = useState<Set<string>>(new Set());
+  const [editingSubtaskId, setEditingSubtaskId] = useState<string | null>(null);
+  const [editSubtaskTitle, setEditSubtaskTitle] = useState<string>('');
+  const [newSubtaskTitles, setNewSubtaskTitles] = useState<Record<string, string>>({});
+
+  const toggleTaskExpansion = (taskId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setExpandedTasks(prev => {
+      const next = new Set(prev);
+      if (next.has(taskId)) next.delete(taskId);
+      else next.add(taskId);
+      return next;
+    });
+  };
+
+  const handleQuickAddSubtask = (taskId: string, e: React.FormEvent) => {
+    e.preventDefault();
+    const title = newSubtaskTitles[taskId]?.trim();
+    if (title) {
+      addSubtask(taskId, title);
+      setNewSubtaskTitles(prev => ({ ...prev, [taskId]: '' }));
+    }
+  };
 
   const handleTabChange = (tabId: TaskStatus) => {
     setActiveTab(tabId);
@@ -437,11 +460,11 @@ const [selectedTaskIds, setSelectedTaskIds] = useState<Set<string>>(new Set());
               const deadlineInfo = task.deadline ? getDeadlineInfo(task.deadline) : null;
               
               return (
-                <div 
-                  key={task.id}
-                  className="group relative flex items-center gap-4 p-4 md:p-5 bg-white/70 backdrop-blur-xl hover:bg-white border border-white/60 rounded-3xl shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 cursor-pointer"
-                  onClick={() => openDetail(task)}
-                >
+                <div key={task.id} className="flex flex-col gap-1.5 group">
+                  <div 
+                    className="relative flex items-center gap-4 p-4 md:p-5 bg-white/70 backdrop-blur-xl hover:bg-white border border-white/60 rounded-3xl shadow-sm hover:shadow-lg transition-all duration-300 cursor-pointer"
+                    onClick={() => openDetail(task)}
+                  >
                   {/* Status Toggle Button */}
                   {activeTab === 'trash' ? (
                     <button 
@@ -501,12 +524,16 @@ const [selectedTaskIds, setSelectedTaskIds] = useState<Set<string>>(new Set());
                       )}
 
                       {task.subtasks && task.subtasks.length > 0 && (
-                        <div className="flex items-center gap-1.5 px-3 py-1 rounded-full border border-blue-200 bg-blue-50 text-blue-700 shadow-sm hover:bg-blue-100 transition-colors">
+                        <button 
+                          onClick={(e) => toggleTaskExpansion(task.id, e)}
+                          className="flex items-center gap-1.5 px-3 py-1 rounded-full border border-blue-200 bg-blue-50 text-blue-700 shadow-sm hover:bg-blue-100 transition-colors"
+                        >
                           <CheckSquare className="w-3.5 h-3.5" />
                           <span className="text-[12px] font-bold">
                             {task.subtasks.filter((s: any) => s.is_completed).length}/{task.subtasks.length} 서브태스크
                           </span>
-                        </div>
+                          <ChevronRight className={cn("w-3.5 h-3.5 transition-transform", expandedTasks.has(task.id) && "rotate-90")} />
+                        </button>
                       )}
                     </div>
                   </div>
@@ -521,6 +548,104 @@ const [selectedTaskIds, setSelectedTaskIds] = useState<Set<string>>(new Set());
                     />
                   </div>
                 </div>
+
+                {/* Subtasks Accordion */}
+                <AnimatePresence>
+                  {expandedTasks.has(task.id) && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: 'auto', opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      className="overflow-hidden"
+                    >
+                      <div className="pl-14 pr-4 pb-2 space-y-2">
+                        {task.subtasks?.map(sub => (
+                          <div key={sub.id} className="flex items-center gap-3 p-2.5 bg-white/50 border border-slate-100 shadow-sm rounded-xl group/sub hover:bg-white/80 transition-colors">
+                            <button 
+                              onClick={(e) => { e.stopPropagation(); updateSubtask(task.id, sub.id, { is_completed: !sub.is_completed }); }}
+                              className="shrink-0"
+                            >
+                              {sub.is_completed ? (
+                                <CheckCircle2 className="w-5 h-5 text-indigo-400" />
+                              ) : (
+                                <Circle className="w-5 h-5 text-slate-300 group-hover/sub:text-indigo-400" />
+                              )}
+                            </button>
+                            
+                            {editingSubtaskId === sub.id ? (
+                              <div className="flex-1 flex items-center gap-2" onClick={e => e.stopPropagation()}>
+                                <input
+                                  autoFocus
+                                  value={editSubtaskTitle}
+                                  onChange={e => setEditSubtaskTitle(e.target.value)}
+                                  onKeyDown={e => {
+                                    if (e.key === 'Enter') {
+                                      e.preventDefault();
+                                      if (editSubtaskTitle.trim()) {
+                                        updateSubtask(task.id, sub.id, { title: editSubtaskTitle.trim() });
+                                      }
+                                      setEditingSubtaskId(null);
+                                    } else if (e.key === 'Escape') {
+                                      setEditingSubtaskId(null);
+                                    }
+                                  }}
+                                  className="flex-1 bg-white border border-indigo-200 rounded-md px-2 py-1 text-sm font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+                                />
+                                <button 
+                                  onClick={() => {
+                                    if (editSubtaskTitle.trim()) {
+                                      updateSubtask(task.id, sub.id, { title: editSubtaskTitle.trim() });
+                                    }
+                                    setEditingSubtaskId(null);
+                                  }}
+                                  className="text-xs font-bold text-indigo-600 bg-indigo-50 px-2 py-1 rounded-md"
+                                >
+                                  저장
+                                </button>
+                              </div>
+                            ) : (
+                              <span className={cn("font-bold text-sm flex-1", sub.is_completed ? "text-slate-400 line-through" : "text-slate-600")}>
+                                {sub.title}
+                              </span>
+                            )}
+
+                            {!editingSubtaskId && (
+                              <div className="opacity-0 group-hover/sub:opacity-100 flex items-center gap-1 transition-opacity">
+                                <button 
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setEditingSubtaskId(sub.id);
+                                    setEditSubtaskTitle(sub.title);
+                                  }}
+                                  className="p-1.5 text-slate-400 hover:text-indigo-500 rounded-md hover:bg-indigo-50 transition-colors"
+                                >
+                                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
+                                </button>
+                                <button 
+                                  onClick={(e) => { e.stopPropagation(); deleteSubtask(task.id, sub.id); }}
+                                  className="p-1.5 text-slate-400 hover:text-red-500 rounded-md hover:bg-red-50 transition-colors"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                        
+                        <form onSubmit={(e) => handleQuickAddSubtask(task.id, e)} className="relative mt-2" onClick={e => e.stopPropagation()}>
+                          <input 
+                            value={newSubtaskTitles[task.id] || ''}
+                            onChange={e => setNewSubtaskTitles(prev => ({ ...prev, [task.id]: e.target.value }))}
+                            placeholder="하위 작업 추가 후 엔터..."
+                            className="w-full bg-white/50 border border-transparent shadow-sm rounded-xl px-4 py-2.5 pl-9 font-bold text-[13px] focus-visible:ring-2 focus-visible:ring-indigo-500/30 text-slate-700 placeholder:text-slate-400 transition-all focus:bg-white"
+                          />
+                          <Plus className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                        </form>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
               )
             })
           )}

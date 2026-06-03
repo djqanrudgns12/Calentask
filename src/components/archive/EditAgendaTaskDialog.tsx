@@ -84,29 +84,29 @@ export function EditAgendaTaskDialog({
           {/* Properties */}
           <div className="grid grid-cols-2 gap-4 mb-8">
             <div>
-              <Label className="block text-sm font-bold text-slate-600 mb-2 flex items-center gap-1"><Tag className="w-4 h-4"/> 카테고리</Label>
+              <Label className="block text-[13px] font-bold text-slate-500 mb-2 flex items-center gap-1.5"><Tag className="w-3.5 h-3.5"/> 카테고리</Label>
               <select 
                 value={editForm.category_id || ''}
                 onChange={e => setEditForm({ ...editForm, category_id: e.target.value || null })}
-                className="w-full h-12 bg-white/60 border border-slate-200 shadow-sm rounded-xl px-4 font-bold text-sm text-slate-700 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-400 transition-all"
+                className="w-full h-10 bg-white/60 border border-slate-200 shadow-sm rounded-xl px-3 font-bold text-[13px] text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 transition-all appearance-none"
               >
                 <option value="">카테고리 없음</option>
                 {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
               </select>
             </div>
-            <div>
-              <Label className="block text-sm font-bold text-slate-600 mb-2 flex items-center gap-1"><Clock className="w-4 h-4"/> 데드라인</Label>
+            <div className="overflow-hidden">
+              <Label className="block text-[13px] font-bold text-slate-500 mb-2 flex items-center gap-1.5"><Clock className="w-3.5 h-3.5"/> 데드라인</Label>
               <DateTimePickerPopover 
                 date={editForm.deadline ? new Date(editForm.deadline) : null} 
                 setDate={(d: Date | null) => setEditForm({ ...editForm, deadline: d ? d.toISOString() : null })}
                 align="start"
               >
-                <div className="flex items-center gap-2 px-4 h-12 bg-white/60 hover:bg-white rounded-xl border border-slate-200 hover:border-indigo-300 hover:shadow-sm transition-all w-full cursor-pointer">
+                <div className="flex items-center gap-2 px-3 h-10 bg-white/60 hover:bg-white rounded-xl border border-slate-200 hover:border-indigo-300 hover:shadow-sm transition-all w-full cursor-pointer overflow-hidden">
                   <span className={cn(
-                    "flex-1 text-sm font-bold text-left whitespace-nowrap",
+                    "flex-1 text-[13px] font-bold text-left whitespace-nowrap overflow-hidden text-ellipsis",
                     editForm.deadline ? "text-slate-700" : "text-slate-400"
                   )}>
-                    {editForm.deadline ? format(new Date(editForm.deadline), 'yyyy년 M월 d일 a h:mm', { locale: ko }) : '마감일 설정'}
+                    {editForm.deadline ? format(new Date(editForm.deadline), 'yy.M.d a h:mm', { locale: ko }) : '마감일 설정'}
                   </span>
                 </div>
               </DateTimePickerPopover>
