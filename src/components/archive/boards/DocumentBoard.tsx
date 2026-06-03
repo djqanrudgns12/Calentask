@@ -51,11 +51,7 @@ export function DocumentBoard() {
   const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
   const [isGuideModalOpen, setIsGuideModalOpen] = useState(false);
 
-  useEffect(() => {
-    setLocalTitle(docItem?.title || '');
-  }, [activeTabId, docItem?.id]); // 탭이나 문서가 바뀔 때만 초기화
-
-  // Handle title change
+  // Handle title change from the input
   const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!activeTabId || !docItem) return;
     const newTitle = e.target.value;
@@ -63,6 +59,20 @@ export function DocumentBoard() {
     updateItem(activeTabId, docItem.id, { title: newTitle }); // 스토어 디바운스 업데이트
     updateTab(activeTabId, { name: newTitle || '제목 없음' });
   };
+
+  // Keep localTitle and docItem in sync when tab is renamed externally (e.g. double click tab)
+  useEffect(() => {
+    if (docItem) {
+      // If we switch tabs, initialize localTitle
+      setLocalTitle(docItem.title || '');
+      
+      // If tab was renamed externally, sync it down to the document
+      if (currentTab?.name && currentTab.name !== docItem.title) {
+        setLocalTitle(currentTab.name);
+        updateItem(activeTabId!, docItem.id, { title: currentTab.name });
+      }
+    }
+  }, [activeTabId, docItem?.id, currentTab?.name]);
 
   // Setup Tiptap Editor
   const editor = useEditor({

@@ -5,8 +5,9 @@ import {
   getArchiveNotes, createArchiveNote, updateArchiveNote, deleteArchiveNote 
 } from '@/app/actions/archive';
 
-// Debounce timers for updateItem to avoid flooding the server during typing
+// Debounce timers for updateItem and updateTab to avoid flooding the server during typing
 const updateTimers: Record<string, ReturnType<typeof setTimeout>> = {};
+const tabUpdateTimers: Record<string, ReturnType<typeof setTimeout>> = {};
 
 type ArchiveTab = Database['public']['Tables']['archive_tabs']['Row'];
 type Note = Database['public']['Tables']['notes']['Row'];
@@ -101,16 +102,33 @@ export const useArchiveStore = create<ArchiveState>()((set, get) => ({
   },
 
   updateTab: async (id, updates) => {
-    const prevTabs = get().tabs;
+    // Optimistic update
     set(state => ({
       tabs: state.tabs.map(t => t.id === id ? { ...t, ...updates } : t)
     }));
-    try {
-      await updateArchiveTab(id, updates);
-    } catch (error) {
-      console.error('Failed to update tab:', error);
-      set({ tabs: prevTabs }); // Rollback
-    }
+    
+    // Debounced server sync
+    if (tabUpdateTimers[id]) clearTimeout(tabUpdateTimers[id]);
+    
+    tabUpdateTimers[id] = setTimeout(async () => {
+      try {
+        const updatedTab = get().tabs.find(t => t.id === id);
+        if (updatedTab) {
+          await updateArchiveTab(id, {
+            name: updatedTab.name,
+            icon: updatedTab.icon,
+            position: updatedTab.position,
+            is_secure: updatedTab.is_secure,
+            board_type: updatedTab.board_type
+          });
+        }
+      } catch (error) {
+        console.error('Failed to update tab:', error);
+        // Note: we could rollback here by fetching tabs, but since it's debounced,
+        // rolling back to a stale prevTabs might be tricky. For now, rely on error logs.
+      }
+      delete tabUpdateTimers[id];
+    }, 500);
   },
 
   deleteTab: async (id) => {
