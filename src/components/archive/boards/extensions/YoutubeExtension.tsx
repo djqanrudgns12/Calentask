@@ -34,6 +34,7 @@ const YoutubeComponent = (props: any) => {
         </div>
       ) : (
         <div className="relative group overflow-hidden rounded-xl border border-slate-200 aspect-video w-full" contentEditable={false}>
+          {/* @ts-ignore */}
           <ReactPlayer url={src} width="100%" height="100%" controls />
           <button 
             onClick={() => setIsEditing(true)} 
