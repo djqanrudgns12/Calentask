@@ -99,19 +99,21 @@ export function DateTimePickerPopover({ date, setDate, children, align = "center
       <PopoverContent className="z-50 w-[340px] p-0 rounded-3xl shadow-[0_20px_60px_-15px_rgba(0,0,0,0.1)] border border-slate-100 overflow-hidden bg-white/95 backdrop-blur-3xl" align={align} sideOffset={12}>
         <div className="flex flex-col">
           {/* Presets Header */}
-          <div className="bg-slate-50/80 p-3 border-b border-slate-100 flex gap-2 overflow-x-auto hide-scrollbar">
-            <div className="flex items-center text-xs font-bold text-slate-400 mr-1 shrink-0">
-              <Zap className="w-3.5 h-3.5 mr-1" /> 빠른 선택
+          <div className="bg-slate-50/80 p-3 border-b border-slate-100 flex flex-col gap-2">
+            <div className="flex items-center text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+              <Zap className="w-3.5 h-3.5 mr-1 text-amber-500" /> 빠른 선택
             </div>
-            <button onClick={() => applyPreset(() => setHours(setMinutes(new Date(), 0), 18))} className="px-3 py-1.5 rounded-full bg-white text-[11px] font-bold text-slate-600 border border-slate-200 hover:border-indigo-300 hover:text-indigo-600 shadow-sm shrink-0 transition-colors">
-              오늘 퇴근 (18:00)
-            </button>
-            <button onClick={() => applyPreset(() => setHours(setMinutes(addDays(new Date(), 1), 0), 9))} className="px-3 py-1.5 rounded-full bg-white text-[11px] font-bold text-slate-600 border border-slate-200 hover:border-indigo-300 hover:text-indigo-600 shadow-sm shrink-0 transition-colors">
-              내일 출근 (09:00)
-            </button>
-            <button onClick={() => applyPreset(() => setHours(setMinutes(nextFriday(new Date()), 0), 18))} className="px-3 py-1.5 rounded-full bg-white text-[11px] font-bold text-slate-600 border border-slate-200 hover:border-indigo-300 hover:text-indigo-600 shadow-sm shrink-0 transition-colors">
-              이번 주 금요일
-            </button>
+            <div className="flex flex-wrap gap-1.5">
+              <button onClick={() => applyPreset(() => setHours(setMinutes(new Date(), 0), 18))} className="px-2.5 py-1.5 rounded-md bg-white text-[11px] font-bold text-slate-600 border border-slate-200 hover:border-indigo-300 hover:text-indigo-600 shadow-sm transition-colors">
+                오늘 퇴근 (18:00)
+              </button>
+              <button onClick={() => applyPreset(() => setHours(setMinutes(addDays(new Date(), 1), 0), 9))} className="px-2.5 py-1.5 rounded-md bg-white text-[11px] font-bold text-slate-600 border border-slate-200 hover:border-indigo-300 hover:text-indigo-600 shadow-sm transition-colors">
+                내일 출근 (09:00)
+              </button>
+              <button onClick={() => applyPreset(() => setHours(setMinutes(nextFriday(new Date()), 0), 18))} className="px-2.5 py-1.5 rounded-md bg-white text-[11px] font-bold text-slate-600 border border-slate-200 hover:border-indigo-300 hover:text-indigo-600 shadow-sm transition-colors">
+                이번 주 금요일
+              </button>
+            </div>
           </div>
 
           <div className="p-5">
