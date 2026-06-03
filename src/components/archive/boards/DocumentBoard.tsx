@@ -189,6 +189,7 @@ export function DocumentBoard() {
             {editor && (
               <FloatingMenu 
                 editor={editor} 
+                // @ts-ignore
                 tippyOptions={{ placement: 'bottom-start', offset: [0, 8] }}
                 shouldShow={({ state, view }) => {
                   if (view.composing) return false;
