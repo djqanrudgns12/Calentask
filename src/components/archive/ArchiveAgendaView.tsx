@@ -182,36 +182,19 @@ const [selectedTaskIds, setSelectedTaskIds] = useState<Set<string>>(new Set());
 
   return (
     <div className="relative flex flex-col h-full bg-slate-50 overflow-hidden">
-      {/* Decorative Gradients */}
-      <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-indigo-200/40 rounded-full blur-[120px] pointer-events-none" />
-      <div className="absolute bottom-[-20%] right-[-10%] w-[50%] h-[50%] bg-purple-200/40 rounded-full blur-[120px] pointer-events-none" />
-      <div className="absolute top-[20%] right-[10%] w-[30%] h-[30%] bg-emerald-200/20 rounded-full blur-[100px] pointer-events-none" />
+      {/* Subtle Background */}
+      <div className="absolute top-0 left-0 w-full h-64 bg-gradient-to-b from-purple-50/50 to-transparent pointer-events-none" />
 
       {/* Main Container */}
-      <div className="relative z-10 flex flex-col h-full max-w-5xl mx-auto w-full px-6 py-10 md:px-12">
-        {/* Agenda Center Banner */}
-        <div className="shrink-0 mb-8 relative overflow-hidden rounded-[2.5rem] bg-slate-900 shadow-xl border border-white/10">
-          <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/40 via-purple-500/30 to-slate-900/90 z-0" />
-          <div className="absolute top-[-50%] left-[-20%] w-[70%] h-[150%] bg-blue-400/20 rounded-full blur-[100px] pointer-events-none z-0" />
-          <div className="absolute bottom-[-50%] right-[-20%] w-[70%] h-[150%] bg-purple-500/20 rounded-full blur-[100px] pointer-events-none z-0" />
-          
-          <div className="relative z-10 px-8 py-14 md:py-16 flex flex-col items-center justify-center text-center">
-            <div className="w-14 h-14 mb-5 bg-white/10 rounded-2xl backdrop-blur-xl flex items-center justify-center border border-white/20 shadow-lg">
-              <Calendar className="w-7 h-7 text-white" />
-            </div>
-            <h1 className="text-4xl md:text-5xl font-extrabold text-white tracking-tight mb-3 drop-shadow-sm">Agenda Center</h1>
-            <p className="text-indigo-100/80 font-medium text-lg max-w-md mx-auto">
-              자연어로 오늘의 목표를 입력하고,<br className="hidden md:block" /> 체계적으로 완벽하게 달성하세요.
-            </p>
-          </div>
-        </div>
+      <div className="relative z-10 flex flex-col h-full max-w-5xl mx-auto w-full px-4 md:px-8 py-6">
+
 
         {/* Quick Add Form (Minimalist & Professional) */}
         <motion.div 
           animate={showTitleError ? { x: [-10, 10, -10, 10, 0] } : {}}
           transition={{ duration: 0.4 }}
           className={cn(
-            "relative z-20 shrink-0 -mt-16 mb-10 mx-4 md:mx-10 bg-white/90 backdrop-blur-3xl shadow-xl border transition-all duration-300",
+            "relative z-20 shrink-0 mb-6 bg-white/80 backdrop-blur-3xl shadow-sm border transition-all duration-300",
             isQuickAddExpanded ? "rounded-3xl border-slate-200/60 shadow-lg" : "rounded-full border-white/80",
             showTitleError && "border-red-400 ring-4 ring-red-500/10"
           )}

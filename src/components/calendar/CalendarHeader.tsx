@@ -107,6 +107,7 @@ export function CalendarHeader({ onOpenSettings }: CalendarHeaderProps) {
   const isNiceImport = viewMode === 'nice_import'
   const isAnniversary = viewMode === 'anniversary'
   const isInsights = viewMode === 'insights'
+  const isAgenda = viewMode === 'archive_agenda'
 
   let wrapperClassName = "flex-1 flex flex-row items-center justify-between rounded-xl md:rounded-[2rem] px-2 py-1.5 md:px-4 md:py-2.5 gap-2 md:gap-4 transition-all duration-500 overflow-hidden relative "
 
@@ -118,6 +119,8 @@ export function CalendarHeader({ onOpenSettings }: CalendarHeaderProps) {
     wrapperClassName += "bg-white/80 backdrop-blur-md shadow-[0_0_30px_-5px_rgba(244,63,94,0.15)] border border-rose-100/50"
   } else if (isInsights) {
     wrapperClassName += "bg-white/90 backdrop-blur-xl shadow-[0_10px_40px_-10px_rgba(99,102,241,0.2)] border border-indigo-100/80"
+  } else if (isAgenda) {
+    wrapperClassName += "bg-white/90 backdrop-blur-xl shadow-[0_10px_40px_-10px_rgba(139,92,246,0.2)] border border-purple-100/80"
   }
 
   // --- Slots ---
@@ -194,6 +197,32 @@ export function CalendarHeader({ onOpenSettings }: CalendarHeaderProps) {
                 <span className="relative inline-flex rounded-full w-2 h-2 bg-emerald-500"></span>
               </span>
               <p className="text-xs text-indigo-500 font-mono tracking-wider font-bold">INSIGHT DASHBOARD ONLINE</p>
+            </div>
+          </div>
+        </motion.div>
+      )
+    }
+    if (isAgenda) {
+      return (
+        <motion.div 
+          key="agenda-left"
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={{ opacity: 0, x: -20 }}
+          className="flex items-center shrink-0 gap-4 py-1"
+        >
+          <div className="relative w-12 h-12 rounded-xl bg-gradient-to-br from-purple-100 to-blue-100 flex items-center justify-center shrink-0 shadow-inner border border-white">
+            <CalendarHeart className="w-6 h-6 text-purple-600 relative z-10" />
+            <div className="absolute inset-0 bg-white/50 rounded-xl animate-pulse" />
+          </div>
+          <div className="hidden md:flex flex-col">
+            <h2 className="font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-purple-700 to-blue-700 text-xl tracking-tight">Agenda Center</h2>
+            <div className="flex items-center gap-2 mt-0.5">
+              <span className="relative flex w-2 h-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-500 opacity-75"></span>
+                <span className="relative inline-flex rounded-full w-2 h-2 bg-blue-500"></span>
+              </span>
+              <p className="text-xs text-purple-500 font-mono tracking-wider font-bold">MANAGE YOUR TASKS</p>
             </div>
           </div>
         </motion.div>
@@ -322,6 +351,12 @@ export function CalendarHeader({ onOpenSettings }: CalendarHeaderProps) {
             {isInsights && (
               <>
                 <div className="absolute inset-0 bg-gradient-to-r from-indigo-50/50 via-purple-50/30 to-pink-50/50 pointer-events-none" />
+                <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-white/40 via-transparent to-transparent pointer-events-none" />
+              </>
+            )}
+            {isAgenda && (
+              <>
+                <div className="absolute inset-0 bg-gradient-to-r from-purple-50/50 via-blue-50/30 to-indigo-50/50 pointer-events-none" />
                 <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-white/40 via-transparent to-transparent pointer-events-none" />
               </>
             )}
