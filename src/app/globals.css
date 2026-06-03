@@ -232,13 +232,31 @@
 
 .prose.tiptap table .column-resize-handle {
   position: absolute;
-  right: -2px;
+  right: -5px;
   top: 0;
-  bottom: -2px;
-  width: 4px;
+  bottom: 0;
+  width: 10px; /* Wider hit area */
+  background-color: transparent;
+  pointer-events: auto; /* Allow interaction */
+  z-index: 20;
+  cursor: col-resize;
+}
+
+.prose.tiptap table .column-resize-handle::after {
+  content: "";
+  position: absolute;
+  left: 4px;
+  right: 4px;
+  top: 0;
+  bottom: 0;
   background-color: var(--color-vibrant-blue);
-  pointer-events: none;
-  z-index: 10;
+  opacity: 0;
+  transition: opacity 0.2s ease-in-out;
+}
+
+.prose.tiptap table .column-resize-handle:hover::after,
+.prose.tiptap table .column-resize-handle:active::after {
+  opacity: 1;
 }
 
 .resize-cursor {
