@@ -272,18 +272,22 @@ const [selectedTaskIds, setSelectedTaskIds] = useState<Set<string>>(new Set());
                     </div>
                   </div>
 
-                  {/* Date Badge (Expanded View) */}
-                  {parsedData.date && (
-                    <div className="space-y-2">
-                      <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Parsed Date</label>
-                      <div className="flex items-center gap-2 px-3 py-2 bg-indigo-50/50 rounded-xl border border-indigo-100 w-fit">
-                        <Clock className="w-4 h-4 text-indigo-500" />
-                        <span className="text-sm font-bold text-indigo-700">
-                          {format(parsedData.date, 'yyyy년 M월 d일 a h:mm', { locale: ko })}
-                        </span>
-                      </div>
+                  {/* Deadline Date Picker (Expanded View) */}
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Deadline</label>
+                    <div className="flex items-center gap-3 px-4 py-2.5 bg-slate-50 focus-within:bg-white rounded-xl border border-slate-200 focus-within:border-indigo-400 focus-within:shadow-sm transition-all w-full sm:w-max">
+                      <Clock className="w-4 h-4 text-slate-400" />
+                      <input 
+                        type="datetime-local" 
+                        value={parsedData.date ? format(parsedData.date, "yyyy-MM-dd'T'HH:mm") : ''}
+                        onChange={(e) => {
+                          const date = e.target.value ? new Date(e.target.value) : null;
+                          setParsedData(prev => ({ ...prev, date, hasTime: true }));
+                        }}
+                        className="flex-1 bg-transparent text-sm font-bold text-slate-700 outline-none w-full"
+                      />
                     </div>
-                  )}
+                  </div>
 
                   {/* Subtasks */}
                   <div className="space-y-2">
@@ -351,27 +355,35 @@ const [selectedTaskIds, setSelectedTaskIds] = useState<Set<string>>(new Set());
         </motion.div>
 
         {/* Tabs */}
-        <div className="flex items-center justify-between mb-6 shrink-0">
-          <div className="flex items-center gap-2 bg-white/40 p-1.5 rounded-2xl backdrop-blur-md border border-white/50 w-max">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 shrink-0">
+          <div className="flex items-center p-1.5 bg-slate-100 rounded-[1.25rem] w-full sm:w-auto overflow-x-auto hide-scrollbar border border-slate-200/60 shadow-inner">
             {TABS.map(tab => {
-            const Icon = tab.icon;
-            const isActive = activeTab === tab.id;
-            return (
-              <button
-                key={tab.id}
-                onClick={() => handleTabChange(tab.id)}
-                className={cn(
-                  "flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-all duration-300",
-                  isActive 
-                    ? "bg-white text-indigo-700 shadow-sm border border-white/80" 
-                    : "text-slate-500 hover:text-slate-700 hover:bg-white/50"
-                )}
-              >
-                <Icon className={cn("w-4 h-4", isActive ? "text-indigo-600" : "text-slate-400")} />
-                {tab.label}
-              </button>
-            )
-          })}
+              const Icon = tab.icon;
+              const isActive = activeTab === tab.id;
+              
+              let activeColor = "text-slate-800 bg-white shadow-sm border border-slate-200/60";
+              let iconColor = "text-slate-700";
+              if (isActive) {
+                if (tab.id === 'done') { activeColor = "bg-emerald-50 text-emerald-700 shadow-sm border border-emerald-200/60"; iconColor = "text-emerald-600"; }
+                else if (tab.id === 'trash') { activeColor = "bg-red-50 text-red-700 shadow-sm border border-red-200/60"; iconColor = "text-red-600"; }
+                else if (tab.id === 'archive') { activeColor = "bg-orange-50 text-orange-700 shadow-sm border border-orange-200/60"; iconColor = "text-orange-600"; }
+                else { activeColor = "bg-indigo-50 text-indigo-700 shadow-sm border border-indigo-200/60"; iconColor = "text-indigo-600"; }
+              }
+
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => handleTabChange(tab.id)}
+                  className={cn(
+                    "flex-1 sm:flex-none flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-all duration-300",
+                    isActive ? activeColor : "text-slate-500 hover:text-slate-700 hover:bg-slate-200/50"
+                  )}
+                >
+                  <Icon className={cn("w-4 h-4", isActive ? iconColor : "text-slate-400")} />
+                  {tab.label}
+                </button>
+              )
+            })}
           </div>
           
           {activeTab === 'trash' && filteredTasks.length > 0 && (
