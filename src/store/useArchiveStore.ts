@@ -526,6 +526,11 @@ export const useArchiveStore = create<ArchiveState>()(
         items: state.items,
         boardConfigs: state.boardConfigs,
       }),
+      merge: (persistedState: any, currentState) => ({
+        ...currentState,
+        ...persistedState,
+        isPrefetched: false, // Force prefetch to run on every load even if old cache had it
+      }),
       // localStorage 용량 초과 시 graceful 처리
       storage: {
         getItem: (name) => {

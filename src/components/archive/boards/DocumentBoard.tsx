@@ -234,8 +234,10 @@ export function DocumentBoard() {
   const initializedDocId = useRef<string | null>(null);
 
   useEffect(() => {
+    if (!editor || !docItem) return;
+    
     // Force sync if docItem changes (hydration or tab switch)
-    if (editor && docItem && initializedDocId.current !== docItem.id) {
+    if (initializedDocId.current !== docItem.id) {
       initializedDocId.current = docItem.id;
       // We use a small timeout to ensure Tiptap has fully initialized its schema
       setTimeout(() => {
@@ -243,8 +245,24 @@ export function DocumentBoard() {
           editor.commands.setContent(getValidContent());
         }
       }, 50);
+    } else {
+      // Handle background sync updates (where docItem ID is the same, but content changed from server)
+      const storeJson = JSON.stringify(docItem.data?.contentJSON || {});
+      const editorJson = JSON.stringify(editor.getJSON());
+      
+      const storeText = docItem.content || '';
+      const editorText = editor.getText() || '';
+
+      // If store JSON differs from editor JSON (or text differs for raw text), and it's not a local update
+      if (storeJson !== editorJson && (storeJson !== '{}' || storeText !== editorText)) {
+        setTimeout(() => {
+          if (!editor.isDestroyed) {
+            editor.commands.setContent(getValidContent());
+          }
+        }, 10);
+      }
     }
-  }, [editor, docItem?.id]);
+  }, [editor, docItem?.id, docItem?.data?.contentJSON, docItem?.content]);
 
   if (!docItem || !editor) return null;
 
