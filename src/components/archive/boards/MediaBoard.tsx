@@ -7,6 +7,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { FastAverageColor } from 'fast-average-color';
 import ReactPlayer from 'react-player';
 
+const Player = ReactPlayer as any;
+
 // Extracts a thumbnail and standardizes URL if possible
 function extractMediaMetadata(url: string) {
   let thumbnail = '';
@@ -289,7 +291,7 @@ export function MediaBoard() {
                   <X className="w-5 h-5" />
                 </button>
                 <div className="w-full aspect-video relative bg-black">
-                  <ReactPlayer 
+                  <Player 
                     url={activeMedia.data?.url as string} 
                     width="100%" 
                     height="100%"
