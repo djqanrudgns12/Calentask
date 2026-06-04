@@ -61,6 +61,7 @@ interface ArchiveState {
   updateItem: (boardId: string, itemId: string, updates: Partial<BoardItem>) => Promise<void>;
   deleteItem: (boardId: string, itemId: string) => Promise<void>;
   reorderItems: (boardId: string, startIndex: number, endIndex: number) => Promise<void>;
+  flushPendingUpdates: () => Promise<void>;
 }
 
 export const useArchiveStore = create<ArchiveState>()((set, get) => ({
@@ -185,7 +186,9 @@ export const useArchiveStore = create<ArchiveState>()((set, get) => ({
   },
 
   addItem: async (boardId, item) => {
-    const tempId = item.id || Date.now().toString();
+    // 임시 ID 대신 클라이언트에서 UUID를 생성하여 고정시킵니다.
+    // 이를 통해 생성 직후 연속된 타이핑(updateItem) 시 발생하는 ID 불일치에 의한 저장 누락을 방지합니다.
+    const tempId = item.id || crypto.randomUUID();
     const boardItems = get().items[boardId] || [];
     const newItem: BoardItem = {
       id: tempId,
@@ -205,6 +208,7 @@ export const useArchiveStore = create<ArchiveState>()((set, get) => ({
     
     try {
       const created = await createArchiveNote({
+        id: tempId, // 생성한 UUID를 DB에 그대로 전달
         tab_id: boardId,
         tags: newItem.tags,
         is_pinned: false,
@@ -325,4 +329,62 @@ export const useArchiveStore = create<ArchiveState>()((set, get) => ({
       set({ items: prevItems });
     }
   },
+
+  flushPendingUpdates: async () => {
+    const promises: Promise<void>[] = [];
+    
+    // Flush tab timers
+    for (const id of Object.keys(tabUpdateTimers)) {
+      clearTimeout(tabUpdateTimers[id]);
+      const updatedTab = get().tabs.find(t => t.id === id);
+      if (updatedTab) {
+        promises.push(updateArchiveTab(id, {
+          name: updatedTab.name,
+          icon: updatedTab.icon,
+          position: updatedTab.position,
+          is_secure: updatedTab.is_secure,
+          board_type: updatedTab.board_type
+        }).catch(console.error).then(() => {}));
+      }
+      delete tabUpdateTimers[id];
+    }
+
+    // Flush item timers
+    for (const key of Object.keys(updateTimers)) {
+      clearTimeout(updateTimers[key]);
+      const [boardId, itemId] = key.split(':');
+      const updatedItem = get().items[boardId]?.find(i => i.id === itemId);
+      if (updatedItem) {
+        promises.push(updateArchiveNote(itemId, {
+          tags: updatedItem.tags,
+          content_data: {
+            title: updatedItem.title,
+            content: updatedItem.content,
+            status: updatedItem.status,
+            position: updatedItem.position,
+            data: updatedItem.data
+          }
+        }).catch(console.error).then(() => {}));
+      }
+      delete updateTimers[key];
+    }
+    
+    if (promises.length > 0) {
+      await Promise.all(promises);
+    }
+  },
 }));
+
+// 페이지 이탈 시 데이터 유실 방지(Unload Protection) 안전장치
+if (typeof window !== 'undefined') {
+  window.addEventListener('beforeunload', (e) => {
+    if (Object.keys(updateTimers).length > 0 || Object.keys(tabUpdateTimers).length > 0) {
+      // 강제로 즉시 동기화 시도 (네트워크 환경에 따라 보장되지 않을 수 있으므로 경고창 띄움)
+      useArchiveStore.getState().flushPendingUpdates();
+      
+      e.preventDefault();
+      e.returnValue = '변경사항이 아직 저장되지 않았습니다. 나가시겠습니까?';
+      return e.returnValue;
+    }
+  });
+}
