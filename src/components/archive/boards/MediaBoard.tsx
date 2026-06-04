@@ -250,7 +250,7 @@ export function MediaBoard() {
                 >
                   <X className="w-5 h-5" />
                 </button>
-                <div className="w-full aspect-video flex items-center justify-center bg-black">
+                <div className="w-full aspect-video relative bg-black">
                   <ReactPlayer 
                     url={activeMedia.data?.url as string} 
                     width="100%" 
