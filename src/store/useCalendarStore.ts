@@ -144,7 +144,6 @@ export const useCalendarStore = create<CalendarState>()(
     {
       name: 'calendar-storage',
       partialize: (state) => ({
-        currentDate: state.currentDate,
         viewMode: state.viewMode,
         activeCategories: state.activeCategories,
         activePresetId: state.activePresetId,
@@ -162,9 +161,7 @@ export const useCalendarStore = create<CalendarState>()(
         return {
           ...currentState,
           ...state,
-          currentDate: state.currentDate
-            ? new Date(state.currentDate)
-            : currentState.currentDate,
+          currentDate: currentState.currentDate,
         }
       },
     }

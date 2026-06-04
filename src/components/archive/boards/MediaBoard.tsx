@@ -1,13 +1,11 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react';
-import { Plus, Video, Play, X, Clock, Tag as TagIcon, LayoutGrid, List as ListIcon, Link as LinkIcon, Palette } from 'lucide-react';
+import { Plus, Video, Play, X, Clock, Tag as TagIcon, LayoutGrid, List as ListIcon, Link as LinkIcon, Palette, Edit2 } from 'lucide-react';
 import { useArchiveStore } from '@/store/useArchiveStore';
 import { motion, AnimatePresence } from 'framer-motion';
-import dynamic from 'next/dynamic';
 import { FastAverageColor } from 'fast-average-color';
-
-const ReactPlayer = dynamic(() => import('react-player'), { ssr: false }) as any;
+import ReactPlayer from 'react-player';
 
 // Extracts a thumbnail and standardizes URL if possible
 function extractMediaMetadata(url: string) {
@@ -33,6 +31,9 @@ export function MediaBoard() {
   const [newUrl, setNewUrl] = useState('');
   const [newTitle, setNewTitle] = useState('');
   const [activeMediaId, setActiveMediaId] = useState<string | null>(null);
+  const [editingCardId, setEditingCardId] = useState<string | null>(null);
+  const [editTitle, setEditTitle] = useState('');
+  const [editUrl, setEditUrl] = useState('');
 
   const handleAddMedia = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -63,6 +64,35 @@ export function MediaBoard() {
     setNewUrl('');
     setNewTitle('');
     setIsAdding(false);
+  };
+
+  const handleEditMedia = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!activeTabId || !editingCardId || !editUrl.trim()) return;
+
+    const { thumbnail, url } = extractMediaMetadata(editUrl);
+    let dominantColor = '#f8fafc'; // default neutral
+
+    if (thumbnail) {
+      try {
+        const fac = new FastAverageColor();
+        const color = await fac.getColorAsync(thumbnail, { crossOrigin: 'anonymous' });
+        dominantColor = color.hex;
+      } catch (err) {
+        console.warn('CORS or loading error for average color, using default.', err);
+      }
+    }
+
+    updateItem(activeTabId, editingCardId, {
+      title: editTitle.trim() || '새로운 미디어/링크',
+      data: {
+        url,
+        thumbnail,
+        color: dominantColor
+      }
+    });
+
+    setEditingCardId(null);
   };
 
   const activeMedia = items.find(i => i.id === activeMediaId);
@@ -202,12 +232,20 @@ export function MediaBoard() {
                   <div>
                     <div className="flex items-start justify-between gap-4">
                       <h3 className="font-bold text-slate-800 text-lg leading-snug line-clamp-2">{item.title}</h3>
-                      <button 
-                        onClick={(e) => { e.stopPropagation(); deleteItem(activeTabId!, item.id); }}
-                        className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-400 opacity-0 group-hover:opacity-100 transition-all shrink-0"
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
+                      <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-all shrink-0">
+                        <button 
+                          onClick={(e) => { e.stopPropagation(); setEditingCardId(item.id); setEditTitle(item.title); setEditUrl((item.data?.url as string) || ''); }}
+                          className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-400"
+                        >
+                          <Edit2 className="w-4 h-4" />
+                        </button>
+                        <button 
+                          onClick={(e) => { e.stopPropagation(); deleteItem(activeTabId!, item.id); }}
+                          className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-400"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
                     </div>
                     {item.content && (
                       <p className="text-sm text-slate-500 mt-2 line-clamp-3 font-medium leading-relaxed">{item.content}</p>
@@ -307,6 +345,64 @@ export function MediaBoard() {
           </div>
         )}
       </AnimatePresence>
+
+      {/* Edit Media Modal */}
+      <AnimatePresence>
+        {editingCardId && (
+          <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
+              onClick={() => setEditingCardId(null)}
+            />
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 10 }}
+              className="relative w-full max-w-lg bg-white rounded-3xl shadow-xl overflow-hidden"
+            >
+              <div className="p-6 border-b border-slate-100 flex items-center justify-between">
+                <h3 className="font-bold text-lg text-slate-800">미디어 수정</h3>
+                <button onClick={() => setEditingCardId(null)} className="p-2 hover:bg-slate-100 rounded-xl text-slate-400 transition-colors">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              <form onSubmit={handleEditMedia} className="p-6 flex flex-col gap-5">
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-2">미디어 URL</label>
+                  <input 
+                    autoFocus
+                    type="text"
+                    value={editUrl}
+                    onChange={(e) => setEditUrl(e.target.value)}
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all text-slate-700"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-2">제목</label>
+                  <input 
+                    type="text"
+                    value={editTitle}
+                    onChange={(e) => setEditTitle(e.target.value)}
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all text-slate-700"
+                  />
+                </div>
+                <div className="flex gap-3 mt-2">
+                  <button type="button" onClick={() => setEditingCardId(null)} className="flex-1 px-4 py-3 text-slate-600 font-bold bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors">
+                    취소
+                  </button>
+                  <button type="submit" disabled={!editUrl.trim()} className="flex-1 px-4 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-sm transition-colors disabled:opacity-50">
+                    저장
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
+
