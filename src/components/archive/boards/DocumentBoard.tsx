@@ -72,10 +72,13 @@ export function DocumentBoard() {
   }, [docItem]);
 
   useEffect(() => {
+    if (currentTab?.board_type !== 'list') return;
     latestActiveTabId.current = activeTabId;
-  }, [activeTabId]);
+  }, [activeTabId, currentTab?.board_type]);
 
   useEffect(() => {
+    if (currentTab?.board_type !== 'list') return;
+    
     const storeItemsDict = useArchiveStore.getState().items;
     const existingItems = storeItemsDict[activeTabId || ''];
     
@@ -83,7 +86,7 @@ export function DocumentBoard() {
       initRef.current = activeTabId;
       addItem(activeTabId, { title: currentTab?.name || '새 문서', content: '' });
     }
-  }, [activeTabId, items.length, addItem, currentTab?.name]);
+  }, [activeTabId, items.length, addItem, currentTab?.name, currentTab?.board_type]);
 
   const [localTitle, setLocalTitle] = useState(docItem?.title || '');
   const [isGuideModalOpen, setIsGuideModalOpen] = useState(false);
