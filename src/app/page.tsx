@@ -178,87 +178,7 @@ export default function CalendarPage() {
           <UpcomingAnniversaryWidget />
 
           <div className="pb-3 mb-2 relative">
-            <button 
-              onClick={() => {
-                if (!isArchiveMenuOpen) setViewMode('archive_notes')
-              }}
-              className={`group relative w-full text-left px-4 py-3.5 rounded-2xl text-[15px] transition-all duration-300 overflow-hidden flex items-center justify-between ${
-                isArchiveMenuOpen 
-                ? 'bg-gradient-to-r from-slate-100 to-white text-slate-800 font-bold shadow-sm border border-slate-200' 
-                : 'font-medium text-slate-500 hover:bg-white hover:shadow-sm hover:text-slate-800 border border-transparent'
-              } mb-2`}
-            >
-              {isArchiveMenuOpen && (
-                <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-slate-500 rounded-r-full" />
-              )}
-              <div className="relative z-10 flex items-center gap-3">
-                <Archive className={`w-5 h-5 transition-colors ${isArchiveMenuOpen ? 'text-slate-600' : 'text-slate-300 group-hover:text-slate-600'}`} />
-                <span>아카이브 관리</span>
-              </div>
-              <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${isArchiveMenuOpen ? 'rotate-180 text-slate-600' : 'text-slate-400'}`} />
-            </button>
-
-            <AnimatePresence initial={false}>
-              {isArchiveMenuOpen && (
-                <motion.div
-                  initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: 'auto', opacity: 1 }}
-                  exit={{ height: 0, opacity: 0 }}
-                  transition={{ duration: 0.3, ease: 'easeInOut' }}
-                  className="overflow-hidden"
-                >
-                  <div className="flex flex-col space-y-1 mt-1 pb-3 mb-2 border-b border-slate-100/50">
-                    <button 
-                      onClick={() => setViewMode('archive_notes')}
-                      className={`w-[calc(100%-1.25rem)] ml-5 text-left px-4 py-2.5 rounded-xl text-sm transition-all duration-300 flex items-center gap-2.5 ${
-                        viewMode === 'archive_notes'
-                        ? 'bg-slate-100/80 text-slate-800 font-bold shadow-sm border border-slate-200/50' 
-                        : 'bg-transparent text-slate-400 hover:bg-white hover:shadow-sm hover:text-slate-700 border border-transparent'
-                      }`}
-                    >
-                      <NotebookPen className={`w-4 h-4 ${viewMode === 'archive_notes' ? 'text-slate-600' : 'text-slate-300'}`} />
-                      아카이브 노트
-                    </button>
-
-                    <button 
-                      onClick={() => setViewMode('archive_agenda')}
-                      className={`w-[calc(100%-1.25rem)] ml-5 text-left px-4 py-2.5 rounded-xl text-sm transition-all duration-300 flex items-center gap-2.5 ${
-                        viewMode === 'archive_agenda'
-                        ? 'bg-indigo-50/80 text-indigo-700 font-bold shadow-sm border border-indigo-100/50' 
-                        : 'bg-transparent text-slate-400 hover:bg-white hover:shadow-sm hover:text-slate-700 border border-transparent'
-                      }`}
-                    >
-                      <Sparkles className={`w-4 h-4 ${viewMode === 'archive_agenda' ? 'text-indigo-500' : 'text-slate-300'}`} />
-                      오늘의 할 일 (아젠다)
-                    </button>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            <button 
-              onClick={() => setViewMode('insights')}
-              className={`group relative w-full text-left px-4 py-3.5 rounded-2xl text-[15px] transition-all duration-300 overflow-hidden flex items-center justify-between ${
-                viewMode === 'insights' 
-                ? 'font-bold text-indigo-800 shadow-[0_4px_20px_-5px_rgba(99,102,241,0.3)] border border-indigo-200/50 scale-[1.02] bg-white' 
-                : 'font-medium text-slate-500 hover:bg-white hover:shadow-sm hover:text-slate-800 border border-transparent'
-              }`}
-            >
-              <div className={`absolute inset-0 opacity-20 transition-opacity duration-300 ${
-                viewMode === 'insights' 
-                ? 'bg-gradient-to-br from-indigo-400 via-purple-300 to-pink-300' 
-                : 'bg-gradient-to-br from-slate-100 to-slate-50 group-hover:opacity-40'
-              }`} />
-              
-              <div className="relative z-10 flex items-center gap-3">
-                <Sparkles className={`w-5 h-5 transition-transform duration-500 ${viewMode === 'insights' ? 'text-purple-500 rotate-12 scale-110' : 'text-slate-300 group-hover:text-purple-400'}`} />
-                <span>인사이트 대시보드</span>
-              </div>
-            </button>
-            <div className="absolute inset-x-4 bottom-0 h-px bg-gradient-to-r from-transparent via-slate-200 to-transparent opacity-50" />
-          </div>
-
-          <div className="flex flex-col space-y-1.5 mt-2">
+            <div className="flex flex-col space-y-1.5">
             <button 
               onClick={() => {
                 if (!isCalendarMenuOpen) setViewMode('monthly')
@@ -328,6 +248,86 @@ export default function CalendarPage() {
                 </motion.div>
               )}
             </AnimatePresence>
+            </div>
+
+            <button 
+              onClick={() => {
+                if (!isArchiveMenuOpen) setViewMode('archive_notes')
+              }}
+              className={`group relative w-full text-left px-4 py-3.5 rounded-2xl text-[15px] transition-all duration-300 overflow-hidden flex items-center justify-between ${
+                isArchiveMenuOpen 
+                ? 'bg-gradient-to-r from-slate-100 to-white text-slate-800 font-bold shadow-sm border border-slate-200' 
+                : 'font-medium text-slate-500 hover:bg-white hover:shadow-sm hover:text-slate-800 border border-transparent'
+              } mt-2`}
+            >
+              {isArchiveMenuOpen && (
+                <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-slate-500 rounded-r-full" />
+              )}
+              <div className="relative z-10 flex items-center gap-3">
+                <Archive className={`w-5 h-5 transition-colors ${isArchiveMenuOpen ? 'text-slate-600' : 'text-slate-300 group-hover:text-slate-600'}`} />
+                <span>아카이브 관리</span>
+              </div>
+              <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${isArchiveMenuOpen ? 'rotate-180 text-slate-600' : 'text-slate-400'}`} />
+            </button>
+
+            <AnimatePresence initial={false}>
+              {isArchiveMenuOpen && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: 'auto', opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.3, ease: 'easeInOut' }}
+                  className="overflow-hidden"
+                >
+                  <div className="flex flex-col space-y-1 mt-1 pb-3 mb-2 border-b border-slate-100/50">
+                    <button 
+                      onClick={() => setViewMode('archive_notes')}
+                      className={`w-[calc(100%-1.25rem)] ml-5 text-left px-4 py-2.5 rounded-xl text-sm transition-all duration-300 flex items-center gap-2.5 ${
+                        viewMode === 'archive_notes'
+                        ? 'bg-slate-100/80 text-slate-800 font-bold shadow-sm border border-slate-200/50' 
+                        : 'bg-transparent text-slate-400 hover:bg-white hover:shadow-sm hover:text-slate-700 border border-transparent'
+                      }`}
+                    >
+                      <NotebookPen className={`w-4 h-4 ${viewMode === 'archive_notes' ? 'text-slate-600' : 'text-slate-300'}`} />
+                      아카이브 노트
+                    </button>
+
+                    <button 
+                      onClick={() => setViewMode('archive_agenda')}
+                      className={`w-[calc(100%-1.25rem)] ml-5 text-left px-4 py-2.5 rounded-xl text-sm transition-all duration-300 flex items-center gap-2.5 ${
+                        viewMode === 'archive_agenda'
+                        ? 'bg-indigo-50/80 text-indigo-700 font-bold shadow-sm border border-indigo-100/50' 
+                        : 'bg-transparent text-slate-400 hover:bg-white hover:shadow-sm hover:text-slate-700 border border-transparent'
+                      }`}
+                    >
+                      <Sparkles className={`w-4 h-4 ${viewMode === 'archive_agenda' ? 'text-indigo-500' : 'text-slate-300'}`} />
+                      오늘의 할 일 (아젠다)
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            <button 
+              onClick={() => setViewMode('insights')}
+              className={`group relative w-full text-left px-4 py-3.5 rounded-2xl text-[15px] transition-all duration-300 overflow-hidden flex items-center justify-between ${
+                viewMode === 'insights' 
+                ? 'font-bold text-indigo-800 shadow-[0_4px_20px_-5px_rgba(99,102,241,0.3)] border border-indigo-200/50 scale-[1.02] bg-white' 
+                : 'font-medium text-slate-500 hover:bg-white hover:shadow-sm hover:text-slate-800 border border-transparent'
+              }`}
+            >
+              <div className={`absolute inset-0 opacity-20 transition-opacity duration-300 ${
+                viewMode === 'insights' 
+                ? 'bg-gradient-to-br from-indigo-400 via-purple-300 to-pink-300' 
+                : 'bg-gradient-to-br from-slate-100 to-slate-50 group-hover:opacity-40'
+              }`} />
+              
+              <div className="relative z-10 flex items-center gap-3">
+                <Sparkles className={`w-5 h-5 transition-transform duration-500 ${viewMode === 'insights' ? 'text-purple-500 rotate-12 scale-110' : 'text-slate-300 group-hover:text-purple-400'}`} />
+                <span>인사이트 대시보드</span>
+              </div>
+            </button>
+            <div className="absolute inset-x-4 bottom-0 h-px bg-gradient-to-r from-transparent via-slate-200 to-transparent opacity-50" />
           </div>
 
         </div>
@@ -454,6 +454,9 @@ export default function CalendarPage() {
       
       {/* Confetti Animation wrapper */}
       <AnniversaryConfetti />
+
+      {/* Global Add Event Dialog - always mounted so it can be opened from any view (e.g. archive agenda "캘린더에 등록") */}
+      <AddEventDialog />
 
       {/* Global Command Palette */}
       <CommandPalette />
