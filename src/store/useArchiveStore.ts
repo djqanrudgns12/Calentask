@@ -1,9 +1,11 @@
 import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 import { Database } from '@/types/supabase';
 import { 
   getArchiveTabs, createArchiveTab, updateArchiveTab, deleteArchiveTab,
   getArchiveNotes, createArchiveNote, updateArchiveNote, deleteArchiveNote 
 } from '@/app/actions/archive';
+import { fetchTabsDirect, fetchNotesDirect, fetchAllNotesDirect } from '@/lib/archive-queries';
 
 // Debounce timers for updateItem and updateTab to avoid flooding the server during typing
 const updateTimers: Record<string, ReturnType<typeof setTimeout>> = {};
@@ -67,7 +69,36 @@ interface ArchiveState {
   prefetchArchive: () => Promise<void>;
 }
 
-export const useArchiveStore = create<ArchiveState>()((set, get) => ({
+// ============================================================
+// 헬퍼: 노트 데이터를 BoardItem으로 변환
+// ============================================================
+function parseNoteToBoardItem(note: any): BoardItem {
+  const content = note.content_data as any || {};
+  return {
+    id: note.id,
+    boardId: note.tab_id,
+    title: content.title || '무제',
+    content: content.content || '',
+    status: content.status || 'todo',
+    tags: note.tags || [],
+    createdAt: note.created_at || new Date().toISOString(),
+    updatedAt: note.updated_at || new Date().toISOString(),
+    position: content.position || 0,
+    data: content.data || {}
+  };
+}
+
+// ============================================================
+// 헬퍼: 특정 boardId에 대기 중인 수정 타이머가 있는지 확인
+// (Race condition 방어: 사용자 수정 중이면 서버 데이터 덮어쓰기 방지)
+// ============================================================
+function hasPendingUpdatesForBoard(boardId: string): boolean {
+  return Object.keys(updateTimers).some(k => k.startsWith(boardId + ':'));
+}
+
+export const useArchiveStore = create<ArchiveState>()(
+  persist(
+    (set, get) => ({
   isPinLocked: false, // Secure by default
   setPinLocked: (locked) => set({ isPinLocked: locked }),
 
@@ -77,35 +108,97 @@ export const useArchiveStore = create<ArchiveState>()((set, get) => ({
   
   isPrefetched: false,
   
+  // ============================================================
+  // 전략 1+2+4: 직접 호출 + 병렬 프리패칭 + 일괄 로딩
+  // ============================================================
   prefetchArchive: async () => {
     if (get().isPrefetched) return;
+    
+    // 캐시가 있으면 즉시 isPrefetched 플래그를 세워서 UI 스켈레톤을 즉시 제거
+    const cachedTabs = get().tabs;
+    const cachedItems = get().items;
+    if (cachedTabs.length > 0 && Object.keys(cachedItems).length > 0) {
+      set({ isPrefetched: true });
+    }
+    
     try {
-      const tabs = await getArchiveTabs();
+      // 전략 1: 클라이언트에서 Supabase 직접 호출 (Server Action 우회)
+      // 실패 시 Server Action 폴백
+      let tabs = await fetchTabsDirect();
+      if (!tabs) {
+        tabs = await getArchiveTabs();
+      }
+      
       if (tabs.length > 0) {
-        // 프리패칭 중 첫 번째 탭의 데이터를 백그라운드에서 병렬로 미리 가져옴
-        const firstTabId = tabs[0].id;
-        get().fetchItems(firstTabId);
+        const firstTabId = get().activeTabId || tabs[0].id;
         set({ tabs, activeTabId: firstTabId, isPrefetched: true });
+        
+        // 전략 4: 모든 노트를 한 번의 쿼리로 일괄 로딩
+        const allNotes = await fetchAllNotesDirect();
+        if (allNotes) {
+          // tab_id별 그룹핑
+          const grouped: Record<string, BoardItem[]> = {};
+          for (const note of allNotes) {
+            const tabId = note.tab_id;
+            if (!grouped[tabId]) grouped[tabId] = [];
+            grouped[tabId].push(parseNoteToBoardItem(note));
+          }
+          // 각 그룹을 position 순으로 정렬
+          for (const key of Object.keys(grouped)) {
+            grouped[key].sort((a, b) => a.position - b.position);
+          }
+          
+          // Race condition 방어: 수정 중인 탭은 서버 데이터로 덮어쓰지 않음
+          const safeItems = { ...get().items };
+          for (const [tabId, items] of Object.entries(grouped)) {
+            if (!hasPendingUpdatesForBoard(tabId)) {
+              safeItems[tabId] = items;
+            }
+          }
+          set({ items: safeItems });
+        } else {
+          // 폴백: 활성 탭만 개별 로딩
+          get().fetchItems(firstTabId);
+        }
       } else {
         set({ tabs, isPrefetched: true });
       }
     } catch (error) {
       console.error('Failed to prefetch archive:', error);
+      // 최종 폴백: 기존 Server Action 방식
+      try {
+        const tabs = await getArchiveTabs();
+        if (tabs.length > 0) {
+          const firstTabId = tabs[0].id;
+          get().fetchItems(firstTabId);
+          set({ tabs, activeTabId: firstTabId, isPrefetched: true });
+        } else {
+          set({ tabs, isPrefetched: true });
+        }
+      } catch (e) {
+        console.error('Fallback also failed:', e);
+        set({ isPrefetched: true }); // UI가 멈추지 않도록
+      }
     }
   },
 
   fetchTabs: async () => {
     try {
-      const data = await getArchiveTabs();
+      // 전략 1: 클라이언트 직접 호출 (폴백 포함)
+      let data = await fetchTabsDirect();
+      if (!data) {
+        data = await getArchiveTabs();
+      }
+      
       let newActiveTabId = get().activeTabId;
       
       if (data.length > 0 && !newActiveTabId) {
         newActiveTabId = data[0].id;
       }
       
-      // 폭포수 현상(Waterfall) 제거: 탭과 첫 번째 아이템을 동시에 불러옴 (병렬 처리)
+      // 전략 2: 캐시 히트 시 재요청 스킵
       if (newActiveTabId && !get().items[newActiveTabId]) {
-        get().fetchItems(newActiveTabId); // 비동기로 백그라운드 실행
+        get().fetchItems(newActiveTabId);
       }
       
       set({ tabs: data, activeTabId: newActiveTabId });
@@ -202,23 +295,28 @@ export const useArchiveStore = create<ArchiveState>()((set, get) => ({
 
   fetchItems: async (boardId) => {
     try {
-      const data = await getArchiveNotes(boardId);
-      const parsedItems: BoardItem[] = data.map((note: any) => {
-        const content = note.content_data as any || {};
-        return {
-          id: note.id,
-          boardId: note.tab_id,
-          title: content.title || '무제',
-          content: content.content || '',
-          status: content.status || 'todo',
-          tags: note.tags || [],
-          createdAt: note.created_at || new Date().toISOString(),
-          updatedAt: note.updated_at || new Date().toISOString(),
-          position: content.position || 0,
-          data: content.data || {}
-        };
-      });
+      // 전략 2: 이미 캐시에 있으면 백그라운드에서만 최신화
+      const existingItems = get().items[boardId];
+      
+      // 전략 1: 클라이언트 직접 호출 (폴백 포함)
+      let data = await fetchNotesDirect(boardId);
+      if (!data) {
+        data = await getArchiveNotes(boardId);
+      }
+      
+      const parsedItems: BoardItem[] = data.map(parseNoteToBoardItem);
       parsedItems.sort((a, b) => a.position - b.position);
+      
+      // Race condition 방어: 수정 중이면 서버 데이터 적용 스킵
+      if (hasPendingUpdatesForBoard(boardId)) {
+        return; // 사용자 입력 우선
+      }
+      
+      // Stale cache flash 방지: 데이터가 동일하면 리렌더링 스킵
+      if (existingItems && JSON.stringify(existingItems) === JSON.stringify(parsedItems)) {
+        return;
+      }
+      
       set(state => ({ items: { ...state.items, [boardId]: parsedItems } }));
     } catch (error) {
       console.error('Failed to fetch items:', error);
@@ -417,7 +515,53 @@ export const useArchiveStore = create<ArchiveState>()((set, get) => ({
       await Promise.all(promises);
     }
   },
-}));
+    }),
+    {
+      name: 'archive-store',
+      version: 1,
+      // 전략 3: 필수 데이터만 localStorage에 캐싱 (partialize)
+      partialize: (state) => ({
+        tabs: state.tabs,
+        activeTabId: state.activeTabId,
+        items: state.items,
+        boardConfigs: state.boardConfigs,
+        isPrefetched: state.isPrefetched,
+      }),
+      // localStorage 용량 초과 시 graceful 처리
+      storage: {
+        getItem: (name) => {
+          try {
+            const str = localStorage.getItem(name);
+            return str ? JSON.parse(str) : null;
+          } catch {
+            return null;
+          }
+        },
+        setItem: (name, value) => {
+          try {
+            localStorage.setItem(name, JSON.stringify(value));
+          } catch (e) {
+            // QuotaExceededError 등: 캐시 저장 실패해도 앱은 정상 작동
+            console.warn('[archive-store] localStorage save failed, clearing old cache:', e);
+            try {
+              localStorage.removeItem(name);
+              localStorage.setItem(name, JSON.stringify(value));
+            } catch {
+              // 완전히 실패해도 무시 — 캐시 없이 서버만 사용
+            }
+          }
+        },
+        removeItem: (name) => {
+          try {
+            localStorage.removeItem(name);
+          } catch {
+            // 무시
+          }
+        },
+      },
+    }
+  )
+);
 
 // 페이지 이탈 시 데이터 유실 방지(Unload Protection) 안전장치
 if (typeof window !== 'undefined') {

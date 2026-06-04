@@ -17,7 +17,6 @@ import { AddNoteDialog } from './AddNoteDialog';
 import { CommandPalette } from './CommandPalette';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useHotkeys } from 'react-hotkeys-hook';
-import { initYjsSync } from '@/lib/yjs-sync';
 import { useEffect } from 'react';
 
 export function ArchiveNotesView() {
@@ -27,14 +26,16 @@ export function ArchiveNotesView() {
   const [editingTabName, setEditingTabName] = useState('');
 
   useEffect(() => {
-    // Initialize WebRTC P2P Sync
-    initYjsSync();
     fetchTabs();
   }, []);
 
   useEffect(() => {
     if (activeTabId) {
-      fetchItems(activeTabId);
+      // 전략 2: 캐시에 데이터가 있으면 서버 재요청 스킵 (백그라운드 최신화는 prefetch에서 처리)
+      const cachedItems = useArchiveStore.getState().items[activeTabId];
+      if (!cachedItems || cachedItems.length === 0) {
+        fetchItems(activeTabId);
+      }
     }
   }, [activeTabId]);
 
