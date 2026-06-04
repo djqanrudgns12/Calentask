@@ -24,7 +24,7 @@ const uploadImageToSupabase = async (file: File): Promise<{ url: string, path: s
 };
 
 const ImageComponent = (props: any) => {
-  const { src, path, width, align } = props.node.attrs;
+  const { src, path, width, height, align } = props.node.attrs;
   const [inputUrl, setInputUrl] = useState(src || '');
   const [isEditing, setIsEditing] = useState(!src);
   const [isUploading, setIsUploading] = useState(false);
@@ -34,10 +34,12 @@ const ImageComponent = (props: any) => {
   const imageRef = useRef<HTMLImageElement>(null);
   const [isResizing, setIsResizing] = useState(false);
   const [currentWidth, setCurrentWidth] = useState(width);
+  const [currentHeight, setCurrentHeight] = useState(height);
 
   useEffect(() => {
     setCurrentWidth(width);
-  }, [width]);
+    setCurrentHeight(height);
+  }, [width, height]);
 
   const handleSaveUrl = () => {
     if (inputUrl) {
@@ -71,20 +73,63 @@ const ImageComponent = (props: any) => {
     }
   };
 
-  // 리사이즈 핸들러
-  const handlePointerDown = (e: React.PointerEvent) => {
+  // 8방향 리사이즈 핸들러
+  const handlePointerDown = (e: React.PointerEvent, direction: string) => {
     e.preventDefault();
     e.stopPropagation();
     setIsResizing(true);
     
     const startX = e.clientX;
+    const startY = e.clientY;
+    
+    // imageRef의 현재 실제 크기를 기준으로 삼음
     const startWidth = imageRef.current?.offsetWidth || currentWidth || 500;
+    const startHeight = imageRef.current?.offsetHeight || currentHeight || 300;
+    const aspectRatio = startWidth / startHeight;
 
     const handlePointerMove = (moveEvent: PointerEvent) => {
-      const deltaX = moveEvent.clientX - startX;
-      // 오른쪽 핸들을 잡고 드래그하는 기준 (가운데 정렬일 경우 계산이 다를 수 있으나 심플하게 처리)
-      let newWidth = Math.max(100, startWidth + deltaX * 2);
-      setCurrentWidth(newWidth);
+      let deltaX = moveEvent.clientX - startX;
+      let deltaY = moveEvent.clientY - startY;
+
+      // 방향에 따라 delta 부호 반전 (왼쪽이나 위쪽으로 드래그할 때 너비/높이가 증가하도록)
+      if (direction.includes('w')) deltaX = -deltaX;
+      if (direction.includes('n')) deltaY = -deltaY;
+
+      let newWidth = startWidth;
+      let newHeight = startHeight;
+
+      const isCenterAlign = align === 'center';
+      
+      // 가로 조절
+      if (direction.includes('e') || direction.includes('w')) {
+        // 중앙 정렬 시 양쪽으로 늘어나기 때문에 시각적 피드백을 맞추기 위해 x2 적용 (가로 전용 핸들일 때만)
+        const scaleFactorX = (isCenterAlign && direction.length === 1) ? 2 : 1;
+        newWidth = Math.max(50, startWidth + deltaX * scaleFactorX);
+      }
+
+      // 세로 조절
+      if (direction.includes('n') || direction.includes('s')) {
+        newHeight = Math.max(50, startHeight + deltaY);
+      }
+
+      // Shift 키 누른 경우 비율 유지 로직
+      if (moveEvent.shiftKey) {
+        if (direction.length === 2) {
+          // 대각선일 경우 델타값이 큰 쪽을 기준으로 조절
+          if (Math.abs(deltaX) > Math.abs(deltaY)) {
+            newHeight = newWidth / aspectRatio;
+          } else {
+            newWidth = newHeight * aspectRatio;
+          }
+        } else if (direction.includes('e') || direction.includes('w')) {
+          newHeight = newWidth / aspectRatio;
+        } else {
+          newWidth = newHeight * aspectRatio;
+        }
+      }
+
+      if (direction.includes('e') || direction.includes('w') || direction.length === 2) setCurrentWidth(newWidth);
+      if (direction.includes('n') || direction.includes('s') || direction.length === 2) setCurrentHeight(newHeight);
     };
 
     const handlePointerUp = () => {
@@ -93,7 +138,10 @@ const ImageComponent = (props: any) => {
       document.removeEventListener('pointerup', handlePointerUp);
       // 최종 크기 저장
       if (imageRef.current) {
-        props.updateAttributes({ width: imageRef.current.offsetWidth });
+        props.updateAttributes({ 
+          width: imageRef.current.offsetWidth,
+          height: imageRef.current.offsetHeight 
+        });
       }
     };
 
@@ -120,7 +168,7 @@ const ImageComponent = (props: any) => {
               placeholder="이미지 URL 붙여넣기..."
               className="flex-1 bg-transparent border-none outline-none text-sm text-slate-700 placeholder:text-slate-400"
             />
-            <button onClick={handleSaveUrl} className="text-xs font-bold text-indigo-600 px-3 py-1.5 bg-indigo-50 rounded hover:bg-indigo-100 whitespace-nowrap">저장</button>
+            <button onPointerDown={(e) => { e.preventDefault(); handleSaveUrl(); }} className="text-xs font-bold text-indigo-600 px-3 py-1.5 bg-indigo-50 rounded hover:bg-indigo-100 whitespace-nowrap">저장</button>
           </div>
           
           <div className="hidden md:block w-px h-6 bg-slate-200 self-center" />
@@ -134,7 +182,7 @@ const ImageComponent = (props: any) => {
               className="hidden" 
             />
             <button 
-              onClick={() => fileInputRef.current?.click()} 
+              onPointerDown={(e) => { e.preventDefault(); fileInputRef.current?.click(); }} 
               disabled={isUploading}
               className="w-full md:w-auto flex items-center justify-center gap-1.5 text-xs font-bold text-slate-600 px-3 py-1.5 bg-white border border-slate-200 rounded hover:bg-slate-50 disabled:opacity-50 whitespace-nowrap"
             >
@@ -145,7 +193,7 @@ const ImageComponent = (props: any) => {
               )}
               {isUploading ? '업로드 중...' : '파일 업로드'}
             </button>
-            <button onClick={props.deleteNode} className="p-1.5 text-slate-400 hover:text-red-500 rounded hover:bg-slate-100">
+            <button onPointerDown={(e) => { e.preventDefault(); props.deleteNode(); }} className="p-1.5 text-slate-400 hover:text-red-500 rounded hover:bg-slate-100">
               <Trash2 className="w-4 h-4" />
             </button>
           </div>
@@ -153,11 +201,11 @@ const ImageComponent = (props: any) => {
       ) : (
         <div 
           className="relative inline-block max-w-full"
-          style={{ width: currentWidth || 'auto' }}
+          style={{ width: currentWidth || 'auto', height: currentHeight || 'auto' }}
         >
-          {/* 드래그 핸들 */}
+          {/* 드래그 핸들 (위쪽 중앙) */}
           <div 
-            className="absolute -top-3 left-1/2 -translate-x-1/2 p-1 bg-white border border-slate-200 rounded-md shadow-sm opacity-0 group-hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing z-10"
+            className="absolute -top-4 left-1/2 -translate-x-1/2 p-1.5 bg-white border border-slate-200 rounded-md shadow-sm opacity-0 group-hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing z-20 pointer-events-auto"
             contentEditable={false}
             data-drag-handle
           >
@@ -166,7 +214,7 @@ const ImageComponent = (props: any) => {
 
           <div 
             className={cn(
-              "relative rounded-xl overflow-hidden border-2 transition-colors", 
+              "relative rounded-xl overflow-hidden border-2 transition-colors w-full h-full", 
               props.selected ? "border-indigo-400 ring-4 ring-indigo-400/20" : "border-transparent hover:border-slate-200"
             )}
             contentEditable={false}
@@ -175,21 +223,21 @@ const ImageComponent = (props: any) => {
               ref={imageRef}
               src={src} 
               alt="Uploaded Document" 
-              className="w-full h-auto object-contain pointer-events-none select-none"
-              style={{ display: 'block' }}
+              className="object-fill pointer-events-none select-none"
+              style={{ display: 'block', width: '100%', height: '100%' }}
             />
             
             {/* 호버 시 오버레이 메뉴 */}
-            <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+            <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-20">
               <button 
-                onClick={(e) => { e.stopPropagation(); setIsEditing(true); }} 
+                onPointerDown={(e) => { e.preventDefault(); e.stopPropagation(); setIsEditing(true); }} 
                 className="p-1.5 bg-white shadow-sm border border-slate-200 rounded-md text-xs font-semibold text-slate-600 hover:bg-slate-50 pointer-events-auto"
                 title="이미지 수정"
               >
                 수정
               </button>
               <button 
-                onClick={(e) => { e.stopPropagation(); handleDelete(); }} 
+                onPointerDown={(e) => { e.preventDefault(); e.stopPropagation(); handleDelete(); }} 
                 className="p-1.5 bg-white shadow-sm border border-rose-100 rounded-md text-xs font-semibold text-rose-600 hover:bg-rose-50 pointer-events-auto"
                 title="이미지 삭제"
               >
@@ -197,21 +245,20 @@ const ImageComponent = (props: any) => {
               </button>
             </div>
             
-            {/* 리사이즈 핸들 */}
+            {/* 8방향 리사이즈 핸들 */}
             {(props.selected || isResizing) && (
               <>
-                <div 
-                  className="absolute right-0 top-1/2 -translate-y-1/2 w-3 h-8 bg-indigo-500 rounded-l-md cursor-col-resize opacity-80 hover:opacity-100 z-10 pointer-events-auto shadow-sm flex items-center justify-center"
-                  onPointerDown={handlePointerDown}
-                >
-                  <div className="w-0.5 h-4 bg-white/50 rounded-full" />
-                </div>
-                <div 
-                  className="absolute left-0 top-1/2 -translate-y-1/2 w-3 h-8 bg-indigo-500 rounded-r-md cursor-col-resize opacity-80 hover:opacity-100 z-10 pointer-events-auto shadow-sm flex items-center justify-center"
-                  onPointerDown={handlePointerDown}
-                >
-                  <div className="w-0.5 h-4 bg-white/50 rounded-full" />
-                </div>
+                {/* 모서리 핸들 (대각선) */}
+                <div onPointerDown={(e) => handlePointerDown(e, 'nw')} className="absolute -top-1.5 -left-1.5 w-3 h-3 bg-indigo-500 border border-white rounded-full cursor-nwse-resize z-30 opacity-80 hover:opacity-100 shadow-sm pointer-events-auto" />
+                <div onPointerDown={(e) => handlePointerDown(e, 'ne')} className="absolute -top-1.5 -right-1.5 w-3 h-3 bg-indigo-500 border border-white rounded-full cursor-nesw-resize z-30 opacity-80 hover:opacity-100 shadow-sm pointer-events-auto" />
+                <div onPointerDown={(e) => handlePointerDown(e, 'sw')} className="absolute -bottom-1.5 -left-1.5 w-3 h-3 bg-indigo-500 border border-white rounded-full cursor-nesw-resize z-30 opacity-80 hover:opacity-100 shadow-sm pointer-events-auto" />
+                <div onPointerDown={(e) => handlePointerDown(e, 'se')} className="absolute -bottom-1.5 -right-1.5 w-3 h-3 bg-indigo-500 border border-white rounded-full cursor-nwse-resize z-30 opacity-80 hover:opacity-100 shadow-sm pointer-events-auto" />
+                
+                {/* 상하좌우 핸들 */}
+                <div onPointerDown={(e) => handlePointerDown(e, 'n')} className="absolute -top-1.5 left-1/2 -translate-x-1/2 w-4 h-3 bg-indigo-500 border border-white rounded-sm cursor-ns-resize z-30 opacity-80 hover:opacity-100 shadow-sm pointer-events-auto" />
+                <div onPointerDown={(e) => handlePointerDown(e, 's')} className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-4 h-3 bg-indigo-500 border border-white rounded-sm cursor-ns-resize z-30 opacity-80 hover:opacity-100 shadow-sm pointer-events-auto" />
+                <div onPointerDown={(e) => handlePointerDown(e, 'w')} className="absolute top-1/2 -left-1.5 -translate-y-1/2 w-3 h-4 bg-indigo-500 border border-white rounded-sm cursor-ew-resize z-30 opacity-80 hover:opacity-100 shadow-sm pointer-events-auto" />
+                <div onPointerDown={(e) => handlePointerDown(e, 'e')} className="absolute top-1/2 -right-1.5 -translate-y-1/2 w-3 h-4 bg-indigo-500 border border-white rounded-sm cursor-ew-resize z-30 opacity-80 hover:opacity-100 shadow-sm pointer-events-auto" />
               </>
             )}
           </div>
@@ -232,6 +279,7 @@ export const CustomImage = Node.create({
       src: { default: '' },
       path: { default: '' },
       width: { default: null },
+      height: { default: null },
       align: { default: 'center' }, // left, center, right
     };
   },
