@@ -94,7 +94,7 @@ export default function CalendarPage() {
   }, [isAgendaInitialized, fetchAgendaTasks])
 
   const agendaEvents = agendaTasksStore
-    .filter(task => task.status !== 'trash' && task.status !== 'done' && task.deadline)
+    .filter(task => task.status !== 'trash' && task.status !== 'done' && task.deadline && task.is_calendar_registered === true)
     .map(task => {
       const taskDate = new Date(task.deadline!);
       return {
