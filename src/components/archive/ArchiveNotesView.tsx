@@ -21,7 +21,7 @@ import { initYjsSync } from '@/lib/yjs-sync';
 import { useEffect } from 'react';
 
 export function ArchiveNotesView() {
-  const { tabs, activeTabId, setActiveTabId, setCommandPaletteOpen, fetchTabs, fetchItems, updateTab, deleteTab } = useArchiveStore();
+  const { tabs, activeTabId, setActiveTabId, setCommandPaletteOpen, fetchTabs, fetchItems, updateTab, deleteTab, isPrefetched } = useArchiveStore();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [editingTabId, setEditingTabId] = useState<string | null>(null);
   const [editingTabName, setEditingTabName] = useState('');
@@ -80,7 +80,13 @@ export function ArchiveNotesView() {
           </div>
 
           {/* Dynamic Tabs Navigation */}
-          {tabs.length > 0 && (
+          {!isPrefetched ? (
+            <div className="flex items-center space-x-2 overflow-x-auto hide-scrollbar">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="h-9 w-24 bg-slate-100 animate-pulse rounded-lg" />
+              ))}
+            </div>
+          ) : tabs.length > 0 && (
             <div className="flex items-center space-x-2 overflow-x-auto hide-scrollbar">
               {tabs.map((tab: any) => {
                 const Icon = getIconForType(tab.board_type);
@@ -156,7 +162,19 @@ export function ArchiveNotesView() {
         {/* Board Content Area */}
         <div className="flex-1 p-6 overflow-hidden">
           <div className="w-full h-full bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden relative">
-            {tabs.length === 0 ? (
+            {!isPrefetched ? (
+              <div className="absolute inset-0 flex flex-col p-8">
+                {/* Skeleton UI for Board */}
+                <div className="h-10 w-1/3 bg-slate-100 animate-pulse rounded-xl mb-8" />
+                <div className="space-y-4">
+                  <div className="h-6 w-full bg-slate-50 animate-pulse rounded-lg" />
+                  <div className="h-6 w-11/12 bg-slate-50 animate-pulse rounded-lg" />
+                  <div className="h-6 w-4/5 bg-slate-50 animate-pulse rounded-lg" />
+                  <div className="h-6 w-full bg-slate-50 animate-pulse rounded-lg" />
+                  <div className="h-6 w-3/4 bg-slate-50 animate-pulse rounded-lg" />
+                </div>
+              </div>
+            ) : tabs.length === 0 ? (
               <div className="absolute inset-0 flex flex-col items-center justify-center bg-[#fafafa]">
                 <div className="w-20 h-20 bg-white shadow-sm border border-slate-100 rounded-3xl flex items-center justify-center mb-6">
                   <FolderOpen className="w-10 h-10 text-indigo-300" />

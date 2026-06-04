@@ -149,6 +149,8 @@ export default function CalendarPage() {
 
   useEffect(() => {
     setMounted(true)
+    // 아카이브 노트 렌더링 체감 속도를 0초로 만들기 위한 백그라운드 선탑재(Prefetching) 실행
+    useArchiveStore.getState().prefetchArchive()
   }, [])
 
   if (!mounted) {

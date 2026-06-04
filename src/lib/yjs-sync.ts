@@ -1,25 +1,13 @@
-import * as Y from 'yjs';
-import { WebrtcProvider } from 'y-webrtc';
-import { useArchiveStore } from '@/store/useArchiveStore';
+// yjs-sync.ts
+// P2P sync is disabled.
+// Archive data is now persisted to Supabase (server) and fetched on mount,
+// so WebRTC-based local sync is no longer the source of truth.
+// Re-enable this only after implementing conflict resolution between
+// server data and P2P-received data.
 
-// 1. Create Yjs Document
-export const ydoc = new Y.Doc();
-
-// 2. Setup WebRTC Provider for P2P Sync (using a unique room name)
-// This will connect devices on the same network or over public signaling servers.
-export const provider = new WebrtcProvider('calentask-life-os-room-v1', ydoc);
-
-// 3. Define Shared Types
-export const yTabs = ydoc.getMap('tabs');
-export const yItems = ydoc.getMap('items');
-
-// 4. Synchronization Logic
-let isSyncing = false;
+// 불필요한 WebRTC 연결과 Yjs Document 생성을 제거하여
+// 백그라운드 리소스 소모(시그널링 서버 통신 등)를 완전히 차단합니다.
 
 export function initYjsSync() {
-  // P2P sync is disabled.
-  // Archive data is now persisted to Supabase (server) and fetched on mount,
-  // so WebRTC-based local sync is no longer the source of truth.
-  // Re-enable this only after implementing conflict resolution between
-  // server data and P2P-received data.
+  // No-op: P2P sync disabled in favor of Supabase server sync
 }

@@ -51,10 +51,11 @@ export function DocumentBoard() {
 
   // Initialize document if not exists (with guard against double-calls)
   useEffect(() => {
-    const existingItems = useArchiveStore.getState().items[activeTabId || ''];
-    const hasItems = existingItems && existingItems.length > 0;
+    const storeItemsDict = useArchiveStore.getState().items;
+    const existingItems = storeItemsDict[activeTabId || ''];
     
-    if (activeTabId && !hasItems && items.length === 0 && initRef.current !== activeTabId) {
+    // undefined: 아직 로딩 안됨, []: 로딩 완료되었으나 비어있음
+    if (activeTabId && existingItems !== undefined && existingItems.length === 0 && initRef.current !== activeTabId) {
       initRef.current = activeTabId;
       addItem(activeTabId, { title: currentTab?.name || '새 문서', content: '' });
     }

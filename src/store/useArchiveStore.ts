@@ -62,6 +62,9 @@ interface ArchiveState {
   deleteItem: (boardId: string, itemId: string) => Promise<void>;
   reorderItems: (boardId: string, startIndex: number, endIndex: number) => Promise<void>;
   flushPendingUpdates: () => Promise<void>;
+  
+  isPrefetched: boolean;
+  prefetchArchive: () => Promise<void>;
 }
 
 export const useArchiveStore = create<ArchiveState>()((set, get) => ({
@@ -72,15 +75,42 @@ export const useArchiveStore = create<ArchiveState>()((set, get) => ({
   setActiveTabId: (id) => set({ activeTabId: id }),
   tabs: [],
   
+  isPrefetched: false,
+  
+  prefetchArchive: async () => {
+    if (get().isPrefetched) return;
+    try {
+      const tabs = await getArchiveTabs();
+      if (tabs.length > 0) {
+        // 프리패칭 중 첫 번째 탭의 데이터를 백그라운드에서 병렬로 미리 가져옴
+        const firstTabId = tabs[0].id;
+        get().fetchItems(firstTabId);
+        set({ tabs, activeTabId: firstTabId, isPrefetched: true });
+      } else {
+        set({ tabs, isPrefetched: true });
+      }
+    } catch (error) {
+      console.error('Failed to prefetch archive:', error);
+    }
+  },
+
   fetchTabs: async () => {
     try {
       const data = await getArchiveTabs();
-      set({ tabs: data });
-      if (data.length > 0 && !get().activeTabId) {
-        set({ activeTabId: data[0].id });
+      let newActiveTabId = get().activeTabId;
+      
+      if (data.length > 0 && !newActiveTabId) {
+        newActiveTabId = data[0].id;
       }
+      
+      // 폭포수 현상(Waterfall) 제거: 탭과 첫 번째 아이템을 동시에 불러옴 (병렬 처리)
+      if (newActiveTabId && !get().items[newActiveTabId]) {
+        get().fetchItems(newActiveTabId); // 비동기로 백그라운드 실행
+      }
+      
+      set({ tabs: data, activeTabId: newActiveTabId });
     } catch (error) {
-      console.error('Failed to fetch archive tabs:', error);
+      console.error('Failed to fetch tabs:', error);
     }
   },
 
@@ -125,14 +155,24 @@ export const useArchiveStore = create<ArchiveState>()((set, get) => ({
         }
       } catch (error) {
         console.error('Failed to update tab:', error);
-        // Note: we could rollback here by fetching tabs, but since it's debounced,
-        // rolling back to a stale prevTabs might be tricky. For now, rely on error logs.
       }
       delete tabUpdateTimers[id];
     }, 500);
   },
 
   deleteTab: async (id) => {
+    // 삭제 대상 탭과 소속 아이템들의 대기 중인 디바운스 타이머를 모두 정리
+    if (tabUpdateTimers[id]) {
+      clearTimeout(tabUpdateTimers[id]);
+      delete tabUpdateTimers[id];
+    }
+    for (const key of Object.keys(updateTimers)) {
+      if (key.startsWith(`${id}:`)) {
+        clearTimeout(updateTimers[key]);
+        delete updateTimers[key];
+      }
+    }
+
     const prevTabs = get().tabs;
     set(state => ({
       tabs: state.tabs.filter(t => t.id !== id),
@@ -278,6 +318,13 @@ export const useArchiveStore = create<ArchiveState>()((set, get) => ({
   },
 
   deleteItem: async (boardId, itemId) => {
+    // 삭제 대상에 대한 대기 중인 디바운스 타이머를 먼저 정리하여 유령 업데이트 방지
+    const timerKey = `${boardId}:${itemId}`;
+    if (updateTimers[timerKey]) {
+      clearTimeout(updateTimers[timerKey]);
+      delete updateTimers[timerKey];
+    }
+
     const prevItems = get().items;
     set(state => ({
       items: {
@@ -310,9 +357,6 @@ export const useArchiveStore = create<ArchiveState>()((set, get) => ({
     });
 
     try {
-      // In a real production app, we might want a bulk update endpoint, 
-      // but for now we update one by one or rely on local state ordering mostly.
-      // We will loop and update position in background
       for (const item of reordered) {
         await updateArchiveNote(item.id, {
           content_data: {
