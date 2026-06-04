@@ -89,6 +89,20 @@ export function DocumentBoard() {
   const [isGuideModalOpen, setIsGuideModalOpen] = useState(false);
   const [activeRibbonTab, setActiveRibbonTab] = useState<'home'|'insert'|'view'>('home');
   const [zoom, setZoom] = useState(100);
+  
+  const [pageCount, setPageCount] = useState(1);
+  const pageContainerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!pageContainerRef.current) return;
+    const observer = new ResizeObserver((entries) => {
+      const el = entries[0].target as HTMLElement;
+      // 1056 is the height of an A4 page
+      setPageCount(Math.max(1, Math.ceil(el.offsetHeight / 1056)));
+    });
+    observer.observe(pageContainerRef.current);
+    return () => observer.disconnect();
+  }, []);
 
   // Dropdown states
   const [showFontFamily, setShowFontFamily] = useState(false);
@@ -255,7 +269,15 @@ export function DocumentBoard() {
           <button onClick={() => setActiveRibbonTab('insert')} className={cn("px-4 py-2 text-sm font-semibold rounded-t-lg transition-colors border border-b-0", activeRibbonTab === 'insert' ? "bg-white text-indigo-600 border-slate-200 translate-y-px" : "text-slate-500 border-transparent hover:bg-slate-100")}>삽입</button>
           <button onClick={() => setActiveRibbonTab('view')} className={cn("px-4 py-2 text-sm font-semibold rounded-t-lg transition-colors border border-b-0", activeRibbonTab === 'view' ? "bg-white text-indigo-600 border-slate-200 translate-y-px" : "text-slate-500 border-transparent hover:bg-slate-100")}>보기 및 도구</button>
           
-          <div className="ml-auto flex items-center gap-4 text-xs font-bold text-slate-400 pb-2">
+          <div className="ml-auto flex items-center gap-3 text-xs font-bold text-slate-400 pb-2">
+            {/* Zoom Controls - Always visible */}
+            <div className="flex items-center gap-1 bg-slate-100/80 rounded-lg px-1.5 py-0.5 border border-slate-200/60">
+              <button onClick={() => setZoom(z => Math.max(50, z - 10))} className="p-0.5 hover:bg-white hover:shadow-sm rounded text-slate-500 transition-colors" title="축소"><ZoomOut className="w-3.5 h-3.5" /></button>
+              <span className="text-[11px] font-bold w-9 text-center text-slate-600 tabular-nums">{zoom}%</span>
+              <button onClick={() => setZoom(z => Math.min(200, z + 10))} className="p-0.5 hover:bg-white hover:shadow-sm rounded text-slate-500 transition-colors" title="확대"><ZoomIn className="w-3.5 h-3.5" /></button>
+            </div>
+            <button onClick={() => setZoom(100)} className="text-[11px] font-semibold px-1.5 py-0.5 bg-slate-100 hover:bg-slate-200 text-slate-500 rounded border border-slate-200/60 transition-colors" title="100%로 초기화">100%</button>
+            <div className="w-px h-4 bg-slate-200" />
             <span className="flex items-center gap-1.5"><Type className="w-3.5 h-3.5" /> {textCount}</span>
             <span className="flex items-center gap-1.5"><FileText className="w-3.5 h-3.5" /> {wordCount}</span>
             <button 
@@ -449,19 +471,6 @@ export function DocumentBoard() {
                 </button>
               </div>
 
-              {/* Zoom */}
-              <div className="flex items-center gap-3 px-4 border-r border-slate-200">
-                <div className="text-sm font-semibold text-slate-500 flex items-center gap-1.5">
-                  <Search className="w-4 h-4" /> 화면 배율
-                </div>
-                <div className="flex items-center gap-1 bg-slate-50 rounded-lg p-1 border border-slate-100">
-                  <button onClick={() => setZoom(z => Math.max(50, z - 10))} className="p-1 hover:bg-white hover:shadow-sm rounded text-slate-600"><ZoomOut className="w-4 h-4" /></button>
-                  <span className="text-xs font-bold w-12 text-center text-slate-700">{zoom}%</span>
-                  <button onClick={() => setZoom(z => Math.min(200, z + 10))} className="p-1 hover:bg-white hover:shadow-sm rounded text-slate-600"><ZoomIn className="w-4 h-4" /></button>
-                </div>
-                <button onClick={() => setZoom(100)} className="text-xs font-semibold px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded">100%</button>
-              </div>
-
               <div className="flex items-center gap-2 text-xs text-slate-500">
                 <Wand2 className="w-4 h-4" />
                 <button onClick={() => setIsGuideModalOpen(true)} className="hover:text-indigo-600 hover:underline">슬래시 명령어 가이드</button>
@@ -471,123 +480,69 @@ export function DocumentBoard() {
         </div>
       </div>
 
-      {/* Editor Area */}
+      {/* Editor Area - Word/HWP Style Paginated View */}
       <div 
         id="editor-scroll-container"
-        className="flex-1 overflow-y-auto pb-32 cursor-text transition-all duration-200 origin-top" 
+        className="flex-1 overflow-y-auto cursor-text transition-all duration-200 origin-top bg-[#e8e8e8]" 
         onClick={(e) => {
           if (e.target === e.currentTarget) editor.commands.focus();
         }}
       >
         <div 
-          className="mx-auto bg-white min-h-[800px] shadow-sm border-x border-slate-100"
+          className="doc-pages-container mx-auto"
           style={{ 
-            width: '800px', 
             transform: `scale(${zoom / 100})`, 
             transformOrigin: 'top center',
-            marginTop: '2rem',
-            marginBottom: '4rem',
-            padding: '4rem' 
-          }}
-          onClick={(e) => {
-            if (e.target === e.currentTarget) editor.commands.focus();
+            paddingTop: '2rem',
+            paddingBottom: '4rem',
           }}
         >
-          <input 
-            type="text"
-            value={localTitle}
-            onChange={handleTitleChange}
-            placeholder="제목을 입력하세요"
-            className="w-full text-4xl md:text-5xl font-extrabold text-slate-900 bg-transparent border-none focus:outline-none focus:ring-0 mb-8 placeholder:text-slate-300 transition-all tracking-tight"
-          />
-          
-          <div className="relative group">
-            {editor && <SlashMenuWrapper editor={editor} />}
+          {/* A4 Page */}
+          <div 
+            ref={pageContainerRef}
+            className="doc-page mx-auto bg-white relative"
+            style={{ 
+              width: '816px',  /* A4: 210mm ≈ 816px at 96dpi */
+              minHeight: '1056px', /* A4: 297mm ≈ 1056px at 96dpi */
+              boxShadow: '0 2px 12px rgba(0,0,0,0.12), 0 0 0 1px rgba(0,0,0,0.04)',
+              marginBottom: '24px',
+            }}
+            onClick={(e) => {
+              if (e.target === e.currentTarget && editor) editor.commands.focus();
+            }}
+          >
+            {/* Virtual Page Boundaries & Numbers */}
+            <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden rounded-[inherit]">
+              {Array.from({ length: pageCount }).map((_, i) => (
+                <div 
+                  key={i} 
+                  className="absolute w-full flex flex-col items-center justify-end pb-8" 
+                  style={{ 
+                    top: `${i * 1056}px`, 
+                    height: '1056px',
+                    borderBottom: i < pageCount - 1 ? '1px dashed #cbd5e1' : 'none'
+                  }}
+                >
+                  <span className="text-sm text-slate-400 font-medium bg-white px-2">
+                    - {i + 1} -
+                  </span>
+                </div>
+              ))}
+            </div>
+
+            {/* Editor Content Area */}
+            <div className="relative z-10" style={{ padding: '96px 72px' }}>
+              <input 
+              type="text"
+              value={localTitle}
+              onChange={handleTitleChange}
+              placeholder="제목을 입력하세요"
+              className="w-full text-4xl md:text-5xl font-extrabold text-slate-900 bg-transparent border-none focus:outline-none focus:ring-0 mb-8 placeholder:text-slate-300 transition-all tracking-tight"
+            />
             
-            {editor && (
-              <BubbleMenu 
-                editor={editor} 
-                shouldShow={({ editor, from, to }) => {
-                  const hasSelection = from !== to;
-                  return hasSelection && !editor.isActive('table');
-                }}
-                className="z-50"
-              >
-                <motion.div drag dragMomentum={false} className="flex items-center bg-white border border-slate-200 text-slate-700 shadow-xl rounded-xl overflow-hidden p-1.5 gap-1.5 cursor-grab active:cursor-grabbing">
-                  <div className="flex items-center text-slate-300 mr-0.5" title="드래그하여 이동"><GripVertical className="w-4 h-4" /></div>
-                  <button onClick={() => editor.chain().focus().toggleBold().run()} className={cn("p-1.5 rounded-md transition-colors", editor.isActive('bold') ? "bg-slate-100 text-slate-900" : "hover:bg-slate-50")} title="굵게"><Bold className="w-4 h-4" /></button>
-                  <button onClick={() => editor.chain().focus().toggleItalic().run()} className={cn("p-1.5 rounded-md transition-colors", editor.isActive('italic') ? "bg-slate-100 text-slate-900" : "hover:bg-slate-50")} title="기울임"><Italic className="w-4 h-4" /></button>
-                  <button onClick={() => editor.chain().focus().toggleUnderline().run()} className={cn("p-1.5 rounded-md transition-colors", editor.isActive('underline') ? "bg-slate-100 text-slate-900" : "hover:bg-slate-50")} title="밑줄"><UnderlineIcon className="w-4 h-4" /></button>
-                  <button onClick={() => editor.chain().focus().toggleStrike().run()} className={cn("p-1.5 rounded-md transition-colors", editor.isActive('strike') ? "bg-slate-100 text-slate-900" : "hover:bg-slate-50")} title="취소선"><Strikethrough className="w-4 h-4" /></button>
-                  <div className="w-px h-5 bg-slate-200 mx-0.5" />
-                  <button onClick={() => editor.chain().focus().setColor('#f43f5e').run()} className="p-1.5 rounded-md transition-colors text-rose-500 hover:bg-slate-50" title="빨간색"><Palette className="w-4 h-4" /></button>
-                  <button onClick={() => editor.chain().focus().setColor('#3b82f6').run()} className="p-1.5 rounded-md transition-colors text-blue-500 hover:bg-slate-50" title="파란색"><Palette className="w-4 h-4" /></button>
-                  <button onClick={() => editor.chain().focus().toggleHighlight({ color: '#fef08a' }).run()} className="p-1.5 rounded-md transition-colors text-yellow-500 hover:bg-slate-50" title="노란색 형광펜"><Highlighter className="w-4 h-4" /></button>
-                  <button onClick={() => editor.chain().focus().toggleHighlight({ color: '#bbf7d0' }).run()} className="p-1.5 rounded-md transition-colors text-green-500 hover:bg-slate-50" title="초록색 형광펜"><Highlighter className="w-4 h-4" /></button>
-                </motion.div>
-              </BubbleMenu>
-            )}
 
-            {editor && (
-              <BubbleMenu 
-                editor={editor}
-                shouldShow={({ editor }) => editor.isActive('table')}
-                // @ts-ignore
-                tippyOptions={{ placement: 'top', duration: 100 }}
-                className="z-50"
-              >
-                <motion.div drag dragMomentum={false} className="flex flex-col bg-white border border-slate-200 text-slate-700 shadow-xl rounded-xl overflow-hidden p-2 gap-2 max-w-[460px] cursor-grab active:cursor-grabbing">
-                  {/* Row 1: Formatting & Standard Actions */}
-                  <div className="flex items-center gap-1.5 flex-wrap">
-                    <div className="flex items-center text-slate-300 mr-0.5" title="드래그하여 이동"><GripVertical className="w-4 h-4" /></div>
-                    <div className="flex items-center bg-slate-50 rounded-lg p-0.5 border border-slate-100">
-                      <button onClick={() => editor.chain().focus().toggleBold().run()} className={cn("p-1.5 rounded-md transition-colors", editor.isActive('bold') ? "bg-slate-200" : "hover:bg-slate-200/50")}><Bold className="w-3.5 h-3.5" /></button>
-                      <button onClick={() => editor.chain().focus().toggleItalic().run()} className={cn("p-1.5 rounded-md transition-colors", editor.isActive('italic') ? "bg-slate-200" : "hover:bg-slate-200/50")}><Italic className="w-3.5 h-3.5" /></button>
-                    </div>
-                    <div className="flex items-center bg-slate-50 rounded-lg p-0.5 border border-slate-100">
-                      <button onClick={() => editor.chain().focus().toggleHeaderRow().run()} className="p-1.5 rounded-md hover:bg-slate-200/50" title="제목 행 전환"><PanelTop className="w-3.5 h-3.5" /></button>
-                      <button onClick={() => editor.chain().focus().toggleHeaderColumn().run()} className="p-1.5 rounded-md hover:bg-slate-200/50" title="제목 열 전환"><PanelLeft className="w-3.5 h-3.5" /></button>
-                      <button onClick={() => editor.chain().focus().mergeCells().run()} className="p-1.5 rounded-md hover:bg-slate-200/50" title="셀 병합"><Grip className="w-3.5 h-3.5" /></button>
-                      <button onClick={() => editor.chain().focus().splitCell().run()} className="p-1.5 rounded-md hover:bg-slate-200/50" title="셀 분할"><Grid3X3 className="w-3.5 h-3.5" /></button>
-                    </div>
-                    <div className="flex items-center bg-slate-50 rounded-lg p-0.5 border border-slate-100">
-                      <button onClick={() => editor.chain().focus().addRowBefore().run()} className="p-1.5 rounded-md text-indigo-500 hover:bg-slate-200/50" title="위에 행 추가"><ArrowUp className="w-3.5 h-3.5" /></button>
-                      <button onClick={() => editor.chain().focus().addRowAfter().run()} className="p-1.5 rounded-md text-indigo-500 hover:bg-slate-200/50" title="아래에 행 추가"><ArrowDown className="w-3.5 h-3.5" /></button>
-                      <button onClick={() => editor.chain().focus().addColumnBefore().run()} className="p-1.5 rounded-md text-indigo-500 hover:bg-slate-200/50" title="왼쪽에 열 추가"><ArrowLeft className="w-3.5 h-3.5" /></button>
-                      <button onClick={() => editor.chain().focus().addColumnAfter().run()} className="p-1.5 rounded-md text-indigo-500 hover:bg-slate-200/50" title="오른쪽에 열 추가"><ArrowRight className="w-3.5 h-3.5" /></button>
-                      <button onClick={() => editor.chain().focus().deleteRow().run()} className="p-1.5 rounded-md text-rose-500 hover:bg-slate-200/50" title="현재 행 삭제"><Minus className="w-3.5 h-3.5" /></button>
-                      <button onClick={() => editor.chain().focus().deleteColumn().run()} className="p-1.5 rounded-md text-rose-500 hover:bg-slate-200/50" title="현재 열 삭제"><Minus className="w-3.5 h-3.5" /></button>
-                    </div>
-                    <button onClick={() => editor.chain().focus().deleteTable().run()} className="p-1.5 rounded-lg bg-rose-50 text-rose-500 hover:bg-rose-100 ml-1 border border-rose-100" title="표 전체 삭제"><Trash className="w-3.5 h-3.5" /></button>
-                  </div>
-                  
-                  {/* Row 2: Advanced Styling (Borders & Colors) */}
-                  <div className="flex items-center gap-2 pt-2 border-t border-slate-100">
-                    <span className="text-xs font-bold text-slate-400 pl-1">배경</span>
-                    <div className="flex items-center gap-1">
-                      {['#fee2e2', '#dbeafe', '#dcfce7', '#fef08a', 'transparent'].map(color => (
-                        <button key={color} onClick={() => (editor as any).chain().focus().setCellAttribute('backgroundColor', color === 'transparent' ? null : color).run()} className="w-5 h-5 rounded border border-slate-200 hover:scale-110 transition-transform" style={{ backgroundColor: color === 'transparent' ? '#fff' : color }} title={color === 'transparent' ? '배경 없음' : '배경색'} />
-                      ))}
-                    </div>
-                    <div className="w-px h-4 bg-slate-200 mx-1" />
-                    <span className="text-xs font-bold text-slate-400">테두리</span>
-                    <div className="flex items-center gap-1">
-                      <select onChange={(e) => (editor as any).chain().focus().setCellAttribute('borderWidth', e.target.value).run()} className="text-xs border border-slate-200 rounded p-1 outline-none bg-slate-50" title="테두리 두께">
-                        <option value="">기본 두께</option>
-                        {BORDER_WIDTHS.map(w => <option key={w} value={w}>{w}</option>)}
-                      </select>
-                      <select onChange={(e) => (editor as any).chain().focus().setCellAttribute('borderStyle', e.target.value).run()} className="text-xs border border-slate-200 rounded p-1 outline-none bg-slate-50" title="테두리 스타일">
-                        <option value="">기본 스타일</option>
-                        {BORDER_STYLES.map(s => <option key={s} value={s}>{s}</option>)}
-                      </select>
-                      <input type="color" onChange={(e) => (editor as any).chain().focus().setCellAttribute('borderColor', e.target.value).run()} className="w-6 h-6 p-0 border-0 rounded cursor-pointer bg-transparent" title="테두리 색상" />
-                    </div>
-                  </div>
-                </motion.div>
-              </BubbleMenu>
-            )}
-
-            <EditorContent editor={editor} className="min-h-[500px]" />
+              <EditorContent editor={editor} className="min-h-[500px]" />
+            </div>
           </div>
         </div>
       </div>

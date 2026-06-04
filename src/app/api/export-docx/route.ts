@@ -22,11 +22,15 @@ export async function POST(req: Request) {
       margins: { top: 1440, right: 1440, bottom: 1440, left: 1440 }
     });
     
-    return new NextResponse(buffer, {
+    // Buffer를 Uint8Array로 변환하여 NextResponse에 전달
+    const uint8 = new Uint8Array(buffer);
+    
+    return new NextResponse(uint8, {
       status: 200,
       headers: {
         'Content-Type': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
         'Content-Disposition': `attachment; filename*=UTF-8''${encodeURIComponent(title)}.docx`,
+        'Content-Length': String(uint8.byteLength),
       },
     });
   } catch (error) {
