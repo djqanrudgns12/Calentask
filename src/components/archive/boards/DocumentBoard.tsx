@@ -76,17 +76,25 @@ export function DocumentBoard() {
     latestActiveTabId.current = activeTabId;
   }, [activeTabId, currentTab?.board_type]);
 
+  // 빈 문서 자동 생성 (레이스 컨디션 방어)
+  // 핵심: 서버에서 데이터를 아직 불러오지 않은 상태에서 빈 문서를 성급하게 만들면 안 됨.
+  // isPrefetched가 true가 된 후에만 (=서버 데이터가 도착한 후에만) 빈 문서를 생성하도록 guard 추가.
+  const isPrefetched = useArchiveStore((s) => s.isPrefetched);
+  
   useEffect(() => {
     if (currentTab?.board_type !== 'list') return;
+    if (!isPrefetched) return; // 서버 데이터 로딩 완료 전까지 대기
     
     const storeItemsDict = useArchiveStore.getState().items;
     const existingItems = storeItemsDict[activeTabId || ''];
     
+    // existingItems가 undefined(=아직 한번도 fetch되지 않은 탭)인 경우에도 생성하지 않음
+    // 오직 서버 fetch가 완료되었고, 결과가 빈 배열일 때만 새 문서 생성
     if (activeTabId && existingItems !== undefined && existingItems.length === 0 && initRef.current !== activeTabId) {
       initRef.current = activeTabId;
       addItem(activeTabId, { title: currentTab?.name || '새 문서', content: '' });
     }
-  }, [activeTabId, items.length, addItem, currentTab?.name, currentTab?.board_type]);
+  }, [activeTabId, items.length, addItem, currentTab?.name, currentTab?.board_type, isPrefetched]);
 
   const [localTitle, setLocalTitle] = useState(docItem?.title || '');
   const [isGuideModalOpen, setIsGuideModalOpen] = useState(false);

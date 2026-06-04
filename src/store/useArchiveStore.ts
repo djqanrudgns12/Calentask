@@ -114,12 +114,9 @@ export const useArchiveStore = create<ArchiveState>()(
   prefetchArchive: async () => {
     if (get().isPrefetched) return;
     
-    // 캐시가 있으면 즉시 isPrefetched 플래그를 세워서 UI 스켈레톤을 즉시 제거
-    const cachedTabs = get().tabs;
-    const cachedItems = get().items;
-    if (cachedTabs.length > 0 && Object.keys(cachedItems).length > 0) {
-      set({ isPrefetched: true });
-    }
+    // 캐시가 있으면 즉시 탭 UI를 보여주되, isPrefetched는 아직 false로 유지
+    // (isPrefetched가 true여야만 DocumentBoard가 빈 문서 자동 생성을 시도하므로,
+    //  서버에서 노트 데이터가 도착하기 전까지 빈 문서 생성을 차단하는 핵심 안전장치)
     
     try {
       // 전략 1: 클라이언트에서 Supabase 직접 호출 (Server Action 우회)
@@ -131,7 +128,8 @@ export const useArchiveStore = create<ArchiveState>()(
       
       if (tabs.length > 0) {
         const firstTabId = get().activeTabId || tabs[0].id;
-        set({ tabs, activeTabId: firstTabId, isPrefetched: true });
+        // 탭은 먼저 세팅하되, isPrefetched는 아직 false 유지
+        set({ tabs, activeTabId: firstTabId });
         
         // 전략 4: 모든 노트를 한 번의 쿼리로 일괄 로딩
         const allNotes = await fetchAllNotesDirect();
@@ -155,10 +153,13 @@ export const useArchiveStore = create<ArchiveState>()(
               safeItems[tabId] = items;
             }
           }
-          set({ items: safeItems });
+          // 노트 데이터 로딩이 완전히 끝난 후에야 isPrefetched를 true로 전환
+          // → 이 시점부터 DocumentBoard의 빈 문서 자동 생성이 허용됨
+          set({ items: safeItems, isPrefetched: true });
         } else {
-          // 폴백: 활성 탭만 개별 로딩
-          get().fetchItems(firstTabId);
+          // 폴백: 활성 탭만 개별 로딩 후 isPrefetched 전환
+          await get().fetchItems(firstTabId);
+          set({ isPrefetched: true });
         }
       } else {
         set({ tabs, isPrefetched: true });
@@ -170,7 +171,7 @@ export const useArchiveStore = create<ArchiveState>()(
         const tabs = await getArchiveTabs();
         if (tabs.length > 0) {
           const firstTabId = tabs[0].id;
-          get().fetchItems(firstTabId);
+          await get().fetchItems(firstTabId);
           set({ tabs, activeTabId: firstTabId, isPrefetched: true });
         } else {
           set({ tabs, isPrefetched: true });
@@ -519,17 +520,19 @@ export const useArchiveStore = create<ArchiveState>()(
     {
       name: 'archive-store',
       version: 1,
-      // 전략 3: 필수 데이터만 localStorage에 캐싱 (partialize)
+      // 전략 3: 탭 목록과 설정만 localStorage에 캐싱
+      // 노트 데이터(items)는 캐싱하지 않음 → 항상 서버에서 최신 데이터를 받아와야 함
+      // (다른 컴퓨터에서 작성한 내용이 현재 컴퓨터에서 보이지 않는 문제의 근본 원인이었음)
       partialize: (state) => ({
         tabs: state.tabs,
         activeTabId: state.activeTabId,
-        items: state.items,
         boardConfigs: state.boardConfigs,
       }),
       merge: (persistedState: any, currentState) => ({
         ...currentState,
         ...persistedState,
-        isPrefetched: false, // Force prefetch to run on every load even if old cache had it
+        isPrefetched: false, // 매 로드마다 서버에서 노트를 새로 가져오도록 강제
+        items: {},           // 캐시된 노트 데이터 무시 → 서버 데이터만 사용
       }),
       // localStorage 용량 초과 시 graceful 처리
       storage: {
