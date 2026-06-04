@@ -193,6 +193,15 @@ export function DocumentBoard() {
     },
   });
 
+  const initializedDocId = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (editor && docItem && initializedDocId.current !== docItem.id) {
+      initializedDocId.current = docItem.id;
+      editor.commands.setContent(docItem.data?.contentJSON || docItem.content || '');
+    }
+  }, [editor, docItem?.id]);
+
   if (!docItem || !editor) return null;
 
   const textCount = docItem.content?.length || 0;
