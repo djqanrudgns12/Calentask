@@ -5,21 +5,50 @@ import { Plus, Video, Play, X, Clock, Tag as TagIcon, LayoutGrid, List as ListIc
 import { useArchiveStore } from '@/store/useArchiveStore';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FastAverageColor } from 'fast-average-color';
-import ReactPlayer from 'react-player';
 
-const Player = ReactPlayer as any;
+// Extract YouTube video ID from various URL formats
+function extractYouTubeId(url: string): string | null {
+  const ytRegExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+  const match = url.match(ytRegExp);
+  if (match && match[2].length === 11) {
+    return match[2];
+  }
+  return null;
+}
 
 // Extracts a thumbnail and standardizes URL if possible
 function extractMediaMetadata(url: string) {
   let thumbnail = '';
-  const ytRegExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
-  const ytMatch = url.match(ytRegExp);
+  const videoId = extractYouTubeId(url);
   
-  if (ytMatch && ytMatch[2].length === 11) {
-    thumbnail = `https://img.youtube.com/vi/${ytMatch[2]}/maxresdefault.jpg`;
+  if (videoId) {
+    thumbnail = `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
   }
   
   return { thumbnail, url };
+}
+
+// Inline YouTube player component using direct iframe embed
+function YouTubePlayer({ url }: { url: string }) {
+  const videoId = extractYouTubeId(url);
+  
+  if (!videoId) {
+    return (
+      <div className="w-full h-full flex items-center justify-center bg-black text-white/50">
+        <p>유효하지 않은 YouTube URL입니다</p>
+      </div>
+    );
+  }
+  
+  return (
+    <iframe
+      src={`https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0`}
+      className="absolute inset-0 w-full h-full"
+      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+      allowFullScreen
+      style={{ border: 'none' }}
+    />
+  );
 }
 
 const EMPTY_ARRAY: any[] = [];
@@ -282,7 +311,7 @@ export function MediaBoard() {
               layoutId={`media-${activeMedia.id}`}
               className="relative w-full max-w-6xl bg-white rounded-3xl shadow-2xl overflow-hidden flex flex-col md:flex-row max-h-[90vh]"
             >
-              {/* React Player Wrapper */}
+              {/* YouTube Player Wrapper */}
               <div className="w-full md:w-2/3 bg-black relative flex flex-col justify-center min-h-[30vh]">
                 <button 
                   onClick={() => setActiveMediaId(null)}
@@ -291,14 +320,7 @@ export function MediaBoard() {
                   <X className="w-5 h-5" />
                 </button>
                 <div className="w-full aspect-video relative bg-black">
-                  <Player 
-                    url={activeMedia.data?.url as string} 
-                    width="100%" 
-                    height="100%"
-                    controls={true}
-                    playing={true}
-                    style={{ position: 'absolute', top: 0, left: 0 }}
-                  />
+                  <YouTubePlayer url={activeMedia.data?.url as string} />
                 </div>
               </div>
 
