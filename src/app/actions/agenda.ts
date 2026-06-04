@@ -25,6 +25,7 @@ export interface AgendaTask {
   updated_at: string
   deleted_at: string | null
   subtasks: AgendaSubtask[]
+  is_calendar_registered: boolean
 }
 
 // 할 일 목록 전체 조회 (휴지통 포함)

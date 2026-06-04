@@ -14,6 +14,8 @@ interface CalendarState {
   semesterTerm: 1 | 2
   isAddEventOpen: boolean
   addEventDate: Date | null
+  prefillAgendaTaskId: string | null
+  prefillEventData: Partial<Activity> | null
   editingEvent: Activity | null
   deletingEventId: string | null
   editingCategory: Category | null
@@ -31,6 +33,7 @@ interface CalendarState {
   setSemesterYear: (year: number) => void
   setSemesterTerm: (term: 1 | 2) => void
   openAddEvent: (date?: Date) => void
+  openAddEventWithPrefill: (taskId: string, data: Partial<Activity>) => void
   openEditEvent: (event: Activity) => void
   closeAddEvent: () => void
   openDeleteConfirm: (id: string) => void
@@ -62,6 +65,8 @@ export const useCalendarStore = create<CalendarState>()(
       semesterTerm: new Date().getMonth() >= 2 && new Date().getMonth() <= 7 ? 1 : 2,
       isAddEventOpen: false,
       addEventDate: null,
+      prefillAgendaTaskId: null,
+      prefillEventData: null,
       editingEvent: null,
       deletingEventId: null,
       editingCategory: null,
@@ -78,9 +83,10 @@ export const useCalendarStore = create<CalendarState>()(
       setActivePreset: (id, name) => set({ activePresetId: id, activePresetName: name }),
       setSemesterYear: (year) => set({ semesterYear: year }),
       setSemesterTerm: (term) => set({ semesterTerm: term }),
-      openAddEvent: (date) => set({ isAddEventOpen: true, addEventDate: date || null, editingEvent: null, selectedDaySummary: null, selectedEventDetail: null }),
-      openEditEvent: (event) => set({ isAddEventOpen: true, addEventDate: new Date(event.start_time), editingEvent: event, selectedDaySummary: null, selectedEventDetail: null }),
-      closeAddEvent: () => set({ isAddEventOpen: false, addEventDate: null, editingEvent: null }),
+      openAddEvent: (date) => set({ isAddEventOpen: true, addEventDate: date || null, prefillAgendaTaskId: null, prefillEventData: null, editingEvent: null, selectedDaySummary: null, selectedEventDetail: null }),
+      openAddEventWithPrefill: (taskId, data) => set({ isAddEventOpen: true, addEventDate: null, prefillAgendaTaskId: taskId, prefillEventData: data, editingEvent: null, selectedDaySummary: null, selectedEventDetail: null }),
+      openEditEvent: (event) => set({ isAddEventOpen: true, addEventDate: new Date(event.start_time), editingEvent: event, prefillAgendaTaskId: null, prefillEventData: null, selectedDaySummary: null, selectedEventDetail: null }),
+      closeAddEvent: () => set({ isAddEventOpen: false, addEventDate: null, prefillAgendaTaskId: null, prefillEventData: null, editingEvent: null }),
       openDeleteConfirm: (id) => set({ deletingEventId: id }),
       closeDeleteConfirm: () => set({ deletingEventId: null }),
       openEditCategory: (category) => set({ editingCategory: category }),
@@ -126,6 +132,8 @@ export const useCalendarStore = create<CalendarState>()(
         // 초기화할 임시 상태들 (모달, 팝업 등)
         isAddEventOpen: false,
         addEventDate: null,
+        prefillAgendaTaskId: null,
+        prefillEventData: null,
         editingEvent: null,
         deletingEventId: null,
         editingCategory: null,

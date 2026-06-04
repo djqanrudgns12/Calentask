@@ -129,7 +129,7 @@ export function ArchiveNotesView() {
                           className="w-24 bg-indigo-50/50 border-none outline-none focus:ring-2 focus:ring-indigo-500/30 rounded px-1 -mx-1 text-indigo-700"
                         />
                       ) : (
-                        <span className="select-none">{tab.name}</span>
+                        <span className="select-none">{tab.name || '제목 없음'}</span>
                       )}
                     </button>
                     

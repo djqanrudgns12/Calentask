@@ -14,6 +14,7 @@ import { Popover, PopoverContent, PopoverTrigger, PopoverHeader, PopoverTitle } 
 import { useActivityTemplates } from '@/hooks/useInsightsQueries'
 import type { ActivityTemplate } from '@/app/actions/insights'
 import { useCalendarStore } from '@/store/useCalendarStore'
+import { useAgendaStore } from '@/store/useAgendaStore'
 
 /**
  * 모바일 키보드가 올라올 때 visualViewport를 감지하여
@@ -100,7 +101,7 @@ const COLOR_SWATCHES = [
 ]
 
 export function AddEventDialog({ children }: { children?: React.ReactNode }) {
-  const { isAddEventOpen, closeAddEvent, addEventDate, openAddEvent, editingEvent, openEditCategory } = useCalendarStore()
+  const { isAddEventOpen, closeAddEvent, addEventDate, prefillEventData, prefillAgendaTaskId, openAddEvent, editingEvent, openEditCategory } = useCalendarStore()
   const { dialogRef, scrollRef, handleFocusScroll } = useKeyboardAwareDialog(isAddEventOpen)
   
   const [title, setTitle] = useState('')
@@ -164,32 +165,44 @@ export function AddEventDialog({ children }: { children?: React.ReactNode }) {
         setNewCategoryName('')
       } else {
         // 생성 모드 초기화
-        if (addEventDate) {
-          setStartDate(format(addEventDate, 'yyyy-MM-dd'))
-          setEndDate(format(addEventDate, 'yyyy-MM-dd'))
+        let initStartObj: Date | null = null
+        let initEndObj: Date | null = null
+        
+        if (prefillEventData?.start_time) {
+          initStartObj = new Date(prefillEventData.start_time)
+          initEndObj = new Date(initStartObj.getTime() + 60 * 60 * 1000) // add 1 hour
+        } else if (addEventDate) {
+          initStartObj = addEventDate
+          initEndObj = addEventDate
+        }
+
+        if (initStartObj && initEndObj) {
+          setStartDate(format(initStartObj, 'yyyy-MM-dd'))
+          setEndDate(format(initEndObj, 'yyyy-MM-dd'))
+          setStartTime(format(initStartObj, 'HH:mm'))
+          setEndTime(format(initEndObj, 'HH:mm'))
         } else {
           const now = new Date()
           setStartDate(format(now, 'yyyy-MM-dd'))
           setEndDate(format(now, 'yyyy-MM-dd'))
+          const nextHour = new Date()
+          nextHour.setHours(nextHour.getHours() + 1, 0, 0, 0)
+          setStartTime(format(nextHour, 'HH:mm'))
+          nextHour.setHours(nextHour.getHours() + 1)
+          setEndTime(format(nextHour, 'HH:mm'))
         }
-        // Set to next hour for default times
-        const nextHour = new Date()
-        nextHour.setHours(nextHour.getHours() + 1, 0, 0, 0)
-        setStartTime(format(nextHour, 'HH:mm'))
-        nextHour.setHours(nextHour.getHours() + 1)
-        setEndTime(format(nextHour, 'HH:mm'))
         
-        setTitle('')
+        setTitle(prefillEventData?.title || '')
         setIsAllDay(false)
-        setSelectedCategories([])
+        setSelectedCategories((prefillEventData as any)?.category_ids || [])
         setCustomColor(null)
-        setMemo('')
+        setMemo(prefillEventData?.memo || '')
         setIsAddingCategory(false)
         setNewCategoryName('')
         setIsTemplateOpen(false)
       }
     }
-  }, [isAddEventOpen, addEventDate, editingEvent])
+  }, [isAddEventOpen, addEventDate, prefillEventData, editingEvent])
 
   const toggleCategory = (id: string) => {
     setSelectedCategories(prev => {
@@ -321,6 +334,9 @@ export function AddEventDialog({ children }: { children?: React.ReactNode }) {
         },
         {
           onSuccess: () => {
+            if (prefillAgendaTaskId) {
+              useAgendaStore.getState().updateTask(prefillAgendaTaskId, { is_calendar_registered: true })
+            }
             closeAddEvent()
           }
         }

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
-import { MoreVertical, Edit2, Trash2, CheckCircle2, Archive as ArchiveIcon } from 'lucide-react';
+import { MoreVertical, Edit2, Trash2, CheckCircle2, Archive as ArchiveIcon, Calendar } from 'lucide-react';
 import { TaskStatus } from '@/store/useAgendaStore';
 
 interface AgendaTaskContextMenuProps {
@@ -8,9 +8,10 @@ interface AgendaTaskContextMenuProps {
   onEdit: () => void;
   onChangeStatus: (status: TaskStatus) => void;
   onPermanentDelete?: () => void;
+  onAddToCalendar?: () => void;
 }
 
-export function AgendaTaskContextMenu({ status, onEdit, onChangeStatus, onPermanentDelete }: AgendaTaskContextMenuProps) {
+export function AgendaTaskContextMenu({ status, onEdit, onChangeStatus, onPermanentDelete, onAddToCalendar }: AgendaTaskContextMenuProps) {
   return (
     <Popover>
       <PopoverTrigger 
@@ -35,6 +36,16 @@ export function AgendaTaskContextMenu({ status, onEdit, onChangeStatus, onPerman
           >
             <ArchiveIcon className="w-4 h-4" />
             Inbox로 복구
+          </button>
+        )}
+
+        {onAddToCalendar && status !== 'trash' && (
+          <button 
+            onClick={() => onAddToCalendar()}
+            className="w-full flex items-center gap-2 px-3 py-2 text-sm text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
+          >
+            <Calendar className="w-4 h-4" />
+            캘린더에 등록
           </button>
         )}
 

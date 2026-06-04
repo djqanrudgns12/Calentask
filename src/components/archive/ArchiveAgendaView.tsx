@@ -60,7 +60,16 @@ export function ArchiveAgendaView() {
 
   const { tasks, fetchTasks, isInitialized, addTask, updateTask, setTaskStatus, addSubtask, updateSubtask, deleteSubtask, deleteTask } = useAgendaStore();
   const { data: categories = [] } = useCategories();
-  const { openAddEvent } = useCalendarStore();
+  const { openAddEvent, openAddEventWithPrefill } = useCalendarStore();
+
+  const handleAddToCalendar = (task: AgendaTask) => {
+    openAddEventWithPrefill(task.id, {
+      title: task.title,
+      memo: task.memo || '',
+      ...(task.category_id && { category_ids: [task.category_id] }),
+      ...(task.deadline && { start_time: task.deadline })
+    });
+  };
 
 
   const filteredTasks = tasks.filter(t => t.status === activeTab);
@@ -523,6 +532,13 @@ export function ArchiveAgendaView() {
                         </div>
                       )}
 
+                      {task.is_calendar_registered && (
+                        <div className="flex items-center gap-1 px-3 py-1 text-indigo-700 bg-indigo-50 rounded-full shadow-sm border border-indigo-200 transition-colors">
+                          <Calendar className="w-3.5 h-3.5" />
+                          <span className="text-[12px] font-bold">캘린더에 등록됨</span>
+                        </div>
+                      )}
+
                       {task.subtasks && task.subtasks.length > 0 && (
                         <button 
                           onClick={(e) => toggleTaskExpansion(task.id, e)}
@@ -545,6 +561,7 @@ export function ArchiveAgendaView() {
                       onEdit={() => openDetail(task)} 
                       onChangeStatus={(s) => setTaskStatus(task.id, s)} 
                       onPermanentDelete={() => deleteTask(task.id)}
+                      onAddToCalendar={() => handleAddToCalendar(task)}
                     />
                   </div>
                 </div>

@@ -59,7 +59,7 @@ export function DocumentBoard() {
     const newTitle = e.target.value;
     setLocalTitle(newTitle); // 즉각적인 UI 업데이트
     updateItem(activeTabId, docItem.id, { title: newTitle }); // 스토어 디바운스 업데이트
-    updateTab(activeTabId, { name: newTitle || '제목 없음' });
+    updateTab(activeTabId, { name: newTitle });
   };
 
   // Keep localTitle and docItem in sync when tab is renamed externally (e.g. double click tab)
