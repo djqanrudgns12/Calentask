@@ -37,6 +37,18 @@ export function DocumentBoard() {
   // Use the first item as the document content
   const docItem = items[0];
 
+  // Tiptap의 onUpdate 클로저(Closure) 문제를 해결하기 위해 항상 최신 상태를 유지하는 ref 사용
+  const latestDocItem = useRef(docItem);
+  const latestActiveTabId = useRef(activeTabId);
+
+  useEffect(() => {
+    latestDocItem.current = docItem;
+  }, [docItem]);
+
+  useEffect(() => {
+    latestActiveTabId.current = activeTabId;
+  }, [activeTabId]);
+
   // Initialize document if not exists (with guard against double-calls)
   useEffect(() => {
     const existingItems = useArchiveStore.getState().items[activeTabId || ''];
@@ -107,15 +119,19 @@ export function DocumentBoard() {
     ],
     content: docItem?.data?.contentJSON || docItem?.content || '',
     onUpdate: ({ editor }) => {
-      if (!activeTabId || !docItem) return;
+      // 클로저에 고정된(stale) 값 대신 항상 최신 ref 값을 참조
+      const currentTabId = latestActiveTabId.current;
+      const currentDocItem = latestDocItem.current;
+
+      if (!currentTabId || !currentDocItem) return;
       
       const json = editor.getJSON();
       const text = editor.getText();
       
-      updateItem(activeTabId, docItem.id, { 
+      updateItem(currentTabId, currentDocItem.id, { 
         content: text, // Backward compatibility & text stats
         data: {
-          ...docItem.data,
+          ...currentDocItem.data,
           contentJSON: json
         }
       });
