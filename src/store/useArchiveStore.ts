@@ -196,8 +196,8 @@ export const useArchiveStore = create<ArchiveState>()(
         newActiveTabId = data[0].id;
       }
       
-      // 전략 2: 캐시 히트 시 재요청 스킵
-      if (newActiveTabId && !get().items[newActiveTabId]) {
+      // 전략 2: fetchItems 내부에서 백그라운드 최신화 처리
+      if (newActiveTabId) {
         get().fetchItems(newActiveTabId);
       }
       
@@ -525,7 +525,6 @@ export const useArchiveStore = create<ArchiveState>()(
         activeTabId: state.activeTabId,
         items: state.items,
         boardConfigs: state.boardConfigs,
-        isPrefetched: state.isPrefetched,
       }),
       // localStorage 용량 초과 시 graceful 처리
       storage: {

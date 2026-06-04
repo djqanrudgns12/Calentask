@@ -31,11 +31,8 @@ export function ArchiveNotesView() {
 
   useEffect(() => {
     if (activeTabId) {
-      // 전략 2: 캐시에 데이터가 있으면 서버 재요청 스킵 (백그라운드 최신화는 prefetch에서 처리)
-      const cachedItems = useArchiveStore.getState().items[activeTabId];
-      if (!cachedItems || cachedItems.length === 0) {
-        fetchItems(activeTabId);
-      }
+      // 전략 2: fetchItems 내부에서 Stale cache flash 방지 및 백그라운드 동기화 처리
+      fetchItems(activeTabId);
     }
   }, [activeTabId]);
 
