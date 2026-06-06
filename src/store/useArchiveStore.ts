@@ -28,6 +28,8 @@ export interface BoardItem {
   data?: Record<string, any>; // 다양한 보드(좌표, 서식, 썸네일 등)의 커스텀 데이터를 저장하는 필드
 }
 
+export type EditorViewMode = 'page' | 'wide';
+
 interface ArchiveState {
   // Security
   isPinLocked: boolean;
@@ -67,6 +69,14 @@ interface ArchiveState {
   
   isPrefetched: boolean;
   prefetchArchive: () => Promise<void>;
+
+  // 에디터 뷰 설정 (탭별 저장, localStorage 영속화)
+  tabViewModes: Record<string, EditorViewMode>;
+  setTabViewMode: (tabId: string, mode: EditorViewMode) => void;
+
+  // 집중 모드 (전역 일시 상태, 탭 전환 시 자동 해제, 비영속화)
+  focusModeTabId: string | null;
+  setFocusMode: (tabId: string | null) => void;
 }
 
 // ============================================================
@@ -103,7 +113,7 @@ export const useArchiveStore = create<ArchiveState>()(
   setPinLocked: (locked) => set({ isPinLocked: locked }),
 
   activeTabId: null,
-  setActiveTabId: (id) => set({ activeTabId: id }),
+  setActiveTabId: (id) => set({ activeTabId: id, focusModeTabId: null }),
   tabs: [],
   
   isPrefetched: false,
@@ -289,6 +299,16 @@ export const useArchiveStore = create<ArchiveState>()(
   setOptimisticAgendaTasks: (tasks) => set({ optimisticAgendaTasks: tasks }),
 
   items: {},
+
+  // 에디터 뷰 설정 (탭별)
+  tabViewModes: {},
+  setTabViewMode: (tabId, mode) => set((state) => ({
+    tabViewModes: { ...state.tabViewModes, [tabId]: mode }
+  })),
+
+  // 집중 모드
+  focusModeTabId: null,
+  setFocusMode: (tabId) => set({ focusModeTabId: tabId }),
   boardConfigs: {},
   setBoardConfig: (boardId, config) => set((state) => ({
     boardConfigs: { ...state.boardConfigs, [boardId]: { ...(state.boardConfigs[boardId] || {}), ...config } }
@@ -527,6 +547,7 @@ export const useArchiveStore = create<ArchiveState>()(
         tabs: state.tabs,
         activeTabId: state.activeTabId,
         boardConfigs: state.boardConfigs,
+        tabViewModes: state.tabViewModes,
       }),
       merge: (persistedState: any, currentState) => ({
         ...currentState,

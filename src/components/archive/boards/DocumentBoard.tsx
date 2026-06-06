@@ -8,10 +8,11 @@ import {
   SquareCheckBig, Minus, Lightbulb, ChevronRight, Bookmark as BookmarkIcon, ImageIcon, Film as YoutubeIcon, 
   Code, Wand2, ArrowUp, ArrowDown, ArrowLeft, ArrowRight, Grip, PanelTop, PanelLeft, Trash, Grid3X3, 
   GripVertical, Underline as UnderlineIcon, Strikethrough, Link as LinkIcon, Smile, Download, Sigma,
-  Undo, Redo, ZoomIn, ZoomOut, Maximize, Search, ChevronDown, Check
+  Undo, Redo, ZoomIn, ZoomOut, Maximize, Minimize2, Search, ChevronDown, Check, PanelTopOpen, X
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useArchiveStore } from '@/store/useArchiveStore';
+import { useArchiveStore, EditorViewMode } from '@/store/useArchiveStore';
+import { useHotkeys } from 'react-hotkeys-hook';
 import { useEditor, EditorContent } from '@tiptap/react';
 import { BubbleMenu, FloatingMenu } from '@tiptap/react/menus';
 import StarterKit from '@tiptap/starter-kit';
@@ -57,9 +58,18 @@ const BORDER_STYLES = ['solid', 'dashed', 'dotted', 'none'];
 const BORDER_WIDTHS = ['1px', '2px', '3px', '4px'];
 
 export function DocumentBoard() {
-  const { activeTabId, tabs, items: storeItems, updateItem, addItem, updateTab, deleteTab } = useArchiveStore();
+  const { activeTabId, tabs, items: storeItems, updateItem, addItem, updateTab, deleteTab, tabViewModes, setTabViewMode, focusModeTabId, setFocusMode } = useArchiveStore();
   const currentTab = tabs.find(t => t.id === activeTabId);
   const items = activeTabId ? (storeItems[activeTabId] || EMPTY_ARRAY) : EMPTY_ARRAY;
+
+  // 뒷 뷰 모드 상태 (탭별 저장)
+  const viewMode: EditorViewMode = (activeTabId ? tabViewModes[activeTabId] : undefined) || 'page';
+  const isWideView = viewMode === 'wide';
+  const isFocusMode = focusModeTabId === activeTabId;
+
+  // 집중 모드 호버 툴바
+  const [showFocusToolbar, setShowFocusToolbar] = useState(false);
+  const focusToolbarTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const initRef = useRef<string | null>(null);
   
   const docItem = items[0];
@@ -100,6 +110,27 @@ export function DocumentBoard() {
   const [isGuideModalOpen, setIsGuideModalOpen] = useState(false);
   const [activeRibbonTab, setActiveRibbonTab] = useState<'home'|'insert'|'view'>('home');
   const [zoom, setZoom] = useState(100);
+
+  // 집중 모드 단축키 + ESC 탈출
+  useHotkeys('mod+shift+f', (e) => {
+    e.preventDefault();
+    if (activeTabId) setFocusMode(isFocusMode ? null : activeTabId);
+  }, { enableOnFormTags: true }, [activeTabId, isFocusMode]);
+
+  useHotkeys('escape', () => {
+    if (isFocusMode) setFocusMode(null);
+  }, { enableOnFormTags: true }, [isFocusMode]);
+
+  // 집중 모드 호버 툴바 로직
+  const handleFocusToolbarEnter = useCallback(() => {
+    if (focusToolbarTimeout.current) clearTimeout(focusToolbarTimeout.current);
+    focusToolbarTimeout.current = setTimeout(() => setShowFocusToolbar(true), 200);
+  }, []);
+
+  const handleFocusToolbarLeave = useCallback(() => {
+    if (focusToolbarTimeout.current) clearTimeout(focusToolbarTimeout.current);
+    focusToolbarTimeout.current = setTimeout(() => setShowFocusToolbar(false), 500);
+  }, []);
   
   const [pageCount, setPageCount] = useState(1);
   const pageContainerRef = useRef<HTMLDivElement>(null);
@@ -290,7 +321,8 @@ export function DocumentBoard() {
 
   return (
     <div className="w-full h-full bg-slate-50 relative flex flex-col">
-      {/* Ribbon Toolbar */}
+      {/* Ribbon Toolbar — 집중 모드에서는 숨김 (호버 슬라이드인 툴바로 대체) */}
+      {!isFocusMode && (
       <div className="border-b border-slate-200 bg-white shrink-0 sticky top-0 z-20 shadow-sm flex flex-col">
         {/* Tab Headers */}
         <div className="flex px-4 pt-2 gap-1 border-b border-slate-100 bg-slate-50">
@@ -493,6 +525,37 @@ export function DocumentBoard() {
 
           {activeRibbonTab === 'view' && (
             <>
+              {/* 뷰 모드 토글 */}
+              <div className="flex items-center gap-1 pr-4 border-r border-slate-200">
+                <div className="flex bg-slate-100 rounded-lg p-0.5">
+                  <button 
+                    onClick={() => activeTabId && setTabViewMode(activeTabId, 'page')}
+                    className={cn("flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-bold transition-all", viewMode === 'page' ? "bg-white text-indigo-600 shadow-sm" : "text-slate-500 hover:text-slate-700")}
+                  >
+                    <FileText className="w-3.5 h-3.5" /> 페이지 뷰
+                  </button>
+                  <button 
+                    onClick={() => activeTabId && setTabViewMode(activeTabId, 'wide')}
+                    className={cn("flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-bold transition-all", viewMode === 'wide' ? "bg-white text-indigo-600 shadow-sm" : "text-slate-500 hover:text-slate-700")}
+                  >
+                    <PanelTopOpen className="w-3.5 h-3.5" /> 넓은 뷰
+                  </button>
+                </div>
+              </div>
+
+              {/* 집중 모드 */}
+              <div className="flex items-center pr-4 border-r border-slate-200">
+                <button 
+                  onClick={() => activeTabId && setFocusMode(isFocusMode ? null : activeTabId)}
+                  className={cn(
+                    "flex items-center gap-2 px-3 py-1.5 rounded-lg font-bold text-sm transition-colors",
+                    isFocusMode ? "bg-indigo-600 text-white" : "bg-slate-50 text-slate-700 hover:bg-slate-100"
+                  )}
+                >
+                  <Maximize className="w-4 h-4" /> 집중 모드
+                </button>
+              </div>
+
               {/* Export */}
               <div className="flex items-center pr-4 border-r border-slate-200">
                 <button onClick={exportWord} className="flex items-center gap-2 px-3 py-1.5 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 rounded-lg font-bold text-sm transition-colors">
@@ -508,11 +571,81 @@ export function DocumentBoard() {
           )}
         </div>
       </div>
+      )}
+
+      {/* 집중 모드: 호버 감지 영역 + 슬라이드인 툴바 */}
+      {isFocusMode && (
+        <>
+          {/* 호버 감지 영역 (화면 상단 30px) */}
+          <div 
+            className="fixed top-0 left-0 right-0 h-[30px] z-50"
+            onMouseEnter={handleFocusToolbarEnter}
+          />
+
+          {/* 슬라이드인 Ribbon 툴바 */}
+          <AnimatePresence>
+            {showFocusToolbar && (
+              <motion.div
+                initial={{ y: '-100%' }}
+                animate={{ y: 0 }}
+                exit={{ y: '-100%' }}
+                transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+                className="fixed top-0 left-0 right-0 z-50 border-b border-slate-200 bg-white/95 backdrop-blur-md shadow-lg"
+                onMouseEnter={() => { if (focusToolbarTimeout.current) clearTimeout(focusToolbarTimeout.current); }}
+                onMouseLeave={handleFocusToolbarLeave}
+              >
+                {/* 축소된 Ribbon — 홈 탭 도구만 표시 */}
+                <div className="px-4 py-2 flex items-center flex-wrap gap-x-4 gap-y-2">
+                  {/* History */}
+                  <div className="flex items-center gap-1 pr-4 border-r border-slate-200">
+                    <button onClick={() => editor.chain().focus().undo().run()} disabled={!editor.can().undo()} className="p-1.5 rounded hover:bg-slate-100 disabled:opacity-30" title="실행 취소"><Undo className="w-4 h-4 text-slate-700" /></button>
+                    <button onClick={() => editor.chain().focus().redo().run()} disabled={!editor.can().redo()} className="p-1.5 rounded hover:bg-slate-100 disabled:opacity-30" title="다시 실행"><Redo className="w-4 h-4 text-slate-700" /></button>
+                  </div>
+                  {/* Formatting */}
+                  <div className="flex items-center gap-0.5 pr-4 border-r border-slate-200">
+                    <button onClick={() => editor.chain().focus().toggleBold().run()} className={cn("p-1.5 rounded", editor.isActive('bold') ? "bg-slate-200" : "hover:bg-slate-100")}><Bold className="w-4 h-4" /></button>
+                    <button onClick={() => editor.chain().focus().toggleItalic().run()} className={cn("p-1.5 rounded", editor.isActive('italic') ? "bg-slate-200" : "hover:bg-slate-100")}><Italic className="w-4 h-4" /></button>
+                    <button onClick={() => editor.chain().focus().toggleUnderline().run()} className={cn("p-1.5 rounded", editor.isActive('underline') ? "bg-slate-200" : "hover:bg-slate-100")}><UnderlineIcon className="w-4 h-4" /></button>
+                    <button onClick={() => editor.chain().focus().toggleStrike().run()} className={cn("p-1.5 rounded", editor.isActive('strike') ? "bg-slate-200" : "hover:bg-slate-100")}><Strikethrough className="w-4 h-4" /></button>
+                  </div>
+                  {/* Alignment & Lists */}
+                  <div className="flex items-center gap-0.5">
+                    <button onClick={() => editor.chain().focus().setTextAlign('left').run()} className={cn("p-1.5 rounded", editor.isActive({ textAlign: 'left' }) ? "bg-slate-200" : "hover:bg-slate-100")}><AlignLeft className="w-4 h-4" /></button>
+                    <button onClick={() => editor.chain().focus().setTextAlign('center').run()} className={cn("p-1.5 rounded", editor.isActive({ textAlign: 'center' }) ? "bg-slate-200" : "hover:bg-slate-100")}><AlignCenter className="w-4 h-4" /></button>
+                    <button onClick={() => editor.chain().focus().toggleBulletList().run()} className={cn("p-1.5 rounded", editor.isActive('bulletList') ? "bg-slate-200" : "hover:bg-slate-100")}><List className="w-4 h-4" /></button>
+                    <button onClick={() => editor.chain().focus().toggleOrderedList().run()} className={cn("p-1.5 rounded", editor.isActive('orderedList') ? "bg-slate-200" : "hover:bg-slate-100")}><ListOrdered className="w-4 h-4" /></button>
+                  </div>
+                  {/* 나가기 버튼 */}
+                  <button 
+                    onClick={() => setFocusMode(null)} 
+                    className="ml-auto flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg text-xs font-bold transition-colors"
+                  >
+                    <Minimize2 className="w-3.5 h-3.5" /> 나가기
+                  </button>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* 플로팅 나가기 버튼 (우측 상단, 반투명) */}
+          <button 
+            onClick={() => setFocusMode(null)}
+            className="fixed top-4 right-4 z-40 p-2 bg-black/10 hover:bg-black/20 backdrop-blur-sm rounded-full text-slate-500 hover:text-slate-800 transition-all opacity-40 hover:opacity-100"
+            title="집중 모드 나가기 (ESC)"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </>
+      )}
 
       {/* Editor Area - Word/HWP Style Paginated View */}
       <div 
         id="editor-scroll-container"
-        className="flex-1 overflow-y-auto cursor-text transition-all duration-200 origin-top bg-[#e8e8e8]" 
+        data-scroll-detect
+        className={cn(
+          "flex-1 overflow-y-auto cursor-text transition-all duration-300 origin-top",
+          isWideView ? "bg-white" : "bg-[#e8e8e8]"
+        )}
         onClick={(e) => {
           if (e.target === e.currentTarget) editor.commands.focus();
         }}
@@ -522,51 +655,57 @@ export function DocumentBoard() {
           style={{ 
             transform: `scale(${zoom / 100})`, 
             transformOrigin: 'top center',
-            paddingTop: '2rem',
-            paddingBottom: '4rem',
+            paddingTop: isWideView ? '0.5rem' : '1rem',
+            paddingBottom: isWideView ? '1rem' : '2rem',
           }}
         >
-          {/* A4 Page */}
+          {/* A4 Page / Wide View Container */}
           <div 
             ref={pageContainerRef}
-            className="doc-page mx-auto bg-white relative"
+            className={cn(
+              "doc-page mx-auto bg-white relative",
+              isWideView && "shadow-none"
+            )}
             style={{ 
-              width: '816px',  /* A4: 210mm ≈ 816px at 96dpi */
-              minHeight: '1056px', /* A4: 297mm ≈ 1056px at 96dpi */
-              boxShadow: '0 2px 12px rgba(0,0,0,0.12), 0 0 0 1px rgba(0,0,0,0.04)',
-              marginBottom: '24px',
+              width: isWideView ? '100%' : '816px',
+              maxWidth: isWideView ? '960px' : undefined,
+              minHeight: isWideView ? 'auto' : '1056px',
+              boxShadow: isWideView ? 'none' : '0 2px 12px rgba(0,0,0,0.12), 0 0 0 1px rgba(0,0,0,0.04)',
+              marginBottom: isWideView ? '0' : '24px',
             }}
             onClick={(e) => {
               if (e.target === e.currentTarget && editor) editor.commands.focus();
             }}
           >
-            {/* Virtual Page Boundaries & Numbers */}
-            <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden rounded-[inherit]">
-              {Array.from({ length: pageCount }).map((_, i) => (
-                <div 
-                  key={i} 
-                  className="absolute w-full flex flex-col items-center justify-end pb-8" 
-                  style={{ 
-                    top: `${i * 1056}px`, 
-                    height: '1056px',
-                    borderBottom: i < pageCount - 1 ? '1px dashed #cbd5e1' : 'none'
-                  }}
-                >
-                  <span className="text-sm text-slate-400 font-medium bg-white px-2">
-                    - {i + 1} -
-                  </span>
-                </div>
-              ))}
-            </div>
+            {/* Virtual Page Boundaries & Numbers — 넓은 뷰에서는 숨김 */}
+            {!isWideView && (
+              <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden rounded-[inherit]">
+                {Array.from({ length: pageCount }).map((_, i) => (
+                  <div 
+                    key={i} 
+                    className="absolute w-full flex flex-col items-center justify-end pb-8" 
+                    style={{ 
+                      top: `${i * 1056}px`, 
+                      height: '1056px',
+                      borderBottom: i < pageCount - 1 ? '1px dashed #cbd5e1' : 'none'
+                    }}
+                  >
+                    <span className="text-sm text-slate-400 font-medium bg-white px-2">
+                      - {i + 1} -
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
 
             {/* Editor Content Area */}
-            <div className="relative z-10" style={{ padding: '96px 72px' }}>
+            <div className="relative z-10" style={{ padding: isWideView ? '48px 40px' : '64px 56px' }}>
               <input 
               type="text"
               value={localTitle}
               onChange={handleTitleChange}
               placeholder="제목을 입력하세요"
-              className="w-full text-4xl md:text-5xl font-extrabold text-slate-900 bg-transparent border-none focus:outline-none focus:ring-0 mb-8 placeholder:text-slate-300 transition-all tracking-tight"
+              className="w-full text-4xl md:text-5xl font-extrabold text-slate-900 bg-transparent border-none focus:outline-none focus:ring-0 mb-5 placeholder:text-slate-300 transition-all tracking-tight"
             />
             
 

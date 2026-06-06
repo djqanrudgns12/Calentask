@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { useArchiveStore } from '@/store/useArchiveStore';
 import { PinPadOverlay } from '@/components/archive/PinPadOverlay';
 import { DocumentBoard } from '@/components/archive/boards/DocumentBoard';
@@ -20,10 +20,48 @@ import { useHotkeys } from 'react-hotkeys-hook';
 import { useEffect } from 'react';
 
 export function ArchiveNotesView() {
-  const { tabs, activeTabId, setActiveTabId, setCommandPaletteOpen, fetchTabs, fetchItems, updateTab, deleteTab, isPrefetched } = useArchiveStore();
+  const { tabs, activeTabId, setActiveTabId, setCommandPaletteOpen, fetchTabs, fetchItems, updateTab, deleteTab, isPrefetched, focusModeTabId } = useArchiveStore();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [editingTabId, setEditingTabId] = useState<string | null>(null);
   const [editingTabName, setEditingTabName] = useState('');
+  const [isScrolled, setIsScrolled] = useState(false);
+  const boardContainerRef = useRef<HTMLDivElement>(null);
+
+  const isFocusMode = focusModeTabId !== null && focusModeTabId === activeTabId;
+
+  // Board 컨테이너의 스크롤을 감지하여 헤더 축소 트리거
+  const handleBoardScroll = useCallback(() => {
+    if (boardContainerRef.current) {
+      // Board 내부의 스크롤 가능한 첫 번째 자식 요소를 감지
+      const scrollable = boardContainerRef.current.querySelector('[data-scroll-detect]') as HTMLElement;
+      if (scrollable) {
+        setIsScrolled(scrollable.scrollTop > 10);
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    const container = boardContainerRef.current;
+    if (!container) return;
+    // MutationObserver로 내부 스크롤 요소가 마운트되면 이벤트 리스너 부착
+    const attachScrollListener = () => {
+      const scrollable = container.querySelector('[data-scroll-detect]') as HTMLElement;
+      if (scrollable) {
+        scrollable.addEventListener('scroll', handleBoardScroll, { passive: true });
+        return () => scrollable.removeEventListener('scroll', handleBoardScroll);
+      }
+    };
+    const cleanup = attachScrollListener();
+    const observer = new MutationObserver(() => {
+      cleanup?.();
+      attachScrollListener();
+    });
+    observer.observe(container, { childList: true, subtree: true });
+    return () => {
+      cleanup?.();
+      observer.disconnect();
+    };
+  }, [handleBoardScroll, activeTabId]);
 
   useEffect(() => {
     fetchTabs();
@@ -61,105 +99,133 @@ export function ArchiveNotesView() {
   return (
     <PinPadOverlay>
       <div className="flex flex-col h-full bg-[#f7f9fb]">
-        {/* Header & Tabs */}
-        <div className="px-8 pt-8 pb-4 border-b border-slate-200 bg-white/50 backdrop-blur-md sticky top-0 z-10 shrink-0">
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">아카이브 노트</h1>
-              <p className="text-slate-500 mt-1 text-sm font-medium">나만의 지식 보관소이자 창의력을 펼치는 캔버스입니다.</p>
+        {/* Header & Tabs — 집중 모드 시 전체 숨김 */}
+        {!isFocusMode && (
+          <div className="border-b border-slate-200 bg-white/50 backdrop-blur-md sticky top-0 z-10 shrink-0">
+            {/* 타이틀 영역 — 스크롤 시 접힘 */}
+            <div className={cn(
+              "overflow-hidden transition-all duration-300 ease-out",
+              isScrolled ? "max-h-0 opacity-0 pt-0 pb-0 px-8" : "max-h-40 opacity-100 px-8 pt-6 pb-3"
+            )}>
+              <div className="flex items-center justify-between">
+                <div>
+                  <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">아카이브 노트</h1>
+                  <p className="text-slate-500 mt-1 text-sm font-medium">나만의 지식 보관소이자 창의력을 펼치는 캔버스입니다.</p>
+                </div>
+                <button 
+                  onClick={handleAddNewTab}
+                  className="flex items-center gap-2 px-4 py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-bold hover:bg-indigo-700 shadow-sm shadow-indigo-600/20 transition-all hover:scale-105 active:scale-95"
+                >
+                  <Plus className="w-4 h-4" />
+                  새 노트 추가
+                </button>
+              </div>
             </div>
-            <button 
-              onClick={handleAddNewTab}
-              className="flex items-center gap-2 px-4 py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-bold hover:bg-indigo-700 shadow-sm shadow-indigo-600/20 transition-all hover:scale-105 active:scale-95"
-            >
-              <Plus className="w-4 h-4" />
-              새 노트 추가
-            </button>
-          </div>
 
-          {/* Dynamic Tabs Navigation */}
-          {!isPrefetched ? (
-            <div className="flex items-center space-x-2 overflow-x-auto hide-scrollbar">
-              {Array.from({ length: 4 }).map((_, i) => (
-                <div key={i} className="h-9 w-24 bg-slate-100 animate-pulse rounded-lg" />
-              ))}
-            </div>
-          ) : tabs.length > 0 && (
-            <div className="flex items-center space-x-2 overflow-x-auto hide-scrollbar">
-              {tabs.map((tab: any) => {
-                const Icon = getIconForType(tab.board_type);
-                const isActive = activeTabId === tab.id;
-                const isEditing = editingTabId === tab.id;
-                
-                return (
-                  <div key={tab.id} className="relative group flex items-center">
-                    <button
-                      onClick={() => !isEditing && setActiveTabId(tab.id)}
-                      onDoubleClick={() => {
-                        setEditingTabId(tab.id);
-                        setEditingTabName(tab.name);
-                      }}
-                      className={cn(
-                        "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all whitespace-nowrap",
-                        isActive 
-                          ? "bg-white text-indigo-600 shadow-sm border border-slate-200" 
-                          : "text-slate-500 hover:bg-white/60 hover:text-slate-700 border border-transparent"
-                      )}
+            {/* 탭 네비게이션 영역 — 항상 표시, 스크롤 시 패딩 축소 */}
+            <div className={cn(
+              "transition-all duration-300 ease-out",
+              isScrolled ? "px-6 pt-1.5 pb-1.5" : "px-8 pt-1 pb-3"
+            )}>
+              {!isPrefetched ? (
+                <div className="flex items-center space-x-2 overflow-x-auto hide-scrollbar">
+                  {Array.from({ length: 4 }).map((_, i) => (
+                    <div key={i} className="h-9 w-24 bg-slate-100 animate-pulse rounded-lg" />
+                  ))}
+                </div>
+              ) : tabs.length > 0 && (
+                <div className="flex items-center space-x-2 overflow-x-auto hide-scrollbar">
+                  {/* 스크롤 상태에서 축소된 새 노트 추가 버튼 */}
+                  {isScrolled && (
+                    <button 
+                      onClick={handleAddNewTab}
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 text-white rounded-lg text-xs font-bold hover:bg-indigo-700 shadow-sm transition-all shrink-0"
                     >
-                      <Icon className={cn("w-4 h-4 shrink-0", isActive ? "text-indigo-600" : "text-slate-400")} />
-                      
-                      {isEditing ? (
-                        <input 
-                          autoFocus
-                          value={editingTabName}
-                          onChange={(e) => setEditingTabName(e.target.value)}
-                          onBlur={() => {
-                            if (editingTabName.trim() && editingTabName !== tab.name) {
-                              updateTab(tab.id, { name: editingTabName.trim() });
-                            }
-                            setEditingTabId(null);
-                          }}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter') {
-                              e.preventDefault();
-                              if (editingTabName.trim() && editingTabName !== tab.name) {
-                                updateTab(tab.id, { name: editingTabName.trim() });
-                              }
-                              setEditingTabId(null);
-                            } else if (e.key === 'Escape') {
-                              setEditingTabId(null);
-                            }
-                          }}
-                          className="w-24 bg-indigo-50/50 border-none outline-none focus:ring-2 focus:ring-indigo-500/30 rounded px-1 -mx-1 text-indigo-700"
-                        />
-                      ) : (
-                        <span className="select-none">{tab.name || '제목 없음'}</span>
-                      )}
+                      <Plus className="w-3.5 h-3.5" />
+                      추가
                     </button>
+                  )}
+                  {tabs.map((tab: any) => {
+                    const Icon = getIconForType(tab.board_type);
+                    const isActive = activeTabId === tab.id;
+                    const isEditing = editingTabId === tab.id;
                     
-                    {!isEditing && (
-                      <button 
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          if (confirm(`'${tab.name}' 노트를 정말 삭제하시겠습니까?`)) {
-                            deleteTab(tab.id);
-                          }
-                        }}
-                        className="absolute right-1 opacity-0 group-hover:opacity-100 p-1 text-slate-400 hover:text-rose-500 transition-opacity bg-white/80 backdrop-blur rounded"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    )}
-                  </div>
-                );
-              })}
+                    return (
+                      <div key={tab.id} className="relative group flex items-center">
+                        <button
+                          onClick={() => !isEditing && setActiveTabId(tab.id)}
+                          onDoubleClick={() => {
+                            setEditingTabId(tab.id);
+                            setEditingTabName(tab.name);
+                          }}
+                          className={cn(
+                            "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all whitespace-nowrap",
+                            isActive 
+                              ? "bg-white text-indigo-600 shadow-sm border border-slate-200" 
+                              : "text-slate-500 hover:bg-white/60 hover:text-slate-700 border border-transparent"
+                          )}
+                        >
+                          <Icon className={cn("w-4 h-4 shrink-0", isActive ? "text-indigo-600" : "text-slate-400")} />
+                          
+                          {isEditing ? (
+                            <input 
+                              autoFocus
+                              value={editingTabName}
+                              onChange={(e) => setEditingTabName(e.target.value)}
+                              onBlur={() => {
+                                if (editingTabName.trim() && editingTabName !== tab.name) {
+                                  updateTab(tab.id, { name: editingTabName.trim() });
+                                }
+                                setEditingTabId(null);
+                              }}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                  e.preventDefault();
+                                  if (editingTabName.trim() && editingTabName !== tab.name) {
+                                    updateTab(tab.id, { name: editingTabName.trim() });
+                                  }
+                                  setEditingTabId(null);
+                                } else if (e.key === 'Escape') {
+                                  setEditingTabId(null);
+                                }
+                              }}
+                              className="w-24 bg-indigo-50/50 border-none outline-none focus:ring-2 focus:ring-indigo-500/30 rounded px-1 -mx-1 text-indigo-700"
+                            />
+                          ) : (
+                            <span className="select-none">{tab.name || '제목 없음'}</span>
+                          )}
+                        </button>
+                        
+                        {!isEditing && (
+                          <button 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (confirm(`'${tab.name}' 노트를 정말 삭제하시겠습니까?`)) {
+                                deleteTab(tab.id);
+                              }
+                            }}
+                            className="absolute right-1 opacity-0 group-hover:opacity-100 p-1 text-slate-400 hover:text-rose-500 transition-opacity bg-white/80 backdrop-blur rounded"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
-          )}
-        </div>
+          </div>
+        )}
 
         {/* Board Content Area */}
-        <div className="flex-1 p-6 overflow-hidden">
-          <div className="w-full h-full bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden relative">
+        <div className={cn("flex-1 overflow-hidden", isFocusMode ? "p-0" : "p-3")}>
+          <div ref={boardContainerRef} className={cn(
+            "w-full h-full overflow-hidden relative",
+            isFocusMode 
+              ? "bg-white rounded-none border-0 shadow-none" 
+              : "bg-white rounded-2xl shadow-sm border border-slate-200"
+          )}>
             {!isPrefetched ? (
               <div className="absolute inset-0 flex flex-col p-8">
                 {/* Skeleton UI for Board */}
