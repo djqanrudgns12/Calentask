@@ -129,7 +129,13 @@ export function DocumentBoard() {
 
   const handleFocusToolbarLeave = useCallback(() => {
     if (focusToolbarTimeout.current) clearTimeout(focusToolbarTimeout.current);
-    focusToolbarTimeout.current = setTimeout(() => setShowFocusToolbar(false), 500);
+    focusToolbarTimeout.current = setTimeout(() => {
+      setShowFocusToolbar(false);
+      setFocusDropdown(null);
+      setFocusFontFamily(false);
+      setFocusFontSize(false);
+      setFocusEmojiPicker(false);
+    }, 500);
   }, []);
   
   const [pageCount, setPageCount] = useState(1);
@@ -153,6 +159,12 @@ export function DocumentBoard() {
   const [showHighlightColor, setShowHighlightColor] = useState(false);
   const [showInsertMenu, setShowInsertMenu] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+
+  // 집중 모드 드롭다운 상태
+  const [focusDropdown, setFocusDropdown] = useState<'text' | 'paragraph' | 'insert' | null>(null);
+  const [focusFontFamily, setFocusFontFamily] = useState(false);
+  const [focusFontSize, setFocusFontSize] = useState(false);
+  const [focusEmojiPicker, setFocusEmojiPicker] = useState(false);
 
   const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!activeTabId || !docItem) return;
@@ -594,28 +606,193 @@ export function DocumentBoard() {
                 onMouseEnter={() => { if (focusToolbarTimeout.current) clearTimeout(focusToolbarTimeout.current); }}
                 onMouseLeave={handleFocusToolbarLeave}
               >
-                {/* 축소된 Ribbon — 홈 탭 도구만 표시 */}
-                <div className="px-4 py-2 flex items-center flex-wrap gap-x-4 gap-y-2">
-                  {/* History */}
-                  <div className="flex items-center gap-1 pr-4 border-r border-slate-200">
+                {/* 고도화된 집중 모드 Ribbon — 직접 노출 + 드롭다운 그룹 */}
+                <div className="px-4 py-2 flex items-center gap-x-3">
+                  {/* ── 히스토리 ── */}
+                  <div className="flex items-center gap-1 pr-3 border-r border-slate-200">
                     <button onClick={() => editor.chain().focus().undo().run()} disabled={!editor.can().undo()} className="p-1.5 rounded hover:bg-slate-100 disabled:opacity-30" title="실행 취소"><Undo className="w-4 h-4 text-slate-700" /></button>
                     <button onClick={() => editor.chain().focus().redo().run()} disabled={!editor.can().redo()} className="p-1.5 rounded hover:bg-slate-100 disabled:opacity-30" title="다시 실행"><Redo className="w-4 h-4 text-slate-700" /></button>
                   </div>
-                  {/* Formatting */}
-                  <div className="flex items-center gap-0.5 pr-4 border-r border-slate-200">
-                    <button onClick={() => editor.chain().focus().toggleBold().run()} className={cn("p-1.5 rounded", editor.isActive('bold') ? "bg-slate-200" : "hover:bg-slate-100")}><Bold className="w-4 h-4" /></button>
-                    <button onClick={() => editor.chain().focus().toggleItalic().run()} className={cn("p-1.5 rounded", editor.isActive('italic') ? "bg-slate-200" : "hover:bg-slate-100")}><Italic className="w-4 h-4" /></button>
-                    <button onClick={() => editor.chain().focus().toggleUnderline().run()} className={cn("p-1.5 rounded", editor.isActive('underline') ? "bg-slate-200" : "hover:bg-slate-100")}><UnderlineIcon className="w-4 h-4" /></button>
-                    <button onClick={() => editor.chain().focus().toggleStrike().run()} className={cn("p-1.5 rounded", editor.isActive('strike') ? "bg-slate-200" : "hover:bg-slate-100")}><Strikethrough className="w-4 h-4" /></button>
+
+                  {/* ── 글꼴 셀렉터 (직접 노출) ── */}
+                  <div className="flex items-center gap-1.5 pr-3 border-r border-slate-200">
+                    <div className="relative">
+                      <button onClick={() => { setFocusFontFamily(!focusFontFamily); setFocusFontSize(false); setFocusDropdown(null); }} className="flex items-center justify-between w-24 px-2 py-1.5 text-xs font-semibold bg-slate-50 border border-slate-200 rounded hover:bg-slate-100">
+                        <span className="truncate">{FONT_FAMILIES.find(f => editor.isActive('textStyle', { fontFamily: f.value }))?.name || '글꼴'}</span>
+                        <ChevronDown className="w-3 h-3 ml-1 text-slate-400" />
+                      </button>
+                      {focusFontFamily && (
+                        <>
+                          <div className="fixed inset-0 z-[60]" onClick={() => setFocusFontFamily(false)} />
+                          <div className="absolute top-full left-0 mt-1 w-36 bg-white border border-slate-200 rounded shadow-lg z-[70] py-1">
+                            {FONT_FAMILIES.map(f => (
+                              <button key={f.name} onClick={() => { (editor as any).chain().focus().setFontFamily(f.value).run(); setFocusFontFamily(false); }} className="w-full text-left px-3 py-1.5 text-xs hover:bg-slate-50 flex justify-between items-center">
+                                <span style={{ fontFamily: f.value }}>{f.name}</span>
+                                {editor.isActive('textStyle', { fontFamily: f.value }) && <Check className="w-3 h-3 text-indigo-500" />}
+                              </button>
+                            ))}
+                          </div>
+                        </>
+                      )}
+                    </div>
+
+                    {/* 크기 셀렉터 (직접 노출) */}
+                    <div className="relative">
+                      <button onClick={() => { setFocusFontSize(!focusFontSize); setFocusFontFamily(false); setFocusDropdown(null); }} className="flex items-center justify-between w-16 px-2 py-1.5 text-xs font-semibold bg-slate-50 border border-slate-200 rounded hover:bg-slate-100">
+                        <span>{editor.getAttributes('textStyle').fontSize || '크기'}</span>
+                        <ChevronDown className="w-3 h-3 ml-1 text-slate-400" />
+                      </button>
+                      {focusFontSize && (
+                        <>
+                          <div className="fixed inset-0 z-[60]" onClick={() => setFocusFontSize(false)} />
+                          <div className="absolute top-full left-0 mt-1 w-16 bg-white border border-slate-200 rounded shadow-lg z-[70] py-1 max-h-48 overflow-y-auto">
+                            {FONT_SIZES.map(s => (
+                              <button key={s} onClick={() => { (editor as any).chain().focus().setFontSize(s).run(); setFocusFontSize(false); }} className="w-full text-left px-3 py-1.5 text-xs hover:bg-slate-50 flex justify-between items-center">
+                                <span>{s.replace('px', '')}</span>
+                                {(editor as any).isActive('textStyle', { fontSize: s }) && <Check className="w-3 h-3 text-indigo-500" />}
+                              </button>
+                            ))}
+                          </div>
+                        </>
+                      )}
+                    </div>
                   </div>
-                  {/* Alignment & Lists */}
-                  <div className="flex items-center gap-0.5">
-                    <button onClick={() => editor.chain().focus().setTextAlign('left').run()} className={cn("p-1.5 rounded", editor.isActive({ textAlign: 'left' }) ? "bg-slate-200" : "hover:bg-slate-100")}><AlignLeft className="w-4 h-4" /></button>
-                    <button onClick={() => editor.chain().focus().setTextAlign('center').run()} className={cn("p-1.5 rounded", editor.isActive({ textAlign: 'center' }) ? "bg-slate-200" : "hover:bg-slate-100")}><AlignCenter className="w-4 h-4" /></button>
-                    <button onClick={() => editor.chain().focus().toggleBulletList().run()} className={cn("p-1.5 rounded", editor.isActive('bulletList') ? "bg-slate-200" : "hover:bg-slate-100")}><List className="w-4 h-4" /></button>
-                    <button onClick={() => editor.chain().focus().toggleOrderedList().run()} className={cn("p-1.5 rounded", editor.isActive('orderedList') ? "bg-slate-200" : "hover:bg-slate-100")}><ListOrdered className="w-4 h-4" /></button>
+
+                  {/* ── B, I, U 토글 (직접 노출) ── */}
+                  <div className="flex items-center gap-0.5 pr-3 border-r border-slate-200">
+                    <button onClick={() => editor.chain().focus().toggleBold().run()} className={cn("p-1.5 rounded transition-colors", editor.isActive('bold') ? "bg-slate-200 text-slate-900" : "text-slate-600 hover:bg-slate-100")} title="굵게"><Bold className="w-4 h-4" /></button>
+                    <button onClick={() => editor.chain().focus().toggleItalic().run()} className={cn("p-1.5 rounded transition-colors", editor.isActive('italic') ? "bg-slate-200 text-slate-900" : "text-slate-600 hover:bg-slate-100")} title="기울임"><Italic className="w-4 h-4" /></button>
+                    <button onClick={() => editor.chain().focus().toggleUnderline().run()} className={cn("p-1.5 rounded transition-colors", editor.isActive('underline') ? "bg-slate-200 text-slate-900" : "text-slate-600 hover:bg-slate-100")} title="밑줄"><UnderlineIcon className="w-4 h-4" /></button>
                   </div>
-                  {/* 나가기 버튼 */}
+
+                  {/* ── 드롭다운 1: 텍스트 서식 ── */}
+                  <div className="relative pr-3 border-r border-slate-200">
+                    <button
+                      onClick={() => { setFocusDropdown(focusDropdown === 'text' ? null : 'text'); setFocusFontFamily(false); setFocusFontSize(false); }}
+                      className={cn("flex items-center gap-1.5 px-2.5 py-1.5 rounded text-xs font-semibold transition-colors", focusDropdown === 'text' ? "bg-indigo-50 text-indigo-600" : "text-slate-600 hover:bg-slate-100")}
+                    >
+                      <Palette className="w-3.5 h-3.5" /> 서식 <ChevronDown className="w-3 h-3" />
+                    </button>
+                    {focusDropdown === 'text' && (
+                      <>
+                        <div className="fixed inset-0 z-[60]" onClick={() => setFocusDropdown(null)} />
+                        <div className="absolute top-full left-0 mt-1 w-52 bg-white border border-slate-200 rounded-lg shadow-xl z-[70] p-3 space-y-3">
+                          {/* 취소선 */}
+                          <button onClick={() => editor.chain().focus().toggleStrike().run()} className={cn("w-full flex items-center gap-2 px-2 py-1.5 rounded text-sm transition-colors", editor.isActive('strike') ? "bg-slate-100 text-slate-900" : "text-slate-600 hover:bg-slate-50")}>
+                            <Strikethrough className="w-4 h-4" /> 취소선
+                          </button>
+                          <div className="border-t border-slate-100" />
+                          {/* 글자 색상 */}
+                          <div>
+                            <div className="text-xs font-semibold text-slate-500 mb-1.5 px-1">글자 색상</div>
+                            <div className="grid grid-cols-6 gap-1.5 px-1">
+                              {COLORS.map(c => (
+                                <button key={c} onClick={() => { editor.chain().focus().setColor(c).run(); }} className="w-6 h-6 rounded-md border border-slate-200 hover:scale-110 transition-transform" style={{ backgroundColor: c }} />
+                              ))}
+                            </div>
+                          </div>
+                          <div className="border-t border-slate-100" />
+                          {/* 형광펜 색상 */}
+                          <div>
+                            <div className="text-xs font-semibold text-slate-500 mb-1.5 px-1">형광펜</div>
+                            <button onClick={() => { editor.chain().focus().unsetHighlight().run(); }} className="w-full text-left px-2 py-1 text-xs text-slate-500 hover:bg-slate-50 rounded mb-1">색상 없음</button>
+                            <div className="grid grid-cols-6 gap-1.5 px-1">
+                              {COLORS.map(c => (
+                                <button key={c} onClick={() => { editor.chain().focus().toggleHighlight({ color: c }).run(); }} className="w-6 h-6 rounded-md border border-slate-200 hover:scale-110 transition-transform" style={{ backgroundColor: c }} />
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      </>
+                    )}
+                  </div>
+
+                  {/* ── 드롭다운 2: 단락 ── */}
+                  <div className="relative pr-3 border-r border-slate-200">
+                    <button
+                      onClick={() => { setFocusDropdown(focusDropdown === 'paragraph' ? null : 'paragraph'); setFocusFontFamily(false); setFocusFontSize(false); }}
+                      className={cn("flex items-center gap-1.5 px-2.5 py-1.5 rounded text-xs font-semibold transition-colors", focusDropdown === 'paragraph' ? "bg-indigo-50 text-indigo-600" : "text-slate-600 hover:bg-slate-100")}
+                    >
+                      <AlignLeft className="w-3.5 h-3.5" /> 단락 <ChevronDown className="w-3 h-3" />
+                    </button>
+                    {focusDropdown === 'paragraph' && (
+                      <>
+                        <div className="fixed inset-0 z-[60]" onClick={() => setFocusDropdown(null)} />
+                        <div className="absolute top-full left-0 mt-1 w-52 bg-white border border-slate-200 rounded-lg shadow-xl z-[70] p-3 space-y-3">
+                          {/* 제목 */}
+                          <div>
+                            <div className="text-xs font-semibold text-slate-500 mb-1.5 px-1">제목</div>
+                            <div className="flex items-center gap-1 px-1">
+                              <button onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()} className={cn("px-2.5 py-1.5 rounded text-xs font-bold transition-colors", editor.isActive('heading', { level: 1 }) ? "bg-indigo-100 text-indigo-700" : "bg-slate-50 text-slate-600 hover:bg-slate-100")}>H1</button>
+                              <button onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()} className={cn("px-2.5 py-1.5 rounded text-xs font-bold transition-colors", editor.isActive('heading', { level: 2 }) ? "bg-indigo-100 text-indigo-700" : "bg-slate-50 text-slate-600 hover:bg-slate-100")}>H2</button>
+                              <button onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()} className={cn("px-2.5 py-1.5 rounded text-xs font-bold transition-colors", editor.isActive('heading', { level: 3 }) ? "bg-indigo-100 text-indigo-700" : "bg-slate-50 text-slate-600 hover:bg-slate-100")}>H3</button>
+                              <button onClick={() => editor.chain().focus().setParagraph().run()} className={cn("px-2.5 py-1.5 rounded text-xs font-bold transition-colors", editor.isActive('paragraph') && !editor.isActive('heading') ? "bg-indigo-100 text-indigo-700" : "bg-slate-50 text-slate-600 hover:bg-slate-100")}>본문</button>
+                            </div>
+                          </div>
+                          <div className="border-t border-slate-100" />
+                          {/* 정렬 */}
+                          <div>
+                            <div className="text-xs font-semibold text-slate-500 mb-1.5 px-1">정렬</div>
+                            <div className="flex items-center gap-1 px-1">
+                              <button onClick={() => editor.chain().focus().setTextAlign('left').run()} className={cn("p-1.5 rounded transition-colors", editor.isActive({ textAlign: 'left' }) ? "bg-slate-200" : "hover:bg-slate-100")}><AlignLeft className="w-4 h-4" /></button>
+                              <button onClick={() => editor.chain().focus().setTextAlign('center').run()} className={cn("p-1.5 rounded transition-colors", editor.isActive({ textAlign: 'center' }) ? "bg-slate-200" : "hover:bg-slate-100")}><AlignCenter className="w-4 h-4" /></button>
+                              <button onClick={() => editor.chain().focus().setTextAlign('right').run()} className={cn("p-1.5 rounded transition-colors", editor.isActive({ textAlign: 'right' }) ? "bg-slate-200" : "hover:bg-slate-100")}><AlignRight className="w-4 h-4" /></button>
+                            </div>
+                          </div>
+                          <div className="border-t border-slate-100" />
+                          {/* 목록 */}
+                          <div>
+                            <div className="text-xs font-semibold text-slate-500 mb-1.5 px-1">목록</div>
+                            <div className="flex items-center gap-1 px-1">
+                              <button onClick={() => editor.chain().focus().toggleBulletList().run()} className={cn("p-1.5 rounded transition-colors", editor.isActive('bulletList') ? "bg-slate-200" : "hover:bg-slate-100")} title="글머리 기호"><List className="w-4 h-4" /></button>
+                              <button onClick={() => editor.chain().focus().toggleOrderedList().run()} className={cn("p-1.5 rounded transition-colors", editor.isActive('orderedList') ? "bg-slate-200" : "hover:bg-slate-100")} title="번호 매기기"><ListOrdered className="w-4 h-4" /></button>
+                              <button onClick={() => editor.chain().focus().toggleTaskList().run()} className={cn("p-1.5 rounded transition-colors", editor.isActive('taskList') ? "bg-slate-200" : "hover:bg-slate-100")} title="체크리스트"><SquareCheckBig className="w-4 h-4" /></button>
+                              <button onClick={() => editor.chain().focus().toggleBlockquote().run()} className={cn("p-1.5 rounded transition-colors", editor.isActive('blockquote') ? "bg-slate-200" : "hover:bg-slate-100")} title="인용구"><Quote className="w-4 h-4" /></button>
+                            </div>
+                          </div>
+                        </div>
+                      </>
+                    )}
+                  </div>
+
+                  {/* ── 드롭다운 3: 삽입 ── */}
+                  <div className="relative">
+                    <button
+                      onClick={() => { setFocusDropdown(focusDropdown === 'insert' ? null : 'insert'); setFocusFontFamily(false); setFocusFontSize(false); setFocusEmojiPicker(false); }}
+                      className={cn("flex items-center gap-1.5 px-2.5 py-1.5 rounded text-xs font-semibold transition-colors", focusDropdown === 'insert' ? "bg-indigo-50 text-indigo-600" : "text-slate-600 hover:bg-slate-100")}
+                    >
+                      <Plus className="w-3.5 h-3.5" /> 삽입 <ChevronDown className="w-3 h-3" />
+                    </button>
+                    {focusDropdown === 'insert' && (
+                      <>
+                        <div className="fixed inset-0 z-[60]" onClick={() => { setFocusDropdown(null); setFocusEmojiPicker(false); }} />
+                        <div className="absolute top-full left-0 mt-1 w-48 bg-white border border-slate-200 rounded-lg shadow-xl z-[70] py-1">
+                          <button onClick={() => { editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run(); setFocusDropdown(null); }} className="w-full text-left px-3 py-2 text-sm hover:bg-slate-50 flex items-center gap-2"><TableIcon className="w-4 h-4 text-indigo-500" /> 표</button>
+                          <button onClick={() => { (editor as any).chain().focus().setCustomImage().run(); setFocusDropdown(null); }} className="w-full text-left px-3 py-2 text-sm hover:bg-slate-50 flex items-center gap-2"><ImageIcon className="w-4 h-4 text-indigo-500" /> 이미지</button>
+                          <button onClick={() => { (editor as any).chain().focus().setCustomYoutube().run(); setFocusDropdown(null); }} className="w-full text-left px-3 py-2 text-sm hover:bg-slate-50 flex items-center gap-2"><YoutubeIcon className="w-4 h-4 text-rose-500" /> 비디오</button>
+                          <button onClick={() => { const url = window.prompt('URL을 입력하세요'); if (url) { editor.chain().focus().extendMarkRange('link').setLink({ href: url }).run(); } setFocusDropdown(null); }} className="w-full text-left px-3 py-2 text-sm hover:bg-slate-50 flex items-center gap-2"><LinkIcon className="w-4 h-4 text-blue-500" /> 링크</button>
+                          <div className="border-t border-slate-100 my-1" />
+                          <div className="relative">
+                            <button onClick={() => setFocusEmojiPicker(!focusEmojiPicker)} className="w-full text-left px-3 py-2 text-sm hover:bg-slate-50 flex items-center gap-2"><Smile className="w-4 h-4 text-yellow-500" /> 이모지</button>
+                            {focusEmojiPicker && (
+                              <div className="absolute top-0 left-full ml-1 z-[80]">
+                                <EmojiPicker onEmojiClick={(emojiData: EmojiClickData) => { editor.chain().focus().insertContent(emojiData.emoji).run(); setFocusEmojiPicker(false); setFocusDropdown(null); }} />
+                              </div>
+                            )}
+                          </div>
+                          <button onClick={() => { (editor as any).chain().focus().setCustomMath().run(); setFocusDropdown(null); }} className="w-full text-left px-3 py-2 text-sm hover:bg-slate-50 flex items-center gap-2"><Sigma className="w-4 h-4 text-teal-600" /> 수식</button>
+                          <button onClick={() => { editor.chain().focus().setHorizontalRule().run(); setFocusDropdown(null); }} className="w-full text-left px-3 py-2 text-sm hover:bg-slate-50 flex items-center gap-2"><Minus className="w-4 h-4 text-slate-400" /> 구분선</button>
+                          <div className="border-t border-slate-100 my-1" />
+                          <button onClick={() => { (editor as any).chain().focus().setCallout().run(); setFocusDropdown(null); }} className="w-full text-left px-3 py-2 text-sm hover:bg-slate-50 flex items-center gap-2"><Lightbulb className="w-4 h-4 text-amber-500" /> 콜아웃</button>
+                          <button onClick={() => { (editor as any).chain().focus().setToggle().run(); setFocusDropdown(null); }} className="w-full text-left px-3 py-2 text-sm hover:bg-slate-50 flex items-center gap-2"><ChevronRight className="w-4 h-4 text-slate-500" /> 토글 목록</button>
+                          <button onClick={() => { (editor as any).chain().focus().setBookmark().run(); setFocusDropdown(null); }} className="w-full text-left px-3 py-2 text-sm hover:bg-slate-50 flex items-center gap-2"><BookmarkIcon className="w-4 h-4 text-emerald-500" /> 북마크</button>
+                          <button onClick={() => { editor.chain().focus().toggleCodeBlock().run(); setFocusDropdown(null); }} className="w-full text-left px-3 py-2 text-sm hover:bg-slate-50 flex items-center gap-2"><Code className="w-4 h-4 text-slate-500" /> 코드 블록</button>
+                        </div>
+                      </>
+                    )}
+                  </div>
+
+                  {/* ── 나가기 ── */}
                   <button 
                     onClick={() => setFocusMode(null)} 
                     className="ml-auto flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg text-xs font-bold transition-colors"
