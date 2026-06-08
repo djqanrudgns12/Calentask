@@ -136,10 +136,11 @@ export function useCategoryDailyTrend(categoryId: string | null, days: number = 
 
 // ─── 종합 현황 탭 Hooks ───
 
-export function useOverviewKPI() {
+export function useOverviewKPI(startDate: string, endDate: string, periodType: string = 'week') {
   return useQuery({
-    queryKey: ['overviewKPI'],
-    queryFn: () => getOverviewKPI()
+    queryKey: ['overviewKPI', startDate, endDate, periodType],
+    queryFn: () => getOverviewKPI(startDate, endDate, periodType),
+    enabled: !!startDate && !!endDate
   })
 }
 

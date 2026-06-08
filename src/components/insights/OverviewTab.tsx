@@ -82,10 +82,7 @@ export default function OverviewTab() {
   } = useInsightsFilterStore()
   const { data: categoriesData = [] } = useCategories()
   const { data: templates = [] } = useActivityTemplates()
-  const { data: kpi, isLoading: isLoadingKPI } = useOverviewKPI()
-
-  const [selectedSubjectId, setSelectedSubjectId] = useState<string | null>(null)
-
+  // 기간 계산을 KPI 호출보다 먼저 수행해야 하므로 위치 조정
   const fromDate = period === 'single' && singleDate
     ? startOfDay(singleDate)
     : customDateRange?.from ? startOfDay(customDateRange.from) : getPresetRange(period).from
@@ -95,6 +92,15 @@ export default function OverviewTab() {
 
   const startDateIso = fromDate.toISOString()
   const endDateIso = toDate.toISOString()
+
+  const { data: kpi, isLoading: isLoadingKPI } = useOverviewKPI(startDateIso, endDateIso, period)
+
+  // 비교 레이블: 기간에 따라 동적으로 변경
+  const prevLabel = period === 'month' ? '전월' : period === 'year' ? '작년' : period === 'week' ? '전주' : '전 기간'
+
+  const [selectedSubjectId, setSelectedSubjectId] = useState<string | null>(null)
+
+  // (기간 계산은 위에서 이미 수행됨)
 
   // 이전 기간
   const diff = differenceInDays(toDate, fromDate) + 1
@@ -172,7 +178,7 @@ export default function OverviewTab() {
               return (
                 <div className={`flex items-center gap-0.5 mt-1 text-[11px] font-bold ${ch > 0 ? 'text-emerald-500' : 'text-red-400'}`}>
                   {ch > 0 ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
-                  {Math.abs(ch)}% vs 전주
+                  {Math.abs(ch)}% vs {prevLabel}
                 </div>
               )
             })()}
@@ -193,7 +199,7 @@ export default function OverviewTab() {
               return (
                 <div className={`flex items-center gap-0.5 mt-1 text-[11px] font-bold ${ch > 0 ? 'text-emerald-500' : 'text-red-400'}`}>
                   {ch > 0 ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
-                  {Math.abs(ch)}% vs 전주
+                  {Math.abs(ch)}% vs {prevLabel}
                 </div>
               )
             })()}
@@ -214,7 +220,7 @@ export default function OverviewTab() {
               return (
                 <div className={`flex items-center gap-0.5 mt-1 text-[11px] font-bold ${ch > 0 ? 'text-emerald-500' : 'text-red-400'}`}>
                   {ch > 0 ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
-                  {Math.abs(ch)}% vs 전주
+                  {Math.abs(ch)}% vs {prevLabel}
                 </div>
               )
             })()}

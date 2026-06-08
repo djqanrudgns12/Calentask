@@ -33,7 +33,7 @@ export const useInsightsFilterStore = create<InsightsFilterState>()(
       selectedCategoryIds: [],
       
       setActiveTab: (tab) => set({ activeTab: tab }),
-      setPeriod: (period) => set({ period }),
+      setPeriod: (period) => set({ period, customDateRange: undefined }),
       setCustomDateRange: (range) => set({ customDateRange: range }),
       setSingleDate: (date) => set({ singleDate: date }),
       setActivityType: (type) => set({ activityType: type }),

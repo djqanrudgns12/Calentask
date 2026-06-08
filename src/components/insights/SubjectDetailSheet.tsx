@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from 'react';
+import { useMemo, useEffect } from 'react';
 import { useSubjectDetails, useCategoryMonthlyTrend } from '@/hooks/useInsightsQueries';
 import { useCalendarStore } from '@/store/useCalendarStore';
 import { X, Clock, CalendarDays, Loader2, TrendingUp, Flame, Zap, Timer } from 'lucide-react';
@@ -41,6 +41,14 @@ export default function SubjectDetailSheet({
   const openEditEvent = useCalendarStore((state) => state.openEditEvent);
 
   const catColor = breakdownInfo?.hex_color || '#6366F1';
+
+  // 시트가 열릴 때 body 스크롤 잠금
+  useEffect(() => {
+    if (subjectId) {
+      document.body.style.overflow = 'hidden'
+      return () => { document.body.style.overflow = '' }
+    }
+  }, [subjectId])
 
   // 핵심 통계
   const stats = useMemo(() => {
@@ -167,17 +175,17 @@ export default function SubjectDetailSheet({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="fixed inset-0 bg-gray-900/40 backdrop-blur-sm z-[100]"
+            className="fixed inset-0 bg-gray-900/40 backdrop-blur-sm z-[200]"
           />
           <motion.div 
-            initial={{ x: '100%' }}
-            animate={{ x: 0 }}
-            exit={{ x: '100%' }}
+            initial={{ y: '100%', x: 0 }}
+            animate={{ y: 0, x: 0 }}
+            exit={{ y: '100%', x: 0 }}
             transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-            className="fixed inset-y-0 right-0 w-full max-w-[520px] bg-white shadow-2xl z-[101] flex flex-col border-l border-gray-100"
+            className="fixed inset-0 md:inset-y-0 md:left-auto md:right-0 md:w-[520px] bg-white shadow-2xl z-[201] flex flex-col"
           >
-            {/* Header */}
-            <div className="flex items-center justify-between px-6 py-5 border-b border-gray-100 bg-white z-10 sticky top-0">
+            {/* Header — safe-area 대응 포함 */}
+            <div className="flex items-center justify-between px-5 md:px-6 py-4 md:py-5 border-b border-gray-100 bg-white z-10 sticky top-0 pt-[max(1rem,env(safe-area-inset-top))]">
               <div className="flex items-center gap-3">
                 <div className="w-4 h-4 rounded-full shadow-sm" style={{ backgroundColor: catColor }} />
                 <h2 className="text-xl font-bold text-gray-900 tracking-tight">

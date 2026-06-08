@@ -66,10 +66,10 @@ export default function TimeAnalysisTab() {
 
   const fromDate = period === 'single' && singleDate
     ? startOfDay(singleDate)
-    : customDateRange?.from ? startOfDay(customDateRange.from) : getPresetDateRange('week').from
+    : customDateRange?.from ? startOfDay(customDateRange.from) : getPresetDateRange(period).from
   const toDate = period === 'single' && singleDate
     ? endOfDay(singleDate)
-    : customDateRange?.to ? endOfDay(customDateRange.to) : getPresetDateRange('week').to
+    : customDateRange?.to ? endOfDay(customDateRange.to) : getPresetDateRange(period).to
 
   const startDateIso = fromDate.toISOString()
   const endDateIso = toDate.toISOString()

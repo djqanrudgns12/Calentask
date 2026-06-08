@@ -762,92 +762,99 @@ export type OverviewKPI = {
 
 /**
  * 종합 현황 탭의 Hero KPI + 레이더 차트 데이터
+ * startDate/endDate: 선택된 기간의 ISO 날짜 문자열
+ * periodType: 'week' | 'month' | 'year' | 'custom' — 비교 레이블용
  */
-export async function getOverviewKPI(): Promise<OverviewKPI> {
+export async function getOverviewKPI(startDate: string, endDate: string, periodType: string = 'week'): Promise<OverviewKPI> {
   const supabase = await createClient()
   const { data: userData } = await supabase.auth.getUser()
   if (!userData.user) throw new Error('Not authenticated')
 
+  // 방어 코드: startDate/endDate가 비어있거나 유효하지 않은 경우 이번 주를 기본값으로 사용
   const now = new Date()
-  const dayOfWeek = now.getDay()
-  const mondayOffset = dayOfWeek === 0 ? 6 : dayOfWeek - 1
+  let currentStart = new Date(startDate)
+  let currentEnd = new Date(endDate)
+  if (isNaN(currentStart.getTime()) || isNaN(currentEnd.getTime())) {
+    // 폴백: 이번 주(월~일)
+    const dayOfWeek = now.getDay()
+    const mondayOffset = dayOfWeek === 0 ? 6 : dayOfWeek - 1
+    currentStart = new Date(now)
+    currentStart.setDate(now.getDate() - mondayOffset)
+    currentStart.setHours(0, 0, 0, 0)
+    currentEnd = new Date(currentStart)
+    currentEnd.setDate(currentStart.getDate() + 6)
+    currentEnd.setHours(23, 59, 59, 999)
+  }
 
-  // 이번 주 (월~일)
-  const currentWeekStart = new Date(now)
-  currentWeekStart.setDate(now.getDate() - mondayOffset)
-  currentWeekStart.setHours(0, 0, 0, 0)
-  const currentWeekEnd = new Date(currentWeekStart)
-  currentWeekEnd.setDate(currentWeekStart.getDate() + 6)
-  currentWeekEnd.setHours(23, 59, 59, 999)
+  // 비교 기간: 선택 기간과 동일 길이의 직전 기간
+  const diffMs = currentEnd.getTime() - currentStart.getTime()
+  const prevStart = new Date(currentStart.getTime() - diffMs - 1) // 1ms 겹침 방지
+  prevStart.setHours(0, 0, 0, 0)
+  const prevEnd = new Date(currentStart.getTime() - 1)
+  prevEnd.setHours(23, 59, 59, 999)
 
-  // 지난 주
-  const prevWeekStart = new Date(currentWeekStart)
-  prevWeekStart.setDate(prevWeekStart.getDate() - 7)
-  const prevWeekEnd = new Date(currentWeekStart)
-  prevWeekEnd.setMilliseconds(-1)
-
-  // 1) 활동 시간 (이번 주 / 지난 주)
+  // 1) 활동 시간 (현재 기간 / 이전 기간)
   const { data: currentActs } = await supabase
     .from('activities')
-    .select('start_time, end_time')
+    .select('id, start_time, end_time')
     .eq('user_id', userData.user.id)
-    .gte('start_time', currentWeekStart.toISOString())
-    .lte('start_time', currentWeekEnd.toISOString())
+    .gte('start_time', currentStart.toISOString())
+    .lte('start_time', currentEnd.toISOString())
     .is('deleted_at', null)
 
   const { data: prevActs } = await supabase
     .from('activities')
     .select('start_time, end_time')
     .eq('user_id', userData.user.id)
-    .gte('start_time', prevWeekStart.toISOString())
-    .lte('start_time', prevWeekEnd.toISOString())
+    .gte('start_time', prevStart.toISOString())
+    .lte('start_time', prevEnd.toISOString())
     .is('deleted_at', null)
 
-  let currentWeekMins = 0
+  let currentMins = 0
   ;(currentActs || []).forEach((a: any) => {
-    currentWeekMins += (new Date(a.end_time).getTime() - new Date(a.start_time).getTime()) / 60000
+    currentMins += (new Date(a.end_time).getTime() - new Date(a.start_time).getTime()) / 60000
   })
-  let prevWeekMins = 0
+  let prevMins = 0
   ;(prevActs || []).forEach((a: any) => {
-    prevWeekMins += (new Date(a.end_time).getTime() - new Date(a.start_time).getTime()) / 60000
+    prevMins += (new Date(a.end_time).getTime() - new Date(a.start_time).getTime()) / 60000
   })
 
   // 평균 세션
-  const avgSessionMins = (currentActs || []).length > 0 ? Math.round(currentWeekMins / (currentActs || []).length) : 0
+  const avgSessionMins = (currentActs || []).length > 0 ? Math.round(currentMins / (currentActs || []).length) : 0
 
-  // 2) 할 일 완료 (이번 주 / 지난 주) — updated_at 기반으로 done 상태 변경 시점 추정
+  // 2) 할 일 완료 (현재 기간 / 이전 기간)
   const { data: currentDone } = await supabase
     .from('agenda_tasks')
     .select('id')
     .eq('user_id', userData.user.id)
     .eq('status', 'done')
-    .gte('updated_at', currentWeekStart.toISOString())
-    .lte('updated_at', currentWeekEnd.toISOString())
+    .gte('updated_at', currentStart.toISOString())
+    .lte('updated_at', currentEnd.toISOString())
 
   const { data: prevDone } = await supabase
     .from('agenda_tasks')
     .select('id')
     .eq('user_id', userData.user.id)
     .eq('status', 'done')
-    .gte('updated_at', prevWeekStart.toISOString())
-    .lte('updated_at', prevWeekEnd.toISOString())
+    .gte('updated_at', prevStart.toISOString())
+    .lte('updated_at', prevEnd.toISOString())
 
-  // 3) 아카이브 메모 (이번 주 / 지난 주)
+  // 3) 아카이브 메모 (현재 기간 / 이전 기간)
   const { data: currentNotes } = await supabase
     .from('notes')
     .select('id')
     .eq('user_id', userData.user.id)
-    .gte('updated_at', currentWeekStart.toISOString())
-    .lte('updated_at', currentWeekEnd.toISOString())
+    .gte('updated_at', currentStart.toISOString())
+    .lte('updated_at', currentEnd.toISOString())
 
   const { data: prevNotes } = await supabase
     .from('notes')
     .select('id')
     .eq('user_id', userData.user.id)
-    .gte('updated_at', prevWeekStart.toISOString())
-    .lte('updated_at', prevWeekEnd.toISOString())
+    .gte('updated_at', prevStart.toISOString())
+    .lte('updated_at', prevEnd.toISOString())
 
-  // 4) 스트릭 계산 (최근 90일)
+  // 4) 스트릭 계산 (최근 90일 — 기간과 무관하게 항상 현재 기준)
   const ninetyDaysAgo = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000)
   const { data: streakActs } = await supabase
     .from('activities')
@@ -883,16 +890,17 @@ export async function getOverviewKPI(): Promise<OverviewKPI> {
     .select('id')
     .eq('user_id', userData.user.id)
 
+  const currentActIds = (currentActs || []).map((a: any) => a.id).filter(Boolean)
   const { data: activeCats } = await supabase
     .from('activity_category_map')
     .select('category_id')
-    .in('activity_id', (currentActs || []).map((a: any) => a.id || '').filter(Boolean))
+    .in('activity_id', currentActIds.length > 0 ? currentActIds : ['__none__'])
 
   const uniqueActiveCats = new Set((activeCats || []).map((c: any) => c.category_id))
 
   return {
-    currentWeekHours: Number((currentWeekMins / 60).toFixed(1)),
-    prevWeekHours: Number((prevWeekMins / 60).toFixed(1)),
+    currentWeekHours: Number((currentMins / 60).toFixed(1)),
+    prevWeekHours: Number((prevMins / 60).toFixed(1)),
     currentWeekDone: (currentDone || []).length,
     prevWeekDone: (prevDone || []).length,
     currentWeekNotes: (currentNotes || []).length,

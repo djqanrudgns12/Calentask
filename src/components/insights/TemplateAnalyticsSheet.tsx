@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo } from 'react'
+import { useMemo, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, Clock, CalendarDays, Loader2, TrendingUp, BarChart3, Flame, Zap, Target } from 'lucide-react'
 import { BarChart, Bar, LineChart, Line, AreaChart, Area, RadarChart, Radar, PolarGrid, PolarAngleAxis, ResponsiveContainer, XAxis, YAxis, Tooltip, CartesianGrid, ReferenceLine } from 'recharts'
@@ -35,6 +35,14 @@ export function TemplateAnalyticsSheet({ templateId, templateTitle, templateColo
   const { data: dailyTrend } = useTemplateDailyTrend(templateId, 90)
 
   const isLoading = isLoadingStats || isLoadingMonthly
+
+  // 시트가 열릴 때 body 스크롤 잠금 (배경 스크롤 방지)
+  useEffect(() => {
+    if (templateId) {
+      document.body.style.overflow = 'hidden'
+      return () => { document.body.style.overflow = '' }
+    }
+  }, [templateId])
 
   // 월별 차트 데이터
   const monthlyChartData = useMemo(() => {
@@ -145,22 +153,24 @@ export function TemplateAnalyticsSheet({ templateId, templateTitle, templateColo
     <AnimatePresence>
       {templateId && (
         <>
+          {/* 오버레이: z-[200]으로 페이지 헤더(z-10)를 완전히 덮음 */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="fixed inset-0 bg-gray-900/40 backdrop-blur-sm z-[100]"
+            className="fixed inset-0 bg-gray-900/40 backdrop-blur-sm z-[200]"
           />
+          {/* 시트: 모바일은 전체화면(아래→위), 데스크톱은 오른쪽 560px(오른쪽→왼쪽) */}
           <motion.div
-            initial={{ x: '100%' }}
-            animate={{ x: 0 }}
-            exit={{ x: '100%' }}
+            initial={{ y: '100%', x: 0 }}
+            animate={{ y: 0, x: 0 }}
+            exit={{ y: '100%', x: 0 }}
             transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-            className="fixed inset-y-0 right-0 w-full max-w-[560px] bg-white shadow-2xl z-[101] flex flex-col border-l border-gray-100"
+            className="fixed inset-0 md:inset-y-0 md:left-auto md:right-0 md:w-[560px] bg-white shadow-2xl z-[201] flex flex-col"
           >
-            {/* Header */}
-            <div className="flex items-center justify-between px-6 py-5 border-b border-gray-100 bg-white z-10 sticky top-0">
+            {/* Header — safe-area 대응 포함 */}
+            <div className="flex items-center justify-between px-5 md:px-6 py-4 md:py-5 border-b border-gray-100 bg-white z-10 sticky top-0 pt-[max(1rem,env(safe-area-inset-top))]">
               <div className="flex items-center gap-3">
                 <div className="w-4 h-4 rounded-full shadow-sm" style={{ backgroundColor: templateColor }} />
                 <h2 className="text-xl font-bold text-gray-900 tracking-tight">
