@@ -8,6 +8,97 @@ import { motion, AnimatePresence, useDragControls } from 'framer-motion';
 
 const ForceGraph2D = dynamic(() => import('react-force-graph-2d'), { ssr: false });
 
+const CatalogGroup = ({ boardName, satellites, isDarkMode, selectedNode, handleCardClick, setActiveTabId, onClose }: any) => {
+  const [isOpen, setIsOpen] = useState(satellites.length <= 5);
+  const hasSelectedChild = selectedNode && satellites.some((sat: any) => sat.id === selectedNode.id);
+  
+  useEffect(() => {
+    if (hasSelectedChild) setIsOpen(true);
+  }, [hasSelectedChild]);
+
+  return (
+    <div className={`mb-3 rounded-2xl overflow-hidden border ${isDarkMode ? 'border-white/10' : 'border-slate-200'} transition-all`}>
+      <button 
+        onClick={() => setIsOpen(!isOpen)}
+        className={`w-full flex items-center justify-between p-3 md:p-4 text-left transition-colors ${
+          isDarkMode ? 'bg-slate-800 hover:bg-slate-700/80' : 'bg-slate-50 hover:bg-slate-100'
+        }`}
+      >
+        <span className={`font-bold text-sm md:text-base ${isDarkMode ? 'text-slate-200' : 'text-slate-800'}`}>
+          {boardName} <span className="ml-1 text-[10px] md:text-xs px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-600 dark:text-indigo-400">{satellites.length}</span>
+        </span>
+        {isOpen ? <ChevronUp className="w-4 h-4 text-slate-400" /> : <ChevronDown className="w-4 h-4 text-slate-400" />}
+      </button>
+      
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div 
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            className={`px-2 pb-2 ${isDarkMode ? 'bg-slate-800/30' : 'bg-white'}`}
+          >
+            <div className="space-y-2 mt-2">
+              {satellites.map((sat: any) => {
+                const isCardSelected = selectedNode && (selectedNode.id === sat.id);
+                return (
+                  <button
+                    key={sat.id}
+                    id={`card-${sat.id}`}
+                    onClick={() => handleCardClick(sat.id)}
+                    className={`w-full text-left p-3 md:p-4 rounded-xl md:rounded-2xl border transition-all duration-300 ${
+                      isCardSelected 
+                        ? isDarkMode 
+                          ? 'bg-indigo-500/20 border-indigo-400/50 shadow-[0_0_20px_rgba(129,140,248,0.2)]'
+                          : 'bg-indigo-50 border-indigo-500 shadow-sm ring-1 ring-indigo-500/20'
+                        : isDarkMode
+                          ? 'bg-white/5 border-white/5 hover:bg-white/10 hover:border-white/20'
+                          : 'bg-white border-slate-200 hover:border-indigo-300 hover:bg-slate-50 shadow-sm'
+                    }`}
+                  >
+                    <div className="flex items-start justify-between mb-1 md:mb-2">
+                      <h4 className={`font-bold text-sm md:text-base leading-tight pr-2 truncate ${isDarkMode ? 'text-slate-100' : 'text-slate-800'}`}>
+                        {sat.name}
+                      </h4>
+                      <span className={`shrink-0 px-2 py-0.5 rounded text-[9px] md:text-[10px] font-bold flex items-center gap-1 ${isDarkMode ? 'bg-white/10 text-slate-300' : 'bg-slate-100 text-slate-500'}`}>
+                        <FileText className="w-3 h-3" />
+                        Item
+                      </span>
+                    </div>
+                    {sat.snippet && (
+                      <p className={`text-[11px] md:text-xs line-clamp-1 md:line-clamp-2 leading-relaxed mb-2 md:mb-3 ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>
+                        {sat.snippet}
+                      </p>
+                    )}
+                    <div className={`flex items-center justify-between mt-auto pt-2 border-t ${isDarkMode ? 'border-white/5' : 'border-slate-100'}`}>
+                      <div className={`flex items-center gap-1 md:gap-1.5 text-[9px] md:text-[10px] font-medium ${isDarkMode ? 'text-slate-500' : 'text-slate-400'}`}>
+                        <CalendarDays className="w-3 h-3" />
+                        {new Date(sat.createdAt).toLocaleDateString()}
+                      </div>
+                      {isCardSelected && (
+                        <div 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setActiveTabId(sat.boardId);
+                            if (onClose) onClose();
+                          }}
+                          className="bg-indigo-600 hover:bg-indigo-700 text-white text-[9px] md:text-[10px] font-bold px-2 py-1 md:px-2.5 md:py-1 rounded-md transition-colors"
+                        >
+                          노트로 이동
+                        </div>
+                      )}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+};
+
 export function GraphBoard({ onClose }: { onClose?: () => void }) {
   const { items, tabs, setActiveTabId } = useArchiveStore();
   const [dimensions, setDimensions] = useState({ width: 800, height: 600 });
@@ -118,8 +209,16 @@ export function GraphBoard({ onClose }: { onClose?: () => void }) {
   useEffect(() => {
     if (graphRef.current) {
       const fg = graphRef.current;
-      fg.d3Force('charge').strength(-150);
-      fg.d3Force('link').distance((link: any) => link.type === 'gravity' ? 30 : 150);
+      fg.d3Force('charge').strength(-50);
+      fg.d3Force('link').distance((link: any) => link.type === 'gravity' ? 20 : 80);
+      
+      // 모바일 초기 줌 반응성 강화
+      setTimeout(() => {
+        if (graphRef.current) {
+          const isMobile = window.innerWidth < 768;
+          graphRef.current.zoomToFit(400, isMobile ? 30 : 60);
+        }
+      }, 800);
     }
   }, [graphData]);
 
@@ -195,13 +294,35 @@ export function GraphBoard({ onClose }: { onClose?: () => void }) {
     ctx.shadowBlur = 0; 
 
     // Draw typography
-    if (!dim && globalScale > 2) {
-      const fontSize = isHub ? 10/globalScale : 6/globalScale;
+    if (!dim && globalScale > 1.2) {
+      const baseSize = isHub ? 14 : 11;
+      const isMobile = window.innerWidth < 768;
+      // 줌인 시 글씨가 자연스럽게 커지도록 스케일 조정 (완전 반비례가 아닌 점진적 축소)
+      const fontSize = (baseSize * (isMobile ? 1.3 : 1)) / Math.pow(globalScale, 0.5);
+      
       ctx.font = `bold ${fontSize}px Inter, sans-serif`;
+      const textWidth = ctx.measureText(node.name).width;
+      const bgPaddingX = 6 / globalScale;
+      const bgPaddingY = 3 / globalScale;
+      const yPos = node.y + r + (10 / globalScale) + fontSize / 2;
+
+      // Draw background pill
+      ctx.fillStyle = isDarkMode ? 'rgba(15, 23, 42, 0.85)' : 'rgba(255, 255, 255, 0.85)';
+      ctx.beginPath();
+      ctx.roundRect(
+        node.x - textWidth / 2 - bgPaddingX, 
+        yPos - fontSize / 2 - bgPaddingY, 
+        textWidth + bgPaddingX * 2, 
+        fontSize + bgPaddingY * 2, 
+        4 / globalScale
+      );
+      ctx.fill();
+
+      // Draw text
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillStyle = isHub ? themeColors.hubText : themeColors.satText;
-      ctx.fillText(node.name, node.x, node.y + r + (6/globalScale));
+      ctx.fillText(node.name, node.x, yPos);
     }
   }, [selectedNode, themeColors]);
 
@@ -239,60 +360,30 @@ export function GraphBoard({ onClose }: { onClose?: () => void }) {
         {graphData.satellites.length === 0 ? (
           <p className={`text-sm text-center mt-10 ${isDarkMode ? 'text-slate-500' : 'text-slate-400'}`}>기록된 항목이 없습니다.</p>
         ) : (
-          graphData.satellites.map((sat: any) => {
-            const isCardSelected = selectedNode && (selectedNode.id === sat.id);
-            return (
-              <button
-                key={sat.id}
-                id={`card-${sat.id}`}
-                onClick={() => handleCardClick(sat.id)}
-                className={`w-full text-left p-3 md:p-4 rounded-xl md:rounded-2xl border transition-all duration-300 ${
-                  isCardSelected 
-                    ? isDarkMode 
-                      ? 'bg-indigo-500/20 border-indigo-400/50 shadow-[0_0_20px_rgba(129,140,248,0.2)]'
-                      : 'bg-indigo-50 border-indigo-500 shadow-sm ring-1 ring-indigo-500/20'
-                    : isDarkMode
-                      ? 'bg-white/5 border-white/5 hover:bg-white/10 hover:border-white/20'
-                      : 'bg-white border-slate-200 hover:border-indigo-300 hover:bg-slate-50 shadow-sm'
-                }`}
-              >
-                <div className="flex items-start justify-between mb-1 md:mb-2">
-                  <h4 className={`font-bold text-sm md:text-base leading-tight pr-2 truncate ${isDarkMode ? 'text-slate-100' : 'text-slate-800'}`}>
-                    {sat.name}
-                  </h4>
-                  <span className={`shrink-0 px-2 py-0.5 rounded text-[9px] md:text-[10px] font-bold flex items-center gap-1 ${isDarkMode ? 'bg-white/10 text-slate-300' : 'bg-slate-100 text-slate-500'}`}>
-                    <FileText className="w-3 h-3" />
-                    Item
-                  </span>
-                </div>
-                
-                {sat.snippet && (
-                  <p className={`text-[11px] md:text-xs line-clamp-1 md:line-clamp-2 leading-relaxed mb-2 md:mb-3 ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>
-                    {sat.snippet}
-                  </p>
-                )}
-                
-                <div className={`flex items-center justify-between mt-auto pt-2 border-t ${isDarkMode ? 'border-white/5' : 'border-slate-100'}`}>
-                  <div className={`flex items-center gap-1 md:gap-1.5 text-[9px] md:text-[10px] font-medium ${isDarkMode ? 'text-slate-500' : 'text-slate-400'}`}>
-                    <CalendarDays className="w-3 h-3" />
-                    {new Date(sat.createdAt).toLocaleDateString()}
-                  </div>
-                  {isCardSelected && (
-                    <div 
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setActiveTabId(sat.boardId);
-                        if (onClose) onClose();
-                      }}
-                      className="bg-indigo-600 hover:bg-indigo-700 text-white text-[9px] md:text-[10px] font-bold px-2 py-1 md:px-2.5 md:py-1 rounded-md transition-colors"
-                    >
-                      노트로 이동
-                    </div>
-                  )}
-                </div>
-              </button>
-            );
-          })
+          (() => {
+            const grouped: Record<string, any[]> = {};
+            graphData.satellites.forEach((sat: any) => {
+              if (!grouped[sat.boardId]) grouped[sat.boardId] = [];
+              grouped[sat.boardId].push(sat);
+            });
+            
+            return Object.entries(grouped).map(([boardId, groupSats]) => {
+              const tab = tabs.find(t => t.id === boardId);
+              const boardName = tab?.name || '기타';
+              return (
+                <CatalogGroup 
+                  key={boardId} 
+                  boardName={boardName} 
+                  satellites={groupSats} 
+                  isDarkMode={isDarkMode} 
+                  selectedNode={selectedNode} 
+                  handleCardClick={handleCardClick}
+                  setActiveTabId={setActiveTabId}
+                  onClose={onClose}
+                />
+              );
+            });
+          })()
         )}
       </div>
     </>

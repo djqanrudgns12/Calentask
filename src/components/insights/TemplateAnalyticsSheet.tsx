@@ -1,6 +1,7 @@
 'use client'
 
-import { useMemo, useEffect } from 'react'
+import { useMemo, useEffect, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, Clock, CalendarDays, Loader2, TrendingUp, BarChart3, Flame, Zap, Target } from 'lucide-react'
 import { BarChart, Bar, LineChart, Line, AreaChart, Area, RadarChart, Radar, PolarGrid, PolarAngleAxis, ResponsiveContainer, XAxis, YAxis, Tooltip, CartesianGrid, ReferenceLine } from 'recharts'
@@ -43,6 +44,11 @@ export function TemplateAnalyticsSheet({ templateId, templateTitle, templateColo
       return () => { document.body.style.overflow = '' }
     }
   }, [templateId])
+
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   // 월별 차트 데이터
   const monthlyChartData = useMemo(() => {
@@ -149,7 +155,9 @@ export function TemplateAnalyticsSheet({ templateId, templateTitle, templateColo
     return `${mins}분`
   }
 
-  return (
+  if (!mounted) return null
+
+  return createPortal(
     <AnimatePresence>
       {templateId && (
         <>
@@ -378,6 +386,7 @@ export function TemplateAnalyticsSheet({ templateId, templateTitle, templateColo
           </motion.div>
         </>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   )
 }

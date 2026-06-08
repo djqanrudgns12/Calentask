@@ -168,6 +168,7 @@ export function useCreateActivity(startDate: string, endDate: string) {
           memo: newActivityData.payload.memo || null,
           type: newActivityData.payload.type,
           hex_color: newActivityData.payload.hex_color || null,
+          template_id: newActivityData.payload.template_id || null,
           deleted_at: null,
           categories: []
         }

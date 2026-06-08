@@ -14,6 +14,7 @@ export type Activity = {
   memo: string | null
   type: 'EVENT' | 'TASK'
   hex_color: string | null
+  template_id: string | null
   deleted_at: string | null
   categories: Category[]
 }

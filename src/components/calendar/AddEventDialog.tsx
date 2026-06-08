@@ -118,6 +118,7 @@ export function AddEventDialog({ children }: { children?: React.ReactNode }) {
   const [isAddingCategory, setIsAddingCategory] = useState(false)
   const [newCategoryName, setNewCategoryName] = useState('')
   const [isTemplateOpen, setIsTemplateOpen] = useState(false)
+  const [templateId, setTemplateId] = useState<string | null>(null)
 
   const currentMonthStart = startOfMonth(new Date()).toISOString()
   const currentMonthEnd = endOfMonth(new Date()).toISOString()
@@ -161,6 +162,7 @@ export function AddEventDialog({ children }: { children?: React.ReactNode }) {
         setSelectedCategories(editingEvent.categories?.map(c => c.id) || [])
         setCustomColor(editingEvent.hex_color)
         setMemo(editingEvent.memo || '')
+        setTemplateId(editingEvent.template_id || null)
         setIsAddingCategory(false)
         setNewCategoryName('')
       } else {
@@ -197,6 +199,7 @@ export function AddEventDialog({ children }: { children?: React.ReactNode }) {
         setSelectedCategories((prefillEventData as any)?.category_ids || [])
         setCustomColor(null)
         setMemo(prefillEventData?.memo || '')
+        setTemplateId(null)
         setIsAddingCategory(false)
         setNewCategoryName('')
         setIsTemplateOpen(false)
@@ -255,6 +258,7 @@ export function AddEventDialog({ children }: { children?: React.ReactNode }) {
     setSelectedCategories(catIds)
     setCustomColor(template.hex_color || null)
     setMemo(template.memo || '')
+    setTemplateId(template.id)
     
     if (!isAllDay) {
        // 템플릿에 기본 시작 시각이 있으면 적용 (날짜는 유지)
@@ -310,7 +314,8 @@ export function AddEventDialog({ children }: { children?: React.ReactNode }) {
       is_all_day: isAllDay,
       type: 'EVENT' as const,
       memo,
-      hex_color: finalHex
+      hex_color: finalHex,
+      template_id: templateId
     }
 
     if (editingEvent) {
