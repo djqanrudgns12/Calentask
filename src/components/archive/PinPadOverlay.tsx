@@ -30,7 +30,7 @@ async function hashText(text: string) {
 }
 
 export function PinPadOverlay({ children }: { children: React.ReactNode }) {
-  const { isPinLocked, setPinLocked } = useArchiveStore();
+  const { isPinLocked, setPinLocked, hasInitializedLock, setHasInitializedLock } = useArchiveStore();
   const { data: status, isLoading: isStatusLoading } = useSecurityPinStatus();
   
   const setupMutation = useSetupSecurityPin();
@@ -60,9 +60,12 @@ export function PinPadOverlay({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (isStatusLoading) return;
     
-    // ✅ 초기 접속 잠금: PIN이 설정되어 있으면 무조건 잠금
-    if (status?.isSetup && !isPinLocked) {
-      setPinLocked(true);
+    // ✅ 초기 접속 잠금: 처음 로드 시 PIN이 설정되어 있으면 무조건 잠금
+    if (!hasInitializedLock) {
+      if (status?.isSetup) {
+        setPinLocked(true);
+      }
+      setHasInitializedLock(true);
     }
 
     // 모드 결정
@@ -73,7 +76,7 @@ export function PinPadOverlay({ children }: { children: React.ReactNode }) {
         setMode('setup_pin');
       }
     }
-  }, [isStatusLoading, status, isPinLocked, setPinLocked]);
+  }, [isStatusLoading, status, isPinLocked, setPinLocked, hasInitializedLock, setHasInitializedLock]);
 
   // Lockout countdown timer
   useEffect(() => {

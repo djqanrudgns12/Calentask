@@ -34,6 +34,8 @@ interface ArchiveState {
   // Security
   isPinLocked: boolean;
   setPinLocked: (locked: boolean) => void;
+  hasInitializedLock: boolean;
+  setHasInitializedLock: (initialized: boolean) => void;
 
   // Tabs
   activeTabId: string | null;
@@ -111,6 +113,8 @@ export const useArchiveStore = create<ArchiveState>()(
     (set, get) => ({
   isPinLocked: false, // Secure by default
   setPinLocked: (locked) => set({ isPinLocked: locked }),
+  hasInitializedLock: false,
+  setHasInitializedLock: (initialized) => set({ hasInitializedLock: initialized }),
 
   activeTabId: null,
   setActiveTabId: (id) => set({ activeTabId: id, focusModeTabId: null }),
