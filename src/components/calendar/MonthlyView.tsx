@@ -151,7 +151,7 @@ export const MonthlyView = React.memo(function MonthlyView({ currentDate, events
                         className="hidden md:block w-[3px] shrink-0 rounded-l-lg"
                         style={{ background: getEventBarGradient(event) }}
                       />
-                      <div className="flex-1 flex flex-col px-[3px] py-[1px] md:px-2.5 md:py-1.5 min-w-0">
+                      <div className="flex-1 flex flex-col px-[3px] py-[2px] md:px-2.5 md:py-1.5 min-w-0 min-h-[18px]">
                         <span className="font-semibold text-slate-800 truncate pr-0.5 group-hover:pr-10 leading-[1.1] tracking-tighter md:tracking-normal md:leading-normal">
                           {event.title}
                         </span>
@@ -180,7 +180,7 @@ export const MonthlyView = React.memo(function MonthlyView({ currentDate, events
                 {dayEvents.length > ((holidayName && showHolidaysAsTags) ? 2 : 3) && (
                   <button
                     onClick={(e) => { e.stopPropagation(); openDaySummary(day); }}
-                    className="w-full mt-0 md:mt-1.5 text-center px-1 py-[1px] md:px-2 md:py-1 text-[9px] md:text-xs font-bold text-slate-500 bg-slate-50/80 hover:bg-slate-100 rounded-sm md:rounded-md transition-colors"
+                    className="w-full mt-0 md:mt-1.5 text-center px-1 py-[2px] md:px-2 md:py-1 text-[9px] md:text-xs font-bold text-slate-500 bg-slate-50/80 hover:bg-slate-100 rounded-sm md:rounded-md transition-colors min-h-[18px]"
                   >
                     + {dayEvents.length - ((holidayName && showHolidaysAsTags) ? 2 : 3)}
                   </button>

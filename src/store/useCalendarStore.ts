@@ -26,6 +26,7 @@ interface CalendarState {
   showTraditionalTerms: boolean
   selectedDaySummary: Date | null
   selectedEventDetail: Activity | null
+  isCategoryBarExpanded: boolean  // 모바일 카테고리 바 접힘/펼침 상태
   setCurrentDate: (date: Date) => void
   setViewMode: (mode: ViewMode) => void
   setActiveCategories: (categories: string[]) => void
@@ -50,6 +51,7 @@ interface CalendarState {
   openEventDetail: (event: Activity) => void
   closeEventDetail: () => void
   updateTaskTime: (taskId: string, newStartTime: string, newEndTime: string) => void
+  setCategoryBarExpanded: (expanded: boolean) => void
   resetStore: () => void
 }
 
@@ -77,6 +79,7 @@ export const useCalendarStore = create<CalendarState>()(
       showTraditionalTerms: false,
       selectedDaySummary: null,
       selectedEventDetail: null,
+      isCategoryBarExpanded: false,  // 기본 접힘
       setCurrentDate: (date) => set({ currentDate: date }),
       setViewMode: (mode) => set({ viewMode: mode }),
       setActiveCategories: (categories) => set({ activeCategories: categories, activePresetId: null, activePresetName: null }),
@@ -100,6 +103,7 @@ export const useCalendarStore = create<CalendarState>()(
       closeDaySummary: () => set({ selectedDaySummary: null }),
       openEventDetail: (event) => set({ selectedEventDetail: event, selectedDaySummary: null, isAddEventOpen: false }),
       closeEventDetail: () => set({ selectedEventDetail: null }),
+      setCategoryBarExpanded: (expanded) => set({ isCategoryBarExpanded: expanded }),
       updateTaskTime: (taskId, newStartTime, newEndTime) => set((state) => {
         // 이 부분은 향후 로컬 캐싱이나 낙관적 업데이트(Optimistic Update)를 위한 자리입니다.
         // 실제 DB 업데이트 로직은 컴포넌트 레벨에서 API를 호출하도록 설계됩니다.
@@ -128,6 +132,7 @@ export const useCalendarStore = create<CalendarState>()(
         showNationalDays: state.showNationalDays,
         showAnniversaries: state.showAnniversaries,
         showTraditionalTerms: state.showTraditionalTerms,
+        isCategoryBarExpanded: state.isCategoryBarExpanded,
         
         // 초기화할 임시 상태들 (모달, 팝업 등)
         isAddEventOpen: false,
@@ -155,6 +160,7 @@ export const useCalendarStore = create<CalendarState>()(
         showNationalDays: state.showNationalDays,
         showAnniversaries: state.showAnniversaries,
         showTraditionalTerms: state.showTraditionalTerms,
+        isCategoryBarExpanded: state.isCategoryBarExpanded,
       }),
       merge: (persistedState: unknown, currentState) => {
         const state = persistedState as Partial<CalendarState>

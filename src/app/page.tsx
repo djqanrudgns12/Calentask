@@ -43,6 +43,7 @@ import { ArchiveNotesView } from '@/components/archive/ArchiveNotesView'
 import { ArchiveAgendaView } from '@/components/archive/ArchiveAgendaView'
 import { BottomNavigation } from '@/components/ui/BottomNavigation'
 import { CommandPalette } from '@/components/ui/CommandPalette'
+import { MobileCategoryBar } from '@/components/calendar/MobileCategoryBar'
 
 export default function CalendarPage() {
   const [mounted, setMounted] = useState(false)
@@ -378,6 +379,9 @@ export default function CalendarPage() {
           onDragCancel={handleDragCancel}
         >
           <div className="flex-1 overflow-y-auto overflow-x-hidden px-1 md:px-8 pb-8">
+            {/* 모바일 카테고리 필터 바 — 캘린더 뷰에서만 표시, 캘린더와 함께 스크롤 */}
+            {isMyCalendarActive && <MobileCategoryBar />}
+
             {viewMode === 'monthly' && <MonthlyView currentDate={currentDate} events={events} />}
             {viewMode === 'weekly' && <WeeklyView currentDate={currentDate} events={events} />}
             {viewMode === 'list' && <ListView currentDate={currentDate} events={events} />}

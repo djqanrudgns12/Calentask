@@ -185,13 +185,13 @@ export function CalendarHeader({ onOpenSettings }: CalendarHeaderProps) {
           exit={{ opacity: 0, x: -20 }}
           className="flex items-center shrink-0 gap-4 py-1"
         >
-          <div className="relative w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-100 to-purple-100 flex items-center justify-center shrink-0 shadow-inner border border-white">
-            <BrainCircuit className="w-6 h-6 text-indigo-600 relative z-10" />
+          <div className="relative w-10 h-10 md:w-12 md:h-12 rounded-xl bg-gradient-to-br from-indigo-100 to-purple-100 flex items-center justify-center shrink-0 shadow-inner border border-white">
+            <BrainCircuit className="w-5 h-5 md:w-6 md:h-6 text-indigo-600 relative z-10" />
             <div className="absolute inset-0 bg-white/50 rounded-xl animate-pulse" />
           </div>
-          <div className="hidden md:flex flex-col">
-            <h2 className="font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-indigo-700 to-purple-700 text-xl tracking-tight">인사이트 대시보드</h2>
-            <div className="flex items-center gap-2 mt-0.5">
+          <div className="flex flex-col">
+            <h2 className="font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-indigo-700 to-purple-700 text-base md:text-xl tracking-tight">인사이트 대시보드</h2>
+            <div className="hidden md:flex items-center gap-2 mt-0.5">
               <span className="relative flex w-2 h-2">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-500 opacity-75"></span>
                 <span className="relative inline-flex rounded-full w-2 h-2 bg-emerald-500"></span>
@@ -211,13 +211,13 @@ export function CalendarHeader({ onOpenSettings }: CalendarHeaderProps) {
           exit={{ opacity: 0, x: -20 }}
           className="flex items-center shrink-0 gap-4 py-1"
         >
-          <div className="relative w-12 h-12 rounded-xl bg-gradient-to-br from-purple-100 to-blue-100 flex items-center justify-center shrink-0 shadow-inner border border-white">
-            <CalendarHeart className="w-6 h-6 text-purple-600 relative z-10" />
+          <div className="relative w-10 h-10 md:w-12 md:h-12 rounded-xl bg-gradient-to-br from-purple-100 to-blue-100 flex items-center justify-center shrink-0 shadow-inner border border-white">
+            <CalendarHeart className="w-5 h-5 md:w-6 md:h-6 text-purple-600 relative z-10" />
             <div className="absolute inset-0 bg-white/50 rounded-xl animate-pulse" />
           </div>
-          <div className="hidden md:flex flex-col">
-            <h2 className="font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-purple-700 to-blue-700 text-xl tracking-tight">Agenda Center</h2>
-            <div className="flex items-center gap-2 mt-0.5">
+          <div className="flex flex-col">
+            <h2 className="font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-purple-700 to-blue-700 text-base md:text-xl tracking-tight">Agenda Center</h2>
+            <div className="hidden md:flex items-center gap-2 mt-0.5">
               <span className="relative flex w-2 h-2">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-500 opacity-75"></span>
                 <span className="relative inline-flex rounded-full w-2 h-2 bg-blue-500"></span>
@@ -239,33 +239,31 @@ export function CalendarHeader({ onOpenSettings }: CalendarHeaderProps) {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -10 }}
-          className="flex-1 flex flex-row items-center justify-center gap-1 md:gap-4 overflow-x-auto hide-scrollbar w-full"
+          className="flex-1 flex flex-row items-center justify-center gap-2 md:gap-4 overflow-x-auto hide-scrollbar w-full"
         >
           <div className="flex items-center space-x-1 sm:space-x-2 shrink-0">
-            <button onClick={handlePrev} className="p-1.5 rounded-full hover:bg-slate-100 text-slate-500 transition-colors">
+            <button onClick={handlePrev} className="p-2 rounded-full hover:bg-slate-100 text-slate-500 transition-colors">
               <ChevronLeft className="w-5 h-5" />
             </button>
             <DatePickerPopover>
               {renderHeaderTitle()}
             </DatePickerPopover>
-            <button onClick={handleNext} className="p-1.5 rounded-full hover:bg-slate-100 text-slate-500 transition-colors">
+            <button onClick={handleNext} className="p-2 rounded-full hover:bg-slate-100 text-slate-500 transition-colors">
               <ChevronRight className="w-5 h-5" />
             </button>
-            <button onClick={handleToday} className="px-2 py-1 md:px-3 md:py-1.5 rounded-full bg-slate-100 hover:bg-slate-200 text-[10px] md:text-xs font-bold text-slate-700 transition-colors ml-1">
+            <button onClick={handleToday} className="px-3 py-1.5 rounded-full bg-slate-100 hover:bg-slate-200 text-[11px] md:text-xs font-bold text-slate-700 transition-colors ml-1 min-h-[32px]">
               오늘
             </button>
           </div>
 
-          <div className="h-6 w-px bg-slate-200 mx-1 hidden sm:block"></div>
+          <div className="h-6 w-px bg-slate-200 mx-0.5"></div>
 
           <div className="flex items-center bg-slate-100/80 p-0.5 md:p-1 rounded-full shrink-0">
             {(['monthly', 'weekly', 'list', 'semester'] as const).map((mode) => (
               <button
                 key={mode}
                 onClick={() => setViewMode(mode)}
-                className={`px-2 py-1 md:px-3 md:py-1.5 rounded-full text-[10px] md:text-xs font-bold transition-all whitespace-nowrap ${
-                  mode === 'semester' ? 'hidden md:block ' : ''
-                }${
+                className={`px-2.5 py-1.5 md:px-3 md:py-1.5 rounded-full text-[11px] md:text-xs font-bold transition-all whitespace-nowrap min-h-[32px] ${
                   viewMode === mode ? 'bg-white text-blue-600 shadow-sm ring-1 ring-slate-200/50' : 'text-slate-500 hover:text-slate-700'
                 }`}
               >
