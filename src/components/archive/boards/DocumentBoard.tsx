@@ -887,6 +887,7 @@ export function DocumentBoard() {
             
 
               <EditorContent editor={editor} className="min-h-[500px]" />
+              {editor && <SlashMenuWrapper editor={editor} />}
             </div>
           </div>
         </div>
@@ -903,28 +904,28 @@ function SlashMenuWrapper({ editor }: { editor: any }) {
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const SLASH_COMMANDS = [
-    { id: 'h1', icon: Heading1, title: '큰 제목', category: '기본 블록', action: (e: any, r: any) => e.chain().focus().deleteRange(r).toggleHeading({ level: 1 }).run() },
-    { id: 'h2', icon: Heading2, title: '중간 제목', category: '기본 블록', action: (e: any, r: any) => e.chain().focus().deleteRange(r).toggleHeading({ level: 2 }).run() },
-    { id: 'h3', icon: Heading3, title: '작은 제목', category: '기본 블록', action: (e: any, r: any) => e.chain().focus().deleteRange(r).toggleHeading({ level: 3 }).run() },
-    { id: 'todo', icon: SquareCheckBig, title: '할 일 목록', category: '기본 블록', action: (e: any, r: any) => e.chain().focus().deleteRange(r).toggleTaskList().run() },
-    { id: 'bullet', icon: List, title: '글머리 기호 목록', category: '기본 블록', action: (e: any, r: any) => e.chain().focus().deleteRange(r).toggleBulletList().run() },
-    { id: 'num', icon: ListOrdered, title: '번호 매기기 목록', category: '기본 블록', action: (e: any, r: any) => e.chain().focus().deleteRange(r).toggleOrderedList().run() },
-    { id: 'quote', icon: Quote, title: '인용구', category: '기본 블록', action: (e: any, r: any) => e.chain().focus().deleteRange(r).toggleBlockquote().run() },
-    { id: 'div', icon: Minus, title: '구분선', category: '기본 블록', action: (e: any, r: any) => e.chain().focus().deleteRange(r).setHorizontalRule().run() },
+    { id: 'h1', icon: Heading1, title: '큰 제목', aliases: ['h1', '제목1', '큰제목'], category: '기본 블록', action: (e: any, r: any) => e.chain().focus().deleteRange(r).toggleHeading({ level: 1 }).run() },
+    { id: 'h2', icon: Heading2, title: '중간 제목', aliases: ['h2', '제목2', '중간제목'], category: '기본 블록', action: (e: any, r: any) => e.chain().focus().deleteRange(r).toggleHeading({ level: 2 }).run() },
+    { id: 'h3', icon: Heading3, title: '작은 제목', aliases: ['h3', '제목3', '작은제목'], category: '기본 블록', action: (e: any, r: any) => e.chain().focus().deleteRange(r).toggleHeading({ level: 3 }).run() },
+    { id: 'todo', icon: SquareCheckBig, title: '할 일 목록', aliases: ['todo', '할일', '투두', '체크리스트'], category: '기본 블록', action: (e: any, r: any) => e.chain().focus().deleteRange(r).toggleTaskList().run() },
+    { id: 'bullet', icon: List, title: '글머리 기호 목록', aliases: ['bullet', '글머리', '목록', '리스트'], category: '기본 블록', action: (e: any, r: any) => e.chain().focus().deleteRange(r).toggleBulletList().run() },
+    { id: 'num', icon: ListOrdered, title: '번호 매기기 목록', aliases: ['num', '번호', '숫자'], category: '기본 블록', action: (e: any, r: any) => e.chain().focus().deleteRange(r).toggleOrderedList().run() },
+    { id: 'quote', icon: Quote, title: '인용구', aliases: ['quote', '인용', '인용구'], category: '기본 블록', action: (e: any, r: any) => e.chain().focus().deleteRange(r).toggleBlockquote().run() },
+    { id: 'div', icon: Minus, title: '구분선', aliases: ['div', '구분선', '선'], category: '기본 블록', action: (e: any, r: any) => e.chain().focus().deleteRange(r).setHorizontalRule().run() },
     
-    { id: 'callout', icon: Lightbulb, title: '콜아웃 (알림 박스)', category: '커스텀 및 고급 블록', action: (e: any, r: any) => e.chain().focus().deleteRange(r).setCallout().run() },
-    { id: 'toggle', icon: ChevronRight, title: '토글 목록', category: '커스텀 및 고급 블록', action: (e: any, r: any) => e.chain().focus().deleteRange(r).setToggle().run() },
+    { id: 'callout', icon: Lightbulb, title: '콜아웃 (알림 박스)', aliases: ['callout', '콜아웃', '알림', '박스'], category: '커스텀 및 고급 블록', action: (e: any, r: any) => e.chain().focus().deleteRange(r).setCallout().run() },
+    { id: 'toggle', icon: ChevronRight, title: '토글 목록', aliases: ['toggle', '토글', '접기'], category: '커스텀 및 고급 블록', action: (e: any, r: any) => e.chain().focus().deleteRange(r).setToggle().run() },
     
-    { id: 'bookmark', icon: BookmarkIcon, title: '웹 북마크', category: '데이터 및 미디어', action: (e: any, r: any) => e.chain().focus().deleteRange(r).setBookmark().run() },
-    { id: 'image', icon: ImageIcon, title: '이미지', category: '데이터 및 미디어', action: (e: any, r: any) => e.chain().focus().deleteRange(r).setCustomImage().run() },
-    { id: 'youtube', icon: YoutubeIcon, title: '유튜브', category: '데이터 및 미디어', action: (e: any, r: any) => e.chain().focus().deleteRange(r).setCustomYoutube().run() },
-    { id: 'code', icon: Code, title: '코드 블록', category: '데이터 및 미디어', action: (e: any, r: any) => e.chain().focus().deleteRange(r).toggleCodeBlock().run() },
-    { id: 'table', icon: TableIcon, title: '표(Table)', category: '데이터 및 미디어', action: (e: any, r: any) => e.chain().focus().deleteRange(r).insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run() },
-    { id: 'math', icon: Sigma, title: '수식(Math)', category: '데이터 및 미디어', action: (e: any, r: any) => e.chain().focus().deleteRange(r).setCustomMath().run() },
+    { id: 'bookmark', icon: BookmarkIcon, title: '웹 북마크', aliases: ['bookmark', '북마크', '링크'], category: '데이터 및 미디어', action: (e: any, r: any) => e.chain().focus().deleteRange(r).setBookmark().run() },
+    { id: 'image', icon: ImageIcon, title: '이미지', aliases: ['image', '이미지', '사진'], category: '데이터 및 미디어', action: (e: any, r: any) => e.chain().focus().deleteRange(r).setCustomImage().run() },
+    { id: 'youtube', icon: YoutubeIcon, title: '유튜브', aliases: ['youtube', '유튜브', '영상', '동영상'], category: '데이터 및 미디어', action: (e: any, r: any) => e.chain().focus().deleteRange(r).setCustomYoutube().run() },
+    { id: 'code', icon: Code, title: '코드 블록', aliases: ['code', '코드', '개발'], category: '데이터 및 미디어', action: (e: any, r: any) => e.chain().focus().deleteRange(r).toggleCodeBlock().run() },
+    { id: 'table', icon: TableIcon, title: '표(Table)', aliases: ['table', '표', '테이블'], category: '데이터 및 미디어', action: (e: any, r: any) => e.chain().focus().deleteRange(r).insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run() },
+    { id: 'math', icon: Sigma, title: '수식(Math)', aliases: ['math', '수식', '수학'], category: '데이터 및 미디어', action: (e: any, r: any) => e.chain().focus().deleteRange(r).setCustomMath().run() },
     
-    { id: 'red', icon: Palette, isColor: true, colorCls: 'bg-red-500', title: '빨간색 글자', category: '색상 및 효과', action: (e: any, r: any) => e.chain().focus().deleteRange(r).setColor('#ef4444').run() },
-    { id: 'blue', icon: Palette, isColor: true, colorCls: 'bg-blue-500', title: '파란색 글자', category: '색상 및 효과', action: (e: any, r: any) => e.chain().focus().deleteRange(r).setColor('#3b82f6').run() },
-    { id: 'hl', icon: Highlighter, isColor: false, title: '노란색 형광펜', category: '색상 및 효과', action: (e: any, r: any) => e.chain().focus().deleteRange(r).toggleHighlight({ color: '#fef08a' }).run() },
+    { id: 'red', icon: Palette, isColor: true, colorCls: 'bg-red-500', title: '빨간색 글자', aliases: ['red', '빨간색', '빨강'], category: '색상 및 효과', action: (e: any, r: any) => e.chain().focus().deleteRange(r).setColor('#ef4444').run() },
+    { id: 'blue', icon: Palette, isColor: true, colorCls: 'bg-blue-500', title: '파란색 글자', aliases: ['blue', '파란색', '파랑'], category: '색상 및 효과', action: (e: any, r: any) => e.chain().focus().deleteRange(r).setColor('#3b82f6').run() },
+    { id: 'hl', icon: Highlighter, isColor: false, title: '노란색 형광펜', aliases: ['hl', '형광펜', '노란색', '노랑'], category: '색상 및 효과', action: (e: any, r: any) => e.chain().focus().deleteRange(r).toggleHighlight({ color: '#fef08a' }).run() },
   ];
 
   useEffect(() => {
@@ -933,6 +934,8 @@ function SlashMenuWrapper({ editor }: { editor: any }) {
       const node = $anchor.parent;
       if (node.type.name === 'paragraph' && node.textContent.startsWith('/')) {
         setQuery(node.textContent.slice(1).toLowerCase());
+      } else {
+        setQuery('');
       }
     };
     editor.on('selectionUpdate', updateQuery);
@@ -943,7 +946,13 @@ function SlashMenuWrapper({ editor }: { editor: any }) {
     };
   }, [editor]);
 
-  const filteredCommands = SLASH_COMMANDS.filter(cmd => cmd.id.includes(query) || cmd.title.includes(query));
+  const filteredCommands = SLASH_COMMANDS.filter(cmd => {
+    const q = query.replace(/\s+/g, '');
+    if (!q) return true;
+    return cmd.id.includes(q) || 
+           cmd.title.replace(/\s+/g, '').toLowerCase().includes(q) || 
+           (cmd.aliases && cmd.aliases.some(a => a.includes(q)));
+  });
 
   const groupedCommands = filteredCommands.reduce((acc, cmd) => {
     if (!acc[cmd.category]) acc[cmd.category] = [];
@@ -985,10 +994,13 @@ function SlashMenuWrapper({ editor }: { editor: any }) {
       // @ts-ignore
       tippyOptions={{ placement: 'bottom-start', offset: [0, 8] }}
       shouldShow={({ state, view }) => {
-        if (!view.hasFocus || view.composing) return false;
+        if (!view.hasFocus) return false;
         const { $anchor } = state.selection;
         const node = $anchor.parent;
-        return node.type.name === 'paragraph' && node.textContent.startsWith('/') && !node.textContent.includes(' ');
+        if (node.type.name !== 'paragraph' || !node.textContent.startsWith('/')) return false;
+        if (node.textContent.startsWith('/ ')) return false;
+        if (node.textContent.length > 20) return false;
+        return true;
       }}
       className="flex bg-white shadow-xl border border-slate-100 rounded-xl overflow-hidden p-1 gap-1"
     >
