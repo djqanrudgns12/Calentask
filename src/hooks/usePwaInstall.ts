@@ -76,7 +76,10 @@ export function usePwaInstall() {
       return { action: 'show-ios-guide' }
     }
 
-    if (!deferredPrompt) return { action: 'none' }
+    if (!deferredPrompt) {
+      // 브라우저 정책(이미 설치됨, 캐시 등)으로 자동 설치 프롬프트가 없을 경우 수동 설치 안내
+      return { action: 'show-desktop-guide' }
+    }
 
     // 설치 프롬프트 띄우기
     await deferredPrompt.prompt()

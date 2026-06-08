@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { Download, X, Share } from 'lucide-react'
 import { usePwaInstall } from '@/hooks/usePwaInstall'
 import { motion, AnimatePresence } from 'framer-motion'
+import { toast } from 'sonner'
 
 export function PwaInstallPrompt({ isDesktop = false }: { isDesktop?: boolean }) {
   const { isInstallable, isStandalone, isIos, installApp } = usePwaInstall()
@@ -23,13 +24,18 @@ export function PwaInstallPrompt({ isDesktop = false }: { isDesktop?: boolean })
     }
   }, []);
 
-  // 설치되어 있거나 설치가 불가능하다면 렌더링하지 않음
-  if (isStandalone || !isInstallable) return null
+  // 스탠드얼론(앱 모드)으로 이미 실행 중이라면 렌더링하지 않음
+  if (isStandalone) return null
 
   const handleInstallClick = async () => {
     const result = await installApp()
-    if (result.action === 'show-ios-guide') {
+    if (result?.action === 'show-ios-guide') {
       setShowIosGuide(true)
+    } else if (result?.action === 'show-desktop-guide') {
+      toast.info('자동 설치 팝업을 띄울 수 없습니다.', {
+        description: '브라우저 주소창 우측의 "설치" 아이콘이나 브라우저 메뉴의 "앱 설치" 버튼을 클릭하여 설치해 주세요.',
+        duration: 5000,
+      })
     }
   }
 
