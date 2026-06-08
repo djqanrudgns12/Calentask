@@ -66,3 +66,35 @@ export function useVerifySecurityAnswer() {
     }
   })
 }
+
+// --- 세션 관련 훅 ---
+import { getUserSessions, deleteUserSession, signOutOtherDevices } from '@/app/actions/sessions'
+
+export function useUserSessions() {
+  return useQuery({
+    queryKey: ['userSessions'],
+    queryFn: () => getUserSessions(),
+    staleTime: 1000 * 30, // 30 seconds
+    refetchOnWindowFocus: true,
+  })
+}
+
+export function useDeleteSession() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (sessionId: string) => deleteUserSession(sessionId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['userSessions'] })
+    }
+  })
+}
+
+export function useSignOutOtherDevices() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: () => signOutOtherDevices(),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['userSessions'] })
+    }
+  })
+}
