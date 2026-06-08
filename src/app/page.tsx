@@ -44,6 +44,7 @@ import { ArchiveAgendaView } from '@/components/archive/ArchiveAgendaView'
 import { BottomNavigation } from '@/components/ui/BottomNavigation'
 import { CommandPalette } from '@/components/ui/CommandPalette'
 import { MobileCategoryBar } from '@/components/calendar/MobileCategoryBar'
+import { PwaInstallPrompt } from '@/components/ui/PwaInstallPrompt'
 
 export default function CalendarPage() {
   const [mounted, setMounted] = useState(false)
@@ -341,6 +342,7 @@ export default function CalendarPage() {
         <div className="px-4 py-6 flex flex-col space-y-1 shrink-0">
           {/* Keep uploader and trash at the bottom or below */}
           <div className="mt-auto px-2 flex flex-col space-y-3">
+            <PwaInstallPrompt isDesktop />
             <Button
               variant="outline"
               className="w-full text-sm font-medium border-gray-300 flex items-center justify-center text-slate-700 hover:bg-slate-50"

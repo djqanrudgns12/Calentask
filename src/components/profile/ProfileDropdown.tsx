@@ -9,6 +9,7 @@ import { useCalendarStore } from '@/store/useCalendarStore'
 import { useQueryClient } from '@tanstack/react-query'
 import { useGlobalUIStore } from '@/store/useGlobalUIStore'
 import { Keyboard } from 'lucide-react'
+import { PwaInstallPrompt } from '@/components/ui/PwaInstallPrompt'
 
 export function ProfileDropdown({ onOpenSettings }: { onOpenSettings: () => void }) {
   const [isOpen, setIsOpen] = useState(false)
@@ -82,6 +83,8 @@ export function ProfileDropdown({ onOpenSettings }: { onOpenSettings: () => void
             <Keyboard className="w-4 h-4 text-emerald-500" />
             단축키 안내
           </button>
+          
+          <PwaInstallPrompt />
           
           <button
             onClick={() => {

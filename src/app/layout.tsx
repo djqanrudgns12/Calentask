@@ -16,11 +16,18 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
+  themeColor: "#ffffff",
 };
 
 export const metadata: Metadata = {
   title: "Calentask",
   description: "통합 캘린더 애플리케이션",
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "Calentask",
+  },
 };
 
 export default function RootLayout({
