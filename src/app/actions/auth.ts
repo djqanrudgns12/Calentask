@@ -3,7 +3,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
-import { cookies } from 'next/headers'
+import { cookies, headers } from 'next/headers'
 
 export async function login(formData: FormData) {
   const keepLoggedIn = formData.get('keepLoggedIn') === 'on'
@@ -26,13 +26,38 @@ export async function login(formData: FormData) {
   const password = formData.get('password') as string
   const email = `${username}@calentask.com`
 
-  const { error } = await supabase.auth.signInWithPassword({
+  const { data: authData, error } = await supabase.auth.signInWithPassword({
     email,
     password,
   })
 
   if (error) {
     return redirect('/login?error=invalid_credentials')
+  }
+
+  // 실제 클라이언트 IP/UA를 session_metadata에 저장
+  try {
+    const headersList = await headers()
+    const forwardedFor = headersList.get('x-forwarded-for')
+    const clientIp = forwardedFor ? forwardedFor.split(',')[0].trim() : null
+    const clientUA = headersList.get('user-agent')
+
+    if (authData.session?.access_token) {
+      const payload = authData.session.access_token.split('.')[1]
+      const decoded = JSON.parse(Buffer.from(payload, 'base64').toString())
+      const sessionId = decoded.session_id
+
+      if (sessionId && authData.user) {
+        await supabase.from('session_metadata').upsert({
+          session_id: sessionId,
+          user_id: authData.user.id,
+          client_ip: clientIp,
+          client_user_agent: clientUA,
+        }, { onConflict: 'session_id' })
+      }
+    }
+  } catch (e) {
+    console.error('Failed to save session metadata:', e)
   }
 
   revalidatePath('/', 'layout')
@@ -63,7 +88,7 @@ export async function signup(formData: FormData) {
   // 우회 로직: 아이디 -> 가짜 이메일 변환
   const email = `${username}@calentask.com`
 
-  const { error } = await supabase.auth.signUp({
+  const { data: authData, error } = await supabase.auth.signUp({
     email,
     password,
     options: {
@@ -77,6 +102,31 @@ export async function signup(formData: FormData) {
 
   if (error) {
     return redirect(`/signup?error=signup_failed`)
+  }
+
+  // 실제 클라이언트 IP/UA를 session_metadata에 저장
+  try {
+    const headersList = await headers()
+    const forwardedFor = headersList.get('x-forwarded-for')
+    const clientIp = forwardedFor ? forwardedFor.split(',')[0].trim() : null
+    const clientUA = headersList.get('user-agent')
+
+    if (authData.session?.access_token) {
+      const payload = authData.session.access_token.split('.')[1]
+      const decoded = JSON.parse(Buffer.from(payload, 'base64').toString())
+      const sessionId = decoded.session_id
+
+      if (sessionId && authData.user) {
+        await supabase.from('session_metadata').upsert({
+          session_id: sessionId,
+          user_id: authData.user.id,
+          client_ip: clientIp,
+          client_user_agent: clientUA,
+        }, { onConflict: 'session_id' })
+      }
+    }
+  } catch (e) {
+    console.error('Failed to save session metadata:', e)
   }
 
   revalidatePath('/', 'layout')

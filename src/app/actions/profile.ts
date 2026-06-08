@@ -47,3 +47,24 @@ export async function updateUserPassword(password: string) {
   }
   return true
 }
+
+export async function verifyCurrentPassword(currentPassword: string) {
+  const supabase = await createClient()
+  const { data: userData } = await supabase.auth.getUser()
+  if (!userData.user) return { success: false, error: 'Not authenticated' }
+
+  // 현재 이메일로 비밀번호 재인증 시도
+  const email = userData.user.email
+  if (!email) return { success: false, error: 'No email found' }
+
+  const { error } = await supabase.auth.signInWithPassword({
+    email,
+    password: currentPassword,
+  })
+
+  if (error) {
+    return { success: false, error: '현재 비밀번호가 올바르지 않습니다.' }
+  }
+
+  return { success: true }
+}

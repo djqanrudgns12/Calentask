@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useArchiveStore } from '@/store/useArchiveStore';
 import { useSecurityPinStatus, useSetupSecurityPin, useVerifyPin, useVerifySecurityAnswer } from '@/hooks/useSecurityQueries';
+import { useAutoLock } from '@/hooks/useAutoLock';
 import { Lock, Delete, ShieldAlert, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -36,6 +37,10 @@ export function PinPadOverlay({ children }: { children: React.ReactNode }) {
   const verifyPinMutation = useVerifyPin();
   const verifyAnswerMutation = useVerifySecurityAnswer();
 
+  // 30분 방치 자동 잠금: PIN이 설정된 사용자만 활성화
+  const isAutoLockEnabled = !isStatusLoading && !!status?.isSetup;
+  useAutoLock(isAutoLockEnabled);
+
   type Mode = 'loading' | 'setup_pin' | 'setup_confirm' | 'setup_security' | 'locked' | 'reset';
   const [mode, setMode] = useState<Mode>('loading');
   
@@ -51,16 +56,24 @@ export function PinPadOverlay({ children }: { children: React.ReactNode }) {
   const [answer, setAnswer] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
 
-  // Initialize mode when status loads
+  // 초기 접속 잠금 + 모드 초기화
   useEffect(() => {
-    if (!isStatusLoading && isPinLocked) {
+    if (isStatusLoading) return;
+    
+    // ✅ 초기 접속 잠금: PIN이 설정되어 있으면 무조건 잠금
+    if (status?.isSetup && !isPinLocked) {
+      setPinLocked(true);
+    }
+
+    // 모드 결정
+    if (isPinLocked) {
       if (status?.isSetup) {
         setMode('locked');
       } else {
         setMode('setup_pin');
       }
     }
-  }, [isStatusLoading, status, isPinLocked]);
+  }, [isStatusLoading, status, isPinLocked, setPinLocked]);
 
   // Lockout countdown timer
   useEffect(() => {

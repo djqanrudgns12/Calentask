@@ -3,6 +3,7 @@
 
 import { useState, useEffect } from 'react'
 import { useUserProfile, useUpdateProfile, useUpdatePassword } from '@/hooks/useCalendarQueries'
+import { verifyCurrentPassword } from '@/app/actions/profile'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -26,9 +27,12 @@ export function ProfileTab() {
   const [recoveryEmail, setRecoveryEmail] = useState('')
   
   // 비밀번호 변경 관련 상태
-  const [isChangingPassword, setIsChangingPassword] = useState(false)
+  const [passwordStep, setPasswordStep] = useState<'idle' | 'verify' | 'change'>('idle')
+  const [currentPassword, setCurrentPassword] = useState('')
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
+  const [passwordError, setPasswordError] = useState('')
+  const [isVerifying, setIsVerifying] = useState(false)
 
   useEffect(() => {
     if (profile) {
@@ -45,21 +49,50 @@ export function ProfileTab() {
     })
   }
 
-  const handleSavePassword = async () => {
-    if (!newPassword || newPassword !== confirmPassword) {
-      alert('비밀번호가 일치하지 않거나 입력되지 않았습니다.')
+  const handleVerifyPassword = async () => {
+    if (!currentPassword) {
+      setPasswordError('현재 비밀번호를 입력해주세요.')
       return
     }
+    setIsVerifying(true)
+    setPasswordError('')
+    try {
+      const result = await verifyCurrentPassword(currentPassword)
+      if (result.success) {
+        setPasswordStep('change')
+        setCurrentPassword('')
+      } else {
+        setPasswordError(result.error || '현재 비밀번호가 올바르지 않습니다.')
+      }
+    } catch {
+      setPasswordError('비밀번호 확인 중 오류가 발생했습니다.')
+    } finally {
+      setIsVerifying(false)
+    }
+  }
+
+  const handleSavePassword = async () => {
+    if (!newPassword || newPassword !== confirmPassword) {
+      setPasswordError('비밀번호가 일치하지 않거나 입력되지 않았습니다.')
+      return
+    }
+    setPasswordError('')
     try {
       await updatePassword(newPassword)
       alert('비밀번호가 성공적으로 변경되었습니다.')
-      setIsChangingPassword(false)
-      setNewPassword('')
-      setConfirmPassword('')
+      resetPasswordState()
     } catch (err) {
       console.error(err)
-      alert('비밀번호 변경에 실패했습니다.')
+      setPasswordError('비밀번호 변경에 실패했습니다.')
     }
+  }
+
+  const resetPasswordState = () => {
+    setPasswordStep('idle')
+    setCurrentPassword('')
+    setNewPassword('')
+    setConfirmPassword('')
+    setPasswordError('')
   }
 
   return (
@@ -123,10 +156,10 @@ export function ProfileTab() {
       <section className="space-y-3 md:space-y-4 pt-4 md:pt-6 border-t border-slate-100">
         <div className="flex items-center justify-between">
           <h3 className="text-base md:text-lg font-bold text-slate-800">보안</h3>
-          {!isChangingPassword && (
+          {passwordStep === 'idle' && (
             <Button 
               variant="outline" 
-              onClick={() => setIsChangingPassword(true)}
+              onClick={() => setPasswordStep('verify')}
               className="text-slate-600 border-slate-300 hover:bg-slate-50"
             >
               <KeyRound className="w-4 h-4 mr-2 text-slate-400" />
@@ -135,8 +168,46 @@ export function ProfileTab() {
           )}
         </div>
 
-        {isChangingPassword && (
+        {/* Step 1: 현재 비밀번호 확인 */}
+        {passwordStep === 'verify' && (
           <div className="bg-slate-50 p-5 rounded-2xl border border-slate-100 space-y-4 mb-8">
+            <p className="text-sm text-slate-600 font-medium">비밀번호를 변경하려면 먼저 현재 비밀번호를 입력해주세요.</p>
+            <div className="max-w-sm space-y-2">
+              <Label htmlFor="currentPassword">현재 비밀번호</Label>
+              <Input 
+                id="currentPassword" 
+                type="password"
+                value={currentPassword}
+                onChange={e => { setCurrentPassword(e.target.value); setPasswordError('') }}
+                onKeyDown={e => e.key === 'Enter' && handleVerifyPassword()}
+                placeholder="현재 비밀번호를 입력하세요"
+                className="bg-white border-slate-200"
+                autoFocus
+              />
+            </div>
+            {passwordError && (
+              <p className="text-sm text-rose-500 font-medium">{passwordError}</p>
+            )}
+            <div className="flex justify-end gap-2 pt-2">
+              <Button variant="ghost" onClick={resetPasswordState} className="text-slate-500 hover:text-slate-700 hover:bg-slate-200">
+                취소
+              </Button>
+              <Button 
+                onClick={handleVerifyPassword}
+                disabled={isVerifying || !currentPassword}
+                className="bg-slate-800 hover:bg-slate-900 text-white"
+              >
+                {isVerifying ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+                확인
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* Step 2: 새 비밀번호 입력 */}
+        {passwordStep === 'change' && (
+          <div className="bg-slate-50 p-5 rounded-2xl border border-slate-100 space-y-4 mb-8">
+            <p className="text-sm text-emerald-600 font-medium">✓ 현재 비밀번호가 확인되었습니다. 새로운 비밀번호를 입력해주세요.</p>
             <div className="grid sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="newPassword">새 비밀번호</Label>
@@ -144,9 +215,10 @@ export function ProfileTab() {
                   id="newPassword" 
                   type="password"
                   value={newPassword}
-                  onChange={e => setNewPassword(e.target.value)}
+                  onChange={e => { setNewPassword(e.target.value); setPasswordError('') }}
                   placeholder="새로운 비밀번호"
                   className="bg-white border-slate-200"
+                  autoFocus
                 />
               </div>
               <div className="space-y-2">
@@ -155,23 +227,17 @@ export function ProfileTab() {
                   id="confirmPassword" 
                   type="password"
                   value={confirmPassword}
-                  onChange={e => setConfirmPassword(e.target.value)}
+                  onChange={e => { setConfirmPassword(e.target.value); setPasswordError('') }}
                   placeholder="새로운 비밀번호 확인"
                   className="bg-white border-slate-200"
                 />
               </div>
             </div>
-            
+            {passwordError && (
+              <p className="text-sm text-rose-500 font-medium">{passwordError}</p>
+            )}
             <div className="flex justify-end gap-2 pt-2">
-              <Button 
-                variant="ghost" 
-                onClick={() => {
-                  setIsChangingPassword(false)
-                  setNewPassword('')
-                  setConfirmPassword('')
-                }}
-                className="text-slate-500 hover:text-slate-700 hover:bg-slate-200"
-              >
+              <Button variant="ghost" onClick={resetPasswordState} className="text-slate-500 hover:text-slate-700 hover:bg-slate-200">
                 취소
               </Button>
               <Button 
