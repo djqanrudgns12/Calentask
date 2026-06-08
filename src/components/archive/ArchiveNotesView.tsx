@@ -15,13 +15,14 @@ import { Plus, LayoutGrid, LayoutList, Grip, Image as ImageIcon, Table, Columns,
 import { cn } from '@/lib/utils';
 import { AddNoteDialog } from './AddNoteDialog';
 import { CommandPalette } from './CommandPalette';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, Reorder } from 'framer-motion';
 import { useHotkeys } from 'react-hotkeys-hook';
 import { useEffect } from 'react';
 
 export function ArchiveNotesView() {
-  const { tabs, activeTabId, setActiveTabId, setCommandPaletteOpen, fetchTabs, fetchItems, updateTab, deleteTab, isPrefetched, focusModeTabId } = useArchiveStore();
+  const { tabs, activeTabId, setActiveTabId, setCommandPaletteOpen, fetchTabs, fetchItems, updateTab, deleteTab, reorderTabs, isPrefetched, focusModeTabId } = useArchiveStore();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isSynapseOpen, setIsSynapseOpen] = useState(false);
   const [editingTabId, setEditingTabId] = useState<string | null>(null);
   const [editingTabName, setEditingTabName] = useState('');
   const [isScrolled, setIsScrolled] = useState(false);
@@ -117,15 +118,26 @@ export function ArchiveNotesView() {
                     <span className="md:hidden">노트와 아이디어를 관리하세요.</span>
                   </p>
                 </div>
-                <button 
-                  onClick={handleAddNewTab}
-                  className="flex items-center gap-1.5 md:gap-2 px-3 md:px-4 py-2 md:py-2.5 bg-indigo-600 text-white rounded-xl text-xs md:text-sm font-bold hover:bg-indigo-700 shadow-sm shadow-indigo-600/20 transition-all hover:scale-105 active:scale-95 shrink-0"
-                >
-                  <Plus className="w-4 h-4" />
-                  {/* 왜: 모바일에서 버튼 텍스트를 축약하여 헤더 한 줄 유지 */}
-                  <span className="hidden md:inline">새 노트 추가</span>
-                  <span className="md:hidden">새 노트</span>
-                </button>
+                <div className="flex items-center gap-2 md:gap-3">
+                  <button 
+                    onClick={() => setIsSynapseOpen(true)}
+                    className="relative flex items-center gap-1.5 md:gap-2 px-3 md:px-4 py-2 md:py-2.5 bg-gradient-to-br from-slate-900 to-indigo-950 text-white rounded-xl text-xs md:text-sm font-bold shadow-lg shadow-indigo-500/20 transition-all duration-300 hover:scale-105 active:scale-95 shrink-0 overflow-hidden group border border-indigo-500/30 hover:border-indigo-400"
+                  >
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]" />
+                    <Network className="w-4 h-4 text-indigo-300 group-hover:text-indigo-200 transition-colors relative z-10" />
+                    <span className="hidden md:inline relative z-10 bg-clip-text text-transparent bg-gradient-to-r from-indigo-100 to-white">시냅스</span>
+                    <span className="md:hidden relative z-10 bg-clip-text text-transparent bg-gradient-to-r from-indigo-100 to-white">시냅스</span>
+                  </button>
+                  <button 
+                    onClick={handleAddNewTab}
+                    className="flex items-center gap-1.5 md:gap-2 px-3 md:px-4 py-2 md:py-2.5 bg-indigo-600 text-white rounded-xl text-xs md:text-sm font-bold hover:bg-indigo-700 shadow-sm shadow-indigo-600/20 transition-all hover:scale-105 active:scale-95 shrink-0"
+                  >
+                    <Plus className="w-4 h-4" />
+                    {/* 왜: 모바일에서 버튼 텍스트를 축약하여 헤더 한 줄 유지 */}
+                    <span className="hidden md:inline">새 노트 추가</span>
+                    <span className="md:hidden">새 노트</span>
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -152,73 +164,87 @@ export function ArchiveNotesView() {
                       추가
                     </button>
                   )}
-                  {tabs.map((tab: any) => {
-                    const Icon = getIconForType(tab.board_type);
-                    const isActive = activeTabId === tab.id;
-                    const isEditing = editingTabId === tab.id;
-                    
-                    return (
-                      <div key={tab.id} className="relative group flex items-center">
-                        <button
-                          onClick={() => !isEditing && setActiveTabId(tab.id)}
-                          onDoubleClick={() => {
-                            setEditingTabId(tab.id);
-                            setEditingTabName(tab.name);
-                          }}
-                          className={cn(
-                            "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all whitespace-nowrap",
-                            isActive 
-                              ? "bg-white text-indigo-600 shadow-sm border border-slate-200" 
-                              : "text-slate-500 hover:bg-white/60 hover:text-slate-700 border border-transparent"
-                          )}
+                  <Reorder.Group 
+                    as="div"
+                    axis="x" 
+                    values={tabs} 
+                    onReorder={reorderTabs} 
+                    className="flex items-center space-x-2 shrink-0"
+                  >
+                    {tabs.map((tab: any) => {
+                      const Icon = getIconForType(tab.board_type);
+                      const isActive = activeTabId === tab.id;
+                      const isEditing = editingTabId === tab.id;
+                      
+                      return (
+                        <Reorder.Item 
+                          as="div"
+                          key={tab.id} 
+                          value={tab}
+                          dragMomentum={false}
+                          className="relative group flex items-center shrink-0"
                         >
-                          <Icon className={cn("w-4 h-4 shrink-0", isActive ? "text-indigo-600" : "text-slate-400")} />
-                          
-                          {isEditing ? (
-                            <input 
-                              autoFocus
-                              value={editingTabName}
-                              onChange={(e) => setEditingTabName(e.target.value)}
-                              onBlur={() => {
-                                if (editingTabName.trim() && editingTabName !== tab.name) {
-                                  updateTab(tab.id, { name: editingTabName.trim() });
-                                }
-                                setEditingTabId(null);
-                              }}
-                              onKeyDown={(e) => {
-                                if (e.key === 'Enter') {
-                                  e.preventDefault();
+                          <button
+                            onClick={() => !isEditing && setActiveTabId(tab.id)}
+                            onDoubleClick={() => {
+                              setEditingTabId(tab.id);
+                              setEditingTabName(tab.name);
+                            }}
+                            className={cn(
+                              "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all whitespace-nowrap",
+                              isActive 
+                                ? "bg-white text-indigo-600 shadow-sm border border-slate-200" 
+                                : "text-slate-500 hover:bg-white/60 hover:text-slate-700 border border-transparent"
+                            )}
+                          >
+                            <Icon className={cn("w-4 h-4 shrink-0", isActive ? "text-indigo-600" : "text-slate-400")} />
+                            
+                            {isEditing ? (
+                              <input 
+                                autoFocus
+                                value={editingTabName}
+                                onChange={(e) => setEditingTabName(e.target.value)}
+                                onBlur={() => {
                                   if (editingTabName.trim() && editingTabName !== tab.name) {
                                     updateTab(tab.id, { name: editingTabName.trim() });
                                   }
                                   setEditingTabId(null);
-                                } else if (e.key === 'Escape') {
-                                  setEditingTabId(null);
+                                }}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') {
+                                    e.preventDefault();
+                                    if (editingTabName.trim() && editingTabName !== tab.name) {
+                                      updateTab(tab.id, { name: editingTabName.trim() });
+                                    }
+                                    setEditingTabId(null);
+                                  } else if (e.key === 'Escape') {
+                                    setEditingTabId(null);
+                                  }
+                                }}
+                                className="w-24 bg-indigo-50/50 border-none outline-none focus:ring-2 focus:ring-indigo-500/30 rounded px-1 -mx-1 text-indigo-700"
+                              />
+                            ) : (
+                              <span className="select-none">{tab.name || '제목 없음'}</span>
+                            )}
+                          </button>
+                          
+                          {!isEditing && (
+                            <button 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (confirm(`'${tab.name}' 노트를 정말 삭제하시겠습니까?`)) {
+                                  deleteTab(tab.id);
                                 }
                               }}
-                              className="w-24 bg-indigo-50/50 border-none outline-none focus:ring-2 focus:ring-indigo-500/30 rounded px-1 -mx-1 text-indigo-700"
-                            />
-                          ) : (
-                            <span className="select-none">{tab.name || '제목 없음'}</span>
+                              className="absolute right-1 opacity-0 group-hover:opacity-100 p-1 text-slate-400 hover:text-rose-500 transition-opacity bg-white/80 backdrop-blur rounded"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
                           )}
-                        </button>
-                        
-                        {!isEditing && (
-                          <button 
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              if (confirm(`'${tab.name}' 노트를 정말 삭제하시겠습니까?`)) {
-                                deleteTab(tab.id);
-                              }
-                            }}
-                            className="absolute right-1 opacity-0 group-hover:opacity-100 p-1 text-slate-400 hover:text-rose-500 transition-opacity bg-white/80 backdrop-blur rounded"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        )}
-                      </div>
-                    );
-                  })}
+                        </Reorder.Item>
+                      );
+                    })}
+                  </Reorder.Group>
                 </div>
               )}
             </div>
@@ -295,6 +321,21 @@ export function ArchiveNotesView() {
           </div>
         </div>
       </div>
+
+      <AnimatePresence>
+        {isSynapseOpen && (
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.98 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.98 }}
+            transition={{ duration: 0.3, ease: 'easeOut' }}
+            className="fixed inset-0 z-[100] bg-black p-4 md:p-8"
+          >
+            <GraphBoard onClose={() => setIsSynapseOpen(false)} />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <AddNoteDialog isOpen={isAddDialogOpen} onClose={() => setIsAddDialogOpen(false)} />
       <CommandPalette />
     </PinPadOverlay>

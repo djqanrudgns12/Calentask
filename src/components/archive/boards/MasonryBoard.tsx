@@ -90,32 +90,33 @@ export function MasonryBoard() {
 
   return (
     <div 
-      className="w-full h-full bg-[#f7f9fb] p-6 md:p-10 overflow-y-auto hide-scrollbar relative"
+      className="w-full h-full bg-[#f7f9fb] p-4 md:p-10 overflow-y-auto hide-scrollbar relative pb-28 md:pb-10"
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
     >
       <div className="max-w-7xl mx-auto">
         {/* Header Actions */}
-        <div className="flex items-center justify-between mb-8 sticky top-0 z-10 bg-[#f7f9fb]/90 backdrop-blur-md py-4">
-          <div className="relative">
-            <Search className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+        <div className="flex items-center justify-between gap-4 mb-6 md:mb-8 sticky top-0 z-10 bg-[#f7f9fb]/90 backdrop-blur-md py-2 md:py-4">
+          <div className="relative flex-1 max-w-xl">
+            <Search className="w-4 h-4 md:w-5 md:h-5 absolute left-3 md:left-4 top-1/2 -translate-y-1/2 text-slate-400" />
             <input 
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="이미지 검색..."
-              className="pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all text-sm w-64 shadow-sm"
+              className="w-full pl-9 md:pl-11 pr-4 py-2.5 md:py-3 bg-white border border-slate-200 rounded-xl md:rounded-2xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all text-sm md:text-base shadow-sm"
             />
           </div>
 
           <button 
             onClick={() => fileInputRef.current?.click()}
-            className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 text-white font-bold rounded-xl shadow-sm hover:bg-indigo-700 transition-all active:scale-95"
+            className="hidden md:flex items-center gap-2 px-5 py-2.5 md:py-3 bg-indigo-600 text-white font-bold rounded-xl md:rounded-2xl shadow-sm hover:bg-indigo-700 transition-all active:scale-95 whitespace-nowrap"
           >
-            <Upload className="w-4 h-4" />
+            <Upload className="w-4 h-4 md:w-5 md:h-5" />
             업로드
           </button>
+
           <input 
             type="file" 
             ref={fileInputRef} 
@@ -125,6 +126,14 @@ export function MasonryBoard() {
             className="hidden" 
           />
         </div>
+
+        {/* Mobile Upload FAB */}
+        <button
+          onClick={() => fileInputRef.current?.click()}
+          className="md:hidden fixed bottom-24 right-6 w-14 h-14 bg-indigo-600 text-white rounded-full flex items-center justify-center shadow-[0_8px_30px_rgba(79,70,229,0.4)] z-40 hover:bg-indigo-700 active:scale-90 transition-all"
+        >
+          <Upload className="w-6 h-6" />
+        </button>
 
         {/* Drag Drop Overlay */}
         <AnimatePresence>
@@ -143,12 +152,12 @@ export function MasonryBoard() {
 
         {/* Masonry Grid */}
         {items.length === 0 ? (
-          <div className="text-center py-32 flex flex-col items-center">
-            <div className="w-24 h-24 bg-white shadow-sm border border-slate-100 rounded-3xl flex items-center justify-center mb-6">
-              <ImageIcon className="w-12 h-12 text-indigo-200" />
+          <div className="text-center py-20 md:py-32 flex flex-col items-center">
+            <div className="w-20 h-20 md:w-24 md:h-24 bg-white shadow-sm border border-slate-100 rounded-3xl flex items-center justify-center mb-6">
+              <ImageIcon className="w-10 h-10 md:w-12 md:h-12 text-indigo-200" />
             </div>
-            <h3 className="text-xl font-extrabold text-slate-800 mb-2">영감을 업로드하세요</h3>
-            <p className="text-slate-500 font-medium mb-6 text-center">
+            <h3 className="text-lg md:text-xl font-extrabold text-slate-800 mb-2 truncate px-4 w-full">영감을 업로드하세요</h3>
+            <p className="text-slate-500 font-medium mb-6 text-center text-sm md:text-base px-4">
               파일을 드래그 앤 드롭하거나 업로드 버튼을 눌러<br/>나만의 핀터레스트 보드를 만들어보세요.
             </p>
           </div>

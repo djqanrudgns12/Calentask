@@ -235,8 +235,9 @@ export function MediaBoard() {
                 onClick={() => setActiveMediaId(item.id)}
               >
                 {/* Thumbnail */}
+                {/* 왜: 모바일 리스트 뷰에서 썸네일 폭을 좁게하여 텍스트 영역 확보 */}
                 <div 
-                  className={`relative ${viewMode === 'masonry' ? 'w-full' : 'w-64 shrink-0 aspect-video'}`}
+                  className={`relative ${viewMode === 'masonry' ? 'w-full' : 'w-32 md:w-64 shrink-0 aspect-video'}`}
                   style={{ backgroundColor: item.data?.color || '#0f172a' }}
                 >
                   {item.data?.thumbnail ? (
@@ -259,11 +260,14 @@ export function MediaBoard() {
                 </div>
 
                 {/* Info */}
-                <div className="p-5 flex-1 flex flex-col justify-between">
+                {/* 왜: 모바일 리스트 뷰에서 불필요한 패딩을 줄여 제목 길이 확보 */}
+                <div className="p-3 md:p-5 flex-1 flex flex-col justify-between overflow-hidden">
                   <div>
                     <div className="flex items-start justify-between gap-4">
-                      <h3 className="font-bold text-slate-800 text-lg leading-snug line-clamp-2">{item.title}</h3>
-                      <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-all shrink-0">
+                      {/* 왜: 글자 크기를 조금 줄이고 자동 줄바꿈 처리하여 아주 긴 글자도 잘림 방지 */}
+                      <h3 className="font-bold text-slate-800 text-base md:text-lg leading-snug line-clamp-2 break-all sm:break-words">{item.title}</h3>
+                      {/* 왜: 모바일 환경(터치기기)에서는 hover를 사용할 수 없으므로 항시 노출시키고, PC에서는 hover시에만 나타나도록 처리 */}
+                      <div className="flex gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-all shrink-0">
                         <button 
                           onClick={(e) => { e.stopPropagation(); setEditingCardId(item.id); setEditTitle(item.title); setEditUrl((item.data?.url as string) || ''); }}
                           className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-400"
@@ -307,9 +311,10 @@ export function MediaBoard() {
               className="absolute inset-0 bg-slate-900/90 backdrop-blur-lg"
               onClick={() => setActiveMediaId(null)}
             />
+            {/* 왜: 모바일 브라우저 주소창 등에 의해 모달 하단이 잘리는 현상 방지 */}
             <motion.div 
               layoutId={`media-${activeMedia.id}`}
-              className="relative w-full max-w-6xl bg-white rounded-3xl shadow-2xl overflow-hidden flex flex-col md:flex-row max-h-[90vh]"
+              className="relative w-full max-w-6xl bg-white rounded-3xl shadow-2xl overflow-hidden flex flex-col md:flex-row max-h-[85dvh] md:max-h-[90vh]"
             >
               {/* YouTube Player Wrapper */}
               <div className="w-full md:w-2/3 bg-black relative flex flex-col justify-center min-h-[30vh]">

@@ -176,15 +176,15 @@ export function TableBoard() {
         header: ({ column }: any) => {
           return (
             <div 
-              className="flex items-center gap-2 cursor-pointer select-none group w-full text-slate-500 font-bold text-xs"
+              className="flex items-center gap-1.5 md:gap-2 cursor-pointer select-none group w-full text-slate-500 font-bold text-xs md:text-sm whitespace-nowrap"
               onClick={column.getToggleSortingHandler()}
             >
               {getColIcon(col.type)}
-              {col.name}
+              <span className="truncate">{col.name}</span>
               {column.getIsSorted() ? (
-                <ArrowUpDown className="w-3 h-3 text-indigo-500 ml-auto" />
+                <ArrowUpDown className="w-3 h-3 text-indigo-500 ml-auto shrink-0" />
               ) : (
-                <ArrowUpDown className="w-3 h-3 text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity ml-auto" />
+                <ArrowUpDown className="w-3 h-3 text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity ml-auto shrink-0" />
               )}
             </div>
           );
@@ -225,7 +225,7 @@ export function TableBoard() {
               onClick={handleCellClick}
               onDoubleClick={handleDoubleClick}
               className={cn(
-                "w-full h-full min-h-[36px] px-3 py-2 flex items-center border-[1.5px] transition-colors overflow-hidden text-sm",
+                "w-full h-full min-h-[36px] px-2 md:px-3 py-1.5 md:py-2 flex items-center border-[1.5px] transition-colors overflow-hidden text-xs md:text-sm",
                 isActive ? "border-indigo-500 shadow-[inset_0_0_0_1px_rgba(99,102,241,0.2)] bg-indigo-50/10" : "border-transparent",
                 !isEditing && "cursor-cell select-none"
               )}
@@ -239,7 +239,7 @@ export function TableBoard() {
                     value={val ? new Date(val).toISOString().split('T')[0] : ''}
                     onChange={(e) => handleUpdateCell(item.id, col.id, e.target.value)}
                     onBlur={() => setIsEditing(false)}
-                    className="w-full bg-transparent border-none outline-none p-0 text-sm"
+                    className="w-full bg-transparent border-none outline-none p-0 text-xs md:text-sm"
                   />
                 ) : col.type === 'status' ? (
                   <select 
@@ -248,7 +248,7 @@ export function TableBoard() {
                     value={val || 'todo'}
                     onChange={(e) => { handleUpdateCell(item.id, col.id, e.target.value); setIsEditing(false); }}
                     onBlur={() => setIsEditing(false)}
-                    className="w-full bg-transparent border-none outline-none p-0 text-sm"
+                    className="w-full bg-transparent border-none outline-none p-0 text-xs md:text-sm"
                   >
                     <option value="todo">진행 전</option>
                     <option value="in-progress">진행 중</option>
@@ -265,14 +265,14 @@ export function TableBoard() {
                        handleUpdateCell(item.id, col.id, finalVal);
                     }}
                     onBlur={() => setIsEditing(false)}
-                    className="w-full bg-transparent border-none outline-none p-0 text-sm font-semibold text-slate-800"
+                    className="w-full bg-transparent border-none outline-none p-0 text-xs md:text-sm font-semibold text-slate-800"
                   />
                 )
               ) : (
-                <div className={cn("truncate", col.type === 'number' && "text-right w-full font-mono text-slate-600", col.id === 'title' && "font-bold text-slate-900")}>
+                <div className={cn("truncate whitespace-nowrap", col.type === 'number' && "text-right w-full font-mono text-slate-600", col.id === 'title' && "font-bold text-slate-900")}>
                   {col.type === 'status' ? (
                      <span className={cn(
-                       "px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider",
+                       "px-2 md:px-2.5 py-0.5 md:py-1 rounded-full text-[10px] md:text-xs font-bold uppercase tracking-wider",
                        val === 'done' ? 'bg-emerald-100 text-emerald-700' : val === 'in-progress' ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-600'
                      )}>
                        {val === 'done' ? '완료' : val === 'in-progress' ? '진행 중' : '진행 전'}
@@ -322,10 +322,10 @@ export function TableBoard() {
   });
 
   return (
-    <div className="w-full h-full bg-white flex flex-col relative overflow-hidden focus:outline-none" tabIndex={0} ref={tableRef} onPaste={handlePaste}>
+    <div className="w-full h-full bg-white flex flex-col relative overflow-hidden focus:outline-none pb-24 md:pb-0" tabIndex={0} ref={tableRef} onPaste={handlePaste}>
       {/* Toolbar */}
-      <div className="px-8 py-4 border-b border-slate-100 flex items-center justify-between shrink-0 bg-white">
-        <div className="flex items-center gap-4">
+      <div className="px-4 md:px-8 py-3 md:py-4 border-b border-slate-100 flex items-center justify-between shrink-0 bg-white gap-2 overflow-x-auto hide-scrollbar">
+        <div className="flex items-center gap-2 md:gap-4 shrink-0">
           <div className="relative">
             <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
             <input 
@@ -333,16 +333,16 @@ export function TableBoard() {
               value={globalFilter ?? ''}
               onChange={(e) => setGlobalFilter(e.target.value)}
               placeholder="전체 셀 검색..."
-              className="pl-9 pr-4 py-2 bg-slate-50 border-none rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:bg-white transition-all w-72 shadow-sm font-medium"
+              className="pl-9 pr-4 py-1.5 md:py-2 bg-slate-50 border-none rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:bg-white transition-all w-48 md:w-72 shadow-sm font-medium"
             />
           </div>
-          <button className="flex items-center gap-2 px-3 py-2 text-sm font-bold text-slate-600 hover:bg-slate-100 rounded-lg transition-colors">
+          <button className="flex items-center gap-1.5 md:gap-2 px-2 md:px-3 py-1.5 md:py-2 text-sm font-bold text-slate-600 hover:bg-slate-100 rounded-lg transition-colors whitespace-nowrap">
             <Settings2 className="w-4 h-4" /> 필터
           </button>
         </div>
-        <div>
-          <button className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold rounded-lg transition-all shadow-md shadow-emerald-900/10 active:scale-95">
-            <Download className="w-4 h-4" /> CSV 내보내기
+        <div className="shrink-0">
+          <button className="flex items-center gap-1.5 md:gap-2 px-3 md:px-4 py-1.5 md:py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold rounded-lg transition-all shadow-md shadow-emerald-900/10 active:scale-95 whitespace-nowrap">
+            <Download className="w-4 h-4" /> <span className="hidden md:inline">CSV 내보내기</span><span className="md:hidden">CSV</span>
           </button>
         </div>
       </div>
@@ -357,7 +357,7 @@ export function TableBoard() {
                   {headerGroup.headers.map(header => (
                     <th 
                       key={header.id} 
-                      className="px-2 py-2.5 font-bold text-slate-600 border-r border-b border-slate-200/60 last:border-r-0 hover:bg-slate-200/50 transition-colors"
+                      className="px-2 md:px-3 py-2 md:py-2.5 font-bold text-slate-600 border-r border-b border-slate-200/60 last:border-r-0 hover:bg-slate-200/50 transition-colors whitespace-nowrap"
                       style={{ width: header.getSize() !== 150 ? header.getSize() : 'auto' }}
                     >
                       {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
@@ -404,13 +404,13 @@ export function TableBoard() {
           </table>
           
           {items.length === 0 && (
-             <div className="p-16 text-center flex flex-col items-center justify-center">
-                <div className="w-16 h-16 bg-indigo-50 rounded-2xl flex items-center justify-center mb-6 shadow-inner">
-                   <CheckSquare className="w-8 h-8 text-indigo-400" />
+             <div className="p-8 md:p-16 text-center flex flex-col items-center justify-center h-full pb-32">
+                <div className="w-12 h-12 md:w-16 md:h-16 bg-indigo-50 rounded-2xl flex items-center justify-center mb-4 md:mb-6 shadow-inner">
+                   <CheckSquare className="w-6 h-6 md:w-8 md:h-8 text-indigo-400" />
                 </div>
-                <h3 className="text-xl font-black text-slate-800 mb-2">데이터베이스를 구축하세요</h3>
-                <p className="text-slate-500 font-medium text-sm mb-6 max-w-sm text-center">방향키로 이동하고, Enter로 편집하며, Ctrl+V로 붙여넣는 강력한 스프레드시트를 경험하세요.</p>
-                <button onClick={handleAddRow} className="px-6 py-2.5 bg-slate-900 text-white rounded-xl font-bold text-sm shadow-lg hover:bg-slate-800 transition-all active:scale-95">
+                <h3 className="text-lg md:text-xl font-black text-slate-800 mb-2 truncate px-4 w-full">데이터베이스를 구축하세요</h3>
+                <p className="text-slate-500 font-medium text-xs md:text-sm mb-6 max-w-sm text-center px-4">방향키로 이동하고, Enter로 편집하며, Ctrl+V로 붙여넣는 강력한 스프레드시트를 경험하세요.</p>
+                <button onClick={handleAddRow} className="px-5 md:px-6 py-2 md:py-2.5 bg-slate-900 text-white rounded-xl font-bold text-xs md:text-sm shadow-lg hover:bg-slate-800 transition-all active:scale-95 whitespace-nowrap">
                   첫 행 만들기
                 </button>
              </div>

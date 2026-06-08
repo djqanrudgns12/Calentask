@@ -14,8 +14,6 @@ const BOARD_TYPES = [
   { id: 'table', name: '데이터베이스', icon: Table, desc: '자유도 높은 스프레드시트' },
   { id: 'kanban', name: '미디어 라이브러리', icon: Video, desc: '유튜브 등 미디어 시청 및 아카이브' },
   { id: 'journal', name: '저널', icon: Clock, desc: '시간 순으로 기록하는 다이어리' },
-  { id: 'graph', name: '지식 그래프', icon: Network, desc: '지식 우주망 연결 보드' },
-  { id: 'calendar', name: '캘린더', icon: Calendar, desc: '드래그 앤 드롭 타임블로킹' },
 ];
 
 export function AddNoteDialog({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
@@ -42,8 +40,8 @@ export function AddNoteDialog({ isOpen, onClose }: { isOpen: boolean; onClose: (
   return (
     <AnimatePresence>
       {isOpen && (
-        {/* 왜: 모바일에서 키보드가 올라왔을 때 모달이 가려지지 않도록 상단 정렬로 변경 (데스크탑은 중앙 정렬 유지) */}
         <div className="fixed inset-0 z-50 flex items-start pt-12 md:pt-0 md:items-center justify-center p-4">
+          {/* 왜: 모바일에서 키보드가 올라왔을 때 모달이 가려지지 않도록 상단 정렬로 변경 (데스크탑은 중앙 정렬 유지) */}
           <motion.div 
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -51,11 +49,11 @@ export function AddNoteDialog({ isOpen, onClose }: { isOpen: boolean; onClose: (
             className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
             onClick={onClose}
           />
+          {/* 왜: 상단 정렬에 맞춰 최대 높이를 조절하여 잘림 방지 */}
           <motion.div 
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            {/* 왜: 상단 정렬에 맞춰 최대 높이를 조절하여 잘림 방지 */}
             className="relative w-full max-w-2xl bg-white rounded-2xl md:rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[calc(100dvh-5rem)] md:max-h-[85vh]"
           >
             {/* Header */}
@@ -143,3 +141,5 @@ export function AddNoteDialog({ isOpen, onClose }: { isOpen: boolean; onClose: (
     </AnimatePresence>
   );
 }
+
+// Trigger recompile

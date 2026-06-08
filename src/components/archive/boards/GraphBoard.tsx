@@ -1,21 +1,23 @@
 'use client'
 
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo, useState, useEffect, useRef, useCallback } from 'react';
 import dynamic from 'next/dynamic';
 import { useArchiveStore } from '@/store/useArchiveStore';
-import { Network, Link as LinkIcon, ZoomIn, ZoomOut, Maximize } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { Network, X, Search, FileText, CalendarDays, Moon, Sun, ChevronUp, ChevronDown } from 'lucide-react';
+import { motion, AnimatePresence, useDragControls } from 'framer-motion';
 
-// react-force-graph-2d must be dynamically imported with ssr: false 
-// because it relies on window and canvas API which are not available on server
 const ForceGraph2D = dynamic(() => import('react-force-graph-2d'), { ssr: false });
 
-const EMPTY_ARRAY: any[] = [];
-
-export function GraphBoard() {
-  const { items, tabs, activeTabId, setActiveTabId } = useArchiveStore();
+export function GraphBoard({ onClose }: { onClose?: () => void }) {
+  const { items, tabs, setActiveTabId } = useArchiveStore();
   const [dimensions, setDimensions] = useState({ width: 800, height: 600 });
   const [selectedNode, setSelectedNode] = useState<any>(null);
+  const [isDarkMode, setIsDarkMode] = useState(false); // Default: Light mode
+  const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false); // For mobile bottom sheet
+  
+  const graphRef = useRef<any>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const dragControls = useDragControls();
 
   // Resize observer to keep the canvas responsive
   useEffect(() => {
@@ -33,148 +35,390 @@ export function GraphBoard() {
 
     resizeObserver.observe(container);
     return () => resizeObserver.disconnect();
-  }, []);
+  }, [isMobileDrawerOpen]); // Re-measure if drawer state changes
 
-  // Compute graph data (Nodes = items/tags, Links = shared tags)
+  // Data Engine & Cross-linking
   const graphData = useMemo(() => {
     const nodes: any[] = [];
     const links: any[] = [];
-    const tagMap: Record<string, string[]> = {}; // tag -> item IDs
+    const allItems = Object.values(items).flat();
 
-    // 1. Gather all items
-    Object.values(items).flat().forEach(item => {
+    tabs.forEach((tab) => {
+      const tabItems = allItems.filter(item => item.boardId === tab.id);
       nodes.push({
-        id: item.id,
+        id: `hub-${tab.id}`,
+        name: tab.name || '제목 없음',
+        group: 'hub',
+        val: Math.max(8, tabItems.length * 3),
+        tabId: tab.id,
+        itemCount: tabItems.length
+      });
+    });
+
+    const stopWords = new Set(['이', '가', '은', '는', '에', '를', '의', '도', '및', '또는', '수', '할', '것']);
+    const getKeywords = (text: string) => {
+      if (!text) return [];
+      return text.split(/[\s,.'"]+/).filter(w => w.length > 1 && !stopWords.has(w));
+    };
+
+    const satelliteMap = new Map();
+
+    allItems.forEach(item => {
+      const satelliteId = `sat-${item.id}`;
+      const rawText = item.content ? String(item.content).replace(/<[^>]+>/g, '') : '';
+      const keywords = getKeywords((item.title || '') + ' ' + rawText);
+      
+      const satellite = {
+        id: satelliteId,
         name: item.title || '무제',
-        group: 'item',
+        group: 'satellite',
         val: 3,
-        color: '#4f46e5',
-        boardId: item.boardId
-      });
+        boardId: item.boardId,
+        snippet: rawText.substring(0, 80) + (rawText.length > 80 ? '...' : ''),
+        createdAt: item.createdAt,
+        keywords,
+        rawItem: item
+      };
+      
+      nodes.push(satellite);
+      satelliteMap.set(satelliteId, satellite);
 
-      if (item.tags) {
-        item.tags.forEach(tag => {
-          if (!tagMap[tag]) tagMap[tag] = [];
-          tagMap[tag].push(item.id);
-        });
+      links.push({
+        source: satelliteId,
+        target: `hub-${item.boardId}`,
+        value: 1,
+        type: 'gravity'
+      });
+    });
+
+    const satellites = Array.from(satelliteMap.values());
+    for (let i = 0; i < satellites.length; i++) {
+      for (let j = i + 1; j < satellites.length; j++) {
+        const satA = satellites[i];
+        const satB = satellites[j];
+        
+        if (satA.boardId === satB.boardId) continue;
+
+        const commonKeywords = satA.keywords.filter((k: string) => satB.keywords.includes(k));
+        if (commonKeywords.length > 0) {
+          links.push({
+            source: satA.id,
+            target: satB.id,
+            value: 0.1,
+            type: 'crosslink',
+            commonWords: commonKeywords
+          });
+        }
       }
-    });
+    }
 
-    // 2. Add Tag nodes and link items to tags
-    Object.entries(tagMap).forEach(([tag, itemIds]) => {
-      const tagId = `tag-${tag}`;
-      nodes.push({
-        id: tagId,
-        name: `#${tag}`,
-        group: 'tag',
-        val: Math.max(2, itemIds.length), // size by popularity
-        color: '#f43f5e'
-      });
+    return { nodes, links, allItems, satellites };
+  }, [items, tabs]);
 
-      itemIds.forEach(itemId => {
-        links.push({
-          source: itemId,
-          target: tagId,
-          value: 1
-        });
-      });
-    });
+  useEffect(() => {
+    if (graphRef.current) {
+      const fg = graphRef.current;
+      fg.d3Force('charge').strength(-150);
+      fg.d3Force('link').distance((link: any) => link.type === 'gravity' ? 30 : 150);
+    }
+  }, [graphData]);
 
-    return { nodes, links };
-  }, [items]);
-
-  const handleNodeClick = (node: any) => {
+  const handleNodeClick = useCallback((node: any) => {
     setSelectedNode(node);
+    
+    // Zoom to Node
+    if (graphRef.current) {
+      // Adjust center if drawer is open on mobile
+      const yOffset = window.innerWidth < 768 && isMobileDrawerOpen ? -150 : 0;
+      graphRef.current.centerAt(node.x, node.y + yOffset, 800);
+      graphRef.current.zoom(2.5, 800);
+    }
+
+    // Scroll Panel
+    if (panelRef.current) {
+      const el = document.getElementById(`card-${node.id}`);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }
+  }, [isMobileDrawerOpen]);
+
+  const handleCardClick = useCallback((nodeId: string) => {
+    const node = graphData.nodes.find(n => n.id === nodeId);
+    if (node) handleNodeClick(node);
+    // On mobile, optionally close or minimize drawer slightly if desired, but let's keep it open to show highlight
+  }, [graphData.nodes, handleNodeClick]);
+
+  // Dynamic Theme Colors
+  const themeColors = {
+    hubGlow: isDarkMode ? 'rgba(250, 204, 21, 0.8)' : 'rgba(79, 70, 229, 0.6)',
+    hubCore: isDarkMode ? 'rgba(250, 204, 21, 1)' : 'rgba(79, 70, 229, 1)',
+    hubText: isDarkMode ? 'rgba(250, 204, 21, 1)' : 'rgba(67, 56, 202, 1)',
+    satGlow: isDarkMode ? 'rgba(255, 255, 255, 0.8)' : 'rgba(51, 65, 85, 0.4)',
+    satCore: isDarkMode ? 'rgba(255, 255, 255, 1)' : 'rgba(51, 65, 85, 1)',
+    satText: isDarkMode ? 'rgba(255, 255, 255, 0.7)' : 'rgba(71, 85, 105, 1)',
+    linkGravity: isDarkMode ? 'rgba(255,255,255,0.15)' : 'rgba(71, 85, 105, 0.15)',
+    linkCross: isDarkMode ? 'rgba(129, 140, 248, 0.08)' : 'rgba(99, 102, 241, 0.05)',
+    particleGravity: isDarkMode ? 'rgba(255,255,255,0.8)' : 'rgba(79, 70, 229, 0.6)',
+    particleCross: isDarkMode ? 'rgba(129, 140, 248, 0.5)' : 'rgba(99, 102, 241, 0.4)'
   };
 
+  const drawNode = useCallback((node: any, ctx: CanvasRenderingContext2D, globalScale: number) => {
+    const isHub = node.group === 'hub';
+    
+    let isSelected = false;
+    if (selectedNode) {
+      if (selectedNode.id === node.id) isSelected = true;
+      else if (selectedNode.group === 'hub' && node.boardId === selectedNode.tabId) isSelected = true;
+      else if (selectedNode.group === 'satellite' && node.tabId === selectedNode.boardId) isSelected = true;
+    } else {
+      isSelected = true;
+    }
+    
+    const dim = selectedNode && !isSelected;
+    const r = Math.sqrt(Math.max(0, node.val)) * (isHub ? 1.5 : 1);
+    
+    ctx.beginPath();
+    ctx.arc(node.x, node.y, r, 0, 2 * Math.PI, false);
+    
+    if (isHub) {
+      ctx.fillStyle = dim ? themeColors.hubGlow.replace('0.6', '0.1').replace('0.8', '0.1') : themeColors.hubCore;
+      ctx.shadowColor = dim ? 'transparent' : themeColors.hubGlow;
+      ctx.shadowBlur = dim ? 0 : 20 * globalScale;
+    } else {
+      ctx.fillStyle = dim ? themeColors.satGlow.replace('0.4', '0.05').replace('0.8', '0.1') : themeColors.satCore;
+      ctx.shadowColor = dim ? 'transparent' : themeColors.satGlow;
+      ctx.shadowBlur = dim ? 0 : 10 * globalScale;
+    }
+    
+    ctx.fill();
+    ctx.shadowBlur = 0; 
+
+    // Draw typography
+    if (!dim && globalScale > 2) {
+      const fontSize = isHub ? 10/globalScale : 6/globalScale;
+      ctx.font = `bold ${fontSize}px Inter, sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillStyle = isHub ? themeColors.hubText : themeColors.satText;
+      ctx.fillText(node.name, node.x, node.y + r + (6/globalScale));
+    }
+  }, [selectedNode, themeColors]);
+
+  // Shared Catalog Content to avoid duplication between Desktop and Mobile views
+  const CatalogContent = (
+    <>
+      <div className={`p-4 md:p-6 border-b shrink-0 ${isDarkMode ? 'border-white/10' : 'border-slate-200'}`}>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className={`text-lg md:text-xl font-bold tracking-tight flex items-center gap-2 ${isDarkMode ? 'text-white' : 'text-slate-800'}`}>
+            <Search className={`w-4 h-4 md:w-5 md:h-5 ${isDarkMode ? 'text-indigo-400' : 'text-indigo-600'}`} />
+            아카이브 카탈로그
+          </h3>
+          <div className="hidden md:block">
+            {onClose && (
+              <button onClick={onClose} className={`p-1.5 rounded-lg transition-colors ${isDarkMode ? 'text-slate-400 hover:text-white hover:bg-white/10' : 'text-slate-500 hover:text-slate-800 hover:bg-slate-200'}`}>
+                <X className="w-5 h-5" />
+              </button>
+            )}
+          </div>
+        </div>
+        
+        <div className="flex gap-2 md:gap-3">
+          <div className={`flex-1 rounded-xl p-3 border ${isDarkMode ? 'bg-white/5 border-white/5' : 'bg-white border-slate-200 shadow-sm'}`}>
+            <p className={`text-[10px] md:text-xs font-bold mb-1 ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>총 항목 수</p>
+            <p className={`text-xl md:text-2xl font-black ${isDarkMode ? 'text-white' : 'text-slate-800'}`}>{graphData.satellites.length}<span className={`text-[10px] md:text-sm font-medium ml-1 ${isDarkMode ? 'text-slate-500' : 'text-slate-400'}`}>Items</span></p>
+          </div>
+          <div className={`flex-1 rounded-xl p-3 border ${isDarkMode ? 'bg-white/5 border-white/5' : 'bg-white border-slate-200 shadow-sm'}`}>
+            <p className={`text-[10px] md:text-xs font-bold mb-1 ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>연결선</p>
+            <p className={`text-xl md:text-2xl font-black ${isDarkMode ? 'text-indigo-300' : 'text-indigo-600'}`}>{graphData.links.length}<span className={`text-[10px] md:text-sm font-medium ml-1 ${isDarkMode ? 'text-indigo-500/50' : 'text-indigo-400'}`}>Edges</span></p>
+          </div>
+        </div>
+      </div>
+
+      <div ref={panelRef} className="flex-1 overflow-y-auto p-3 md:p-4 space-y-2 md:space-y-3 custom-scrollbar">
+        {graphData.satellites.length === 0 ? (
+          <p className={`text-sm text-center mt-10 ${isDarkMode ? 'text-slate-500' : 'text-slate-400'}`}>기록된 항목이 없습니다.</p>
+        ) : (
+          graphData.satellites.map((sat: any) => {
+            const isCardSelected = selectedNode && (selectedNode.id === sat.id);
+            return (
+              <button
+                key={sat.id}
+                id={`card-${sat.id}`}
+                onClick={() => handleCardClick(sat.id)}
+                className={`w-full text-left p-3 md:p-4 rounded-xl md:rounded-2xl border transition-all duration-300 ${
+                  isCardSelected 
+                    ? isDarkMode 
+                      ? 'bg-indigo-500/20 border-indigo-400/50 shadow-[0_0_20px_rgba(129,140,248,0.2)]'
+                      : 'bg-indigo-50 border-indigo-500 shadow-sm ring-1 ring-indigo-500/20'
+                    : isDarkMode
+                      ? 'bg-white/5 border-white/5 hover:bg-white/10 hover:border-white/20'
+                      : 'bg-white border-slate-200 hover:border-indigo-300 hover:bg-slate-50 shadow-sm'
+                }`}
+              >
+                <div className="flex items-start justify-between mb-1 md:mb-2">
+                  <h4 className={`font-bold text-sm md:text-base leading-tight pr-2 truncate ${isDarkMode ? 'text-slate-100' : 'text-slate-800'}`}>
+                    {sat.name}
+                  </h4>
+                  <span className={`shrink-0 px-2 py-0.5 rounded text-[9px] md:text-[10px] font-bold flex items-center gap-1 ${isDarkMode ? 'bg-white/10 text-slate-300' : 'bg-slate-100 text-slate-500'}`}>
+                    <FileText className="w-3 h-3" />
+                    Item
+                  </span>
+                </div>
+                
+                {sat.snippet && (
+                  <p className={`text-[11px] md:text-xs line-clamp-1 md:line-clamp-2 leading-relaxed mb-2 md:mb-3 ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>
+                    {sat.snippet}
+                  </p>
+                )}
+                
+                <div className={`flex items-center justify-between mt-auto pt-2 border-t ${isDarkMode ? 'border-white/5' : 'border-slate-100'}`}>
+                  <div className={`flex items-center gap-1 md:gap-1.5 text-[9px] md:text-[10px] font-medium ${isDarkMode ? 'text-slate-500' : 'text-slate-400'}`}>
+                    <CalendarDays className="w-3 h-3" />
+                    {new Date(sat.createdAt).toLocaleDateString()}
+                  </div>
+                  {isCardSelected && (
+                    <div 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setActiveTabId(sat.boardId);
+                        if (onClose) onClose();
+                      }}
+                      className="bg-indigo-600 hover:bg-indigo-700 text-white text-[9px] md:text-[10px] font-bold px-2 py-1 md:px-2.5 md:py-1 rounded-md transition-colors"
+                    >
+                      노트로 이동
+                    </div>
+                  )}
+                </div>
+              </button>
+            );
+          })
+        )}
+      </div>
+    </>
+  );
+
   return (
-    <div className="w-full h-full bg-[#0f172a] rounded-3xl overflow-hidden relative shadow-inner flex flex-col">
-      {/* Header Overlay */}
-      <div className="absolute top-6 left-6 z-10 text-white pointer-events-none">
-        <h2 className="text-2xl font-black flex items-center gap-2 tracking-tight">
-          <Network className="w-6 h-6 text-indigo-400" />
-          지식 그래프
-        </h2>
-        <p className="text-slate-400 text-sm font-medium mt-1 max-w-sm leading-relaxed">
-          내 노션과 노트들이 태그를 중심으로 어떻게 연결되어 있는지 우주처럼 탐험해보세요.
-        </p>
-      </div>
+    <div className={`w-full h-full rounded-3xl overflow-hidden relative shadow-2xl flex border transition-colors duration-500 ${isDarkMode ? 'bg-slate-900 border-slate-700/50' : 'bg-slate-50 border-slate-300/50'}`}>
+      
+      {/* Background ambient gradient */}
+      <div className={`absolute inset-0 pointer-events-none transition-colors duration-500 ${isDarkMode ? 'bg-gradient-to-br from-slate-900 via-[#0a0f1c] to-indigo-950/20' : 'bg-gradient-to-br from-slate-50 via-white to-indigo-50'}`} />
 
-      {/* Stats Overlay */}
-      <div className="absolute top-6 right-6 z-10 flex gap-2">
-        <div className="bg-white/10 backdrop-blur-md px-4 py-2 rounded-xl text-white font-bold text-sm border border-white/10 shadow-lg">
-          노드 {graphData.nodes.length}개
-        </div>
-        <div className="bg-white/10 backdrop-blur-md px-4 py-2 rounded-xl text-white font-bold text-sm border border-white/10 shadow-lg flex items-center gap-1.5">
-          <LinkIcon className="w-3.5 h-3.5 text-rose-400" /> 연결 {graphData.links.length}개
-        </div>
-      </div>
+      {/* Main Graph Area */}
+      <div id="graph-container" className="flex-1 h-full relative" onClick={() => setSelectedNode(null)}>
+        {/* Header Overlay */}
+        <div className="absolute top-4 left-4 md:top-6 md:left-6 z-10 flex flex-col md:flex-row md:items-center gap-2 md:gap-4 pointer-events-none">
+          <div className="flex items-center gap-3 pointer-events-auto">
+            <h2 className={`text-2xl md:text-3xl font-black flex items-center gap-2 tracking-tight bg-clip-text text-transparent ${isDarkMode ? 'bg-gradient-to-r from-white to-slate-400' : 'bg-gradient-to-r from-slate-800 to-indigo-800'}`}>
+              <Network className={`w-6 h-6 md:w-7 md:h-7 ${isDarkMode ? 'text-white' : 'text-slate-800'}`} />
+              시냅스
+            </h2>
+            
+            {/* Theme Toggle Button */}
+            <button
+              onClick={(e) => { e.stopPropagation(); setIsDarkMode(!isDarkMode); }}
+              className={`p-2 rounded-full backdrop-blur-md transition-all shadow-sm ${isDarkMode ? 'bg-white/10 hover:bg-white/20 text-yellow-400' : 'bg-white/80 hover:bg-white text-indigo-600 border border-slate-200'}`}
+              title={isDarkMode ? "라이트 모드로 전환" : "다크 모드로 전환"}
+            >
+              {isDarkMode ? <Sun className="w-4 h-4 md:w-5 md:h-5" /> : <Moon className="w-4 h-4 md:w-5 md:h-5" />}
+            </button>
 
-      {/* Graph Area */}
-      <div id="graph-container" className="flex-1 w-full relative">
+            {/* Mobile Close Button (Top Left) */}
+            <div className="md:hidden">
+               {onClose && (
+                <button 
+                  onClick={onClose}
+                  className={`p-2 rounded-full backdrop-blur-md transition-all shadow-sm ${isDarkMode ? 'bg-white/10 text-white' : 'bg-white/80 text-slate-800 border border-slate-200'}`}
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
+            </div>
+          </div>
+          <p className={`hidden md:block text-sm font-medium max-w-sm leading-relaxed ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>
+            모든 지식이 유기적으로 연결된 우주망입니다.
+          </p>
+        </div>
+
         {graphData.nodes.length > 0 ? (
           <ForceGraph2D
+            ref={graphRef}
             width={dimensions.width}
             height={dimensions.height}
             graphData={graphData}
+            nodeCanvasObject={drawNode}
+            linkColor={(link: any) => {
+              if (selectedNode) {
+                const isSelected = selectedNode.id === link.source.id || selectedNode.id === link.target.id;
+                if (!isSelected) return 'transparent';
+              }
+              return link.type === 'gravity' ? themeColors.linkGravity : themeColors.linkCross;
+            }}
+            linkWidth={(link: any) => link.type === 'gravity' ? 1.5 : 0.5}
+            linkDirectionalParticles={(link: any) => {
+              if (selectedNode && !(selectedNode.id === link.source.id || selectedNode.id === link.target.id)) return 0;
+              return link.type === 'gravity' ? 2 : 1;
+            }}
+            linkDirectionalParticleWidth={(link: any) => link.type === 'gravity' ? 2 : 1}
+            linkDirectionalParticleColor={(link: any) => link.type === 'gravity' ? themeColors.particleGravity : themeColors.particleCross}
+            linkDirectionalParticleSpeed={(link: any) => link.type === 'gravity' ? 0.005 : 0.002}
+            backgroundColor="transparent"
             nodeLabel="name"
-            nodeColor="color"
-            nodeRelSize={6}
-            linkColor={() => 'rgba(255,255,255,0.2)'}
-            backgroundColor="#0f172a"
             onNodeClick={handleNodeClick}
-            // particles for connections
-            linkDirectionalParticles={2}
-            linkDirectionalParticleWidth={2}
-            d3VelocityDecay={0.3}
+            onNodeHover={(node: any) => {
+              const canvas = document.querySelector('#graph-container canvas') as HTMLCanvasElement;
+              if (canvas) canvas.style.cursor = node ? 'pointer' : 'default';
+            }}
+            d3VelocityDecay={0.2}
           />
         ) : (
-          <div className="flex items-center justify-center h-full text-slate-500 font-medium">
-            연결할 지식 데이터가 없습니다. 노트를 작성하고 태그를 달아보세요!
+          <div className={`flex items-center justify-center h-full font-medium z-10 relative ${isDarkMode ? 'text-slate-500' : 'text-slate-400'}`}>
+            연결할 지식 데이터가 없습니다. 아카이브에서 노트를 작성해보세요.
           </div>
         )}
       </div>
 
-      {/* Details Panel */}
-      {selectedNode && (
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="absolute bottom-6 left-6 z-10 bg-white/10 backdrop-blur-xl border border-white/20 p-5 rounded-2xl w-80 shadow-2xl text-white"
+      {/* Desktop Panel */}
+      <motion.div 
+        initial={{ x: 400, opacity: 0 }}
+        animate={{ x: 0, opacity: 1 }}
+        className={`hidden md:flex w-80 md:w-96 h-full flex-col z-20 shrink-0 border-l ${isDarkMode ? 'bg-slate-800/60 backdrop-blur-3xl border-white/10' : 'bg-white/80 backdrop-blur-3xl border-slate-200'}`}
+      >
+        {CatalogContent}
+      </motion.div>
+
+      {/* Mobile Bottom Sheet Drawer */}
+      <AnimatePresence>
+        <motion.div
+          drag="y"
+          dragConstraints={{ top: 0, bottom: 0 }}
+          dragElastic={0.2}
+          onDragEnd={(e, info) => {
+            if (info.offset.y > 50) setIsMobileDrawerOpen(false);
+            else if (info.offset.y < -50) setIsMobileDrawerOpen(true);
+          }}
+          initial={{ y: 'calc(100% - 60px)' }}
+          animate={{ y: isMobileDrawerOpen ? 0 : 'calc(100% - 60px)' }}
+          transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+          className={`md:hidden absolute bottom-0 left-0 right-0 h-[70vh] flex flex-col z-30 rounded-t-3xl shadow-[0_-10px_40px_rgba(0,0,0,0.1)] border-t ${isDarkMode ? 'bg-slate-800/95 border-white/10' : 'bg-white/95 border-slate-200'}`}
         >
-          <div className="flex items-start justify-between mb-3">
-            <h3 className="font-bold text-lg leading-tight truncate pr-4">
-              {selectedNode.name}
-            </h3>
-            <span className={`text-xs px-2 py-0.5 rounded-full font-bold ${selectedNode.group === 'tag' ? 'bg-rose-500/20 text-rose-300' : 'bg-indigo-500/20 text-indigo-300'}`}>
-              {selectedNode.group === 'tag' ? '태그' : '노트'}
-            </span>
+          {/* Drawer Handle */}
+          <div 
+            className="w-full flex flex-col items-center justify-center pt-3 pb-2 cursor-grab active:cursor-grabbing shrink-0"
+            onClick={() => setIsMobileDrawerOpen(!isMobileDrawerOpen)}
+          >
+            <div className={`w-12 h-1.5 rounded-full mb-2 ${isDarkMode ? 'bg-slate-600' : 'bg-slate-300'}`} />
+            <div className={`text-[10px] font-bold flex items-center gap-1 ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>
+              {isMobileDrawerOpen ? <ChevronDown className="w-3 h-3" /> : <ChevronUp className="w-3 h-3" />}
+              {isMobileDrawerOpen ? '스와이프하여 닫기' : '스와이프하여 카탈로그 열기'}
+            </div>
           </div>
           
-          <p className="text-slate-300 text-sm font-medium mb-4">
-            {selectedNode.group === 'tag' 
-              ? `이 태그에 연결된 노트 수: ${selectedNode.val}` 
-              : `이 노트는 그래프의 한 축을 담당하고 있습니다.`}
-          </p>
-
-          <div className="flex gap-2">
-            {selectedNode.group === 'item' && (
-              <button 
-                onClick={() => setActiveTabId(selectedNode.boardId)}
-                className="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-bold py-2 rounded-xl transition-colors shadow-lg"
-              >
-                노트로 이동
-              </button>
-            )}
-            <button 
-              onClick={() => setSelectedNode(null)}
-              className="flex-1 bg-white/10 hover:bg-white/20 text-white text-sm font-bold py-2 rounded-xl transition-colors"
-            >
-              닫기
-            </button>
+          <div className="flex-1 overflow-hidden flex flex-col pointer-events-auto">
+            {CatalogContent}
           </div>
         </motion.div>
-      )}
+      </AnimatePresence>
     </div>
   );
 }

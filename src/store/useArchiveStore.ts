@@ -45,6 +45,7 @@ interface ArchiveState {
   addTab: (tab: Partial<ArchiveTab>) => Promise<void>;
   updateTab: (id: string, updates: Partial<ArchiveTab>) => Promise<void>;
   deleteTab: (id: string) => Promise<void>;
+  reorderTabs: (newTabs: ArchiveTab[]) => Promise<void>;
   
   // Legacy setTabs for compatibility
   setTabs: (tabs: ArchiveTab[]) => void;
@@ -295,6 +296,27 @@ export const useArchiveStore = create<ArchiveState>()(
   },
 
   setTabs: (tabs) => set({ tabs }),
+
+  reorderTabs: async (newTabs) => {
+    const prevTabs = get().tabs;
+    // 새로 들어온 배열 순서대로 position 값을 갱신
+    const reorderedTabs = newTabs.map((tab, idx) => ({ ...tab, position: idx }));
+    
+    // 즉각적인 UI 반영 (낙관적 업데이트)
+    set({ tabs: reorderedTabs });
+
+    try {
+      // 서버에 변경된 순서 반영
+      await Promise.all(
+        reorderedTabs.map(tab => 
+          updateArchiveTab(tab.id, { position: tab.position })
+        )
+      );
+    } catch (error) {
+      console.error('Failed to reorder tabs:', error);
+      set({ tabs: prevTabs }); // 롤백
+    }
+  },
 
   isCommandPaletteOpen: false,
   setCommandPaletteOpen: (open) => set({ isCommandPaletteOpen: open }),
