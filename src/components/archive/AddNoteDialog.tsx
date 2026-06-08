@@ -42,7 +42,8 @@ export function AddNoteDialog({ isOpen, onClose }: { isOpen: boolean; onClose: (
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        {/* 왜: 모바일에서 키보드가 올라왔을 때 모달이 가려지지 않도록 상단 정렬로 변경 (데스크탑은 중앙 정렬 유지) */}
+        <div className="fixed inset-0 z-50 flex items-start pt-12 md:pt-0 md:items-center justify-center p-4">
           <motion.div 
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -54,7 +55,8 @@ export function AddNoteDialog({ isOpen, onClose }: { isOpen: boolean; onClose: (
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            className="relative w-full max-w-2xl bg-white rounded-2xl md:rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[85dvh] md:max-h-[85vh]"
+            {/* 왜: 상단 정렬에 맞춰 최대 높이를 조절하여 잘림 방지 */}
+            className="relative w-full max-w-2xl bg-white rounded-2xl md:rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[calc(100dvh-5rem)] md:max-h-[85vh]"
           >
             {/* Header */}
             <div className="p-5 md:px-8 md:py-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50 shrink-0">
@@ -72,7 +74,6 @@ export function AddNoteDialog({ isOpen, onClose }: { isOpen: boolean; onClose: (
               <div className="mb-6 md:mb-8">
                 <label className="block text-sm font-bold text-slate-700 mb-2">노트 제목</label>
                 <input 
-                  autoFocus
                   type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
