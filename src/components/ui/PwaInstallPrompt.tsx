@@ -14,19 +14,12 @@ export function PwaInstallPrompt({ isDesktop = false }: { isDesktop?: boolean })
     // console.log("PWA State:", { isInstallable, isStandalone, isIos })
   }, [isInstallable, isStandalone, isIos])
 
-  // 서비스 워커 등록
+  // 서비스 워커 등록 (React Hydration 이후 load 이벤트 대기 문제 해결)
   useEffect(() => {
     if ('serviceWorker' in navigator) {
-      window.addEventListener('load', function() {
-        navigator.serviceWorker.register('/sw.js').then(
-          function(registration) {
-            // Registration was successful
-          },
-          function(err) {
-            // registration failed :(
-          }
-        );
-      });
+      navigator.serviceWorker.register('/sw.js').catch((err) => {
+        console.error('Service Worker registration failed:', err)
+      })
     }
   }, []);
 

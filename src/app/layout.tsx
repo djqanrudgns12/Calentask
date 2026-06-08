@@ -38,6 +38,15 @@ export default function RootLayout({
   return (
     <html lang="ko" className={customFont.variable}>
       <body className={`antialiased font-sans bg-[#f7f9fb]`}>
+        <script dangerouslySetInnerHTML={{
+          __html: `
+            window.deferredPWAEvent = null;
+            window.addEventListener('beforeinstallprompt', (e) => {
+              e.preventDefault();
+              window.deferredPWAEvent = e;
+            });
+          `
+        }} />
         <QueryProvider>
           {children}
         </QueryProvider>

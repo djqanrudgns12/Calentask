@@ -39,10 +39,18 @@ export function usePwaInstall() {
     }
 
     // 3. beforeinstallprompt 감지 (안드로이드, 데스크톱 크롬 등)
+    // 이미 발생해서 전역 객체에 저장되어 있다면 바로 사용
+    const winAny = window as any
+    if (winAny.deferredPWAEvent) {
+      setDeferredPrompt(winAny.deferredPWAEvent)
+      setIsInstallable(true)
+    }
+
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault()
       // 이벤트 캐치 (이벤트가 발생했다는 것은 앱이 설치되어 있지 않음을 의미)
       setDeferredPrompt(e as BeforeInstallPromptEvent)
+      winAny.deferredPWAEvent = e
       setIsInstallable(true)
     }
 
