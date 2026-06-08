@@ -126,9 +126,12 @@ export function calculateOverlays(anniversary: Anniversary, rangeStart: Date, ra
     if (rule.options?.show_100_days !== false) {
       const milestones = rule.options?.milestones || LUNAR_MILESTONES;
       milestones.forEach(m => {
+        // 주년 표시가 활성화된 경우 365의 배수(365일, 730일 등)는 주년과 의미가 겹치므로 일수 표시 생략
+        if (rule.options?.show_years !== false && m % 365 === 0) return;
+
         const milestoneDate = addDays(baseDate, m - 1);
         if (milestoneDate >= rangeStart && milestoneDate <= rangeEnd) {
-          // 같은 날짜에 이미 주년 이벤트가 있으면 일수 마일스톤은 스킵 (예: 365일 vs 1주년)
+          // 같은 날짜에 이미 주년 이벤트가 있으면 일수 마일스톤은 스킵 (만약을 대비한 체크)
           const dateKey = format(milestoneDate, 'yyyy-MM-dd');
           if (!yearAnniversaryDates.has(dateKey)) {
             events.push(createEvent(milestoneDate, `${m}일`));

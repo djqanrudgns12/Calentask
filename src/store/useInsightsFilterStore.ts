@@ -3,13 +3,17 @@ import { persist } from 'zustand/middleware';
 import { DateRange } from 'react-day-picker';
 import { ActivityTypeFilter } from '@/components/insights/DashboardFilterBar';
 
+export type InsightsTab = 'overview' | 'time' | 'execution' | 'templates';
+
 interface InsightsFilterState {
+  activeTab: InsightsTab;
   period: 'week' | 'month' | 'year' | 'single' | 'custom';
   customDateRange: DateRange | undefined;
   singleDate: Date | undefined;
   activityType: ActivityTypeFilter;
   selectedCategoryIds: string[];
   
+  setActiveTab: (tab: InsightsTab) => void;
   setPeriod: (period: 'week' | 'month' | 'year' | 'single' | 'custom') => void;
   setCustomDateRange: (range: DateRange | undefined) => void;
   setSingleDate: (date: Date | undefined) => void;
@@ -21,12 +25,14 @@ interface InsightsFilterState {
 export const useInsightsFilterStore = create<InsightsFilterState>()(
   persist(
     (set) => ({
+      activeTab: 'overview' as const,
       period: 'week',
       customDateRange: undefined,
       singleDate: new Date(),
       activityType: 'ALL',
       selectedCategoryIds: [],
       
+      setActiveTab: (tab) => set({ activeTab: tab }),
       setPeriod: (period) => set({ period }),
       setCustomDateRange: (range) => set({ customDateRange: range }),
       setSingleDate: (date) => set({ singleDate: date }),

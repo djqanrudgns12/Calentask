@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { getActivityTemplates, createActivityTemplate, updateActivityTemplate, deleteActivityTemplate, createActivityFromTemplate, getInsightsData, getSubjectDetails } from '@/app/actions/insights'
+import { getActivityTemplates, createActivityTemplate, updateActivityTemplate, deleteActivityTemplate, createActivityFromTemplate, getInsightsData, getSubjectDetails, getAllTemplatesSummary, getTemplateUsageStats, getTemplateMonthlyTrend, getTemplateWeeklyTrend, getTemplateDailyTrend, getCategoryMonthlyTrend, getCategoryDailyTrend, getOverviewKPI, getExecutionAnalytics } from '@/app/actions/insights'
 import type { ActivityTemplate } from '@/app/actions/insights'
 
 export function useActivityTemplates() {
@@ -71,5 +71,83 @@ export function useDeleteTemplate() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['activityTemplates'] })
     }
+  })
+}
+
+// ─── 템플릿 센터 Hooks ───
+
+export function useAllTemplatesSummary(startDate: string, endDate: string) {
+  return useQuery({
+    queryKey: ['templatesSummary', startDate, endDate],
+    queryFn: () => getAllTemplatesSummary(startDate, endDate),
+    enabled: !!startDate && !!endDate
+  })
+}
+
+export function useTemplateUsageStats(templateId: string | null) {
+  return useQuery({
+    queryKey: ['templateUsageStats', templateId],
+    queryFn: () => getTemplateUsageStats(templateId!, '', ''),
+    enabled: !!templateId
+  })
+}
+
+export function useTemplateMonthlyTrend(templateId: string | null) {
+  return useQuery({
+    queryKey: ['templateMonthlyTrend', templateId],
+    queryFn: () => getTemplateMonthlyTrend(templateId!),
+    enabled: !!templateId
+  })
+}
+
+export function useTemplateWeeklyTrend(templateId: string | null) {
+  return useQuery({
+    queryKey: ['templateWeeklyTrend', templateId],
+    queryFn: () => getTemplateWeeklyTrend(templateId!),
+    enabled: !!templateId
+  })
+}
+
+export function useTemplateDailyTrend(templateId: string | null, days: number = 30) {
+  return useQuery({
+    queryKey: ['templateDailyTrend', templateId, days],
+    queryFn: () => getTemplateDailyTrend(templateId!, days),
+    enabled: !!templateId
+  })
+}
+
+// ─── 시간 분석 탭 Hooks ───
+
+export function useCategoryMonthlyTrend(categoryId: string | null) {
+  return useQuery({
+    queryKey: ['categoryMonthlyTrend', categoryId],
+    queryFn: () => getCategoryMonthlyTrend(categoryId!),
+    enabled: !!categoryId
+  })
+}
+
+export function useCategoryDailyTrend(categoryId: string | null, days: number = 7) {
+  return useQuery({
+    queryKey: ['categoryDailyTrend', categoryId, days],
+    queryFn: () => getCategoryDailyTrend(categoryId!, days),
+    enabled: !!categoryId
+  })
+}
+
+// ─── 종합 현황 탭 Hooks ───
+
+export function useOverviewKPI() {
+  return useQuery({
+    queryKey: ['overviewKPI'],
+    queryFn: () => getOverviewKPI()
+  })
+}
+
+// ─── 실행력 탭 Hooks ───
+
+export function useExecutionAnalytics() {
+  return useQuery({
+    queryKey: ['executionAnalytics'],
+    queryFn: () => getExecutionAnalytics()
   })
 }
