@@ -54,7 +54,7 @@ export function AddNoteDialog({ isOpen, onClose }: { isOpen: boolean; onClose: (
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            className="relative w-full max-w-2xl bg-white rounded-2xl md:rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[calc(100vh-2rem)] md:max-h-[85vh]"
+            className="relative w-full max-w-2xl bg-white rounded-2xl md:rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[85dvh] md:max-h-[85vh]"
           >
             {/* Header */}
             <div className="p-5 md:px-8 md:py-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50 shrink-0">
