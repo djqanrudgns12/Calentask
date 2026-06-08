@@ -105,19 +105,26 @@ export function ArchiveNotesView() {
             {/* 타이틀 영역 — 스크롤 시 접힘 */}
             <div className={cn(
               "overflow-hidden transition-all duration-300 ease-out",
-              isScrolled ? "max-h-0 opacity-0 pt-0 pb-0 px-8" : "max-h-40 opacity-100 px-8 pt-6 pb-3"
+              isScrolled ? "max-h-0 opacity-0 pt-0 pb-0 px-4 md:px-8" : "max-h-40 opacity-100 px-4 md:px-8 pt-4 md:pt-6 pb-2 md:pb-3"
             )}>
-              <div className="flex items-center justify-between">
-                <div>
-                  <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">아카이브 노트</h1>
-                  <p className="text-slate-500 mt-1 text-sm font-medium">나만의 지식 보관소이자 창의력을 펼치는 캔버스입니다.</p>
+              <div className="flex items-center justify-between gap-3">
+                {/* 왜: 모바일에서 제목+설명이 버튼과 같은 줄에 배치될 때 넘침 방지를 위해 min-w-0 추가 */}
+                <div className="min-w-0">
+                  <h1 className="text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight">아카이브 노트</h1>
+                  {/* 왜: 모바일에서는 잘리지 않는 짧은 대체 문장으로 교체 (사용자 피드백 반영) */}
+                  <p className="text-slate-500 mt-1 text-sm font-medium">
+                    <span className="hidden md:inline">나만의 지식 보관소이자 창의력을 펼치는 캔버스입니다.</span>
+                    <span className="md:hidden">노트와 아이디어를 관리하세요.</span>
+                  </p>
                 </div>
                 <button 
                   onClick={handleAddNewTab}
-                  className="flex items-center gap-2 px-4 py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-bold hover:bg-indigo-700 shadow-sm shadow-indigo-600/20 transition-all hover:scale-105 active:scale-95"
+                  className="flex items-center gap-1.5 md:gap-2 px-3 md:px-4 py-2 md:py-2.5 bg-indigo-600 text-white rounded-xl text-xs md:text-sm font-bold hover:bg-indigo-700 shadow-sm shadow-indigo-600/20 transition-all hover:scale-105 active:scale-95 shrink-0"
                 >
                   <Plus className="w-4 h-4" />
-                  새 노트 추가
+                  {/* 왜: 모바일에서 버튼 텍스트를 축약하여 헤더 한 줄 유지 */}
+                  <span className="hidden md:inline">새 노트 추가</span>
+                  <span className="md:hidden">새 노트</span>
                 </button>
               </div>
             </div>
@@ -125,7 +132,7 @@ export function ArchiveNotesView() {
             {/* 탭 네비게이션 영역 — 항상 표시, 스크롤 시 패딩 축소 */}
             <div className={cn(
               "transition-all duration-300 ease-out",
-              isScrolled ? "px-6 pt-1.5 pb-1.5" : "px-8 pt-1 pb-3"
+              isScrolled ? "px-4 md:px-6 pt-1.5 pb-1.5" : "px-4 md:px-8 pt-1 pb-3"
             )}>
               {!isPrefetched ? (
                 <div className="flex items-center space-x-2 overflow-x-auto hide-scrollbar">

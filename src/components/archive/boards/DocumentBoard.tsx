@@ -67,6 +67,15 @@ export function DocumentBoard() {
   const isWideView = viewMode === 'wide';
   const isFocusMode = focusModeTabId === activeTabId;
 
+  // 왜: SSR 환경에서 window 접근 시 에러 방지를 위해 useEffect로 클라이언트에서만 판단
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
   // 집중 모드 호버 툴바
   const [showFocusToolbar, setShowFocusToolbar] = useState(false);
   const focusToolbarTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -337,22 +346,28 @@ export function DocumentBoard() {
       {!isFocusMode && (
       <div className="border-b border-slate-200 bg-white shrink-0 sticky top-0 z-20 shadow-sm flex flex-col">
         {/* Tab Headers */}
-        <div className="flex px-4 pt-2 gap-1 border-b border-slate-100 bg-slate-50">
-          <button onClick={() => setActiveRibbonTab('home')} className={cn("px-4 py-2 text-sm font-semibold rounded-t-lg transition-colors border border-b-0", activeRibbonTab === 'home' ? "bg-white text-indigo-600 border-slate-200 translate-y-px" : "text-slate-500 border-transparent hover:bg-slate-100")}>홈</button>
-          <button onClick={() => setActiveRibbonTab('insert')} className={cn("px-4 py-2 text-sm font-semibold rounded-t-lg transition-colors border border-b-0", activeRibbonTab === 'insert' ? "bg-white text-indigo-600 border-slate-200 translate-y-px" : "text-slate-500 border-transparent hover:bg-slate-100")}>삽입</button>
-          <button onClick={() => setActiveRibbonTab('view')} className={cn("px-4 py-2 text-sm font-semibold rounded-t-lg transition-colors border border-b-0", activeRibbonTab === 'view' ? "bg-white text-indigo-600 border-slate-200 translate-y-px" : "text-slate-500 border-transparent hover:bg-slate-100")}>보기 및 도구</button>
+        {/* 왜: 모바일에서 탭 패딩을 줄이고, 우측 줌/통계를 숨겨 넘침 방지 */}
+        <div className="flex px-2 md:px-4 pt-2 gap-1 border-b border-slate-100 bg-slate-50">
+          <button onClick={() => setActiveRibbonTab('home')} className={cn("px-3 md:px-4 py-2 text-xs md:text-sm font-semibold rounded-t-lg transition-colors border border-b-0 shrink-0", activeRibbonTab === 'home' ? "bg-white text-indigo-600 border-slate-200 translate-y-px" : "text-slate-500 border-transparent hover:bg-slate-100")}>홈</button>
+          <button onClick={() => setActiveRibbonTab('insert')} className={cn("px-3 md:px-4 py-2 text-xs md:text-sm font-semibold rounded-t-lg transition-colors border border-b-0 shrink-0", activeRibbonTab === 'insert' ? "bg-white text-indigo-600 border-slate-200 translate-y-px" : "text-slate-500 border-transparent hover:bg-slate-100")}>삽입</button>
+          {/* 왜: 모바일에서 '보기 및 도구'는 너무 길어 '보기'로 축약 */}
+          <button onClick={() => setActiveRibbonTab('view')} className={cn("px-3 md:px-4 py-2 text-xs md:text-sm font-semibold rounded-t-lg transition-colors border border-b-0 shrink-0", activeRibbonTab === 'view' ? "bg-white text-indigo-600 border-slate-200 translate-y-px" : "text-slate-500 border-transparent hover:bg-slate-100")}>
+            <span className="hidden md:inline">보기 및 도구</span>
+            <span className="md:hidden">보기</span>
+          </button>
           
           <div className="ml-auto flex items-center gap-3 text-xs font-bold text-slate-400 pb-2">
-            {/* Zoom Controls - Always visible */}
-            <div className="flex items-center gap-1 bg-slate-100/80 rounded-lg px-1.5 py-0.5 border border-slate-200/60">
+            {/* 왜: 모바일에서 줌 컨트롤은 네이티브 핀치줌으로 대체, 넘침 방지를 위해 숨김 */}
+            <div className="hidden md:flex items-center gap-1 bg-slate-100/80 rounded-lg px-1.5 py-0.5 border border-slate-200/60">
               <button onClick={() => setZoom(z => Math.max(50, z - 10))} className="p-0.5 hover:bg-white hover:shadow-sm rounded text-slate-500 transition-colors" title="축소"><ZoomOut className="w-3.5 h-3.5" /></button>
               <span className="text-[11px] font-bold w-9 text-center text-slate-600 tabular-nums">{zoom}%</span>
               <button onClick={() => setZoom(z => Math.min(200, z + 10))} className="p-0.5 hover:bg-white hover:shadow-sm rounded text-slate-500 transition-colors" title="확대"><ZoomIn className="w-3.5 h-3.5" /></button>
             </div>
-            <button onClick={() => setZoom(100)} className="text-[11px] font-semibold px-1.5 py-0.5 bg-slate-100 hover:bg-slate-200 text-slate-500 rounded border border-slate-200/60 transition-colors" title="100%로 초기화">100%</button>
-            <div className="w-px h-4 bg-slate-200" />
-            <span className="flex items-center gap-1.5"><Type className="w-3.5 h-3.5" /> {textCount}</span>
-            <span className="flex items-center gap-1.5"><FileText className="w-3.5 h-3.5" /> {wordCount}</span>
+            <button onClick={() => setZoom(100)} className="hidden md:block text-[11px] font-semibold px-1.5 py-0.5 bg-slate-100 hover:bg-slate-200 text-slate-500 rounded border border-slate-200/60 transition-colors" title="100%로 초기화">100%</button>
+            <div className="hidden md:block w-px h-4 bg-slate-200" />
+            {/* 왜: 글자 수/단어 수 통계도 모바일에서는 불필요하게 공간을 차지 */}
+            <span className="hidden md:flex items-center gap-1.5"><Type className="w-3.5 h-3.5" /> {textCount}</span>
+            <span className="hidden md:flex items-center gap-1.5"><FileText className="w-3.5 h-3.5" /> {wordCount}</span>
             <button 
               onClick={() => { if (confirm('이 문서를 완전히 삭제하시겠습니까?')) deleteTab(activeTabId!); }}
               className="p-1.5 hover:bg-rose-50 hover:text-rose-600 rounded transition-colors" title="문서 삭제"
@@ -361,18 +376,19 @@ export function DocumentBoard() {
         </div>
 
         {/* Tab Contents */}
-        <div className="px-4 py-2 min-h-[60px] flex items-center flex-wrap gap-x-4 gap-y-2 bg-white">
+        {/* 왜: flex-wrap→flex-nowrap으로 변경하여 모바일에서 세로 줄바꿈 차단, 가로 스크롤로 전환 */}
+        <div className="px-2 md:px-4 py-1.5 md:py-2 min-h-[44px] md:min-h-[60px] flex items-center flex-nowrap overflow-x-auto hide-scrollbar gap-x-3 md:gap-x-4 bg-white">
           
           {activeRibbonTab === 'home' && (
             <>
               {/* History */}
-              <div className="flex items-center gap-1 pr-4 border-r border-slate-200">
+              <div className="flex items-center gap-1 pr-3 md:pr-4 border-r border-slate-200 shrink-0">
                 <button onClick={() => editor.chain().focus().undo().run()} disabled={!editor.can().undo()} className="p-1.5 rounded hover:bg-slate-100 disabled:opacity-30" title="실행 취소 (Ctrl+Z)"><Undo className="w-4 h-4 text-slate-700" /></button>
                 <button onClick={() => editor.chain().focus().redo().run()} disabled={!editor.can().redo()} className="p-1.5 rounded hover:bg-slate-100 disabled:opacity-30" title="다시 실행 (Ctrl+Y)"><Redo className="w-4 h-4 text-slate-700" /></button>
               </div>
 
               {/* Font */}
-              <div className="flex items-center gap-2 pr-4 border-r border-slate-200">
+              <div className="flex items-center gap-2 pr-3 md:pr-4 border-r border-slate-200 shrink-0">
                 {/* Font Family Dropdown */}
                 <div className="relative">
                   <button onClick={() => setShowFontFamily(!showFontFamily)} className="flex items-center justify-between w-28 px-2 py-1.5 text-xs font-semibold bg-slate-50 border border-slate-200 rounded hover:bg-slate-100">
@@ -417,7 +433,7 @@ export function DocumentBoard() {
               </div>
 
               {/* Formatting */}
-              <div className="flex items-center gap-0.5 pr-4 border-r border-slate-200">
+              <div className="flex items-center gap-0.5 pr-3 md:pr-4 border-r border-slate-200 shrink-0">
                 <button onClick={() => editor.chain().focus().toggleBold().run()} className={cn("p-1.5 rounded transition-colors", editor.isActive('bold') ? "bg-slate-200 text-slate-900" : "text-slate-600 hover:bg-slate-100")} title="굵게"><Bold className="w-4 h-4" /></button>
                 <button onClick={() => editor.chain().focus().toggleItalic().run()} className={cn("p-1.5 rounded transition-colors", editor.isActive('italic') ? "bg-slate-200 text-slate-900" : "text-slate-600 hover:bg-slate-100")} title="기울임"><Italic className="w-4 h-4" /></button>
                 <button onClick={() => editor.chain().focus().toggleUnderline().run()} className={cn("p-1.5 rounded transition-colors", editor.isActive('underline') ? "bg-slate-200 text-slate-900" : "text-slate-600 hover:bg-slate-100")} title="밑줄"><UnderlineIcon className="w-4 h-4" /></button>
@@ -456,7 +472,7 @@ export function DocumentBoard() {
               </div>
 
               {/* Paragraph */}
-              <div className="flex items-center gap-0.5">
+              <div className="flex items-center gap-0.5 shrink-0">
                 <button onClick={() => editor.chain().focus().setTextAlign('left').run()} className={cn("p-1.5 rounded transition-colors", editor.isActive({ textAlign: 'left' }) ? "bg-slate-200 text-slate-900" : "text-slate-600 hover:bg-slate-100")}><AlignLeft className="w-4 h-4" /></button>
                 <button onClick={() => editor.chain().focus().setTextAlign('center').run()} className={cn("p-1.5 rounded transition-colors", editor.isActive({ textAlign: 'center' }) ? "bg-slate-200 text-slate-900" : "text-slate-600 hover:bg-slate-100")}><AlignCenter className="w-4 h-4" /></button>
                 <button onClick={() => editor.chain().focus().setTextAlign('right').run()} className={cn("p-1.5 rounded transition-colors", editor.isActive({ textAlign: 'right' }) ? "bg-slate-200 text-slate-900" : "text-slate-600 hover:bg-slate-100")}><AlignRight className="w-4 h-4" /></button>
@@ -470,7 +486,7 @@ export function DocumentBoard() {
           {activeRibbonTab === 'insert' && (
             <>
               {/* Insert Media & Blocks */}
-              <div className="flex items-center gap-2 pr-4 border-r border-slate-200">
+              <div className="flex items-center gap-2 pr-3 md:pr-4 border-r border-slate-200 shrink-0">
                 <button onClick={() => editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()} className="flex items-center gap-1.5 px-2 py-1.5 rounded hover:bg-slate-100 text-sm font-semibold text-slate-700">
                   <TableIcon className="w-4 h-4 text-indigo-500" /> 표
                 </button>
@@ -483,7 +499,7 @@ export function DocumentBoard() {
               </div>
 
               {/* Special Elements */}
-              <div className="flex items-center gap-2 pr-4 border-r border-slate-200">
+              <div className="flex items-center gap-2 pr-3 md:pr-4 border-r border-slate-200 shrink-0">
                 <button onClick={() => {
                   const url = window.prompt('URL을 입력하세요');
                   if (url) {
@@ -511,7 +527,7 @@ export function DocumentBoard() {
               </div>
 
               {/* Layout Blocks */}
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 shrink-0">
                 <button onClick={() => editor.chain().focus().setHorizontalRule().run()} className="flex items-center gap-1.5 px-2 py-1.5 rounded hover:bg-slate-100 text-sm font-semibold text-slate-700">
                   <Minus className="w-4 h-4 text-slate-400" /> 구분선
                 </button>
@@ -538,7 +554,7 @@ export function DocumentBoard() {
           {activeRibbonTab === 'view' && (
             <>
               {/* 뷰 모드 토글 */}
-              <div className="flex items-center gap-1 pr-4 border-r border-slate-200">
+              <div className="flex items-center gap-1 pr-3 md:pr-4 border-r border-slate-200 shrink-0">
                 <div className="flex bg-slate-100 rounded-lg p-0.5">
                   <button 
                     onClick={() => activeTabId && setTabViewMode(activeTabId, 'page')}
@@ -556,7 +572,7 @@ export function DocumentBoard() {
               </div>
 
               {/* 집중 모드 */}
-              <div className="flex items-center pr-4 border-r border-slate-200">
+              <div className="flex items-center pr-3 md:pr-4 border-r border-slate-200 shrink-0">
                 <button 
                   onClick={() => activeTabId && setFocusMode(isFocusMode ? null : activeTabId)}
                   className={cn(
@@ -569,13 +585,13 @@ export function DocumentBoard() {
               </div>
 
               {/* Export */}
-              <div className="flex items-center pr-4 border-r border-slate-200">
+              <div className="flex items-center pr-3 md:pr-4 border-r border-slate-200 shrink-0">
                 <button onClick={exportWord} className="flex items-center gap-2 px-3 py-1.5 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 rounded-lg font-bold text-sm transition-colors">
                   <Download className="w-4 h-4" /> Word (.docx) 내보내기
                 </button>
               </div>
 
-              <div className="flex items-center gap-2 text-xs text-slate-500">
+              <div className="flex items-center gap-2 text-xs text-slate-500 shrink-0">
                 <Wand2 className="w-4 h-4" />
                 <button onClick={() => setIsGuideModalOpen(true)} className="hover:text-indigo-600 hover:underline">슬래시 명령어 가이드</button>
               </div>
@@ -837,10 +853,11 @@ export function DocumentBoard() {
           }}
         >
           {/* A4 Page / Wide View Container */}
+          {/* 왜: max-w-full을 추가하여 모바일에서 816px 고정 너비가 화면을 초과하지 않도록 보장 */}
           <div 
             ref={pageContainerRef}
             className={cn(
-              "doc-page mx-auto bg-white relative",
+              "doc-page mx-auto bg-white relative max-w-full",
               isWideView && "shadow-none"
             )}
             style={{ 
@@ -876,13 +893,14 @@ export function DocumentBoard() {
             )}
 
             {/* Editor Content Area */}
-            <div className="relative z-10" style={{ padding: isWideView ? '48px 40px' : '64px 56px' }}>
+            {/* 왜: 모바일에서 에디터 패딩을 24px 16px으로 축소하여 넓은 편집 공간 확보 */}
+            <div className="relative z-10" style={{ padding: isMobile ? '24px 16px' : (isWideView ? '48px 40px' : '64px 56px') }}>
               <input 
               type="text"
               value={localTitle}
               onChange={handleTitleChange}
               placeholder="제목을 입력하세요"
-              className="w-full text-4xl md:text-5xl font-extrabold text-slate-900 bg-transparent border-none focus:outline-none focus:ring-0 mb-5 placeholder:text-slate-300 transition-all tracking-tight"
+              className="w-full text-2xl md:text-5xl font-extrabold text-slate-900 bg-transparent border-none focus:outline-none focus:ring-0 mb-3 md:mb-5 placeholder:text-slate-300 transition-all tracking-tight"
             />
             
 
