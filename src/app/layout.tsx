@@ -45,13 +45,17 @@ export default function RootLayout({
         <script dangerouslySetInnerHTML={{
           __html: `
             window.deferredPWAEvent = null;
-            window.addEventListener('beforeinstallprompt', (e) => {
+            window.__pwaPromptFired = false;
+            window.addEventListener('beforeinstallprompt', function(e) {
               e.preventDefault();
               window.deferredPWAEvent = e;
+              window.__pwaPromptFired = true;
             });
             if ('serviceWorker' in navigator) {
-              window.addEventListener('load', () => {
-                navigator.serviceWorker.register('/sw.js', { scope: '/' }).catch(console.error);
+              window.addEventListener('load', function() {
+                navigator.serviceWorker.register('/sw.js', { scope: '/' }).catch(function(err) {
+                  console.warn('[SW] Registration failed:', err);
+                });
               });
             }
           `
