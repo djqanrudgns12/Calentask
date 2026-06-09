@@ -15,14 +15,7 @@ export function PwaInstallPrompt({ isDesktop = false }: { isDesktop?: boolean })
     // console.log("PWA State:", { isInstallable, isStandalone, isIos })
   }, [isInstallable, isStandalone, isIos])
 
-  // 서비스 워커 등록 (React Hydration 이후 load 이벤트 대기 문제 해결)
-  useEffect(() => {
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/sw.js').catch((err) => {
-        console.error('Service Worker registration failed:', err)
-      })
-    }
-  }, []);
+
 
   // 스탠드얼론(앱 모드)으로 이미 실행 중이라면 렌더링하지 않음
   if (isStandalone) return null

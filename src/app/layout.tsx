@@ -23,6 +23,10 @@ export const metadata: Metadata = {
   title: "Calentask",
   description: "통합 캘린더 애플리케이션",
   manifest: "/manifest.json",
+  icons: {
+    icon: "/icon-192x192.png",
+    apple: "/icon-192x192.png",
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
@@ -45,6 +49,11 @@ export default function RootLayout({
               e.preventDefault();
               window.deferredPWAEvent = e;
             });
+            if ('serviceWorker' in navigator) {
+              window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js').catch(console.error);
+              });
+            }
           `
         }} />
         <QueryProvider>
