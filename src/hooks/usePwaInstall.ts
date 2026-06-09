@@ -76,21 +76,29 @@ export function usePwaInstall() {
       return { action: 'show-ios-guide' }
     }
 
-    if (!deferredPrompt) {
+    // React state에 없으면 전역 변수에서 한번 더 확인
+    const prompt = deferredPrompt || (window as any).deferredPWAEvent as BeforeInstallPromptEvent | null
+
+    if (!prompt) {
       // 브라우저 정책(이미 설치됨, 캐시 등)으로 자동 설치 프롬프트가 없을 경우 수동 설치 안내
       return { action: 'show-desktop-guide' }
     }
 
     // 설치 프롬프트 띄우기
-    await deferredPrompt.prompt()
-    const { outcome } = await deferredPrompt.userChoice
+    try {
+      await prompt.prompt()
+      const { outcome } = await prompt.userChoice
 
-    if (outcome === 'accepted') {
-      setDeferredPrompt(null)
-      setIsInstallable(false)
-      return { action: 'installed' }
-    } else {
-      return { action: 'dismissed' }
+      if (outcome === 'accepted') {
+        setDeferredPrompt(null)
+        ;(window as any).deferredPWAEvent = null
+        setIsInstallable(false)
+        return { action: 'installed' }
+      } else {
+        return { action: 'dismissed' }
+      }
+    } catch {
+      return { action: 'show-desktop-guide' }
     }
   }
 
