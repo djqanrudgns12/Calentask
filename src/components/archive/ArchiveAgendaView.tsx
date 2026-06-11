@@ -466,7 +466,7 @@ export function ArchiveAgendaView() {
           ) : (
             filteredTasks.map(task => {
               const category = categories.find(c => c.id === task.category_id);
-              const deadlineInfo = task.deadline ? getDeadlineInfo(task.deadline) : null;
+              const deadlineInfo = task.status !== 'done' && task.deadline ? getDeadlineInfo(task.deadline) : null;
               
               return (
                 <div key={task.id} className="flex flex-col gap-1.5 group">
@@ -522,6 +522,15 @@ export function ArchiveAgendaView() {
                         <div className={cn("flex items-center gap-1.5 px-3 py-1 rounded-full border shadow-sm bg-white", deadlineInfo.color.replace('bg-', 'text-').replace('text-', 'border-').replace('100', '200'))}>
                           <Calendar className={cn("w-3.5 h-3.5", deadlineInfo.color.replace('bg-', 'text-').split(' ')[1])} />
                           <span className={cn("text-[12px] font-bold", deadlineInfo.color.replace('bg-', 'text-').split(' ')[1])}>{deadlineInfo.label}</span>
+                        </div>
+                      )}
+                      
+                      {task.status === 'done' && task.completed_at && (
+                        <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-50 border border-slate-200 text-slate-500 shadow-sm transition-colors">
+                          <CheckCircle2 className="w-3.5 h-3.5" />
+                          <span className="text-[12px] font-bold">
+                            {format(new Date(task.completed_at), 'M월 d일 완료', { locale: ko })}
+                          </span>
                         </div>
                       )}
                       

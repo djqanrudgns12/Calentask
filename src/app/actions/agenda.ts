@@ -24,6 +24,7 @@ export interface AgendaTask {
   created_at: string
   updated_at: string
   deleted_at: string | null
+  completed_at: string | null
   subtasks: AgendaSubtask[]
   is_calendar_registered: boolean
 }
@@ -107,6 +108,13 @@ export async function updateAgendaTask(id: string, payload: Partial<Omit<AgendaT
     payload.deleted_at = new Date().toISOString()
   } else if (payload.status) {
     payload.deleted_at = null
+  }
+
+  // 완료 상태에 따른 completed_at 업데이트
+  if (payload.status === 'done') {
+    payload.completed_at = new Date().toISOString()
+  } else if (payload.status && payload.status !== 'done') {
+    payload.completed_at = null
   }
 
   // subtasks는 조인된 테이블이므로 업데이트 페이로드에서 제거해야 합니다.

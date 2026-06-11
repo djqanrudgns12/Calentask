@@ -88,7 +88,13 @@ export const useAgendaStore = create<AgendaState>()((set, get) => ({
   setTaskStatus: async (id, status) => {
     const previousTasks = get().tasks;
     set((state) => ({
-      tasks: state.tasks.map(t => t.id === id ? { ...t, status } : t)
+      tasks: state.tasks.map(t => {
+        if (t.id === id) {
+          const completed_at = status === 'done' ? new Date().toISOString() : (status === t.status ? t.completed_at : null);
+          return { ...t, status, completed_at };
+        }
+        return t;
+      })
     }));
     try {
       const updatedTask = await updateAgendaTask(id, { status });
