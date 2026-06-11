@@ -207,22 +207,32 @@ export default function TemplateCenterTab() {
                   </div>
                 </div>
 
-                {/* 이번 달 통계 */}
+                {/* 이번 달 / 저번 달 통계 */}
                 <div className="pl-3 mb-3">
-                  <div className="text-[11px] font-bold text-gray-400 mb-1">이번 달</div>
-                  <div className="flex items-baseline gap-3">
-                    <span className="text-[24px] font-black text-gray-900 tracking-tighter">{summary.currentMonthHours}</span>
-                    <span className="text-[13px] font-bold text-gray-400">시간</span>
-                    <span className="text-[13px] font-bold text-gray-300">·</span>
-                    <span className="text-[13px] font-bold text-gray-500">{summary.currentMonthCount}회</span>
+                  <div className="flex items-baseline gap-2 mb-1">
+                    <span className="text-[11px] font-bold text-gray-400">이번 달</span>
                     {!isNeutral && (
-                      <span className={`flex items-center gap-0.5 text-[11px] font-bold px-1.5 py-0.5 rounded-full ${
-                        isPositive ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-500'
+                      <span className={`flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-0.5 rounded-md ${
+                        isPositive ? 'text-emerald-500 bg-emerald-50' : 'text-red-500 bg-red-50'
                       }`}>
                         {isPositive ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
                         {Math.abs(changePercent)}%
                       </span>
                     )}
+                  </div>
+                  <div className="flex items-baseline gap-3">
+                    <span className="text-[24px] font-black text-gray-900 tracking-tighter">{summary.currentMonthHours}</span>
+                    <span className="text-[13px] font-bold text-gray-400">시간</span>
+                    <span className="text-[13px] font-bold text-gray-300">·</span>
+                    <span className="text-[13px] font-bold text-gray-500">{summary.currentMonthCount}회</span>
+                  </div>
+                  <div className="flex items-baseline gap-1.5 mt-2 text-[12px] font-medium text-gray-400 bg-gray-50/80 px-2.5 py-1.5 rounded-lg w-fit">
+                    <span className="font-bold text-gray-500">저번 달:</span>
+                    <span className="font-bold text-gray-700">{summary.prevMonthHours}</span>
+                    <span className="text-[11px]">시간</span>
+                    <span className="text-gray-300">·</span>
+                    <span className="font-bold text-gray-700">{summary.prevMonthCount}</span>
+                    <span className="text-[11px]">회</span>
                   </div>
                 </div>
 

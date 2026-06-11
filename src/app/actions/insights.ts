@@ -355,6 +355,17 @@ export type DailyTrendData = {
   count: number
 }
 
+const KST_OFFSET_MS = 9 * 60 * 60 * 1000
+
+function getKSTDate(dateInput: Date | string) {
+  const utcDate = new Date(dateInput)
+  return new Date(utcDate.getTime() + KST_OFFSET_MS)
+}
+
+function getKSTNow() {
+  return getKSTDate(new Date())
+}
+
 /**
  * 전체 템플릿의 요약 통계 (카드 그리드용)
  */
@@ -367,11 +378,18 @@ export async function getAllTemplatesSummary(startDate: string, endDate: string)
   const templates = await getActivityTemplates()
 
   // 2. 현재 기간의 활동 (template_id가 있는 것만)
-  const now = new Date()
-  const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString()
-  const currentMonthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59).toISOString()
-  const prevMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1).toISOString()
-  const prevMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59).toISOString()
+  const currentMonthStart = startDate
+  const currentMonthEnd = endDate
+  
+  const currentStartKST = getKSTDate(startDate)
+  const prevMonthStartKST = new Date(currentStartKST)
+  prevMonthStartKST.setUTCMonth(prevMonthStartKST.getUTCMonth() - 1)
+  
+  const prevMonthEndKST = new Date(currentStartKST)
+  prevMonthEndKST.setUTCMilliseconds(-1)
+  
+  const prevMonthStart = new Date(prevMonthStartKST.getTime() - KST_OFFSET_MS).toISOString()
+  const prevMonthEnd = new Date(prevMonthEndKST.getTime() - KST_OFFSET_MS).toISOString()
 
   // 3. 전체 기간 활동 (template_id NOT NULL)
   const { data: allActivities, error } = await supabase
@@ -385,8 +403,9 @@ export async function getAllTemplatesSummary(startDate: string, endDate: string)
   if (error) throw new Error(error.message)
 
   // 4. 최근 7일 일별 데이터 계산
-  const sevenDaysAgo = new Date()
-  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
+  const kstNow = getKSTNow()
+  const sevenDaysAgoKST = new Date(kstNow.getTime() - 7 * 24 * 60 * 60 * 1000)
+  const sevenDaysAgo = new Date(sevenDaysAgoKST.getTime() - KST_OFFSET_MS).toISOString()
 
   const summaries: TemplateSummary[] = templates.map(tmpl => {
     const acts = (allActivities || []).filter((a: any) => a.template_id === tmpl.id)
@@ -417,8 +436,9 @@ export async function getAllTemplatesSummary(startDate: string, endDate: string)
       if (mins > maxSession) maxSession = mins
 
       // 최근 7일 일별
-      if (start >= sevenDaysAgo) {
-        const dateKey = start.toISOString().split('T')[0]
+      if (a.start_time >= sevenDaysAgo) {
+        const actKST = getKSTDate(a.start_time)
+        const dateKey = `${actKST.getUTCFullYear()}-${String(actKST.getUTCMonth() + 1).padStart(2, '0')}-${String(actKST.getUTCDate()).padStart(2, '0')}`
         dailyMap.set(dateKey, (dailyMap.get(dateKey) || 0) + mins)
       }
     })
@@ -426,9 +446,8 @@ export async function getAllTemplatesSummary(startDate: string, endDate: string)
     // 최근 7일 배열 생성
     const dailyTrend: { date: string; minutes: number }[] = []
     for (let i = 6; i >= 0; i--) {
-      const d = new Date()
-      d.setDate(d.getDate() - i)
-      const key = d.toISOString().split('T')[0]
+      const d = new Date(kstNow.getTime() - i * 24 * 60 * 60 * 1000)
+      const key = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}`
       dailyTrend.push({ date: key, minutes: dailyMap.get(key) || 0 })
     }
 
@@ -504,8 +523,9 @@ export async function getTemplateMonthlyTrend(templateId: string): Promise<Month
   const { data: userData } = await supabase.auth.getUser()
   if (!userData.user) throw new Error('Not authenticated')
 
-  const now = new Date()
-  const startDate = new Date(now.getFullYear() - 1, now.getMonth(), 1).toISOString()
+  const kstNow = getKSTNow()
+  const startKST = new Date(Date.UTC(kstNow.getUTCFullYear(), kstNow.getUTCMonth() - 11, 1))
+  const startDate = new Date(startKST.getTime() - KST_OFFSET_MS).toISOString()
 
   const { data, error } = await supabase
     .from('activities')
@@ -521,15 +541,15 @@ export async function getTemplateMonthlyTrend(templateId: string): Promise<Month
 
   // 최근 12개월 초기화
   for (let i = 11; i >= 0; i--) {
-    const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
-    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+    const d = new Date(Date.UTC(kstNow.getUTCFullYear(), kstNow.getUTCMonth() - i, 1))
+    const key = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`
     monthMap.set(key, { minutes: 0, count: 0 })
   }
 
   ;(data || []).forEach((a: any) => {
-    const start = new Date(a.start_time)
-    const key = `${start.getFullYear()}-${String(start.getMonth() + 1).padStart(2, '0')}`
-    const mins = (new Date(a.end_time).getTime() - start.getTime()) / 60000
+    const actKST = getKSTDate(a.start_time)
+    const key = `${actKST.getUTCFullYear()}-${String(actKST.getUTCMonth() + 1).padStart(2, '0')}`
+    const mins = (new Date(a.end_time).getTime() - new Date(a.start_time).getTime()) / 60000
     const existing = monthMap.get(key)
     if (existing) {
       existing.minutes += mins
@@ -552,8 +572,9 @@ export async function getTemplateWeeklyTrend(templateId: string): Promise<Weekly
   const { data: userData } = await supabase.auth.getUser()
   if (!userData.user) throw new Error('Not authenticated')
 
-  const now = new Date()
-  const startDate = new Date(now.getTime() - 8 * 7 * 24 * 60 * 60 * 1000).toISOString()
+  const kstNow = getKSTNow()
+  const startDateKST = new Date(kstNow.getTime() - 8 * 7 * 24 * 60 * 60 * 1000)
+  const startDate = new Date(startDateKST.getTime() - KST_OFFSET_MS).toISOString()
 
   const { data, error } = await supabase
     .from('activities')
@@ -568,22 +589,23 @@ export async function getTemplateWeeklyTrend(templateId: string): Promise<Weekly
   // 8주 초기화 (월요일 기준)
   const weeks: WeeklyTrendData[] = []
   for (let i = 7; i >= 0; i--) {
-    const weekStart = new Date(now.getTime() - i * 7 * 24 * 60 * 60 * 1000)
-    const day = weekStart.getDay()
+    const weekStartKST = new Date(kstNow.getTime() - i * 7 * 24 * 60 * 60 * 1000)
+    const day = weekStartKST.getUTCDay()
     const diff = day === 0 ? 6 : day - 1
-    weekStart.setDate(weekStart.getDate() - diff)
-    weekStart.setHours(0, 0, 0, 0)
-    weeks.push({ weekStart: weekStart.toISOString().split('T')[0], minutes: 0, count: 0 })
+    weekStartKST.setUTCDate(weekStartKST.getUTCDate() - diff)
+    weekStartKST.setUTCHours(0, 0, 0, 0)
+    weeks.push({ weekStart: weekStartKST.toISOString().split('T')[0], minutes: 0, count: 0 })
   }
 
   ;(data || []).forEach((a: any) => {
-    const start = new Date(a.start_time)
-    const mins = (new Date(a.end_time).getTime() - start.getTime()) / 60000
+    const actKST = getKSTDate(a.start_time)
+    const mins = (new Date(a.end_time).getTime() - new Date(a.start_time).getTime()) / 60000
     
     // 해당 주 찾기
     for (let i = weeks.length - 1; i >= 0; i--) {
-      const ws = new Date(weeks[i].weekStart)
-      if (start >= ws) {
+      const ws = new Date(weeks[i].weekStart + 'T00:00:00Z')
+      const actDateTrunc = new Date(Date.UTC(actKST.getUTCFullYear(), actKST.getUTCMonth(), actKST.getUTCDate()))
+      if (actDateTrunc >= ws) {
         weeks[i].minutes += mins
         weeks[i].count++
         break
@@ -602,8 +624,9 @@ export async function getTemplateDailyTrend(templateId: string, days: number = 3
   const { data: userData } = await supabase.auth.getUser()
   if (!userData.user) throw new Error('Not authenticated')
 
-  const now = new Date()
-  const startDate = new Date(now.getTime() - days * 24 * 60 * 60 * 1000).toISOString()
+  const kstNow = getKSTNow()
+  const startDateKST = new Date(kstNow.getTime() - days * 24 * 60 * 60 * 1000)
+  const startDate = new Date(startDateKST.getTime() - KST_OFFSET_MS).toISOString()
 
   const { data, error } = await supabase
     .from('activities')
@@ -617,14 +640,15 @@ export async function getTemplateDailyTrend(templateId: string, days: number = 3
 
   const dayMap = new Map<string, { minutes: number; count: number }>()
   for (let i = days - 1; i >= 0; i--) {
-    const d = new Date(now.getTime() - i * 24 * 60 * 60 * 1000)
-    dayMap.set(d.toISOString().split('T')[0], { minutes: 0, count: 0 })
+    const d = new Date(kstNow.getTime() - i * 24 * 60 * 60 * 1000)
+    const key = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}`
+    dayMap.set(key, { minutes: 0, count: 0 })
   }
 
   ;(data || []).forEach((a: any) => {
-    const start = new Date(a.start_time)
-    const key = start.toISOString().split('T')[0]
-    const mins = (new Date(a.end_time).getTime() - start.getTime()) / 60000
+    const actKST = getKSTDate(a.start_time)
+    const key = `${actKST.getUTCFullYear()}-${String(actKST.getUTCMonth() + 1).padStart(2, '0')}-${String(actKST.getUTCDate()).padStart(2, '0')}`
+    const mins = (new Date(a.end_time).getTime() - new Date(a.start_time).getTime()) / 60000
     const existing = dayMap.get(key)
     if (existing) {
       existing.minutes += mins
@@ -649,8 +673,9 @@ export async function getCategoryMonthlyTrend(categoryId: string): Promise<Month
   const { data: userData } = await supabase.auth.getUser()
   if (!userData.user) throw new Error('Not authenticated')
 
-  const now = new Date()
-  const startDate = new Date(now.getFullYear(), now.getMonth() - 5, 1).toISOString()
+  const kstNow = getKSTNow()
+  const startKST = new Date(Date.UTC(kstNow.getUTCFullYear(), kstNow.getUTCMonth() - 5, 1))
+  const startDate = new Date(startKST.getTime() - KST_OFFSET_MS).toISOString()
 
   const { data, error } = await supabase
     .from('activities')
@@ -667,15 +692,15 @@ export async function getCategoryMonthlyTrend(categoryId: string): Promise<Month
 
   const monthMap = new Map<string, { minutes: number; count: number }>()
   for (let i = 5; i >= 0; i--) {
-    const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
-    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+    const d = new Date(Date.UTC(kstNow.getUTCFullYear(), kstNow.getUTCMonth() - i, 1))
+    const key = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`
     monthMap.set(key, { minutes: 0, count: 0 })
   }
 
   ;(data || []).forEach((a: any) => {
-    const start = new Date(a.start_time)
-    const key = `${start.getFullYear()}-${String(start.getMonth() + 1).padStart(2, '0')}`
-    const mins = (new Date(a.end_time).getTime() - start.getTime()) / 60000
+    const actKST = getKSTDate(a.start_time)
+    const key = `${actKST.getUTCFullYear()}-${String(actKST.getUTCMonth() + 1).padStart(2, '0')}`
+    const mins = (new Date(a.end_time).getTime() - new Date(a.start_time).getTime()) / 60000
     const existing = monthMap.get(key)
     if (existing) {
       existing.minutes += mins
@@ -698,8 +723,9 @@ export async function getCategoryDailyTrend(categoryId: string, days: number = 7
   const { data: userData } = await supabase.auth.getUser()
   if (!userData.user) throw new Error('Not authenticated')
 
-  const now = new Date()
-  const startDate = new Date(now.getTime() - days * 24 * 60 * 60 * 1000).toISOString()
+  const kstNow = getKSTNow()
+  const startDateKST = new Date(kstNow.getTime() - days * 24 * 60 * 60 * 1000)
+  const startDate = new Date(startDateKST.getTime() - KST_OFFSET_MS).toISOString()
 
   const { data, error } = await supabase
     .from('activities')
@@ -716,14 +742,15 @@ export async function getCategoryDailyTrend(categoryId: string, days: number = 7
 
   const dayMap = new Map<string, { minutes: number; count: number }>()
   for (let i = days - 1; i >= 0; i--) {
-    const d = new Date(now.getTime() - i * 24 * 60 * 60 * 1000)
-    dayMap.set(d.toISOString().split('T')[0], { minutes: 0, count: 0 })
+    const d = new Date(kstNow.getTime() - i * 24 * 60 * 60 * 1000)
+    const key = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}`
+    dayMap.set(key, { minutes: 0, count: 0 })
   }
 
   ;(data || []).forEach((a: any) => {
-    const start = new Date(a.start_time)
-    const key = start.toISOString().split('T')[0]
-    const mins = (new Date(a.end_time).getTime() - start.getTime()) / 60000
+    const actKST = getKSTDate(a.start_time)
+    const key = `${actKST.getUTCFullYear()}-${String(actKST.getUTCMonth() + 1).padStart(2, '0')}-${String(actKST.getUTCDate()).padStart(2, '0')}`
+    const mins = (new Date(a.end_time).getTime() - new Date(a.start_time).getTime()) / 60000
     const existing = dayMap.get(key)
     if (existing) {
       existing.minutes += mins
