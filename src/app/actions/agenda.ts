@@ -113,7 +113,7 @@ export async function updateAgendaTask(id: string, payload: Partial<Omit<AgendaT
   // 완료 상태에 따른 completed_at 업데이트
   if (payload.status === 'done') {
     payload.completed_at = new Date().toISOString()
-  } else if (payload.status && payload.status !== 'done') {
+  } else if (payload.status) {
     payload.completed_at = null
   }
 
