@@ -281,7 +281,7 @@ export function ProfileTab() {
   }
 
   return (
-    <PinPadOverlay>
+    <>
     <div className="space-y-6 md:space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
       
       {/* PWA 앱 설치 유도 (스탠드얼론 아닐 때만 표시) */}
@@ -530,14 +530,13 @@ export function ProfileTab() {
       )}
     </AnimatePresence>
 
-    {/* 데스크톱 설치 가이드 모달 - 브라우저별(Chrome/Edge/기타) 맞춤 안내 */}
-    <DesktopInstallGuideModal 
-      isOpen={showDesktopGuide}
-      onClose={() => setShowDesktopGuide(false)}
-      browserType={browserType}
-    />
-
-    </PinPadOverlay>
+      {/* 데스크톱 설치 가이드 모달 - 브라우저별(Chrome/Edge/기타) 맞춤 안내 */}
+      <DesktopInstallGuideModal 
+        isOpen={showDesktopGuide}
+        onClose={() => setShowDesktopGuide(false)}
+        browserType={browserType}
+      />
+    </>
   )
 }
 

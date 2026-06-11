@@ -279,7 +279,7 @@ export function PinPadOverlay({ children }: { children: React.ReactNode }) {
               animate={{ scale: 1, y: 0, opacity: 1 }}
               exit={{ scale: 0.95, y: -20, opacity: 0 }}
               transition={{ type: "spring", stiffness: 300, damping: 25 }}
-              className="bg-white/80 p-8 rounded-3xl shadow-2xl backdrop-blur-3xl border border-white flex flex-col items-center w-[360px]"
+              className="bg-white/80 p-6 sm:p-8 rounded-3xl shadow-2xl backdrop-blur-3xl border border-white flex flex-col items-center w-[90%] max-w-[360px]"
             >
               <div className="w-14 h-14 bg-gradient-to-tr from-slate-800 to-slate-900 text-white rounded-2xl flex items-center justify-center mb-6 shadow-xl shadow-slate-900/20">
                 {mode === 'loading' ? <Loader2 className="w-7 h-7 animate-spin" /> : mode.startsWith('setup') ? <ShieldAlert className="w-7 h-7" /> : <Lock className="w-7 h-7" />}
