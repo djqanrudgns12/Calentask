@@ -79,6 +79,49 @@ export default function TemplateCenterTab() {
     return Math.round(((current - prev) / prev) * 100)
   }
 
+  const formatMinutesText = (mins: number) => {
+    if (mins === 0) return '0분'
+    if (mins >= 60) {
+      const h = Math.floor(mins / 60)
+      const m = mins % 60
+      return m > 0 ? `${h}시간 ${m}분` : `${h}시간`
+    }
+    return `${mins}분`
+  }
+
+  const renderTimePrimary = (mins: number) => {
+    if (mins === 0) {
+      return (
+        <>
+          <span className="text-[24px] font-black text-gray-900 tracking-tighter">0</span>
+          <span className="text-[13px] font-bold text-gray-400 ml-1">분</span>
+        </>
+      )
+    }
+    if (mins >= 60) {
+      const h = Math.floor(mins / 60)
+      const m = mins % 60
+      return (
+        <>
+          <span className="text-[24px] font-black text-gray-900 tracking-tighter">{h}</span>
+          <span className="text-[13px] font-bold text-gray-400 ml-1">시간</span>
+          {m > 0 && (
+            <>
+              <span className="text-[24px] font-black text-gray-900 tracking-tighter ml-1.5">{m}</span>
+              <span className="text-[13px] font-bold text-gray-400 ml-1">분</span>
+            </>
+          )}
+        </>
+      )
+    }
+    return (
+      <>
+        <span className="text-[24px] font-black text-gray-900 tracking-tighter">{mins}</span>
+        <span className="text-[13px] font-bold text-gray-400 ml-1">분</span>
+      </>
+    )
+  }
+
   const analyticsTemplate = summaries.find(s => s.templateId === analyticsTemplateId)
 
   if (isLoading) {
@@ -233,18 +276,38 @@ export default function TemplateCenterTab() {
                     )}
                   </div>
                   <div className="flex items-baseline gap-2">
-                    <span className="text-[24px] font-black text-gray-900 tracking-tighter">{summary.currentMonthHours}</span>
-                    <span className="text-[13px] font-bold text-gray-400">시간</span>
-                    <span className="text-[13px] font-bold text-gray-300">/</span>
-                    <span className="text-[13px] font-bold text-gray-500">{summary.customUnitEnabled ? `${summary.currentMonthUnits}차시` : `${summary.currentMonthCount}회`}</span>
+                    {summary.customUnitEnabled ? (
+                      <>
+                        <span className="text-[24px] font-black text-gray-900 tracking-tighter">{summary.currentMonthUnits}</span>
+                        <span className="text-[13px] font-bold text-gray-400">차시</span>
+                        <span className="text-[13px] font-bold text-gray-300">/</span>
+                        <span className="text-[13px] font-bold text-gray-500">{formatMinutesText(summary.currentMonthMinutes)}</span>
+                      </>
+                    ) : (
+                      <>
+                        {renderTimePrimary(summary.currentMonthMinutes)}
+                        <span className="text-[13px] font-bold text-gray-300 ml-1">/</span>
+                        <span className="text-[13px] font-bold text-gray-500 ml-1">{summary.currentMonthCount}회</span>
+                      </>
+                    )}
                   </div>
                   <div className="flex items-baseline gap-1.5 mt-2 text-[12px] font-medium text-gray-400 bg-gray-50/80 px-2.5 py-1.5 rounded-lg w-fit">
                     <span className="font-bold text-gray-500">저번 달:</span>
-                    <span className="font-bold text-gray-700">{summary.prevMonthHours}</span>
-                    <span className="text-[11px]">시간</span>
-                    <span className="text-gray-300">/</span>
-                    <span className="font-bold text-gray-700">{summary.customUnitEnabled ? summary.prevMonthUnits : summary.prevMonthCount}</span>
-                    <span className="text-[11px]">{summary.customUnitEnabled ? '차시' : '회'}</span>
+                    {summary.customUnitEnabled ? (
+                      <>
+                        <span className="font-bold text-gray-700">{summary.prevMonthUnits}</span>
+                        <span className="text-[11px]">차시</span>
+                        <span className="text-gray-300">/</span>
+                        <span className="font-bold text-gray-700">{formatMinutesText(summary.prevMonthMinutes)}</span>
+                      </>
+                    ) : (
+                      <>
+                        <span className="font-bold text-gray-700">{formatMinutesText(summary.prevMonthMinutes)}</span>
+                        <span className="text-gray-300">/</span>
+                        <span className="font-bold text-gray-700">{summary.prevMonthCount}</span>
+                        <span className="text-[11px]">회</span>
+                      </>
+                    )}
                   </div>
                 </div>
 
@@ -275,9 +338,19 @@ export default function TemplateCenterTab() {
                   <div className="flex items-center gap-2 text-[12px]">
                     <BarChart3 className="w-3.5 h-3.5 text-gray-400" />
                     <span className="font-bold text-gray-500">총 누적:</span>
-                    <span className="font-black text-gray-900">{summary.totalHours}시간</span>
-                    <span className="text-gray-300">/</span>
-                    <span className="font-bold text-gray-600">{summary.customUnitEnabled ? `${summary.totalUnits}차시` : `${summary.totalCount}회`}</span>
+                    {summary.customUnitEnabled ? (
+                      <>
+                        <span className="font-black text-gray-900">{summary.totalUnits}차시</span>
+                        <span className="text-gray-300">/</span>
+                        <span className="font-bold text-gray-600">{formatMinutesText(summary.totalMinutes)}</span>
+                      </>
+                    ) : (
+                      <>
+                        <span className="font-black text-gray-900">{formatMinutesText(summary.totalMinutes)}</span>
+                        <span className="text-gray-300">/</span>
+                        <span className="font-bold text-gray-600">{summary.totalCount}회</span>
+                      </>
+                    )}
                   </div>
                   <div className="flex items-center gap-2 text-[12px]">
                     <CalendarDays className="w-3.5 h-3.5 text-gray-400" />

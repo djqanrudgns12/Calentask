@@ -231,11 +231,23 @@ export function TemplateAnalyticsSheet({
                       <div className="flex items-center gap-1.5 text-gray-400 font-bold text-[11px] mb-2">
                         <Clock size={13} /> 총 누적 시간
                       </div>
-                      <div className="flex items-baseline gap-1">
-                        <div className="text-[28px] font-black text-gray-900 tracking-tighter">
-                          {stats ? Number((stats.totalMinutes / 60).toFixed(1)) : 0}
-                          <span className="text-[14px] text-gray-400 font-bold ml-1">시간</span>
-                        </div>
+                      <div className="flex items-baseline gap-1 text-[28px] font-black text-gray-900 tracking-tighter">
+                        {stats ? (
+                          stats.totalMinutes === 0 ? (
+                            <>0<span className="text-[14px] text-gray-400 font-bold ml-1">분</span></>
+                          ) : stats.totalMinutes >= 60 ? (
+                            <>
+                              {Math.floor(stats.totalMinutes / 60)}<span className="text-[14px] text-gray-400 font-bold ml-1">시간</span>
+                              {stats.totalMinutes % 60 > 0 && (
+                                <span className="ml-1.5">{stats.totalMinutes % 60}<span className="text-[14px] text-gray-400 font-bold ml-1">분</span></span>
+                              )}
+                            </>
+                          ) : (
+                            <>{stats.totalMinutes}<span className="text-[14px] text-gray-400 font-bold ml-1">분</span></>
+                          )
+                        ) : (
+                          <>0<span className="text-[14px] text-gray-400 font-bold ml-1">분</span></>
+                        )}
                       </div>
                       {stats?.firstPerformedAt && (
                         <p className="text-[10px] text-gray-400 font-medium mt-1">

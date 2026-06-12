@@ -362,10 +362,13 @@ export type TemplateSummary = {
   templateDurationMinutes: number
   templateStartTime?: string
   currentMonthHours: number
+  currentMonthMinutes: number
   currentMonthCount: number
   prevMonthHours: number
+  prevMonthMinutes: number
   prevMonthCount: number
   totalHours: number
+  totalMinutes: number
   totalCount: number
   avgSessionMinutes: number
   lastPerformedAt: string | null
@@ -577,10 +580,13 @@ export async function getAllTemplatesSummary(startDate: string, endDate: string)
       templateDurationMinutes: tmpl.duration_minutes,
       templateStartTime: tmpl.default_start_time,
       currentMonthHours: Number((currentMonthMinutes / 60).toFixed(1)),
+      currentMonthMinutes,
       currentMonthCount,
       prevMonthHours: Number((prevMonthMinutes / 60).toFixed(1)),
+      prevMonthMinutes,
       prevMonthCount,
       totalHours: Number((totalMinutes / 60).toFixed(1)),
+      totalMinutes,
       totalCount: acts.length,
       avgSessionMinutes: acts.length > 0 ? Math.round(totalMinutes / acts.length) : 0,
       lastPerformedAt: acts.length > 0 ? acts[0].start_time : null,
