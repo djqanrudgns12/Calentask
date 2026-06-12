@@ -186,22 +186,27 @@ export function CanvasBoard() {
   const onNodesChangeWrapper = useCallback(
     (changes: any) => {
       setNodes((nds) => applyNodeChanges(changes, nds));
-      // Position changes should be persisted
       changes.forEach((change: any) => {
-        if (change.type === 'position' && change.dragging === false && activeTabId) {
-           const item = items.find(i => i.id === change.id);
-           if (item) {
-             updateItem(activeTabId, item.id, {
-               data: { ...item.data, x: change.position.x, y: change.position.y }
-             });
-           }
-        }
         if (change.type === 'remove' && activeTabId) {
            deleteItem(activeTabId, change.id);
         }
       });
     },
-    [setNodes, items, activeTabId, updateItem, deleteItem]
+    [setNodes, activeTabId, deleteItem]
+  );
+
+  const onNodeDragStop = useCallback(
+    (_: React.MouseEvent, node: Node) => {
+      if (activeTabId) {
+        const item = items.find(i => i.id === node.id);
+        if (item) {
+          updateItem(activeTabId, item.id, {
+            data: { ...item.data, x: node.position.x, y: node.position.y }
+          });
+        }
+      }
+    },
+    [activeTabId, items, updateItem]
   );
 
   const onEdgesChangeWrapper = useCallback(
@@ -295,6 +300,7 @@ export function CanvasBoard() {
         edges={edges}
         onNodesChange={onNodesChangeWrapper}
         onEdgesChange={onEdgesChangeWrapper}
+        onNodeDragStop={onNodeDragStop}
         onConnect={onConnect}
         onEdgeDoubleClick={onEdgeDoubleClick}
         nodeTypes={nodeTypes}
