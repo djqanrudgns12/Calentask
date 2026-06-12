@@ -415,16 +415,50 @@ export async function getAllTemplatesSummary(startDate: string, endDate: string)
   const prevMonthStart = new Date(prevMonthStartKST.getTime() - KST_OFFSET_MS).toISOString()
   const prevMonthEnd = new Date(prevMonthEndKST.getTime() - KST_OFFSET_MS).toISOString()
 
-  // 3. 전체 기간 활동 (template_id NOT NULL)
-  const { data: allActivities, error } = await supabase
+  // 3. 전체 기간 활동 (직접 생성)
+  const { data: directActivities, error } = await supabase
     .from('activities')
     .select('id, template_id, start_time, end_time')
     .eq('user_id', userData.user.id)
     .not('template_id', 'is', null)
     .is('deleted_at', null)
-    .order('start_time', { ascending: false })
 
   if (error) throw new Error(error.message)
+
+  // 3-1. 수동 연결 일정 조회
+  const { data: links } = await supabase
+    .from('template_activity_links')
+    .select('template_id, activity_id')
+
+  const linkedIds = (links || []).map((l: any) => l.activity_id)
+  let linkedActivities: any[] = []
+  if (linkedIds.length > 0) {
+    const { data: linkedData } = await supabase
+      .from('activities')
+      .select('id, start_time, end_time')
+      .eq('user_id', userData.user.id)
+      .in('id', linkedIds)
+      .is('deleted_at', null)
+    linkedActivities = linkedData || []
+  }
+
+  const linkedActMap = new Map(linkedActivities.map(a => [a.id, a]))
+  
+  const allActivities = [...(directActivities || [])]
+  ;(links || []).forEach((l: any) => {
+    const act = linkedActMap.get(l.activity_id)
+    if (act) {
+      allActivities.push({
+        id: act.id,
+        template_id: l.template_id,
+        start_time: act.start_time,
+        end_time: act.end_time
+      })
+    }
+  })
+
+  // 시간 역순 정렬
+  allActivities.sort((a, b) => new Date(b.start_time).getTime() - new Date(a.start_time).getTime())
 
   // BUG-07 수정: 카테고리 목록을 조회하여 ID → name 매핑
   const { data: allCategories } = await supabase
@@ -440,7 +474,7 @@ export async function getAllTemplatesSummary(startDate: string, endDate: string)
   const sevenDaysAgo = new Date(sevenDaysAgoKST.getTime() - KST_OFFSET_MS).toISOString()
 
   const summaries: TemplateSummary[] = templates.map(tmpl => {
-    const acts = (allActivities || []).filter((a: any) => a.template_id === tmpl.id)
+    const acts = allActivities.filter((a: any) => a.template_id === tmpl.id)
     
     let totalMinutes = 0
     let currentMonthMinutes = 0
@@ -518,15 +552,9 @@ export async function getTemplateUsageStats(templateId: string, startDate: strin
   const { data: userData } = await supabase.auth.getUser()
   if (!userData.user) throw new Error('Not authenticated')
 
-  const { data, error } = await supabase
-    .from('activities')
-    .select('start_time, end_time')
-    .eq('user_id', userData.user.id)
-    .eq('template_id', templateId)
-    .is('deleted_at', null)
-    .order('start_time', { ascending: true })
-
-  if (error) throw new Error(error.message)
+  const rawActs = await getTemplateLinkedActivities(templateId)
+  const data = rawActs.map(a => ({ start_time: a.startTime, end_time: a.endTime }))
+  data.sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime())
 
   let totalMinutes = 0
   let maxSessionMinutes = 0
@@ -564,15 +592,10 @@ export async function getTemplateMonthlyTrend(templateId: string): Promise<Month
   const startKST = new Date(Date.UTC(kstNow.getUTCFullYear(), kstNow.getUTCMonth() - 11, 1))
   const startDate = new Date(startKST.getTime() - KST_OFFSET_MS).toISOString()
 
-  const { data, error } = await supabase
-    .from('activities')
-    .select('start_time, end_time')
-    .eq('user_id', userData.user.id)
-    .eq('template_id', templateId)
-    .gte('start_time', startDate)
-    .is('deleted_at', null)
-
-  if (error) throw new Error(error.message)
+  const rawActs = await getTemplateLinkedActivities(templateId)
+  const data = rawActs
+    .filter(a => a.startTime >= startDate)
+    .map(a => ({ start_time: a.startTime, end_time: a.endTime }))
 
   const monthMap = new Map<string, { minutes: number; count: number }>()
 
@@ -613,15 +636,10 @@ export async function getTemplateWeeklyTrend(templateId: string): Promise<Weekly
   const startDateKST = new Date(kstNow.getTime() - 8 * 7 * 24 * 60 * 60 * 1000)
   const startDate = new Date(startDateKST.getTime() - KST_OFFSET_MS).toISOString()
 
-  const { data, error } = await supabase
-    .from('activities')
-    .select('start_time, end_time')
-    .eq('user_id', userData.user.id)
-    .eq('template_id', templateId)
-    .gte('start_time', startDate)
-    .is('deleted_at', null)
-
-  if (error) throw new Error(error.message)
+  const rawActs = await getTemplateLinkedActivities(templateId)
+  const data = rawActs
+    .filter(a => a.startTime >= startDate)
+    .map(a => ({ start_time: a.startTime, end_time: a.endTime }))
 
   // 8주 초기화 (월요일 기준)
   const weeks: WeeklyTrendData[] = []
@@ -665,15 +683,10 @@ export async function getTemplateDailyTrend(templateId: string, days: number = 3
   const startDateKST = new Date(kstNow.getTime() - days * 24 * 60 * 60 * 1000)
   const startDate = new Date(startDateKST.getTime() - KST_OFFSET_MS).toISOString()
 
-  const { data, error } = await supabase
-    .from('activities')
-    .select('start_time, end_time')
-    .eq('user_id', userData.user.id)
-    .eq('template_id', templateId)
-    .gte('start_time', startDate)
-    .is('deleted_at', null)
-
-  if (error) throw new Error(error.message)
+  const rawActs = await getTemplateLinkedActivities(templateId)
+  const data = rawActs
+    .filter(a => a.startTime >= startDate)
+    .map(a => ({ start_time: a.startTime, end_time: a.endTime }))
 
   const dayMap = new Map<string, { minutes: number; count: number }>()
   for (let i = days - 1; i >= 0; i--) {
