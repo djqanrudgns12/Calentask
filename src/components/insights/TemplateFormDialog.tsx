@@ -320,7 +320,7 @@ export function TemplateFormDialog({ isOpen, onClose, editingTemplate, mode = 'm
                         {!isSelected && !cat.is_default && (
                           <span
                             role="button"
-                            className="hidden group-hover/cat:inline-flex items-center justify-center w-4 h-4 rounded-full bg-white/30 hover:bg-red-500/80 transition-colors ml-0.5"
+                            className="inline-flex opacity-0 pointer-events-none group-hover/cat:opacity-100 group-hover/cat:pointer-events-auto items-center justify-center w-4 h-4 rounded-full bg-white/30 hover:bg-red-500/80 transition-opacity ml-0.5"
                             onClick={(e) => {
                               e.stopPropagation()
                               if (window.confirm(`'${cat.name}' 카테고리를 삭제하시겠습니까?\n\n⚠️ 이 카테고리에 연결된 일정의 카테고리 정보가 해제됩니다.`)) {

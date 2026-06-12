@@ -225,7 +225,7 @@ export function TemplateAnalyticsSheet({
                 </div>
               ) : (
                 <div className="space-y-6">
-                  {/* ── 핵심 통계 카드 4종 ── */}
+                  {/* ── 핵심 통계 카드 ── */}
                   <div className="grid grid-cols-2 gap-3">
                     <div className="bg-white rounded-[20px] p-5 border border-gray-100 shadow-sm">
                       <div className="flex items-center gap-1.5 text-gray-400 font-bold text-[11px] mb-2">
@@ -257,34 +257,30 @@ export function TemplateAnalyticsSheet({
                     </div>
                     <div className="bg-white rounded-[20px] p-5 border border-gray-100 shadow-sm">
                       <div className="flex items-center gap-1.5 text-gray-400 font-bold text-[11px] mb-2">
-                        <CalendarDays size={13} /> 총 수행 {customUnitEnabled ? '차시' : '횟수'}
+                        <CalendarDays size={13} /> 총 수행 횟수
                       </div>
                       <div className="text-[28px] font-black text-gray-900 tracking-tighter">
-                        {stats ? (customUnitEnabled ? stats.totalUnits : stats.totalCount) : 0}
-                        <span className="text-[14px] text-gray-400 font-bold ml-1">{customUnitEnabled ? '차시' : '회'}</span>
+                        {stats?.totalCount || 0}
+                        <span className="text-[14px] text-gray-400 font-bold ml-1">회</span>
                       </div>
                     </div>
-                    <div className="bg-white rounded-[20px] p-5 border border-gray-100 shadow-sm">
-                      <div className="flex items-center gap-1.5 text-gray-400 font-bold text-[11px] mb-2">
-                        <Zap size={13} /> 평균 {customUnitEnabled ? '차시' : '세션'}
+                    
+                    {customUnitEnabled && (
+                      <div className="col-span-2 bg-white rounded-[20px] p-5 border border-gray-100 shadow-sm">
+                        <div className="flex items-center gap-1.5 text-gray-400 font-bold text-[11px] mb-2">
+                          <Target size={13} /> 총 누적 차시
+                        </div>
+                        <div className="flex items-baseline gap-2">
+                          <div className="text-[28px] font-black text-gray-900 tracking-tighter">
+                            {stats?.totalUnits || 0}
+                            <span className="text-[14px] text-gray-400 font-bold ml-1">차시</span>
+                          </div>
+                          <div className="text-[12px] font-medium text-gray-400 bg-gray-50 px-2 py-1 rounded-md">
+                            {customUnitMinutes}분 단위
+                          </div>
+                        </div>
                       </div>
-                      <div className="text-[22px] font-black text-gray-900 tracking-tighter">
-                        {stats ? formatSessionStat(stats.avgSessionMinutes) : '0분'}
-                      </div>
-                    </div>
-                    <div className="bg-white rounded-[20px] p-5 border border-gray-100 shadow-sm">
-                      <div className="flex items-center gap-1.5 text-gray-400 font-bold text-[11px] mb-2">
-                        <Flame size={13} /> 최장 {customUnitEnabled ? '차시' : '세션'}
-                      </div>
-                      <div className="text-[22px] font-black text-gray-900 tracking-tighter">
-                        {stats ? formatSessionStat(stats.maxSessionMinutes) : '0분'}
-                      </div>
-                      {stats?.maxSessionDate && (
-                        <p className="text-[10px] text-gray-400 font-medium mt-1">
-                          {format(new Date(stats.maxSessionDate), 'M.d(EEE)', { locale: ko })}
-                        </p>
-                      )}
-                    </div>
+                    )}
                   </div>
 
                   {/* ── 월별 누적 시간 바 차트 ── */}
