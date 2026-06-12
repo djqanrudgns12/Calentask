@@ -5,10 +5,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { X, Pencil, Clock, Plus, Trash2 } from 'lucide-react'
+import { X, Pencil, Clock, Plus, Trash2, CalendarDays } from 'lucide-react'
 import { useCategories, useCreateCategory, useDeleteCategory } from '@/hooks/useCalendarQueries'
-import { useCreateTemplate, useUpdateTemplate } from '@/hooks/useInsightsQueries'
+import { useCreateTemplate, useUpdateTemplate, useCreateActivityFromTemplate } from '@/hooks/useInsightsQueries'
 import type { ActivityTemplate } from '@/app/actions/insights'
+import { format } from 'date-fns'
 
 const COLOR_SWATCHES = [
   '#ef4444', '#f97316', '#eab308', '#22c55e', '#14b8a6', '#0ea5e9', '#3b82f6', '#6366f1',
@@ -57,9 +58,11 @@ interface TemplateFormDialogProps {
   isOpen: boolean
   onClose: () => void
   editingTemplate?: ActivityTemplate | null
+  mode?: 'manage' | 'quick-add'
+  onQuickAddSuccess?: () => void
 }
 
-export function TemplateFormDialog({ isOpen, onClose, editingTemplate }: TemplateFormDialogProps) {
+export function TemplateFormDialog({ isOpen, onClose, editingTemplate, mode = 'manage', onQuickAddSuccess }: TemplateFormDialogProps) {
   const { dialogRef, scrollRef, handleFocusScroll } = useKeyboardAwareDialog(isOpen)
   
   const [title, setTitle] = useState('')
@@ -81,6 +84,17 @@ export function TemplateFormDialog({ isOpen, onClose, editingTemplate }: Templat
   const { mutate: deleteCategory, isPending: isDeletingCategory } = useDeleteCategory()
   const { mutate: createTemplate, isPending: isCreating } = useCreateTemplate()
   const { mutate: updateTemplate, isPending: isUpdating } = useUpdateTemplate()
+  const { mutate: createActivity, isPending: isCreatingActivity } = useCreateActivityFromTemplate()
+
+  // FEAT: 빠른 일정 등록 모드 전용 상태
+  const getRoundedNow = () => {
+    const now = new Date()
+    const minutes = Math.ceil(now.getMinutes() / 10) * 10
+    now.setMinutes(minutes)
+    return format(now, 'HH:mm')
+  }
+  const [startDate, setStartDate] = useState(format(new Date(), 'yyyy-MM-dd'))
+  const [quickAddStartTime, setQuickAddStartTime] = useState(getRoundedNow())
 
   useEffect(() => {
     if (isOpen) {
@@ -93,6 +107,11 @@ export function TemplateFormDialog({ isOpen, onClose, editingTemplate }: Templat
         setDefaultStartTime(editingTemplate.default_start_time || '')
         setCustomUnitEnabled(editingTemplate.custom_unit_enabled || false)
         setCustomUnitMinutes(editingTemplate.custom_unit_minutes || 60)
+        
+        if (mode === 'quick-add') {
+          setStartDate(format(new Date(), 'yyyy-MM-dd'))
+          setQuickAddStartTime(editingTemplate.default_start_time || getRoundedNow())
+        }
       } else {
         setTitle('')
         setCategoryIds([])
@@ -102,9 +121,14 @@ export function TemplateFormDialog({ isOpen, onClose, editingTemplate }: Templat
         setDefaultStartTime('')
         setCustomUnitEnabled(false)
         setCustomUnitMinutes(60)
+        
+        if (mode === 'quick-add') {
+          setStartDate(format(new Date(), 'yyyy-MM-dd'))
+          setQuickAddStartTime(getRoundedNow())
+        }
       }
     }
-  }, [isOpen, editingTemplate])
+  }, [isOpen, editingTemplate, mode])
 
   const getGradient = () => {
     if (customColor) return `linear-gradient(to right, ${customColor}, ${customColor})`
@@ -178,17 +202,45 @@ export function TemplateFormDialog({ isOpen, onClose, editingTemplate }: Templat
       custom_unit_minutes: customUnitEnabled ? customUnitMinutes : 60
     }
 
+    const handleQuickAdd = (templateId: string) => {
+      if (mode !== 'quick-add') return
+      
+      const customDate = new Date(`${startDate}T${quickAddStartTime}:00`)
+      createActivity(
+        { templateId, customDate, durationMinutes },
+        {
+          onSuccess: () => {
+            onQuickAddSuccess?.()
+            onClose()
+          },
+          onError: (err) => alert(`일정 추가에 실패했습니다: ${err.message}`)
+        }
+      )
+    }
+
     if (editingTemplate) {
       updateTemplate(
         { id: editingTemplate.id, payload },
         { 
-          onSuccess: onClose,
+          onSuccess: () => {
+            if (mode === 'quick-add') {
+              handleQuickAdd(editingTemplate.id)
+            } else {
+              onClose()
+            }
+          },
           onError: (err) => alert(`템플릿 수정에 실패했습니다: ${err.message}`)
         }
       )
     } else {
       createTemplate(payload, { 
-        onSuccess: onClose,
+        onSuccess: (data) => {
+          if (mode === 'quick-add' && data?.id) {
+            handleQuickAdd(data.id)
+          } else {
+            onClose()
+          }
+        },
         onError: (err) => alert(`템플릿 저장에 실패했습니다: ${err.message}`)
       })
     }
@@ -205,6 +257,33 @@ export function TemplateFormDialog({ isOpen, onClose, editingTemplate }: Templat
         <form onSubmit={handleSubmit} className="flex flex-col min-h-0 flex-1 overflow-hidden">
           <div ref={scrollRef} onFocusCapture={handleFocusScroll} className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-6 py-6 pb-6 -webkit-overflow-scrolling-touch">
             <div className="space-y-6">
+              
+              {/* FEAT: 빠른 일정 추가용 날짜 및 시각 (quick-add 모드일 때 최상단 노출) */}
+              {mode === 'quick-add' && (
+                <div className="flex gap-3 pb-2 mb-2 border-b border-gray-100">
+                  <div className="flex-1 space-y-1.5">
+                    <Label className="text-indigo-600 font-bold text-[13px] pl-1 flex items-center gap-1"><CalendarDays className="w-3.5 h-3.5" />진행 일자</Label>
+                    <Input 
+                      type="date"
+                      value={startDate}
+                      onChange={e => setStartDate(e.target.value)}
+                      className="bg-indigo-50/50 border-indigo-100 focus-visible:ring-indigo-500 rounded-xl h-11 text-[15px] font-semibold"
+                      required 
+                    />
+                  </div>
+                  <div className="flex-1 space-y-1.5">
+                    <Label className="text-indigo-600 font-bold text-[13px] pl-1 flex items-center gap-1"><Clock className="w-3.5 h-3.5" />시작 시각</Label>
+                    <Input 
+                      type="time"
+                      value={quickAddStartTime}
+                      onChange={e => setQuickAddStartTime(e.target.value)}
+                      className="bg-indigo-50/50 border-indigo-100 focus-visible:ring-indigo-500 rounded-xl h-11 text-[15px] font-semibold"
+                      required 
+                    />
+                  </div>
+                </div>
+              )}
+
               
               {/* Title */}
               <div>
@@ -407,8 +486,10 @@ export function TemplateFormDialog({ isOpen, onClose, editingTemplate }: Templat
           
           <div className="flex-shrink-0 flex justify-end gap-3 bg-white px-6 py-4 border-t border-gray-100">
             <Button type="button" variant="ghost" onClick={onClose} className="text-gray-500 hover:bg-gray-100 rounded-full px-5">취소</Button>
-            <Button type="submit" disabled={isCreating || isUpdating} className="bg-indigo-500 hover:bg-indigo-600 text-white rounded-full px-6 shadow-sm shadow-indigo-200 transition-all active:scale-95">
-              {isCreating || isUpdating ? '저장 중...' : (editingTemplate ? '수정 완료' : '템플릿 저장')}
+            <Button type="submit" disabled={isCreating || isUpdating || isCreatingActivity} className="bg-indigo-500 hover:bg-indigo-600 text-white rounded-full px-6 shadow-sm shadow-indigo-200 transition-all active:scale-95">
+              {isCreating || isUpdating || isCreatingActivity 
+                ? '저장 중...' 
+                : (mode === 'quick-add' ? '✅ 설정 저장 & 캘린더에 추가하기' : (editingTemplate ? '수정 완료' : '템플릿 저장'))}
             </Button>
           </div>
         </form>

@@ -1,7 +1,7 @@
 "use client";
 import { Settings2, Plus } from 'lucide-react';
 import { useState } from 'react';
-import { SmartQuickAdjustPopup } from './SmartQuickAdjustPopup';
+import { TemplateFormDialog } from './TemplateFormDialog';
 import { TemplateManagementSheet } from './TemplateManagementSheet';
 import type { ActivityTemplate } from '@/app/actions/insights';
 
@@ -69,12 +69,13 @@ export default function QuickAddCarousel({ templates }: { templates: ActivityTem
         </div>
       )}
 
-      {/* 스마트 팝업 (칩 클릭 시) */}
-      <SmartQuickAdjustPopup 
+      {/* 빠른 일정 템플릿 폼 (칩 클릭 시 quick-add 모드) */}
+      <TemplateFormDialog 
         isOpen={isPopupOpen}
         onClose={() => setIsPopupOpen(false)}
-        template={selectedTemplate}
-        onSuccess={handleSuccess}
+        editingTemplate={selectedTemplate}
+        mode="quick-add"
+        onQuickAddSuccess={handleSuccess}
       />
 
       {/* 관리 시트 (관리 버튼 클릭 시) */}
