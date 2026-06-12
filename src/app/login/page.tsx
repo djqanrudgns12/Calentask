@@ -68,7 +68,11 @@ export default async function LoginPage(
 
           {searchParams?.error && (
             <div className="rounded-2xl bg-red-50 p-4 text-sm text-red-600 text-center font-medium">
-              {searchParams.error}
+              {searchParams.error === 'user_not_found'
+                ? '존재하지 않는 아이디입니다.'
+                : searchParams.error === 'invalid_password'
+                ? '올바르지 않은 비밀번호입니다.'
+                : '아이디 또는 비밀번호가 올바르지 않습니다.'}
             </div>
           )}
 

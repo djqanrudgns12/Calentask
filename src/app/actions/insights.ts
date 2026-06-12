@@ -13,6 +13,8 @@ export type ActivityTemplate = {
   hex_color?: string
   memo?: string
   default_start_time?: string // HH:mm format
+  custom_unit_enabled?: boolean
+  custom_unit_minutes?: number
 }
 
 export async function getActivityTemplates() {
@@ -45,7 +47,9 @@ export async function getActivityTemplates() {
     duration_minutes: t.duration_minutes,
     hex_color: t.hex_color || t.categories?.hex_color,
     memo: t.memo,
-    default_start_time: t.default_start_time ? t.default_start_time.substring(0, 5) : undefined
+    default_start_time: t.default_start_time ? t.default_start_time.substring(0, 5) : undefined,
+    custom_unit_enabled: t.custom_unit_enabled || false,
+    custom_unit_minutes: t.custom_unit_minutes || 60
   })) as ActivityTemplate[]
 }
 
@@ -63,6 +67,8 @@ export async function createActivityTemplate(payload: Omit<ActivityTemplate, 'id
   if (payload.hex_color) insertPayload.hex_color = payload.hex_color
   if (payload.memo) insertPayload.memo = payload.memo
   if (payload.default_start_time) insertPayload.default_start_time = payload.default_start_time + ':00'
+  if (payload.custom_unit_enabled !== undefined) insertPayload.custom_unit_enabled = payload.custom_unit_enabled
+  if (payload.custom_unit_minutes !== undefined) insertPayload.custom_unit_minutes = payload.custom_unit_minutes
 
   const { data, error } = await supabase
     .from('activity_templates')
@@ -90,6 +96,8 @@ export async function updateActivityTemplate(id: string, payload: Partial<Omit<A
   if (payload.hex_color !== undefined) updatePayload.hex_color = payload.hex_color
   if (payload.memo !== undefined) updatePayload.memo = payload.memo
   if (payload.default_start_time !== undefined) updatePayload.default_start_time = payload.default_start_time ? payload.default_start_time + ':00' : null
+  if (payload.custom_unit_enabled !== undefined) updatePayload.custom_unit_enabled = payload.custom_unit_enabled
+  if (payload.custom_unit_minutes !== undefined) updatePayload.custom_unit_minutes = payload.custom_unit_minutes
 
   const { data, error } = await supabase
     .from('activity_templates')
@@ -230,7 +238,7 @@ export async function getInsightsData(startDate: string, endDate: string) {
 
   // 3. Weekly Chart (Mon-Sun)
   const days = ['월', '화', '수', '목', '금', '토', '일']
-  const weeklyData = days.map(day => ({ day, value: 0 }))
+  const weeklyData: { day: string; hours: number; activities: any[] }[] = days.map(day => ({ day, hours: 0, activities: [] }))
 
   activities.forEach(act => {
     const start = new Date(act.start_time)
@@ -243,7 +251,8 @@ export async function getInsightsData(startDate: string, endDate: string) {
     const dayOfWeek = start.getDay() // 0=Sun, 1=Mon...
     const adjustedDayIndex = dayOfWeek === 0 ? 6 : dayOfWeek - 1 // 0=Mon, 6=Sun
     if (adjustedDayIndex >= 0 && adjustedDayIndex <= 6) {
-      weeklyData[adjustedDayIndex].value += Number((durationMins / 60).toFixed(1))
+      weeklyData[adjustedDayIndex].hours += Number((durationMins / 60).toFixed(1))
+      weeklyData[adjustedDayIndex].activities.push(act)
     }
 
     // Breakdown logic
@@ -316,6 +325,7 @@ export type TemplateSummary = {
   title: string
   hexColor: string
   categoryNames: string[]
+  categoryIds: string[]
   currentMonthHours: number
   currentMonthCount: number
   prevMonthHours: number
@@ -325,6 +335,9 @@ export type TemplateSummary = {
   avgSessionMinutes: number
   lastPerformedAt: string | null
   dailyTrend: { date: string; minutes: number }[]
+  // FEAT-02: 커스텀 시간 단위
+  customUnitEnabled: boolean
+  customUnitMinutes: number
 }
 
 export type TemplateUsageStats = {
@@ -402,6 +415,14 @@ export async function getAllTemplatesSummary(startDate: string, endDate: string)
 
   if (error) throw new Error(error.message)
 
+  // BUG-07 수정: 카테고리 목록을 조회하여 ID → name 매핑
+  const { data: allCategories } = await supabase
+    .from('categories')
+    .select('id, name')
+    .eq('user_id', userData.user.id)
+  const categoryNameMap: Record<string, string> = {}
+  ;(allCategories || []).forEach((c: any) => { categoryNameMap[c.id] = c.name })
+
   // 4. 최근 7일 일별 데이터 계산
   const kstNow = getKSTNow()
   const sevenDaysAgoKST = new Date(kstNow.getTime() - 7 * 24 * 60 * 60 * 1000)
@@ -451,13 +472,15 @@ export async function getAllTemplatesSummary(startDate: string, endDate: string)
       dailyTrend.push({ date: key, minutes: dailyMap.get(key) || 0 })
     }
 
-    const categories = (tmpl as any).category_ids || []
+    const categoryIds = (tmpl as any).category_ids || []
+    const categoryNames = categoryIds.map((id: string) => categoryNameMap[id] || '미분류')
     
     return {
       templateId: tmpl.id,
       title: tmpl.title,
       hexColor: tmpl.hex_color || '#4f46e5',
-      categoryNames: categories,
+      categoryNames, // BUG-07 수정: 실제 카테고리 이름 배열
+      categoryIds, // 카테고리 ID 배열 (편집용)
       currentMonthHours: Number((currentMonthMinutes / 60).toFixed(1)),
       currentMonthCount,
       prevMonthHours: Number((prevMonthMinutes / 60).toFixed(1)),
@@ -466,7 +489,10 @@ export async function getAllTemplatesSummary(startDate: string, endDate: string)
       totalCount: acts.length,
       avgSessionMinutes: acts.length > 0 ? Math.round(totalMinutes / acts.length) : 0,
       lastPerformedAt: acts.length > 0 ? acts[0].start_time : null,
-      dailyTrend
+      dailyTrend,
+      // FEAT-02: 커스텀 시간 단위
+      customUnitEnabled: (tmpl as any).custom_unit_enabled || false,
+      customUnitMinutes: (tmpl as any).custom_unit_minutes || 60
     }
   })
 
@@ -813,20 +839,21 @@ export async function getOverviewKPI(startDate: string, endDate: string, periodT
     currentEnd.setHours(23, 59, 59, 999)
   }
 
-  // 비교 기간: 선택 기간과 동일 길이의 직전 기간
+  // 비교 기간: 선택 기간과 동일 길이의 직전 기간 (BUG-09 수정)
   const diffMs = currentEnd.getTime() - currentStart.getTime()
-  const prevStart = new Date(currentStart.getTime() - diffMs - 1) // 1ms 겹침 방지
-  prevStart.setHours(0, 0, 0, 0)
-  const prevEnd = new Date(currentStart.getTime() - 1)
+  const prevEnd = new Date(currentStart)
+  prevEnd.setDate(prevEnd.getDate() - 1)
   prevEnd.setHours(23, 59, 59, 999)
+  const prevStart = new Date(prevEnd.getTime() - diffMs)
+  prevStart.setHours(0, 0, 0, 0)
 
-  // 1) 활동 시간 (현재 기간 / 이전 기간)
+  // 1) 활동 시간 (현재 기간 / 이전 기간) — BUG-03/10 수정: getActivities와 동일한 필터
   const { data: currentActs } = await supabase
     .from('activities')
     .select('id, start_time, end_time')
     .eq('user_id', userData.user.id)
     .gte('start_time', currentStart.toISOString())
-    .lte('start_time', currentEnd.toISOString())
+    .lte('end_time', currentEnd.toISOString())
     .is('deleted_at', null)
 
   const { data: prevActs } = await supabase
@@ -834,7 +861,7 @@ export async function getOverviewKPI(startDate: string, endDate: string, periodT
     .select('start_time, end_time')
     .eq('user_id', userData.user.id)
     .gte('start_time', prevStart.toISOString())
-    .lte('start_time', prevEnd.toISOString())
+    .lte('end_time', prevEnd.toISOString())
     .is('deleted_at', null)
 
   let currentMins = 0
@@ -849,22 +876,24 @@ export async function getOverviewKPI(startDate: string, endDate: string, periodT
   // 평균 세션
   const avgSessionMins = (currentActs || []).length > 0 ? Math.round(currentMins / (currentActs || []).length) : 0
 
-  // 2) 할 일 완료 (현재 기간 / 이전 기간)
+  // 2) 할 일 완료 (현재 기간 / 이전 기간) — BUG-05 수정: completed_at 사용
   const { data: currentDone } = await supabase
     .from('agenda_tasks')
     .select('id')
     .eq('user_id', userData.user.id)
     .eq('status', 'done')
-    .gte('updated_at', currentStart.toISOString())
-    .lte('updated_at', currentEnd.toISOString())
+    .not('completed_at', 'is', null)
+    .gte('completed_at', currentStart.toISOString())
+    .lte('completed_at', currentEnd.toISOString())
 
   const { data: prevDone } = await supabase
     .from('agenda_tasks')
     .select('id')
     .eq('user_id', userData.user.id)
     .eq('status', 'done')
-    .gte('updated_at', prevStart.toISOString())
-    .lte('updated_at', prevEnd.toISOString())
+    .not('completed_at', 'is', null)
+    .gte('completed_at', prevStart.toISOString())
+    .lte('completed_at', prevEnd.toISOString())
 
   // 3) 아카이브 메모 (현재 기간 / 이전 기간)
   const { data: currentNotes } = await supabase
@@ -890,17 +919,19 @@ export async function getOverviewKPI(startDate: string, endDate: string, periodT
     .gte('start_time', ninetyDaysAgo.toISOString())
     .is('deleted_at', null)
 
+  // BUG-06 수정: KST 기준으로 날짜 파싱
   const activeDays = new Set<string>()
   ;(streakActs || []).forEach((a: any) => {
-    activeDays.add(new Date(a.start_time).toISOString().split('T')[0])
+    const kst = getKSTDate(a.start_time)
+    activeDays.add(`${kst.getUTCFullYear()}-${String(kst.getUTCMonth() + 1).padStart(2, '0')}-${String(kst.getUTCDate()).padStart(2, '0')}`)
   })
 
   let currentStreak = 0
   let maxStreak = 0
   let tempStreak = 0
   for (let i = 0; i < 90; i++) {
-    const d = new Date(now.getTime() - i * 24 * 60 * 60 * 1000)
-    const key = d.toISOString().split('T')[0]
+    const dKst = getKSTDate(new Date(now.getTime() - i * 24 * 60 * 60 * 1000))
+    const key = `${dKst.getUTCFullYear()}-${String(dKst.getUTCMonth() + 1).padStart(2, '0')}-${String(dKst.getUTCDate()).padStart(2, '0')}`
     if (activeDays.has(key)) {
       if (i === 0 || currentStreak > 0) currentStreak++
       tempStreak++
@@ -1001,7 +1032,7 @@ export async function getExecutionAnalytics(): Promise<ExecutionAnalytics> {
 
   doneTasks.forEach(t => {
     const created = new Date(t.created_at)
-    const completed = new Date(t.updated_at)
+    const completed = new Date(t.completed_at || t.updated_at) // BUG-05: completed_at 우선
     const days = Math.max(0, Math.round((completed.getTime() - created.getTime()) / (1000 * 60 * 60 * 24)))
     totalDaysToComplete += days
 
@@ -1045,11 +1076,11 @@ export async function getExecutionAnalytics(): Promise<ExecutionAnalytics> {
 
     const weekLabel = `${weekStart.getMonth() + 1}/${weekStart.getDate()}`
 
-    const doneInWeek = allTasks.filter(t =>
-      t.status === 'done' &&
-      new Date(t.updated_at) >= weekStart &&
-      new Date(t.updated_at) <= weekEnd
-    ).length
+    const doneInWeek = allTasks.filter(t => {
+      if (t.status !== 'done') return false
+      const completedDate = new Date(t.completed_at || t.updated_at) // BUG-05: completed_at 우선
+      return completedDate >= weekStart && completedDate <= weekEnd
+    }).length
 
     const createdInWeek = allTasks.filter(t =>
       new Date(t.created_at) >= weekStart &&
@@ -1070,7 +1101,7 @@ export async function getExecutionAnalytics(): Promise<ExecutionAnalytics> {
 
   doneTasks.forEach(t => {
     const days = Math.max(0, Math.round(
-      (new Date(t.updated_at).getTime() - new Date(t.created_at).getTime()) / (1000 * 60 * 60 * 24)
+      (new Date(t.completed_at || t.updated_at).getTime() - new Date(t.created_at).getTime()) / (1000 * 60 * 60 * 24) // BUG-05: completed_at 우선
     ))
     const bucket = lifespanBuckets.find(b => days >= b.min && days < b.max)
     if (bucket) bucket.count++
@@ -1116,4 +1147,166 @@ export async function getExecutionAnalytics(): Promise<ExecutionAnalytics> {
     statusDistribution,
     overdueTasks
   }
+}
+
+// ─── FEAT-01: 템플릿-일정 연결 관리 서버 액션 ───
+
+/**
+ * 특정 템플릿에 연결된 모든 일정 조회 (직접 생성 + 수동 연결)
+ * 시간순(최신순) 정렬, 정확한 연/월/일과 시작~종료 시각 포함
+ */
+export async function getTemplateLinkedActivities(templateId: string) {
+  const supabase = await createClient()
+  const { data: userData } = await supabase.auth.getUser()
+  if (!userData.user) throw new Error('Not authenticated')
+
+  // 1. 직접 생성된 일정 (template_id가 설정된 것)
+  const { data: directActs } = await supabase
+    .from('activities')
+    .select('id, title, start_time, end_time, is_all_day, template_id')
+    .eq('user_id', userData.user.id)
+    .eq('template_id', templateId)
+    .is('deleted_at', null)
+    .order('start_time', { ascending: false })
+
+  // 2. 수동 연결된 일정 (template_activity_links를 통해)
+  const { data: links } = await supabase
+    .from('template_activity_links')
+    .select('activity_id')
+    .eq('template_id', templateId)
+
+  const linkedIds = (links || []).map((l: any) => l.activity_id)
+  
+  let linkedActs: any[] = []
+  if (linkedIds.length > 0) {
+    const { data } = await supabase
+      .from('activities')
+      .select('id, title, start_time, end_time, is_all_day, template_id')
+      .eq('user_id', userData.user.id)
+      .in('id', linkedIds)
+      .is('deleted_at', null)
+      .order('start_time', { ascending: false })
+    linkedActs = data || []
+  }
+
+  // 3. 합치기 (중복 제거) + 소스 표시
+  const directIds = new Set((directActs || []).map((a: any) => a.id))
+  const linkedIdSet = new Set(linkedIds)
+
+  const allActs = [
+    ...(directActs || []).map((a: any) => ({ ...a, linkType: 'direct' as const })),
+    ...linkedActs
+      .filter((a: any) => !directIds.has(a.id))
+      .map((a: any) => ({ ...a, linkType: 'manual' as const }))
+  ]
+
+  // 시간순 정렬 (최신순)
+  allActs.sort((a, b) => new Date(b.start_time).getTime() - new Date(a.start_time).getTime())
+
+  return allActs.map(a => ({
+    id: a.id,
+    title: a.title,
+    startTime: a.start_time,
+    endTime: a.end_time,
+    isAllDay: a.is_all_day,
+    durationMinutes: Math.round((new Date(a.end_time).getTime() - new Date(a.start_time).getTime()) / 60000),
+    linkType: a.linkType // 'direct' | 'manual'
+  }))
+}
+
+/**
+ * 일정을 템플릿에 통계 전용으로 연결
+ */
+export async function linkActivityToTemplate(templateId: string, activityId: string) {
+  const supabase = await createClient()
+  const { data: userData } = await supabase.auth.getUser()
+  if (!userData.user) return { error: '로그인이 필요합니다.' }
+
+  // 템플릿 소유자 확인
+  const { data: tmpl } = await supabase
+    .from('activity_templates')
+    .select('id')
+    .eq('id', templateId)
+    .eq('user_id', userData.user.id)
+    .single()
+  if (!tmpl) return { error: '템플릿을 찾을 수 없습니다.' }
+
+  const { error } = await supabase
+    .from('template_activity_links')
+    .upsert({ template_id: templateId, activity_id: activityId }, { onConflict: 'template_id,activity_id' })
+
+  if (error) return { error: error.message }
+  return { error: null }
+}
+
+/**
+ * 템플릿-일정 연결 해제
+ */
+export async function unlinkActivityFromTemplate(templateId: string, activityId: string) {
+  const supabase = await createClient()
+  const { data: userData } = await supabase.auth.getUser()
+  if (!userData.user) return { error: '로그인이 필요합니다.' }
+
+  const { error } = await supabase
+    .from('template_activity_links')
+    .delete()
+    .eq('template_id', templateId)
+    .eq('activity_id', activityId)
+
+  if (error) return { error: error.message }
+  return { error: null }
+}
+
+/**
+ * 연결 가능한 일정 검색 (제목 검색 + 날짜 필터)
+ * 이미 연결된 일정도 포함하여 반환 (체크 상태 표시용)
+ */
+export async function searchActivitiesForLinking(
+  templateId: string,
+  query: string,
+  dateFrom?: string,
+  dateTo?: string
+) {
+  const supabase = await createClient()
+  const { data: userData } = await supabase.auth.getUser()
+  if (!userData.user) throw new Error('Not authenticated')
+
+  // 1. 일정 검색
+  let qb = supabase
+    .from('activities')
+    .select('id, title, start_time, end_time, is_all_day, template_id')
+    .eq('user_id', userData.user.id)
+    .is('deleted_at', null)
+    .order('start_time', { ascending: false })
+    .limit(50)
+
+  if (query.trim()) {
+    qb = qb.ilike('title', `%${query.trim()}%`)
+  }
+  if (dateFrom) {
+    qb = qb.gte('start_time', dateFrom)
+  }
+  if (dateTo) {
+    qb = qb.lte('start_time', dateTo)
+  }
+
+  const { data: activities } = await qb
+
+  // 2. 이미 연결된 일정 ID 조회
+  const { data: links } = await supabase
+    .from('template_activity_links')
+    .select('activity_id')
+    .eq('template_id', templateId)
+  const linkedIds = new Set((links || []).map((l: any) => l.activity_id))
+
+  return (activities || []).map((a: any) => ({
+    id: a.id,
+    title: a.title,
+    startTime: a.start_time,
+    endTime: a.end_time,
+    isAllDay: a.is_all_day,
+    durationMinutes: Math.round((new Date(a.end_time).getTime() - new Date(a.start_time).getTime()) / 60000),
+    isDirectlyCreated: a.template_id === templateId,
+    isLinked: linkedIds.has(a.id)
+  }))
 }

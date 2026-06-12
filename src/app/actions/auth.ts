@@ -1,6 +1,6 @@
 'use server'
 
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { cookies, headers } from 'next/headers'
@@ -32,7 +32,18 @@ export async function login(formData: FormData) {
   })
 
   if (error) {
-    return redirect('/login?error=invalid_credentials')
+    const adminClient = createAdminClient()
+    const { data: userExists } = await adminClient
+      .from('users')
+      .select('username')
+      .eq('username', username)
+      .single()
+
+    if (!userExists) {
+      return redirect('/login?error=user_not_found')
+    } else {
+      return redirect('/login?error=invalid_password')
+    }
   }
 
   // 실제 클라이언트 IP/UA를 session_metadata에 저장

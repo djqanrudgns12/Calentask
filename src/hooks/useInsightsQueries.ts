@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { getActivityTemplates, createActivityTemplate, updateActivityTemplate, deleteActivityTemplate, createActivityFromTemplate, getInsightsData, getSubjectDetails, getAllTemplatesSummary, getTemplateUsageStats, getTemplateMonthlyTrend, getTemplateWeeklyTrend, getTemplateDailyTrend, getCategoryMonthlyTrend, getCategoryDailyTrend, getOverviewKPI, getExecutionAnalytics } from '@/app/actions/insights'
+import { getActivityTemplates, createActivityTemplate, updateActivityTemplate, deleteActivityTemplate, createActivityFromTemplate, getInsightsData, getSubjectDetails, getAllTemplatesSummary, getTemplateUsageStats, getTemplateMonthlyTrend, getTemplateWeeklyTrend, getTemplateDailyTrend, getCategoryMonthlyTrend, getCategoryDailyTrend, getOverviewKPI, getExecutionAnalytics, getTemplateLinkedActivities, linkActivityToTemplate, unlinkActivityFromTemplate, searchActivitiesForLinking } from '@/app/actions/insights'
 import type { ActivityTemplate } from '@/app/actions/insights'
 
 export function useActivityTemplates() {
@@ -150,5 +150,49 @@ export function useExecutionAnalytics() {
   return useQuery({
     queryKey: ['executionAnalytics'],
     queryFn: () => getExecutionAnalytics()
+  })
+}
+
+// ─── FEAT-01: 템플릿-일정 연결 Hooks ───
+
+export function useTemplateLinkedActivities(templateId: string | null) {
+  return useQuery({
+    queryKey: ['templateLinkedActivities', templateId],
+    queryFn: () => getTemplateLinkedActivities(templateId!),
+    enabled: !!templateId
+  })
+}
+
+export function useLinkActivity() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ templateId, activityId }: { templateId: string; activityId: string }) =>
+      linkActivityToTemplate(templateId, activityId),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['templateLinkedActivities', variables.templateId] })
+      queryClient.invalidateQueries({ queryKey: ['templatesSummary'] })
+      queryClient.invalidateQueries({ queryKey: ['templateUsageStats'] })
+    }
+  })
+}
+
+export function useUnlinkActivity() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ templateId, activityId }: { templateId: string; activityId: string }) =>
+      unlinkActivityFromTemplate(templateId, activityId),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['templateLinkedActivities', variables.templateId] })
+      queryClient.invalidateQueries({ queryKey: ['templatesSummary'] })
+      queryClient.invalidateQueries({ queryKey: ['templateUsageStats'] })
+    }
+  })
+}
+
+export function useSearchActivitiesForLinking(templateId: string | null, query: string, dateFrom?: string, dateTo?: string) {
+  return useQuery({
+    queryKey: ['searchForLinking', templateId, query, dateFrom, dateTo],
+    queryFn: () => searchActivitiesForLinking(templateId!, query, dateFrom, dateTo),
+    enabled: !!templateId
   })
 }

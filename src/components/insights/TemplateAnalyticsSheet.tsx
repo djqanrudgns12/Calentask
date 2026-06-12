@@ -3,11 +3,13 @@
 import { useMemo, useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, Clock, CalendarDays, Loader2, TrendingUp, BarChart3, Flame, Zap, Target } from 'lucide-react'
+import { X, Clock, CalendarDays, Loader2, TrendingUp, BarChart3, Flame, Zap, Target, Link2, Paperclip, ChevronDown } from 'lucide-react'
 import { BarChart, Bar, LineChart, Line, AreaChart, Area, RadarChart, Radar, PolarGrid, PolarAngleAxis, ResponsiveContainer, XAxis, YAxis, Tooltip, CartesianGrid, ReferenceLine } from 'recharts'
-import { useTemplateUsageStats, useTemplateMonthlyTrend, useTemplateWeeklyTrend, useTemplateDailyTrend } from '@/hooks/useInsightsQueries'
+import { useTemplateUsageStats, useTemplateMonthlyTrend, useTemplateWeeklyTrend, useTemplateDailyTrend, useTemplateLinkedActivities } from '@/hooks/useInsightsQueries'
 import { format } from 'date-fns'
 import { ko } from 'date-fns/locale'
+import TemplateActivityLinker from './TemplateActivityLinker'
+import { Button } from '@/components/ui/button'
 
 interface TemplateAnalyticsSheetProps {
   templateId: string | null
@@ -36,6 +38,11 @@ export function TemplateAnalyticsSheet({ templateId, templateTitle, templateColo
   const { data: dailyTrend } = useTemplateDailyTrend(templateId, 90)
 
   const isLoading = isLoadingStats || isLoadingMonthly
+
+  // FEAT-01: 연결된 일정 목록
+  const { data: linkedActivities } = useTemplateLinkedActivities(templateId)
+  const [showLinker, setShowLinker] = useState(false)
+  const [showAllLinked, setShowAllLinked] = useState(false)
 
   // 시트가 열릴 때 body 스크롤 잠금 (배경 스크롤 방지)
   useEffect(() => {
@@ -98,7 +105,7 @@ export function TemplateAnalyticsSheet({ templateId, templateTitle, templateColo
     const days = ['일', '월', '화', '수', '목', '금', '토']
     const counts = new Array(7).fill(0)
     dailyTrend.forEach(d => {
-      const dow = new Date(d.date).getDay()
+      const dow = new Date(d.date + 'T00:00:00+09:00').getDay() // BUG-14 수정: KST 기준 요일
       counts[dow] += d.count
     })
     // 월~일 순서로 재배치
@@ -380,7 +387,88 @@ export function TemplateAnalyticsSheet({ templateId, templateTitle, templateColo
                       </div>
                     </div>
                   )}
+
+                  {/* FEAT-01: 연결된 일정 목록 */}
+                  <div className="bg-white rounded-[20px] p-5 shadow-sm border border-gray-100">
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-[14px] font-bold text-gray-900 flex items-center gap-2">
+                        <CalendarDays size={15} className="text-indigo-500" />
+                        연결된 일정 목록
+                        {linkedActivities && <span className="text-xs font-bold text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">{linkedActivities.length}건</span>}
+                      </h3>
+                    </div>
+
+                    {(!linkedActivities || linkedActivities.length === 0) ? (
+                      <div className="text-center py-8 text-gray-400">
+                        <CalendarDays className="mx-auto mb-2 text-gray-300" size={28} />
+                        <p className="text-sm font-medium">연결된 일정이 없습니다</p>
+                        <p className="text-xs mt-1">아래 버튼을 눌러 일정을 연결해보세요</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        {(showAllLinked ? linkedActivities : linkedActivities.slice(0, 10)).map((act) => (
+                          <div
+                            key={act.id}
+                            className="flex items-center gap-3 p-3 rounded-xl bg-gray-50/80 border border-gray-100"
+                          >
+                            <div className="w-1 h-10 rounded-full" style={{ backgroundColor: templateColor }} />
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 mb-0.5">
+                                <span className="text-sm font-bold text-gray-900 truncate">{act.title}</span>
+                                {act.linkType === 'direct' ? (
+                                  <span className="shrink-0 px-1.5 py-0.5 text-[9px] font-bold rounded-full bg-indigo-100 text-indigo-600 flex items-center gap-0.5">
+                                    <Link2 size={8} />직접 생성
+                                  </span>
+                                ) : (
+                                  <span className="shrink-0 px-1.5 py-0.5 text-[9px] font-bold rounded-full bg-emerald-100 text-emerald-600 flex items-center gap-0.5">
+                                    <Link2 size={8} />수동 연결
+                                  </span>
+                                )}
+                              </div>
+                              <div className="text-[11px] text-gray-500 font-medium">
+                                {format(new Date(act.startTime), 'yyyy.MM.dd (EEE)', { locale: ko })} {format(new Date(act.startTime), 'HH:mm')}~{format(new Date(act.endTime), 'HH:mm')}
+                                <span className="text-gray-400 ml-2">
+                                  {act.durationMinutes >= 60
+                                    ? `${Math.floor(act.durationMinutes / 60)}시간 ${act.durationMinutes % 60}분`
+                                    : `${act.durationMinutes}분`}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                        {linkedActivities.length > 10 && !showAllLinked && (
+                          <button
+                            onClick={() => setShowAllLinked(true)}
+                            className="w-full text-center py-2.5 text-xs font-bold text-indigo-500 hover:bg-indigo-50 rounded-xl transition-colors flex items-center justify-center gap-1"
+                          >
+                            <ChevronDown size={14} />
+                            나머지 {linkedActivities.length - 10}건 더보기
+                          </button>
+                        )}
+                      </div>
+                    )}
+
+                    {/* 일정 연결 관리 버튼 */}
+                    <Button
+                      onClick={() => setShowLinker(true)}
+                      variant="outline"
+                      className="w-full mt-4 h-11 rounded-2xl border-dashed border-gray-300 text-gray-600 hover:border-indigo-300 hover:text-indigo-600 hover:bg-indigo-50/50 font-bold text-sm flex items-center gap-2 transition-all"
+                    >
+                      <Paperclip size={14} />
+                      일정 연결 관리
+                    </Button>
+                  </div>
                 </div>
+              )}
+
+              {/* FEAT-01: 일정 연결 관리 시트 */}
+              {templateId && (
+                <TemplateActivityLinker
+                  isOpen={showLinker}
+                  onClose={() => setShowLinker(false)}
+                  templateId={templateId}
+                  templateTitle={templateTitle}
+                />
               )}
             </div>
           </motion.div>

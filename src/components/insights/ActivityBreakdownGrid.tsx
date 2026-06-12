@@ -1,5 +1,5 @@
 "use client";
-import { BarChart, Bar, ResponsiveContainer, Cell, PieChart, Pie, Tooltip as RechartsTooltip } from 'recharts';
+import { ResponsiveContainer, Cell, PieChart, Pie, Tooltip as RechartsTooltip } from 'recharts';
 import { LayoutGrid } from 'lucide-react';
 import { motion } from 'framer-motion';
 
@@ -41,20 +41,7 @@ export default function ActivityBreakdownGrid({ breakdown, onSelectSubject }: { 
   const sortedCategories = categories.map(cat => ({
     ...cat,
     percentage: totalMinutes > 0 ? Math.round((cat.minutes / totalMinutes) * 100) : 0,
-    // Generate deterministic sparkline from category stats
-    // Uses a seed from category count to create consistent visual patterns
-    trendData: (() => {
-      const avg = cat.count > 0 ? cat.minutes / cat.count : 0;
-      const seed = (cat.count * 7 + Math.round(cat.minutes)) % 100;
-      const base = avg > 0 ? 0.3 : 0;
-      return [
-        { val: base + ((seed * 3) % 40) / 100 },
-        { val: base + ((seed * 7) % 50) / 100 },
-        { val: base + ((seed * 11) % 45) / 100 },
-        { val: base + ((seed * 13) % 55) / 100 },
-        { val: base + ((seed * 17) % 35) / 100 + 0.3 },
-      ];
-    })()
+    hours: Number((cat.minutes / 60).toFixed(1))
   })).sort((a, b) => b.minutes - a.minutes);
 
   const topCategories = sortedCategories.slice(0, 4);
@@ -133,16 +120,10 @@ export default function ActivityBreakdownGrid({ breakdown, onSelectSubject }: { 
                 <div className="text-[32px] font-black text-gray-900 mt-2 tracking-tighter leading-none">
                   {cat.percentage}<span className="text-[16px] text-gray-400 font-bold ml-0.5">%</span>
                 </div>
-                <div className="h-[28px] w-full mt-3">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={cat.trendData} margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
-                      <Bar dataKey="val" radius={[4, 4, 4, 4]}>
-                        {cat.trendData.map((entry: any, index: number) => (
-                          <Cell key={`cell-${index}`} fill={index === cat.trendData.length - 1 ? color : bgRgba} />
-                        ))}
-                      </Bar>
-                    </BarChart>
-                  </ResponsiveContainer>
+                <div className="flex items-center gap-2 mt-3 text-[11px] font-bold text-gray-400">
+                  <span className="text-gray-700">{cat.hours}h</span>
+                  <span className="text-gray-300">·</span>
+                  <span className="text-gray-700">{cat.count}회</span>
                 </div>
               </motion.div>
             );

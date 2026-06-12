@@ -109,7 +109,7 @@ export default function WeeklySummaryCard({
             {periodLabel}
           </h3>
           {prevTotalHours !== undefined && diffHours !== 0 && (
-            <div className={`flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full ${isPositive ? 'bg-red-50 text-red-500' : 'bg-blue-50 text-blue-500'}`}>
+            <div className={`flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full ${isPositive ? 'bg-emerald-50 text-emerald-500' : 'bg-red-50 text-red-500'}`}>
               {isPositive ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
               {Math.abs(diffPercent)}%
             </div>
@@ -153,7 +153,7 @@ export default function WeeklySummaryCard({
                 isAnimationActive={false}
               />
               <Bar 
-                dataKey="value" 
+                dataKey="hours" 
                 radius={[6, 6, 6, 6]}
                 minPointSize={4}
                 onClick={() => {

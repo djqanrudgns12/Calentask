@@ -33,48 +33,8 @@ function getPresetRange(period: string) {
   }
 }
 
-function processInsightsData(raw: Activity[], activityType: string, selectedCategoryIds: string[]) {
-  let filtered = raw
-  if (activityType !== 'ALL') filtered = filtered.filter(a => a.type === activityType)
-  if (selectedCategoryIds.length > 0) {
-    filtered = filtered.filter(a => a.categories?.some(c => selectedCategoryIds.includes(c.id)))
-  }
-
-  const breakdown: Record<string, any> = {}
-  const weeklyData: { day: string; hours: number }[] = []
-  let totalMinutes = 0
-  let totalCount = 0
-
-  const dayMap: Record<string, number> = {}
-  filtered.forEach(act => {
-    const mins = (new Date(act.end_time).getTime() - new Date(act.start_time).getTime()) / 60000
-    totalMinutes += mins
-    totalCount++
-
-    const dayKey = new Date(act.start_time).toLocaleDateString('ko-KR', { weekday: 'short' })
-    dayMap[dayKey] = (dayMap[dayKey] || 0) + mins
-
-    if (act.categories) {
-      act.categories.forEach(cat => {
-        if (!breakdown[cat.id]) {
-          breakdown[cat.id] = { name: cat.name, hex_color: cat.hex_color, minutes: 0, count: 0 }
-        }
-        breakdown[cat.id].minutes += mins
-        breakdown[cat.id].count++
-      })
-    }
-  })
-
-  Object.entries(dayMap).forEach(([day, mins]) => {
-    weeklyData.push({ day, hours: Number((mins / 60).toFixed(1)) })
-  })
-
-  return {
-    summary: { totalHours: Number((totalMinutes / 60).toFixed(1)), totalCount },
-    breakdown,
-    weeklyData
-  }
-}
+// BUG-01 수정: processInsightsData 클라이언트 함수 제거됨
+// 서버 getInsightsData()의 결과를 직접 사용하여 이중 처리 제거
 
 export default function OverviewTab() {
   const {
@@ -112,16 +72,73 @@ export default function OverviewTab() {
   const { data: insightsData, isLoading: isLoadingInsights } = useInsightsData(startDateIso, endDateIso)
   const { data: prevInsightsData } = useInsightsData(prevStartIso, prevEndIso)
 
+  // BUG-01 수정: 서버 데이터를 직접 사용 (필터 적용은 서버 데이터 기반)
   const processedData = useMemo(() => {
-    if (!insightsData?.rawData) return { summary: { totalHours: 0, totalCount: 0 }, breakdown: {}, weeklyData: [] }
-    return processInsightsData(insightsData.rawData as Activity[], activityType, selectedCategoryIds)
-  }, [insightsData?.rawData, activityType, selectedCategoryIds])
+    if (!insightsData) return { summary: { totalHours: 0, totalCount: 0 }, breakdown: {}, weeklyData: [] }
+    
+    // 필터가 적용되지 않은 경우 서버 데이터 직접 반환
+    if (activityType === 'ALL' && selectedCategoryIds.length === 0) {
+      return {
+        summary: insightsData.summary,
+        breakdown: insightsData.breakdown,
+        weeklyData: insightsData.weeklyData
+      }
+    }
+    
+    // 필터가 적용된 경우, rawData에서 필터링 후 서버와 동일한 로직으로 재계산
+    const raw = (insightsData.rawData || []) as Activity[]
+    let filtered = raw
+    if (activityType !== 'ALL') filtered = filtered.filter(a => a.type === activityType)
+    if (selectedCategoryIds.length > 0) {
+      filtered = filtered.filter(a => a.categories?.some(c => selectedCategoryIds.includes(c.id)))
+    }
+    
+    const breakdown: Record<string, any> = {}
+    const days = ['월', '화', '수', '목', '금', '토', '일']
+    const weeklyData: any[] = days.map(day => ({ day, hours: 0, activities: [] }))
+    let totalMinutes = 0
+    
+    filtered.forEach(act => {
+      const start = new Date(act.start_time)
+      const end = new Date(act.end_time)
+      const mins = (end.getTime() - start.getTime()) / 60000
+      totalMinutes += mins
+      
+      const dayOfWeek = start.getDay()
+      const idx = dayOfWeek === 0 ? 6 : dayOfWeek - 1
+      if (idx >= 0 && idx <= 6) {
+        weeklyData[idx].hours += Number((mins / 60).toFixed(1))
+        weeklyData[idx].activities.push(act)
+      }
+      
+      // 첫 번째 카테고리에만 시간 할당 (서버 로직과 동일 — BUG-04 수정)
+      if (act.categories && act.categories.length > 0) {
+        const cat = act.categories[0]
+        if (!breakdown[cat.id]) {
+          breakdown[cat.id] = { name: cat.name, hex_color: cat.hex_color, minutes: 0, count: 0 }
+        }
+        breakdown[cat.id].minutes += mins
+        breakdown[cat.id].count++
+      } else {
+        if (!breakdown['unclassified']) {
+          breakdown['unclassified'] = { name: '미분류', hex_color: '#9CA3AF', minutes: 0, count: 0 }
+        }
+        breakdown['unclassified'].minutes += mins
+        breakdown['unclassified'].count++
+      }
+    })
+    
+    return {
+      summary: { totalHours: Number((totalMinutes / 60).toFixed(1)), totalCount: filtered.length },
+      breakdown,
+      weeklyData
+    }
+  }, [insightsData, activityType, selectedCategoryIds])
 
   const prevProcessedData = useMemo(() => {
-    if (!prevInsightsData?.rawData) return null
-    const d = processInsightsData(prevInsightsData.rawData as Activity[], activityType, selectedCategoryIds)
-    return d.summary
-  }, [prevInsightsData?.rawData, activityType, selectedCategoryIds])
+    if (!prevInsightsData) return null
+    return prevInsightsData.summary
+  }, [prevInsightsData])
 
   // 레이더 차트 데이터
   const radarData = useMemo(() => {
@@ -151,6 +168,7 @@ export default function OverviewTab() {
     if (cats.length === 0) return null
     return cats.sort((a, b) => b.minutes - a.minutes)[0]?.hex_color || null
   }, [processedData.breakdown])
+
 
   return (
     <>

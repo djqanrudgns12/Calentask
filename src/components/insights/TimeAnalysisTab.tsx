@@ -76,7 +76,7 @@ export default function TimeAnalysisTab() {
 
   const { data: insightsData, isLoading } = useInsightsData(startDateIso, endDateIso)
 
-  // ── 누적 영역 차트 데이터 ──
+  // ── 누적 영역 차트 데이터 (BUG-15 수정: 필터 적용) ──
   const stackedAreaData = useMemo(() => {
     if (!insightsData?.rawData) return []
     const rawActivities = insightsData.rawData as Activity[]
@@ -87,6 +87,12 @@ export default function TimeAnalysisTab() {
       const entry: any = { date: dayStr }
 
       rawActivities.forEach(act => {
+        // BUG-15: 필터 적용
+        if (activityType !== 'ALL' && act.type !== activityType) return
+        if (selectedCategoryIds.length > 0) {
+          if (!act.categories?.some(c => selectedCategoryIds.includes(c.id))) return
+        }
+
         const actDate = startOfDay(new Date(act.start_time))
         if (actDate.getTime() !== startOfDay(day).getTime()) return
         const mins = (new Date(act.end_time).getTime() - new Date(act.start_time).getTime()) / 60000
@@ -96,7 +102,7 @@ export default function TimeAnalysisTab() {
 
       return entry
     })
-  }, [insightsData?.rawData, fromDate, toDate])
+  }, [insightsData?.rawData, fromDate, toDate, activityType, selectedCategoryIds])
 
   // ── 카테고리별 집계 ──
   const categoryBreakdown = useMemo(() => {

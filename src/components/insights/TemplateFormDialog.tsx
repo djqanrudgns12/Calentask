@@ -68,6 +68,8 @@ export function TemplateFormDialog({ isOpen, onClose, editingTemplate }: Templat
   const [customColor, setCustomColor] = useState<string | null>(null)
   const [memo, setMemo] = useState('')
   const [defaultStartTime, setDefaultStartTime] = useState('')
+  const [customUnitEnabled, setCustomUnitEnabled] = useState(false)
+  const [customUnitMinutes, setCustomUnitMinutes] = useState(60)
 
   const [isAddingCategory, setIsAddingCategory] = useState(false)
   const [newCategoryName, setNewCategoryName] = useState('')
@@ -89,6 +91,8 @@ export function TemplateFormDialog({ isOpen, onClose, editingTemplate }: Templat
         setCustomColor(editingTemplate.hex_color || null)
         setMemo(editingTemplate.memo || '')
         setDefaultStartTime(editingTemplate.default_start_time || '')
+        setCustomUnitEnabled(editingTemplate.custom_unit_enabled || false)
+        setCustomUnitMinutes(editingTemplate.custom_unit_minutes || 60)
       } else {
         setTitle('')
         setCategoryIds([])
@@ -96,6 +100,8 @@ export function TemplateFormDialog({ isOpen, onClose, editingTemplate }: Templat
         setCustomColor(null)
         setMemo('')
         setDefaultStartTime('')
+        setCustomUnitEnabled(false)
+        setCustomUnitMinutes(60)
       }
     }
   }, [isOpen, editingTemplate])
@@ -167,7 +173,9 @@ export function TemplateFormDialog({ isOpen, onClose, editingTemplate }: Templat
       duration_minutes: durationMinutes,
       hex_color: customColor || undefined,
       memo: memo || undefined,
-      default_start_time: defaultStartTime || undefined
+      default_start_time: defaultStartTime || undefined,
+      custom_unit_enabled: customUnitEnabled,
+      custom_unit_minutes: customUnitEnabled ? customUnitMinutes : 60
     }
 
     if (editingTemplate) {
@@ -319,6 +327,43 @@ export function TemplateFormDialog({ isOpen, onClose, editingTemplate }: Templat
                     +15
                   </Button>
                 </div>
+              </div>
+
+              {/* FEAT-02: Custom Unit Setting */}
+              <div className="bg-white/60 rounded-xl p-4 border border-gray-100 shadow-sm space-y-3">
+                <div className="flex items-center justify-between">
+                  <Label className="text-gray-600 font-medium text-sm">커스텀 시간 단위</Label>
+                  <button
+                    type="button"
+                    onClick={() => setCustomUnitEnabled(!customUnitEnabled)}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 ${customUnitEnabled ? 'bg-indigo-500' : 'bg-gray-300'}`}
+                  >
+                    <span className={`inline-block h-4 w-4 rounded-full bg-white shadow-sm transition-transform duration-200 ${customUnitEnabled ? 'translate-x-6' : 'translate-x-1'}`} />
+                  </button>
+                </div>
+                {customUnitEnabled && (
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-3 bg-white p-3 rounded-lg border border-gray-100">
+                      <span className="text-sm text-gray-500 font-medium shrink-0">1단위 =</span>
+                      <Input
+                        type="number"
+                        value={customUnitMinutes || ''}
+                        onChange={(e) => setCustomUnitMinutes(parseInt(e.target.value) || 0)}
+                        className="w-20 text-center font-bold text-lg h-10 border-gray-200 focus-visible:ring-indigo-500"
+                        min={1}
+                      />
+                      <span className="text-sm text-gray-500 font-medium">분</span>
+                    </div>
+                    <p className="text-[11px] text-gray-400 pl-1">
+                      예: {customUnitMinutes}분 = 1단위 → {customUnitMinutes * 2}분 활동 = 2.0단위로 통계에 표시됩니다
+                    </p>
+                  </div>
+                )}
+                {!customUnitEnabled && (
+                  <p className="text-[11px] text-gray-400 pl-1">
+                    ON 시 설정한 분 수를 1단위로 환산하여 통계에 표시합니다
+                  </p>
+                )}
               </div>
 
               {/* Default Start Time */}
