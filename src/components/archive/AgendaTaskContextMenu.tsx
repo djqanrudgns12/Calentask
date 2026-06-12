@@ -59,16 +59,7 @@ export function AgendaTaskContextMenu({ status, onEdit, onChangeStatus, onPerman
           </button>
         )}
         
-        {status !== 'archive' && status !== 'trash' && (
-          <button 
-            onClick={() => onChangeStatus('archive')}
-            className="w-full flex items-center gap-2 px-3 py-2 text-sm text-indigo-600 hover:bg-indigo-50 rounded-md transition-colors"
-          >
-            <ArchiveIcon className="w-4 h-4" />
-            보관함으로 이동
-          </button>
-        )}
-        
+
         {status !== 'trash' && (
           <button 
             onClick={() => onChangeStatus('trash')}

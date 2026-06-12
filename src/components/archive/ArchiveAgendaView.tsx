@@ -22,7 +22,6 @@ import { useCalendarStore } from '@/store/useCalendarStore';
 const TABS = [
   { id: 'inbox', label: 'Inbox', icon: Circle },
   { id: 'done', label: 'Done', icon: CheckCircle2 },
-  { id: 'archive', label: 'Archive', icon: ArchiveIcon },
   { id: 'trash', label: 'Bin', icon: Trash2 }
 ] as const;
 
@@ -405,7 +404,6 @@ export function ArchiveAgendaView() {
               if (isActive) {
                 if (tab.id === 'done') { activeColor = "bg-emerald-50 text-emerald-700 shadow-sm border border-emerald-200/60"; iconColor = "text-emerald-600"; }
                 else if (tab.id === 'trash') { activeColor = "bg-red-50 text-red-700 shadow-sm border border-red-200/60"; iconColor = "text-red-600"; }
-                else if (tab.id === 'archive') { activeColor = "bg-orange-50 text-orange-700 shadow-sm border border-orange-200/60"; iconColor = "text-orange-600"; }
                 else { activeColor = "bg-indigo-50 text-indigo-700 shadow-sm border border-indigo-200/60"; iconColor = "text-indigo-600"; }
               }
 
