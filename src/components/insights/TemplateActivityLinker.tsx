@@ -28,6 +28,7 @@ export default function TemplateActivityLinker({
   const [dateFrom, setDateFrom] = useState('')
   const [dateTo, setDateTo] = useState('')
   const [showLinkedOnly, setShowLinkedOnly] = useState(false)
+  const [localOptimisticLinks, setLocalOptimisticLinks] = useState<Record<string, boolean>>({})
   
   const debouncedSearchQuery = useDebounce(searchQuery, 300)
 
@@ -55,30 +56,54 @@ export default function TemplateActivityLinker({
 
   const handleToggle = (activityId: string, isLinked: boolean, isDirectlyCreated: boolean) => {
     if (isDirectlyCreated) return
-    if (isLinked) {
-      unlinkActivity({ templateId, activityId })
+    const currentLinkedState = localOptimisticLinks[activityId] !== undefined ? localOptimisticLinks[activityId] : isLinked
+    
+    // 로컬 상태 즉시 업데이트 (가장 빠른 UI 피드백)
+    setLocalOptimisticLinks(prev => ({ ...prev, [activityId]: !currentLinkedState }))
+
+    if (currentLinkedState) {
+      unlinkActivity({ templateId, activityId }, {
+        onError: () => setLocalOptimisticLinks(prev => ({ ...prev, [activityId]: true }))
+      })
     } else {
-      linkActivity({ templateId, activityId })
+      linkActivity({ templateId, activityId }, {
+        onError: () => setLocalOptimisticLinks(prev => ({ ...prev, [activityId]: false }))
+      })
     }
   }
 
   const filteredResults = useMemo(() => {
     if (!searchResults) return []
+    const withOptimistic = searchResults.map(act => ({
+      ...act,
+      isLinked: localOptimisticLinks[act.id] !== undefined ? localOptimisticLinks[act.id] : act.isLinked
+    }))
+    
     if (showLinkedOnly) {
-      return searchResults.filter(act => act.isLinked || act.isDirectlyCreated)
+      return withOptimistic.filter(act => act.isLinked || act.isDirectlyCreated)
     }
-    return searchResults
-  }, [searchResults, showLinkedOnly])
+    return withOptimistic
+  }, [searchResults, showLinkedOnly, localOptimisticLinks])
 
   const handleBulkLink = async () => {
     if (!filteredResults) return
     const toLink = filteredResults.filter(act => !act.isLinked && !act.isDirectlyCreated)
+    
+    const newLinks = { ...localOptimisticLinks }
+    toLink.forEach(act => newLinks[act.id] = true)
+    setLocalOptimisticLinks(newLinks)
+    
     await Promise.all(toLink.map(act => linkActivity({ templateId, activityId: act.id })))
   }
 
   const handleBulkUnlink = async () => {
     if (!filteredResults) return
     const toUnlink = filteredResults.filter(act => act.isLinked && !act.isDirectlyCreated)
+    
+    const newLinks = { ...localOptimisticLinks }
+    toUnlink.forEach(act => newLinks[act.id] = false)
+    setLocalOptimisticLinks(newLinks)
+    
     await Promise.all(toUnlink.map(act => unlinkActivity({ templateId, activityId: act.id })))
   }
 
