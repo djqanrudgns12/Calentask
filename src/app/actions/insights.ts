@@ -226,8 +226,28 @@ export async function createActivityFromTemplate(templateId: string, customStart
 }
 
 export async function getInsightsData(startDate: string, endDate: string) {
-  // Use existing getActivities action to get all activities in period
-  const activities = await getActivities(startDate, endDate)
+  const supabase = await createClient()
+  const { data: userData } = await supabase.auth.getUser()
+  if (!userData.user) throw new Error('Not authenticated')
+
+  // FEAT: 경량 쿼리로 불필요한 필드(memo, location 등) 제외
+  const { data: activitiesData } = await supabase
+    .from('activities')
+    .select(`
+      id, title, start_time, end_time, is_all_day, type, hex_color,
+      activity_category_map(categories(id, name, hex_color))
+    `)
+    .eq('user_id', userData.user.id)
+    .gte('start_time', startDate)
+    .lte('end_time', endDate)
+    .is('deleted_at', null)
+
+  const activities = (activitiesData || []).map((a: any) => ({
+    ...a,
+    categories: (a.activity_category_map || [])
+      .map((map: any) => map.categories)
+      .filter(Boolean)
+  }))
   
   // 1. Summary
   let totalMinutes = 0
@@ -403,10 +423,7 @@ export async function getAllTemplatesSummary(startDate: string, endDate: string)
   const { data: userData } = await supabase.auth.getUser()
   if (!userData.user) throw new Error('Not authenticated')
 
-  // 1. 모든 템플릿 조회
-  const templates = await getActivityTemplates()
-
-  // 2. 현재 기간의 활동 (template_id가 있는 것만)
+  // 기간 계산
   const currentMonthStart = startDate
   const currentMonthEnd = endDate
   
@@ -420,21 +437,32 @@ export async function getAllTemplatesSummary(startDate: string, endDate: string)
   const prevMonthStart = new Date(prevMonthStartKST.getTime() - KST_OFFSET_MS).toISOString()
   const prevMonthEnd = new Date(prevMonthEndKST.getTime() - KST_OFFSET_MS).toISOString()
 
-  // 3. 전체 기간 활동 (직접 생성)
-  const { data: directActivities, error } = await supabase
-    .from('activities')
-    .select('id, template_id, start_time, end_time')
-    .eq('user_id', userData.user.id)
-    .not('template_id', 'is', null)
-    .is('deleted_at', null)
+  // 1단계: 템플릿, 직접생성 활동, 수동 연결, 카테고리 병렬 조회
+  const [
+    templates,
+    { data: directActivities, error: directError },
+    { data: links },
+    { data: allCategories }
+  ] = await Promise.all([
+    getActivityTemplates(),
+    supabase
+      .from('activities')
+      .select('id, template_id, start_time, end_time')
+      .eq('user_id', userData.user.id)
+      .not('template_id', 'is', null)
+      .is('deleted_at', null),
+    supabase
+      .from('template_activity_links')
+      .select('template_id, activity_id'),
+    supabase
+      .from('categories')
+      .select('id, name')
+      .eq('user_id', userData.user.id)
+  ])
 
-  if (error) throw new Error(error.message)
+  if (directError) throw new Error(directError.message)
 
-  // 3-1. 수동 연결 일정 조회
-  const { data: links } = await supabase
-    .from('template_activity_links')
-    .select('template_id, activity_id')
-
+  // 2단계: 수동 연결된 활동의 상세 정보 조회 (links 결과에 의존)
   const linkedIds = (links || []).map((l: any) => l.activity_id)
   let linkedActivities: any[] = []
   if (linkedIds.length > 0) {
@@ -465,11 +493,7 @@ export async function getAllTemplatesSummary(startDate: string, endDate: string)
   // 시간 역순 정렬
   allActivities.sort((a, b) => new Date(b.start_time).getTime() - new Date(a.start_time).getTime())
 
-  // BUG-07 수정: 카테고리 목록을 조회하여 ID → name 매핑
-  const { data: allCategories } = await supabase
-    .from('categories')
-    .select('id, name')
-    .eq('user_id', userData.user.id)
+  // 카테고리 ID → name 매핑
   const categoryNameMap: Record<string, string> = {}
   ;(allCategories || []).forEach((c: any) => { categoryNameMap[c.id] = c.name })
 
@@ -749,6 +773,148 @@ export async function getTemplateDailyTrend(templateId: string, days: number = 3
   }))
 }
 
+/**
+ * FEAT: 통합 상세 분석 (중복 쿼리 제거)
+ * 1번의 DB 조회로 UsageStats, MonthlyTrend, WeeklyTrend, DailyTrend를 모두 산출합니다.
+ */
+export async function getTemplateFullAnalytics(templateId: string, daysForDaily: number = 30) {
+  const supabase = await createClient()
+  const { data: userData } = await supabase.auth.getUser()
+  if (!userData.user) throw new Error('Not authenticated')
+
+  // 1. 템플릿 정보 및 연결된 일정 병렬 조회
+  const [
+    { data: tmpl },
+    rawActs
+  ] = await Promise.all([
+    supabase.from('activity_templates').select('custom_unit_enabled, custom_unit_minutes').eq('id', templateId).single(),
+    getTemplateLinkedActivities(templateId)
+  ])
+
+  const customUnitEnabled = tmpl?.custom_unit_enabled || false
+  const customUnitMinutes = tmpl?.custom_unit_minutes || 40
+
+  const data = rawActs.map(a => ({ start_time: a.startTime, end_time: a.endTime }))
+  data.sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime())
+
+  const kstNow = getKSTNow()
+
+  // --- 1) Usage Stats 계산 ---
+  let totalMinutes = 0
+  let totalUnits = 0
+  let maxSessionMinutes = 0
+  let maxSessionDate: string | null = null
+
+  ;(data || []).forEach((a: any) => {
+    const mins = (new Date(a.end_time).getTime() - new Date(a.start_time).getTime()) / 60000
+    totalMinutes += mins
+    totalUnits += customUnitEnabled ? Math.floor(mins / customUnitMinutes) : 0
+    if (mins > maxSessionMinutes) {
+      maxSessionMinutes = mins
+      maxSessionDate = a.start_time
+    }
+  })
+
+  const usageStats: TemplateUsageStats = {
+    totalMinutes,
+    totalUnits,
+    totalCount: (data || []).length,
+    avgSessionMinutes: (data || []).length > 0 ? Math.round(totalMinutes / (data || []).length) : 0,
+    maxSessionMinutes: Math.round(maxSessionMinutes),
+    maxSessionDate,
+    firstPerformedAt: (data || []).length > 0 ? data![0].start_time : null,
+    lastPerformedAt: (data || []).length > 0 ? data![data!.length - 1].start_time : null
+  }
+
+  // --- 2) Monthly Trend (최근 12개월) ---
+  const startMonthKST = new Date(Date.UTC(kstNow.getUTCFullYear(), kstNow.getUTCMonth() - 11, 1))
+  const startMonthDate = new Date(startMonthKST.getTime() - KST_OFFSET_MS).toISOString()
+  
+  const monthMap = new Map<string, { minutes: number; count: number }>()
+  for (let i = 11; i >= 0; i--) {
+    const d = new Date(Date.UTC(kstNow.getUTCFullYear(), kstNow.getUTCMonth() - i, 1))
+    const key = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`
+    monthMap.set(key, { minutes: 0, count: 0 })
+  }
+
+  data.filter(a => a.start_time >= startMonthDate).forEach((a: any) => {
+    const actKST = getKSTDate(a.start_time)
+    const key = `${actKST.getUTCFullYear()}-${String(actKST.getUTCMonth() + 1).padStart(2, '0')}`
+    const mins = (new Date(a.end_time).getTime() - new Date(a.start_time).getTime()) / 60000
+    const existing = monthMap.get(key)
+    if (existing) {
+      existing.minutes += mins
+      existing.count++
+    }
+  })
+
+  const monthlyTrend: MonthlyTrendData[] = Array.from(monthMap.entries()).map(([month, d]) => ({
+    month,
+    minutes: Math.round(d.minutes),
+    count: d.count
+  }))
+
+  // --- 3) Weekly Trend (최근 8주) ---
+  const startWeekKST = new Date(kstNow.getTime() - 8 * 7 * 24 * 60 * 60 * 1000)
+  const startWeekDate = new Date(startWeekKST.getTime() - KST_OFFSET_MS).toISOString()
+
+  const weeks: WeeklyTrendData[] = []
+  for (let i = 7; i >= 0; i--) {
+    const weekStartKST = new Date(kstNow.getTime() - i * 7 * 24 * 60 * 60 * 1000)
+    const day = weekStartKST.getUTCDay()
+    const diff = day === 0 ? 6 : day - 1
+    weekStartKST.setUTCDate(weekStartKST.getUTCDate() - diff)
+    weekStartKST.setUTCHours(0, 0, 0, 0)
+    weeks.push({ weekStart: weekStartKST.toISOString().split('T')[0], minutes: 0, count: 0 })
+  }
+
+  data.filter(a => a.start_time >= startWeekDate).forEach((a: any) => {
+    const actKST = getKSTDate(a.start_time)
+    const mins = (new Date(a.end_time).getTime() - new Date(a.start_time).getTime()) / 60000
+    for (let i = weeks.length - 1; i >= 0; i--) {
+      const ws = new Date(weeks[i].weekStart + 'T00:00:00Z')
+      const actDateTrunc = new Date(Date.UTC(actKST.getUTCFullYear(), actKST.getUTCMonth(), actKST.getUTCDate()))
+      if (actDateTrunc >= ws) {
+        weeks[i].minutes += mins
+        weeks[i].count++
+        break
+      }
+    }
+  })
+
+  const weeklyTrend: WeeklyTrendData[] = weeks.map(w => ({ ...w, minutes: Math.round(w.minutes) }))
+
+  // --- 4) Daily Trend (최근 30일) ---
+  const startDayKST = new Date(kstNow.getTime() - daysForDaily * 24 * 60 * 60 * 1000)
+  const startDayDate = new Date(startDayKST.getTime() - KST_OFFSET_MS).toISOString()
+
+  const dayMap = new Map<string, { minutes: number; count: number }>()
+  for (let i = daysForDaily - 1; i >= 0; i--) {
+    const d = new Date(kstNow.getTime() - i * 24 * 60 * 60 * 1000)
+    const key = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}`
+    dayMap.set(key, { minutes: 0, count: 0 })
+  }
+
+  data.filter(a => a.start_time >= startDayDate).forEach((a: any) => {
+    const actKST = getKSTDate(a.start_time)
+    const key = `${actKST.getUTCFullYear()}-${String(actKST.getUTCMonth() + 1).padStart(2, '0')}-${String(actKST.getUTCDate()).padStart(2, '0')}`
+    const mins = (new Date(a.end_time).getTime() - new Date(a.start_time).getTime()) / 60000
+    const existing = dayMap.get(key)
+    if (existing) {
+      existing.minutes += mins
+      existing.count++
+    }
+  })
+
+  const dailyTrend: DailyTrendData[] = Array.from(dayMap.entries()).map(([date, d]) => ({
+    date,
+    minutes: Math.round(d.minutes),
+    count: d.count
+  }))
+
+  return { usageStats, monthlyTrend, weeklyTrend, dailyTrend }
+}
+
 // ─── 시간 분석 탭 서버 액션 ───
 
 /**
@@ -907,22 +1073,72 @@ export async function getOverviewKPI(startDate: string, endDate: string, periodT
   const prevStart = new Date(prevEnd.getTime() - diffMs)
   prevStart.setHours(0, 0, 0, 0)
 
-  // 1) 활동 시간 (현재 기간 / 이전 기간) — BUG-03/10 수정: getActivities와 동일한 필터
-  const { data: currentActs } = await supabase
-    .from('activities')
-    .select('id, start_time, end_time')
-    .eq('user_id', userData.user.id)
-    .gte('start_time', currentStart.toISOString())
-    .lte('end_time', currentEnd.toISOString())
-    .is('deleted_at', null)
-
-  const { data: prevActs } = await supabase
-    .from('activities')
-    .select('start_time, end_time')
-    .eq('user_id', userData.user.id)
-    .gte('start_time', prevStart.toISOString())
-    .lte('end_time', prevEnd.toISOString())
-    .is('deleted_at', null)
+  // 1단계: 독립적인 7개 쿼리를 병렬로 실행
+  const [
+    { data: currentActs },
+    { data: prevActs },
+    { data: currentDone },
+    { data: prevDone },
+    { data: currentNotes },
+    { data: prevNotes },
+    { data: streakActs }
+  ] = await Promise.all([
+    // 1) 활동 시간 (현재 기간)
+    supabase
+      .from('activities')
+      .select('id, start_time, end_time')
+      .eq('user_id', userData.user.id)
+      .gte('start_time', currentStart.toISOString())
+      .lte('end_time', currentEnd.toISOString())
+      .is('deleted_at', null),
+    // 1-2) 활동 시간 (이전 기간)
+    supabase
+      .from('activities')
+      .select('start_time, end_time')
+      .eq('user_id', userData.user.id)
+      .gte('start_time', prevStart.toISOString())
+      .lte('end_time', prevEnd.toISOString())
+      .is('deleted_at', null),
+    // 2) 할 일 완료 (현재 기간)
+    supabase
+      .from('agenda_tasks')
+      .select('id')
+      .eq('user_id', userData.user.id)
+      .eq('status', 'done')
+      .not('completed_at', 'is', null)
+      .gte('completed_at', currentStart.toISOString())
+      .lte('completed_at', currentEnd.toISOString()),
+    // 2-2) 할 일 완료 (이전 기간)
+    supabase
+      .from('agenda_tasks')
+      .select('id')
+      .eq('user_id', userData.user.id)
+      .eq('status', 'done')
+      .not('completed_at', 'is', null)
+      .gte('completed_at', prevStart.toISOString())
+      .lte('completed_at', prevEnd.toISOString()),
+    // 3) 아카이브 메모 (현재 기간)
+    supabase
+      .from('notes')
+      .select('id')
+      .eq('user_id', userData.user.id)
+      .gte('updated_at', currentStart.toISOString())
+      .lte('updated_at', currentEnd.toISOString()),
+    // 3-2) 아카이브 메모 (이전 기간)
+    supabase
+      .from('notes')
+      .select('id')
+      .eq('user_id', userData.user.id)
+      .gte('updated_at', prevStart.toISOString())
+      .lte('updated_at', prevEnd.toISOString()),
+    // 4) 스트릭 계산 (최근 90일)
+    supabase
+      .from('activities')
+      .select('start_time')
+      .eq('user_id', userData.user.id)
+      .gte('start_time', new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000).toISOString())
+      .is('deleted_at', null)
+  ])
 
   let currentMins = 0
   ;(currentActs || []).forEach((a: any) => {
@@ -935,49 +1151,6 @@ export async function getOverviewKPI(startDate: string, endDate: string, periodT
 
   // 평균 세션
   const avgSessionMins = (currentActs || []).length > 0 ? Math.round(currentMins / (currentActs || []).length) : 0
-
-  // 2) 할 일 완료 (현재 기간 / 이전 기간) — BUG-05 수정: completed_at 사용
-  const { data: currentDone } = await supabase
-    .from('agenda_tasks')
-    .select('id')
-    .eq('user_id', userData.user.id)
-    .eq('status', 'done')
-    .not('completed_at', 'is', null)
-    .gte('completed_at', currentStart.toISOString())
-    .lte('completed_at', currentEnd.toISOString())
-
-  const { data: prevDone } = await supabase
-    .from('agenda_tasks')
-    .select('id')
-    .eq('user_id', userData.user.id)
-    .eq('status', 'done')
-    .not('completed_at', 'is', null)
-    .gte('completed_at', prevStart.toISOString())
-    .lte('completed_at', prevEnd.toISOString())
-
-  // 3) 아카이브 메모 (현재 기간 / 이전 기간)
-  const { data: currentNotes } = await supabase
-    .from('notes')
-    .select('id')
-    .eq('user_id', userData.user.id)
-    .gte('updated_at', currentStart.toISOString())
-    .lte('updated_at', currentEnd.toISOString())
-
-  const { data: prevNotes } = await supabase
-    .from('notes')
-    .select('id')
-    .eq('user_id', userData.user.id)
-    .gte('updated_at', prevStart.toISOString())
-    .lte('updated_at', prevEnd.toISOString())
-
-  // 4) 스트릭 계산 (최근 90일 — 기간과 무관하게 항상 현재 기준)
-  const ninetyDaysAgo = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000)
-  const { data: streakActs } = await supabase
-    .from('activities')
-    .select('start_time')
-    .eq('user_id', userData.user.id)
-    .gte('start_time', ninetyDaysAgo.toISOString())
-    .is('deleted_at', null)
 
   // BUG-06 수정: KST 기준으로 날짜 파싱
   const activeDays = new Set<string>()
@@ -1002,17 +1175,22 @@ export async function getOverviewKPI(startDate: string, endDate: string, periodT
     }
   }
 
-  // 5) 카테고리 다양성
-  const { data: allCats } = await supabase
-    .from('categories')
-    .select('id')
-    .eq('user_id', userData.user.id)
-
+  // 2단계: currentActs에 의존하는 activeCats와 독립적인 allCats를 병렬 실행
   const currentActIds = (currentActs || []).map((a: any) => a.id).filter(Boolean)
-  const { data: activeCats } = await supabase
-    .from('activity_category_map')
-    .select('category_id')
-    .in('activity_id', currentActIds.length > 0 ? currentActIds : ['__none__'])
+  
+  const [
+    { data: allCats },
+    { data: activeCats }
+  ] = await Promise.all([
+    supabase
+      .from('categories')
+      .select('id')
+      .eq('user_id', userData.user.id),
+    supabase
+      .from('activity_category_map')
+      .select('category_id')
+      .in('activity_id', currentActIds.length > 0 ? currentActIds : ['__none__'])
+  ])
 
   const uniqueActiveCats = new Set((activeCats || []).map((c: any) => c.category_id))
 
@@ -1220,20 +1398,23 @@ export async function getTemplateLinkedActivities(templateId: string) {
   const { data: userData } = await supabase.auth.getUser()
   if (!userData.user) throw new Error('Not authenticated')
 
-  // 1. 직접 생성된 일정 (template_id가 설정된 것)
-  const { data: directActs } = await supabase
-    .from('activities')
-    .select('id, title, start_time, end_time, is_all_day, template_id')
-    .eq('user_id', userData.user.id)
-    .eq('template_id', templateId)
-    .is('deleted_at', null)
-    .order('start_time', { ascending: false })
-
-  // 2. 수동 연결된 일정 (template_activity_links를 통해)
-  const { data: links } = await supabase
-    .from('template_activity_links')
-    .select('activity_id')
-    .eq('template_id', templateId)
+  // 1단계: 직접 생성 일정과 수동 연결 링크를 병렬 조회
+  const [
+    { data: directActs },
+    { data: links }
+  ] = await Promise.all([
+    supabase
+      .from('activities')
+      .select('id, title, start_time, end_time, is_all_day, template_id')
+      .eq('user_id', userData.user.id)
+      .eq('template_id', templateId)
+      .is('deleted_at', null)
+      .order('start_time', { ascending: false }),
+    supabase
+      .from('template_activity_links')
+      .select('activity_id')
+      .eq('template_id', templateId)
+  ])
 
   const linkedIds = (links || []).map((l: any) => l.activity_id)
   

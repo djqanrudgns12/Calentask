@@ -5,7 +5,7 @@ import { createPortal } from 'react-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, Clock, CalendarDays, Loader2, TrendingUp, BarChart3, Flame, Zap, Target, Link2, Paperclip, ChevronDown } from 'lucide-react'
 import { BarChart, Bar, LineChart, Line, AreaChart, Area, RadarChart, Radar, PolarGrid, PolarAngleAxis, ResponsiveContainer, XAxis, YAxis, Tooltip, CartesianGrid, ReferenceLine } from 'recharts'
-import { useTemplateUsageStats, useTemplateMonthlyTrend, useTemplateWeeklyTrend, useTemplateDailyTrend, useTemplateLinkedActivities } from '@/hooks/useInsightsQueries'
+import { useTemplateFullAnalytics, useTemplateLinkedActivities } from '@/hooks/useInsightsQueries'
 import { format } from 'date-fns'
 import { ko } from 'date-fns/locale'
 import TemplateActivityLinker from './TemplateActivityLinker'
@@ -41,12 +41,11 @@ export function TemplateAnalyticsSheet({
   customUnitMinutes = 60,
   onClose 
 }: TemplateAnalyticsSheetProps) {
-  const { data: stats, isLoading: isLoadingStats } = useTemplateUsageStats(templateId)
-  const { data: monthlyTrend, isLoading: isLoadingMonthly } = useTemplateMonthlyTrend(templateId)
-  const { data: weeklyTrend } = useTemplateWeeklyTrend(templateId)
-  const { data: dailyTrend } = useTemplateDailyTrend(templateId, 90)
-
-  const isLoading = isLoadingStats || isLoadingMonthly
+  const { data: fullAnalytics, isLoading } = useTemplateFullAnalytics(templateId)
+  const stats = fullAnalytics?.usageStats
+  const monthlyTrend = fullAnalytics?.monthlyTrend
+  const weeklyTrend = fullAnalytics?.weeklyTrend
+  const dailyTrend = fullAnalytics?.dailyTrend
 
   // FEAT-01: 연결된 일정 목록
   const { data: linkedActivities } = useTemplateLinkedActivities(templateId)

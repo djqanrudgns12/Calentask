@@ -3,7 +3,7 @@
 import { useInsightsFilterStore, type InsightsTab } from '@/store/useInsightsFilterStore';
 import dynamic from 'next/dynamic';
 import { LayoutDashboard, Clock, CheckSquare, Puzzle } from 'lucide-react';
-import { startTransition } from 'react';
+import { startTransition, useState, useEffect } from 'react';
 
 const OverviewTab = dynamic(() => import('@/components/insights/OverviewTab'), { ssr: false });
 const TimeAnalysisTab = dynamic(() => import('@/components/insights/TimeAnalysisTab'), { ssr: false });
@@ -20,6 +20,13 @@ const TABS: { id: InsightsTab; label: string; icon: typeof LayoutDashboard }[] =
 export default function InsightsClient() {
   const activeTab = useInsightsFilterStore(state => state.activeTab);
   const setActiveTab = useInsightsFilterStore(state => state.setActiveTab);
+
+  // FEAT: 탭 유지 렌더링 (지연 마운트 + display:none 토글)
+  const [mountedTabs, setMountedTabs] = useState<Set<string>>(new Set(['overview']));
+
+  useEffect(() => {
+    setMountedTabs(prev => new Set(prev).add(activeTab));
+  }, [activeTab]);
 
   return (
     <div className="mt-2 pb-24 md:pb-10 relative min-h-screen">
@@ -47,16 +54,32 @@ export default function InsightsClient() {
         </div>
 
         {/* ── 종합 현황 탭 ── */}
-        {activeTab === 'overview' && <OverviewTab />}
+        {mountedTabs.has('overview') && (
+          <div style={{ display: activeTab === 'overview' ? 'block' : 'none' }}>
+            <OverviewTab />
+          </div>
+        )}
 
         {/* ── 시간 분석 탭 ── */}
-        {activeTab === 'time' && <TimeAnalysisTab />}
+        {mountedTabs.has('time') && (
+          <div style={{ display: activeTab === 'time' ? 'block' : 'none' }}>
+            <TimeAnalysisTab />
+          </div>
+        )}
 
         {/* ── 실행력 탭 ── */}
-        {activeTab === 'execution' && <ExecutionTab />}
+        {mountedTabs.has('execution') && (
+          <div style={{ display: activeTab === 'execution' ? 'block' : 'none' }}>
+            <ExecutionTab />
+          </div>
+        )}
 
         {/* ── 템플릿 센터 탭 ── */}
-        {activeTab === 'templates' && <TemplateCenterTab />}
+        {mountedTabs.has('templates') && (
+          <div style={{ display: activeTab === 'templates' ? 'block' : 'none' }}>
+            <TemplateCenterTab />
+          </div>
+        )}
       </div>
     </div>
   );

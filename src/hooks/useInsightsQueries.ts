@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { getActivityTemplates, createActivityTemplate, updateActivityTemplate, deleteActivityTemplate, createActivityFromTemplate, getInsightsData, getSubjectDetails, getAllTemplatesSummary, getTemplateUsageStats, getTemplateMonthlyTrend, getTemplateWeeklyTrend, getTemplateDailyTrend, getCategoryMonthlyTrend, getCategoryDailyTrend, getOverviewKPI, getExecutionAnalytics, getTemplateLinkedActivities, linkActivityToTemplate, unlinkActivityFromTemplate, searchActivitiesForLinking, getAnnualGoalProgress } from '@/app/actions/insights'
+import { getActivityTemplates, createActivityTemplate, updateActivityTemplate, deleteActivityTemplate, createActivityFromTemplate, getInsightsData, getSubjectDetails, getAllTemplatesSummary, getTemplateFullAnalytics, getCategoryMonthlyTrend, getCategoryDailyTrend, getOverviewKPI, getExecutionAnalytics, getTemplateLinkedActivities, linkActivityToTemplate, unlinkActivityFromTemplate, searchActivitiesForLinking, getAnnualGoalProgress } from '@/app/actions/insights'
 import type { ActivityTemplate } from '@/app/actions/insights'
 
 export function useActivityTemplates() {
@@ -81,39 +81,19 @@ export function useAllTemplatesSummary(startDate: string, endDate: string) {
   return useQuery({
     queryKey: ['templatesSummary', startDate, endDate],
     queryFn: () => getAllTemplatesSummary(startDate, endDate),
-    enabled: !!startDate && !!endDate
+    enabled: !!startDate && !!endDate,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 15 * 60 * 1000,
   })
 }
 
-export function useTemplateUsageStats(templateId: string | null) {
+export function useTemplateFullAnalytics(templateId: string | null) {
   return useQuery({
-    queryKey: ['templateUsageStats', templateId],
-    queryFn: () => getTemplateUsageStats(templateId!, '', ''),
-    enabled: !!templateId
-  })
-}
-
-export function useTemplateMonthlyTrend(templateId: string | null) {
-  return useQuery({
-    queryKey: ['templateMonthlyTrend', templateId],
-    queryFn: () => getTemplateMonthlyTrend(templateId!),
-    enabled: !!templateId
-  })
-}
-
-export function useTemplateWeeklyTrend(templateId: string | null) {
-  return useQuery({
-    queryKey: ['templateWeeklyTrend', templateId],
-    queryFn: () => getTemplateWeeklyTrend(templateId!),
-    enabled: !!templateId
-  })
-}
-
-export function useTemplateDailyTrend(templateId: string | null, days: number = 30) {
-  return useQuery({
-    queryKey: ['templateDailyTrend', templateId, days],
-    queryFn: () => getTemplateDailyTrend(templateId!, days),
-    enabled: !!templateId
+    queryKey: ['templateFullAnalytics', templateId],
+    queryFn: () => getTemplateFullAnalytics(templateId!),
+    enabled: !!templateId,
+    staleTime: 3 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
   })
 }
 
@@ -151,7 +131,9 @@ export function useOverviewKPI(startDate: string, endDate: string, periodType: s
 export function useExecutionAnalytics() {
   return useQuery({
     queryKey: ['executionAnalytics'],
-    queryFn: () => getExecutionAnalytics()
+    queryFn: () => getExecutionAnalytics(),
+    staleTime: 5 * 60 * 1000,
+    gcTime: 15 * 60 * 1000,
   })
 }
 
