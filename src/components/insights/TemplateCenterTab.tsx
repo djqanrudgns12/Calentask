@@ -232,22 +232,19 @@ export default function TemplateCenterTab() {
                       </span>
                     )}
                   </div>
-                  <div className="flex items-baseline gap-3">
-                    <span className="text-[24px] font-black text-gray-900 tracking-tighter">{displayCurrentHours}</span>
-                    <span className="text-[13px] font-bold text-gray-400">{unitLabel}</span>
-                    <span className="text-[13px] font-bold text-gray-300">·</span>
-                    <span className="text-[13px] font-bold text-gray-500">{summary.currentMonthCount}회</span>
-                    {summary.customUnitEnabled && (
-                      <span className="text-[10px] font-medium text-gray-400/60 ml-1">(실제 {summary.currentMonthHours}시간)</span>
-                    )}
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-[24px] font-black text-gray-900 tracking-tighter">{summary.currentMonthHours}</span>
+                    <span className="text-[13px] font-bold text-gray-400">시간</span>
+                    <span className="text-[13px] font-bold text-gray-300">/</span>
+                    <span className="text-[13px] font-bold text-gray-500">{summary.customUnitEnabled ? `${summary.currentMonthUnits}차시` : `${summary.currentMonthCount}회`}</span>
                   </div>
                   <div className="flex items-baseline gap-1.5 mt-2 text-[12px] font-medium text-gray-400 bg-gray-50/80 px-2.5 py-1.5 rounded-lg w-fit">
                     <span className="font-bold text-gray-500">저번 달:</span>
-                    <span className="font-bold text-gray-700">{displayPrevHours}</span>
-                    <span className="text-[11px]">{unitLabel}</span>
-                    <span className="text-gray-300">·</span>
-                    <span className="font-bold text-gray-700">{summary.prevMonthCount}</span>
-                    <span className="text-[11px]">회</span>
+                    <span className="font-bold text-gray-700">{summary.prevMonthHours}</span>
+                    <span className="text-[11px]">시간</span>
+                    <span className="text-gray-300">/</span>
+                    <span className="font-bold text-gray-700">{summary.customUnitEnabled ? summary.prevMonthUnits : summary.prevMonthCount}</span>
+                    <span className="text-[11px]">{summary.customUnitEnabled ? '차시' : '회'}</span>
                   </div>
                 </div>
 
@@ -280,7 +277,7 @@ export default function TemplateCenterTab() {
                     <span className="font-bold text-gray-500">총 누적:</span>
                     <span className="font-black text-gray-900">{summary.totalHours}시간</span>
                     <span className="text-gray-300">/</span>
-                    <span className="font-bold text-gray-600">{summary.totalCount}회</span>
+                    <span className="font-bold text-gray-600">{summary.customUnitEnabled ? `${summary.totalUnits}차시` : `${summary.totalCount}회`}</span>
                   </div>
                   <div className="flex items-center gap-2 text-[12px]">
                     <CalendarDays className="w-3.5 h-3.5 text-gray-400" />
@@ -289,15 +286,6 @@ export default function TemplateCenterTab() {
                       {summary.lastPerformedAt 
                         ? formatDistanceToNow(new Date(summary.lastPerformedAt), { addSuffix: true, locale: ko })
                         : '기록 없음'}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2 text-[12px]">
-                    <Clock className="w-3.5 h-3.5 text-gray-400" />
-                    <span className="font-bold text-gray-500">평균 세션:</span>
-                    <span className="font-bold text-gray-700">
-                      {summary.avgSessionMinutes >= 60
-                        ? `${Math.floor(summary.avgSessionMinutes / 60)}시간 ${summary.avgSessionMinutes % 60}분`
-                        : `${summary.avgSessionMinutes}분`}
                     </span>
                   </div>
                 </div>

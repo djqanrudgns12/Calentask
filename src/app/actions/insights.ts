@@ -32,6 +32,8 @@ export async function getActivityTemplates() {
       hex_color,
       memo,
       default_start_time,
+      custom_unit_enabled,
+      custom_unit_minutes,
       categories ( hex_color )
     `)
     .eq('user_id', userData.user.id)

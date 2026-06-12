@@ -164,6 +164,14 @@ export function TemplateAnalyticsSheet({
     return `${mins}분`
   }
 
+  const formatSessionStat = (mins: number) => {
+    if (customUnitEnabled && customUnitMinutes > 0) {
+      const units = Number((mins / customUnitMinutes).toFixed(1)).toString().replace('.0', '')
+      return `${units}차시(${formatMinutes(mins)})`
+    }
+    return formatMinutes(mins)
+  }
+
   if (!mounted) return null
 
   return createPortal(
@@ -221,16 +229,13 @@ export function TemplateAnalyticsSheet({
                   <div className="grid grid-cols-2 gap-3">
                     <div className="bg-white rounded-[20px] p-5 border border-gray-100 shadow-sm">
                       <div className="flex items-center gap-1.5 text-gray-400 font-bold text-[11px] mb-2">
-                        <Clock size={13} /> 총 누적 {customUnitEnabled ? '차시' : '시간'}
+                        <Clock size={13} /> 총 누적 시간
                       </div>
                       <div className="flex items-baseline gap-1">
                         <div className="text-[28px] font-black text-gray-900 tracking-tighter">
-                          {stats ? (customUnitEnabled ? stats.totalUnits : Math.round(stats.totalMinutes / 60)) : 0}
-                          <span className="text-[14px] text-gray-400 font-bold ml-1">{customUnitEnabled ? '차시' : '시간'}</span>
+                          {stats ? Number((stats.totalMinutes / 60).toFixed(1)) : 0}
+                          <span className="text-[14px] text-gray-400 font-bold ml-1">시간</span>
                         </div>
-                        {customUnitEnabled && stats && (
-                          <span className="text-[10px] text-gray-400 font-medium ml-1">(실제 {Math.round(stats.totalMinutes / 60)}시간)</span>
-                        )}
                       </div>
                       {stats?.firstPerformedAt && (
                         <p className="text-[10px] text-gray-400 font-medium mt-1">
@@ -240,27 +245,27 @@ export function TemplateAnalyticsSheet({
                     </div>
                     <div className="bg-white rounded-[20px] p-5 border border-gray-100 shadow-sm">
                       <div className="flex items-center gap-1.5 text-gray-400 font-bold text-[11px] mb-2">
-                        <CalendarDays size={13} /> 총 수행 횟수
+                        <CalendarDays size={13} /> 총 수행 {customUnitEnabled ? '차시' : '횟수'}
                       </div>
                       <div className="text-[28px] font-black text-gray-900 tracking-tighter">
-                        {stats?.totalCount || 0}
-                        <span className="text-[14px] text-gray-400 font-bold ml-1">회</span>
+                        {stats ? (customUnitEnabled ? stats.totalUnits : stats.totalCount) : 0}
+                        <span className="text-[14px] text-gray-400 font-bold ml-1">{customUnitEnabled ? '차시' : '회'}</span>
                       </div>
                     </div>
                     <div className="bg-white rounded-[20px] p-5 border border-gray-100 shadow-sm">
                       <div className="flex items-center gap-1.5 text-gray-400 font-bold text-[11px] mb-2">
-                        <Zap size={13} /> 평균 세션
+                        <Zap size={13} /> 평균 {customUnitEnabled ? '차시' : '세션'}
                       </div>
                       <div className="text-[22px] font-black text-gray-900 tracking-tighter">
-                        {stats ? formatMinutes(stats.avgSessionMinutes) : '0분'}
+                        {stats ? formatSessionStat(stats.avgSessionMinutes) : '0분'}
                       </div>
                     </div>
                     <div className="bg-white rounded-[20px] p-5 border border-gray-100 shadow-sm">
                       <div className="flex items-center gap-1.5 text-gray-400 font-bold text-[11px] mb-2">
-                        <Flame size={13} /> 최장 세션
+                        <Flame size={13} /> 최장 {customUnitEnabled ? '차시' : '세션'}
                       </div>
                       <div className="text-[22px] font-black text-gray-900 tracking-tighter">
-                        {stats ? formatMinutes(stats.maxSessionMinutes) : '0분'}
+                        {stats ? formatSessionStat(stats.maxSessionMinutes) : '0분'}
                       </div>
                       {stats?.maxSessionDate && (
                         <p className="text-[10px] text-gray-400 font-medium mt-1">
