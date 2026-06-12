@@ -357,6 +357,8 @@ export type TemplateSummary = {
   hexColor: string
   categoryNames: string[]
   categoryIds: string[]
+  templateDurationMinutes: number
+  templateStartTime?: string
   currentMonthHours: number
   currentMonthCount: number
   prevMonthHours: number
@@ -570,6 +572,8 @@ export async function getAllTemplatesSummary(startDate: string, endDate: string)
       hexColor: tmpl.hex_color || '#4f46e5',
       categoryNames, // BUG-07 수정: 실제 카테고리 이름 배열
       categoryIds, // 카테고리 ID 배열 (편집용)
+      templateDurationMinutes: tmpl.duration_minutes,
+      templateStartTime: tmpl.default_start_time,
       currentMonthHours: Number((currentMonthMinutes / 60).toFixed(1)),
       currentMonthCount,
       prevMonthHours: Number((prevMonthMinutes / 60).toFixed(1)),

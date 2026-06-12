@@ -50,8 +50,9 @@ export default function TemplateCenterTab() {
       title: summary.title,
       category_id: catIds[0] || '',
       category_ids: catIds,
-      duration_minutes: summary.avgSessionMinutes,
+      duration_minutes: summary.templateDurationMinutes,
       hex_color: summary.hexColor,
+      default_start_time: summary.templateStartTime,
       custom_unit_enabled: summary.customUnitEnabled,
       custom_unit_minutes: summary.customUnitMinutes
     } as ActivityTemplate)
