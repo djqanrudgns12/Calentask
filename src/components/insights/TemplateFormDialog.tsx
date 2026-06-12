@@ -64,7 +64,7 @@ interface TemplateFormDialogProps {
 
 export function TemplateFormDialog({ isOpen, onClose, editingTemplate, mode = 'manage', onQuickAddSuccess }: TemplateFormDialogProps) {
   const { dialogRef, scrollRef, handleFocusScroll } = useKeyboardAwareDialog(isOpen)
-  
+
   const [title, setTitle] = useState('')
   const [categoryIds, setCategoryIds] = useState<string[]>([])
   const [durationMinutes, setDurationMinutes] = useState<number>(60)
@@ -107,7 +107,7 @@ export function TemplateFormDialog({ isOpen, onClose, editingTemplate, mode = 'm
         setDefaultStartTime(editingTemplate.default_start_time || '')
         setCustomUnitEnabled(editingTemplate.custom_unit_enabled || false)
         setCustomUnitMinutes(editingTemplate.custom_unit_minutes || 60)
-        
+
         if (mode === 'quick-add') {
           setStartDate(format(new Date(), 'yyyy-MM-dd'))
           setQuickAddStartTime(editingTemplate.default_start_time || getRoundedNow())
@@ -121,7 +121,7 @@ export function TemplateFormDialog({ isOpen, onClose, editingTemplate, mode = 'm
         setDefaultStartTime('')
         setCustomUnitEnabled(false)
         setCustomUnitMinutes(60)
-        
+
         if (mode === 'quick-add') {
           setStartDate(format(new Date(), 'yyyy-MM-dd'))
           setQuickAddStartTime(getRoundedNow())
@@ -133,14 +133,14 @@ export function TemplateFormDialog({ isOpen, onClose, editingTemplate, mode = 'm
   const getGradient = () => {
     if (customColor) return `linear-gradient(to right, ${customColor}, ${customColor})`
     if (categoryIds.length === 0) return 'linear-gradient(to right, #e2e8f0, #e2e8f0)'
-    
+
     const colors = categoryIds.map(id => {
       const cat = categories.find(c => c.id === id)
       return cat?.hex_color || '#4f46e5'
     })
-    
+
     if (colors.length === 1) return `linear-gradient(to right, ${colors[0]}, ${colors[0]})`
-    
+
     const step = 100 / colors.length
     const stops = colors.map((c, i) => `${c} ${i * step}%, ${c} ${(i + 1) * step}%`)
     return `linear-gradient(to right, ${stops.join(', ')})`
@@ -197,7 +197,7 @@ export function TemplateFormDialog({ isOpen, onClose, editingTemplate, mode = 'm
       duration_minutes: durationMinutes,
       hex_color: customColor || undefined,
       memo: memo || undefined,
-      default_start_time: defaultStartTime || undefined,
+      default_start_time: mode === 'quick-add' ? quickAddStartTime : (defaultStartTime || undefined),
       custom_unit_enabled: customUnitEnabled,
       custom_unit_minutes: customUnitEnabled ? customUnitMinutes : 60
     }
@@ -253,46 +253,46 @@ export function TemplateFormDialog({ isOpen, onClose, editingTemplate, mode = 'm
           <DialogTitle className="text-xl font-bold text-gray-900">{editingTemplate ? '템플릿 수정' : '새 템플릿 만들기'}</DialogTitle>
           <DialogDescription className="sr-only">일정 등록 템플릿 폼</DialogDescription>
         </DialogHeader>
-        
+
         <form onSubmit={handleSubmit} className="flex flex-col min-h-0 flex-1 overflow-hidden">
           <div ref={scrollRef} onFocusCapture={handleFocusScroll} className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-6 py-6 pb-6 -webkit-overflow-scrolling-touch">
             <div className="space-y-6">
-              
+
               {/* FEAT: 빠른 일정 추가용 날짜 및 시각 (quick-add 모드일 때 최상단 노출) */}
               {mode === 'quick-add' && (
                 <div className="flex gap-3 pb-2 mb-2 border-b border-gray-100">
                   <div className="flex-1 space-y-1.5">
                     <Label className="text-indigo-600 font-bold text-[13px] pl-1 flex items-center gap-1"><CalendarDays className="w-3.5 h-3.5" />진행 일자</Label>
-                    <Input 
+                    <Input
                       type="date"
                       value={startDate}
                       onChange={e => setStartDate(e.target.value)}
                       className="bg-indigo-50/50 border-indigo-100 focus-visible:ring-indigo-500 rounded-xl h-11 text-[15px] font-semibold"
-                      required 
+                      required
                     />
                   </div>
                   <div className="flex-1 space-y-1.5">
                     <Label className="text-indigo-600 font-bold text-[13px] pl-1 flex items-center gap-1"><Clock className="w-3.5 h-3.5" />시작 시각</Label>
-                    <Input 
+                    <Input
                       type="time"
                       value={quickAddStartTime}
                       onChange={e => setQuickAddStartTime(e.target.value)}
                       className="bg-indigo-50/50 border-indigo-100 focus-visible:ring-indigo-500 rounded-xl h-11 text-[15px] font-semibold"
-                      required 
+                      required
                     />
                   </div>
                 </div>
               )}
 
-              
+
               {/* Title */}
               <div>
-                <Input 
-                  value={title} 
-                  onChange={(e) => setTitle(e.target.value)} 
+                <Input
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
                   placeholder="템플릿 이름 (예: 기초학력 강사)"
                   className="border-gray-200 focus-visible:ring-indigo-500 rounded-lg bg-white h-12 text-base font-semibold"
-                  required 
+                  required
                 />
               </div>
 
@@ -306,9 +306,9 @@ export function TemplateFormDialog({ isOpen, onClose, editingTemplate, mode = 'm
                       <button
                         key={cat.id}
                         type="button"
-                        onClick={() => setCategoryIds(prev => 
-                          prev.includes(cat.id) 
-                            ? prev.filter(id => id !== cat.id) 
+                        onClick={() => setCategoryIds(prev =>
+                          prev.includes(cat.id)
+                            ? prev.filter(id => id !== cat.id)
                             : [...prev, cat.id]
                         )}
                         className={`group/cat px-3.5 py-1.5 text-sm font-medium rounded-full transition-all flex items-center gap-1.5 shadow-sm text-white border-2
@@ -335,10 +335,10 @@ export function TemplateFormDialog({ isOpen, onClose, editingTemplate, mode = 'm
                       </button>
                     )
                   })}
-                  
+
                   {isAddingCategory ? (
                     <div className="flex items-center gap-1">
-                      <Input 
+                      <Input
                         autoFocus
                         value={newCategoryName}
                         onChange={e => setNewCategoryName(e.target.value)}
@@ -352,7 +352,7 @@ export function TemplateFormDialog({ isOpen, onClose, editingTemplate, mode = 'm
                         placeholder="이름..."
                       />
                       <Button type="button" size="sm" className="h-8 rounded-full px-3 bg-indigo-600 hover:bg-indigo-700" onClick={handleAddCategorySubmit}>추가</Button>
-                      <Button type="button" variant="ghost" size="sm" className="h-8 rounded-full px-2 text-gray-500 hover:text-gray-700" onClick={() => setIsAddingCategory(false)}><X className="w-4 h-4"/></Button>
+                      <Button type="button" variant="ghost" size="sm" className="h-8 rounded-full px-2 text-gray-500 hover:text-gray-700" onClick={() => setIsAddingCategory(false)}><X className="w-4 h-4" /></Button>
                     </div>
                   ) : (
                     <button
@@ -371,7 +371,7 @@ export function TemplateFormDialog({ isOpen, onClose, editingTemplate, mode = 'm
               <div className="bg-white/60 rounded-xl p-4 border border-gray-100 shadow-sm space-y-4">
                 <div className="h-2.5 w-full rounded-full" style={{ background: getGradient() }} />
                 <div className="flex items-center gap-3">
-                  <span className="text-xs text-gray-500 font-medium text-center shrink-0 leading-tight">색상<br/>지정:</span>
+                  <span className="text-xs text-gray-500 font-medium text-center shrink-0 leading-tight">색상<br />지정:</span>
                   <div className="flex flex-wrap items-center gap-2 mt-1">
                     {COLOR_SWATCHES.map(color => (
                       <button
@@ -394,7 +394,7 @@ export function TemplateFormDialog({ isOpen, onClose, editingTemplate, mode = 'm
                     -15
                   </Button>
                   <div className="flex items-center gap-2">
-                    <Input 
+                    <Input
                       type="number"
                       value={durationMinutes || ''}
                       onChange={(e) => setDurationMinutes(parseInt(e.target.value) || 0)}
@@ -446,29 +446,31 @@ export function TemplateFormDialog({ isOpen, onClose, editingTemplate, mode = 'm
               </div>
 
               {/* Default Start Time */}
-              <div className="space-y-2">
-                <Label className="text-gray-600 font-medium text-sm pl-1">기본 시작 시각 (선택)</Label>
-                <div className="flex items-center gap-3">
-                  <Input 
-                    type="time"
-                    value={defaultStartTime}
-                    onChange={e => setDefaultStartTime(e.target.value)}
-                    className="flex-1 bg-white border-gray-200 focus-visible:ring-indigo-500 rounded-lg h-11"
-                  />
-                  {defaultStartTime && (
-                    <Button 
-                      type="button" 
-                      variant="ghost" 
-                      size="sm"
-                      className="text-gray-400 hover:text-rose-500 rounded-full px-3 text-xs"
-                      onClick={() => setDefaultStartTime('')}
-                    >
-                      초기화
-                    </Button>
-                  )}
+              {mode !== 'quick-add' && (
+                <div className="space-y-2">
+                  <Label className="text-gray-600 font-medium text-sm pl-1">기본 시작 시각 (선택)</Label>
+                  <div className="flex items-center gap-3">
+                    <Input
+                      type="time"
+                      value={defaultStartTime}
+                      onChange={e => setDefaultStartTime(e.target.value)}
+                      className="flex-1 bg-white border-gray-200 focus-visible:ring-indigo-500 rounded-lg h-11"
+                    />
+                    {defaultStartTime && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="text-gray-400 hover:text-rose-500 rounded-full px-3 text-xs"
+                        onClick={() => setDefaultStartTime('')}
+                      >
+                        초기화
+                      </Button>
+                    )}
+                  </div>
+                  <p className="text-xs text-gray-400 pl-1">설정 시 빠른 일정 등록에서 이 시각이 자동으로 채워집니다.</p>
                 </div>
-                <p className="text-xs text-gray-400 pl-1">설정 시 빠른 일정 등록에서 이 시각이 자동으로 채워집니다.</p>
-              </div>
+              )}
 
               {/* Memo */}
               <div className="space-y-2">
@@ -483,12 +485,12 @@ export function TemplateFormDialog({ isOpen, onClose, editingTemplate, mode = 'm
 
             </div>
           </div>
-          
+
           <div className="flex-shrink-0 flex justify-end gap-3 bg-white px-6 py-4 border-t border-gray-100">
             <Button type="button" variant="ghost" onClick={onClose} className="text-gray-500 hover:bg-gray-100 rounded-full px-5">취소</Button>
             <Button type="submit" disabled={isCreating || isUpdating || isCreatingActivity} className="bg-indigo-500 hover:bg-indigo-600 text-white rounded-full px-6 shadow-sm shadow-indigo-200 transition-all active:scale-95">
-              {isCreating || isUpdating || isCreatingActivity 
-                ? '저장 중...' 
+              {isCreating || isUpdating || isCreatingActivity
+                ? '저장 중...'
                 : (mode === 'quick-add' ? '✅ 설정 저장 & 캘린더에 추가하기' : (editingTemplate ? '수정 완료' : '템플릿 저장'))}
             </Button>
           </div>
