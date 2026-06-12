@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Search, Calendar, Link2, Link2Off, Loader2, X } from 'lucide-react'
 import { useSearchActivitiesForLinking, useLinkActivity, useUnlinkActivity } from '@/hooks/useInsightsQueries'
+import { useDebounce } from '@/hooks/useDebounce'
 import { format } from 'date-fns'
 import { ko } from 'date-fns/locale'
 
@@ -26,10 +27,13 @@ export default function TemplateActivityLinker({
   const [searchQuery, setSearchQuery] = useState('')
   const [dateFrom, setDateFrom] = useState('')
   const [dateTo, setDateTo] = useState('')
+  const [showLinkedOnly, setShowLinkedOnly] = useState(false)
+  
+  const debouncedSearchQuery = useDebounce(searchQuery, 300)
 
   const { data: searchResults, isLoading } = useSearchActivitiesForLinking(
     isOpen ? templateId : null,
-    searchQuery,
+    debouncedSearchQuery,
     dateFrom || undefined,
     dateTo || undefined
   )
@@ -56,6 +60,26 @@ export default function TemplateActivityLinker({
     } else {
       linkActivity({ templateId, activityId })
     }
+  }
+
+  const filteredResults = useMemo(() => {
+    if (!searchResults) return []
+    if (showLinkedOnly) {
+      return searchResults.filter(act => act.isLinked || act.isDirectlyCreated)
+    }
+    return searchResults
+  }, [searchResults, showLinkedOnly])
+
+  const handleBulkLink = async () => {
+    if (!filteredResults) return
+    const toLink = filteredResults.filter(act => !act.isLinked && !act.isDirectlyCreated)
+    await Promise.all(toLink.map(act => linkActivity({ templateId, activityId: act.id })))
+  }
+
+  const handleBulkUnlink = async () => {
+    if (!filteredResults) return
+    const toUnlink = filteredResults.filter(act => act.isLinked && !act.isDirectlyCreated)
+    await Promise.all(toUnlink.map(act => unlinkActivity({ templateId, activityId: act.id })))
   }
 
   if (typeof window === 'undefined') return null
@@ -130,6 +154,26 @@ export default function TemplateActivityLinker({
               </div>
             </div>
 
+            {/* 액션 바 */}
+            {searchResults && searchResults.length > 0 && (
+              <div className="px-6 py-2 border-b border-gray-50 flex items-center justify-between shrink-0 bg-gray-50/50">
+                <label className="flex items-center gap-2 cursor-pointer group" onClick={() => setShowLinkedOnly(!showLinkedOnly)}>
+                  <div className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${showLinkedOnly ? 'bg-indigo-500 border-indigo-500' : 'bg-white border-gray-300 group-hover:border-indigo-400'}`}>
+                    {showLinkedOnly && <svg className="w-2.5 h-2.5 text-white" viewBox="0 0 12 12" fill="none"><path d="M2 6L5 9L10 3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+                  </div>
+                  <span className="text-[12px] font-bold text-gray-600 select-none">연결된 일정만 보기</span>
+                </label>
+                <div className="flex items-center gap-1.5">
+                  <Button variant="ghost" size="sm" onClick={handleBulkLink} disabled={isLinking} className="h-7 px-2.5 text-[11px] font-bold text-gray-500 hover:text-indigo-600 hover:bg-indigo-50">
+                    모두 연결
+                  </Button>
+                  <Button variant="ghost" size="sm" onClick={handleBulkUnlink} disabled={isUnlinking} className="h-7 px-2.5 text-[11px] font-bold text-gray-500 hover:text-rose-600 hover:bg-rose-50">
+                    모두 해제
+                  </Button>
+                </div>
+              </div>
+            )}
+
             {/* 검색 결과 */}
             <div className="flex-1 overflow-y-auto px-4 py-3">
               {isLoading ? (
@@ -145,13 +189,13 @@ export default function TemplateActivityLinker({
                 </div>
               ) : (
                 <div className="space-y-2">
-                  {searchResults.map((act) => {
+                  {filteredResults.map((act) => {
                     const isChecked = act.isDirectlyCreated || act.isLinked
                     return (
                       <button
                         key={act.id}
                         type="button"
-                        disabled={act.isDirectlyCreated || isLinking || isUnlinking}
+                        disabled={act.isDirectlyCreated}
                         onClick={() => handleToggle(act.id, act.isLinked, act.isDirectlyCreated)}
                         className={`w-full text-left p-3.5 rounded-2xl border transition-all ${
                           isChecked 

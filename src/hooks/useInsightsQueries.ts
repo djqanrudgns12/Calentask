@@ -170,10 +170,30 @@ export function useLinkActivity() {
   return useMutation({
     mutationFn: ({ templateId, activityId }: { templateId: string; activityId: string }) =>
       linkActivityToTemplate(templateId, activityId),
-    onSuccess: (_, variables) => {
+    onMutate: async ({ templateId, activityId }) => {
+      await queryClient.cancelQueries({ queryKey: ['searchForLinking', templateId] })
+      const previousData = queryClient.getQueryData(['searchForLinking', templateId])
+      queryClient.setQueriesData(
+        { queryKey: ['searchForLinking', templateId] },
+        (oldData: any) => {
+          if (!oldData) return oldData;
+          return oldData.map((act: any) => 
+            act.id === activityId ? { ...act, isLinked: true } : act
+          );
+        }
+      )
+      return { previousData, templateId }
+    },
+    onError: (err, variables, context) => {
+      if (context?.previousData) {
+        queryClient.setQueryData(['searchForLinking', context.templateId], context.previousData)
+      }
+    },
+    onSettled: (_, __, variables) => {
       queryClient.invalidateQueries({ queryKey: ['templateLinkedActivities', variables.templateId] })
       queryClient.invalidateQueries({ queryKey: ['templatesSummary'] })
       queryClient.invalidateQueries({ queryKey: ['templateUsageStats'] })
+      queryClient.invalidateQueries({ queryKey: ['searchForLinking', variables.templateId] })
     }
   })
 }
@@ -183,10 +203,30 @@ export function useUnlinkActivity() {
   return useMutation({
     mutationFn: ({ templateId, activityId }: { templateId: string; activityId: string }) =>
       unlinkActivityFromTemplate(templateId, activityId),
-    onSuccess: (_, variables) => {
+    onMutate: async ({ templateId, activityId }) => {
+      await queryClient.cancelQueries({ queryKey: ['searchForLinking', templateId] })
+      const previousData = queryClient.getQueryData(['searchForLinking', templateId])
+      queryClient.setQueriesData(
+        { queryKey: ['searchForLinking', templateId] },
+        (oldData: any) => {
+          if (!oldData) return oldData;
+          return oldData.map((act: any) => 
+            act.id === activityId ? { ...act, isLinked: false } : act
+          );
+        }
+      )
+      return { previousData, templateId }
+    },
+    onError: (err, variables, context) => {
+      if (context?.previousData) {
+        queryClient.setQueryData(['searchForLinking', context.templateId], context.previousData)
+      }
+    },
+    onSettled: (_, __, variables) => {
       queryClient.invalidateQueries({ queryKey: ['templateLinkedActivities', variables.templateId] })
       queryClient.invalidateQueries({ queryKey: ['templatesSummary'] })
       queryClient.invalidateQueries({ queryKey: ['templateUsageStats'] })
+      queryClient.invalidateQueries({ queryKey: ['searchForLinking', variables.templateId] })
     }
   })
 }
