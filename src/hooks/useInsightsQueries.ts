@@ -24,7 +24,8 @@ export function useInsightsData(startDate: string, endDate: string) {
   return useQuery({
     queryKey: ['insights', startDate, endDate],
     queryFn: () => getInsightsData(startDate, endDate),
-    enabled: !!startDate && !!endDate
+    enabled: !!startDate && !!endDate,
+    staleTime: 5 * 60 * 1000, // 5분
   })
 }
 
@@ -140,7 +141,8 @@ export function useOverviewKPI(startDate: string, endDate: string, periodType: s
   return useQuery({
     queryKey: ['overviewKPI', startDate, endDate, periodType],
     queryFn: () => getOverviewKPI(startDate, endDate, periodType),
-    enabled: !!startDate && !!endDate
+    enabled: !!startDate && !!endDate,
+    staleTime: 5 * 60 * 1000, // 5분
   })
 }
 

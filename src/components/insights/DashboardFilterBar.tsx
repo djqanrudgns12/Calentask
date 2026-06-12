@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, startTransition } from 'react';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { Calendar as CalendarIcon, Check, ChevronDown, Filter, RotateCcw, Crosshair, CalendarRange } from 'lucide-react';
@@ -54,20 +54,26 @@ export default function DashboardFilterBar({ categories }: DashboardFilterBarPro
   }, [calendarMode]);
 
   const toggleCategory = (id: string) => {
-    if (selectedCategoryIds.includes(id)) {
-      setSelectedCategoryIds(selectedCategoryIds.filter(catId => catId !== id));
-    } else {
-      setSelectedCategoryIds([...selectedCategoryIds, id]);
-    }
+    startTransition(() => {
+      if (selectedCategoryIds.includes(id)) {
+        setSelectedCategoryIds(selectedCategoryIds.filter(catId => catId !== id));
+      } else {
+        setSelectedCategoryIds([...selectedCategoryIds, id]);
+      }
+    });
   };
 
   const handleSingleClick = () => {
-    setPeriod('single');
+    startTransition(() => {
+      setPeriod('single');
+    });
     setCalendarMode(calendarMode === 'single' ? 'none' : 'single');
   };
 
   const handleCustomClick = () => {
-    setPeriod('custom');
+    startTransition(() => {
+      setPeriod('custom');
+    });
     setCalendarMode(calendarMode === 'custom' ? 'none' : 'custom');
   };
 
@@ -89,7 +95,9 @@ export default function DashboardFilterBar({ categories }: DashboardFilterBarPro
             <button
               key={tab.id}
               onClick={() => {
-                setPeriod(tab.id);
+                startTransition(() => {
+                  setPeriod(tab.id);
+                });
                 setCalendarMode('none');
               }}
               className={cn(
@@ -140,7 +148,9 @@ export default function DashboardFilterBar({ categories }: DashboardFilterBarPro
                 selected={singleDate}
                 onSelect={(date) => {
                   if (date) {
-                    setSingleDate(date);
+                    startTransition(() => {
+                      setSingleDate(date);
+                    });
                     setCalendarMode('none');
                   }
                 }}
@@ -194,7 +204,11 @@ export default function DashboardFilterBar({ categories }: DashboardFilterBarPro
                 mode="range"
                 defaultMonth={customDateRange?.from}
                 selected={customDateRange}
-                onSelect={setCustomDateRange}
+                onSelect={(range) => {
+                  startTransition(() => {
+                    setCustomDateRange(range);
+                  });
+                }}
                 numberOfMonths={1}
                 locale={ko}
               />
@@ -233,7 +247,9 @@ export default function DashboardFilterBar({ categories }: DashboardFilterBarPro
         {isCustomActive && (
           <button
             onClick={() => {
-              resetFilter();
+              startTransition(() => {
+                resetFilter();
+              });
               setCalendarMode('none');
             }}
             className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-[12px] font-bold text-gray-400 hover:text-red-500 hover:bg-red-50 transition-all border border-transparent hover:border-red-200"
@@ -252,7 +268,11 @@ export default function DashboardFilterBar({ categories }: DashboardFilterBarPro
           {(['ALL', 'TASK', 'EVENT'] as const).map((type) => (
             <button
               key={type}
-              onClick={() => setActivityType(type)}
+              onClick={() => {
+                startTransition(() => {
+                  setActivityType(type);
+                });
+              }}
               className={cn(
                 "px-3.5 py-1.5 rounded-full text-xs font-bold transition-all",
                 activityType === type
@@ -281,7 +301,11 @@ export default function DashboardFilterBar({ categories }: DashboardFilterBarPro
             <div className="absolute top-full left-0 mt-2 z-[100] bg-white rounded-2xl shadow-2xl border border-gray-100 p-2 w-[240px]">
               <div className="space-y-0.5 max-h-[300px] overflow-y-auto">
                 <button
-                  onClick={() => setSelectedCategoryIds([])}
+                  onClick={() => {
+                    startTransition(() => {
+                      setSelectedCategoryIds([]);
+                    });
+                  }}
                   className={cn(
                     "w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium transition-colors",
                     selectedCategoryIds.length === 0 ? "bg-gray-100 text-gray-900" : "hover:bg-gray-50 text-gray-600"

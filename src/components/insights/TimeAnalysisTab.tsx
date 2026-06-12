@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useDeferredValue } from 'react'
 import { AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell, ResponsiveContainer, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts'
 import { useInsightsData } from '@/hooks/useInsightsQueries'
 import { useCategories } from '@/hooks/useCalendarQueries'
@@ -76,10 +76,17 @@ export default function TimeAnalysisTab() {
 
   const { data: insightsData, isLoading } = useInsightsData(startDateIso, endDateIso)
 
+  // 최적화: 필터 및 데이터 변경으로 인한 화면 멈춤 방지 (Concurrent Mode)
+  const deferredInsightsData = useDeferredValue(insightsData)
+  const deferredActivityType = useDeferredValue(activityType)
+  const deferredSelectedCategoryIds = useDeferredValue(selectedCategoryIds)
+
+  // 최적화: 참조 안정성 확보
+  const rawActivities = useMemo(() => (deferredInsightsData?.rawData || []) as Activity[], [deferredInsightsData?.rawData])
+
   // ── 누적 영역 차트 데이터 (BUG-15 수정: 필터 적용) ──
   const stackedAreaData = useMemo(() => {
-    if (!insightsData?.rawData) return []
-    const rawActivities = insightsData.rawData as Activity[]
+    if (!deferredInsightsData) return []
     const days = eachDayOfInterval({ start: fromDate, end: toDate })
 
     return days.map(day => {
@@ -88,9 +95,9 @@ export default function TimeAnalysisTab() {
 
       rawActivities.forEach(act => {
         // BUG-15: 필터 적용
-        if (activityType !== 'ALL' && act.type !== activityType) return
-        if (selectedCategoryIds.length > 0) {
-          if (!act.categories?.some(c => selectedCategoryIds.includes(c.id))) return
+        if (deferredActivityType !== 'ALL' && act.type !== deferredActivityType) return
+        if (deferredSelectedCategoryIds.length > 0) {
+          if (!act.categories?.some(c => deferredSelectedCategoryIds.includes(c.id))) return
         }
 
         const actDate = startOfDay(new Date(act.start_time))
@@ -102,18 +109,17 @@ export default function TimeAnalysisTab() {
 
       return entry
     })
-  }, [insightsData?.rawData, fromDate, toDate, activityType, selectedCategoryIds])
+  }, [deferredInsightsData, rawActivities, fromDate, toDate, deferredActivityType, deferredSelectedCategoryIds])
 
   // ── 카테고리별 집계 ──
   const categoryBreakdown = useMemo(() => {
-    if (!insightsData?.rawData) return { items: [], totalMinutes: 0 }
-    const rawActivities = insightsData.rawData as Activity[]
+    if (!deferredInsightsData) return { items: [], totalMinutes: 0 }
     const map: Record<string, { name: string; color: string; minutes: number; count: number }> = {}
 
     rawActivities.forEach(act => {
-      if (activityType !== 'ALL' && act.type !== activityType) return
-      if (selectedCategoryIds.length > 0) {
-        if (!act.categories?.some(c => selectedCategoryIds.includes(c.id))) return
+      if (deferredActivityType !== 'ALL' && act.type !== deferredActivityType) return
+      if (deferredSelectedCategoryIds.length > 0) {
+        if (!act.categories?.some(c => deferredSelectedCategoryIds.includes(c.id))) return
       }
       const mins = (new Date(act.end_time).getTime() - new Date(act.start_time).getTime()) / 60000
       const cat = act.categories?.[0]
@@ -128,12 +134,11 @@ export default function TimeAnalysisTab() {
       .sort((a, b) => b.minutes - a.minutes)
     const totalMinutes = items.reduce((s, i) => s + i.minutes, 0)
     return { items, totalMinutes }
-  }, [insightsData?.rawData, activityType, selectedCategoryIds])
+  }, [deferredInsightsData, rawActivities, deferredActivityType, deferredSelectedCategoryIds])
 
   // ── 워터폴 차트 데이터 ──
   const waterfallData = useMemo(() => {
-    if (!insightsData?.rawData) return []
-    const rawActivities = insightsData.rawData as Activity[]
+    if (!deferredInsightsData) return []
     const days = eachDayOfInterval({ start: fromDate, end: toDate })
 
     let cumulative = 0
@@ -153,9 +158,8 @@ export default function TimeAnalysisTab() {
         total: cumulative
       }
     })
-
     return data
-  }, [insightsData?.rawData, fromDate, toDate])
+  }, [deferredInsightsData, rawActivities, fromDate, toDate])
 
   // 도넛 데이터
   const donutData = useMemo(() => {

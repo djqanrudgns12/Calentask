@@ -11,7 +11,7 @@ interface SmartInsightCommentProps {
   prevActivities?: Activity[];
 }
 
-export default function SmartInsightComment({ activities, prevActivities }: SmartInsightCommentProps) {
+const SmartInsightComment = React.memo(function SmartInsightComment({ activities, prevActivities }: SmartInsightCommentProps) {
   const insight = useMemo(() => {
     if (!activities || activities.length === 0) {
       return {
@@ -196,4 +196,6 @@ export default function SmartInsightComment({ activities, prevActivities }: Smar
       </motion.div>
     </div>
   );
-}
+});
+
+export default SmartInsightComment;

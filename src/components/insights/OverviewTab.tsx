@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useDeferredValue } from 'react'
 import { useInsightsData, useActivityTemplates, useOverviewKPI } from '@/hooks/useInsightsQueries'
 import { useCategories } from '@/hooks/useCalendarQueries'
 import { useInsightsFilterStore } from '@/store/useInsightsFilterStore'
@@ -72,25 +72,34 @@ export default function OverviewTab() {
   const { data: insightsData, isLoading: isLoadingInsights } = useInsightsData(startDateIso, endDateIso)
   const { data: prevInsightsData } = useInsightsData(prevStartIso, prevEndIso)
 
+  // 최적화: 필터 및 데이터 변경으로 인한 화면 멈춤 방지 (Concurrent Mode)
+  const deferredInsightsData = useDeferredValue(insightsData)
+  const deferredPrevInsightsData = useDeferredValue(prevInsightsData)
+  const deferredActivityType = useDeferredValue(activityType)
+  const deferredSelectedCategoryIds = useDeferredValue(selectedCategoryIds)
+
+  // 최적화: 인라인 배열 생성 방지 (참조 안정성 확보로 자식 컴포넌트 리렌더링 차단)
+  const rawActivities = useMemo(() => (deferredInsightsData?.rawData || []) as Activity[], [deferredInsightsData?.rawData])
+  const prevRawActivities = useMemo(() => (deferredPrevInsightsData?.rawData || []) as Activity[], [deferredPrevInsightsData?.rawData])
+
   // BUG-01 수정: 서버 데이터를 직접 사용 (필터 적용은 서버 데이터 기반)
   const processedData = useMemo(() => {
-    if (!insightsData) return { summary: { totalHours: 0, totalCount: 0 }, breakdown: {}, weeklyData: [] }
+    if (!deferredInsightsData) return { summary: { totalHours: 0, totalCount: 0 }, breakdown: {}, weeklyData: [] }
     
     // 필터가 적용되지 않은 경우 서버 데이터 직접 반환
-    if (activityType === 'ALL' && selectedCategoryIds.length === 0) {
+    if (deferredActivityType === 'ALL' && deferredSelectedCategoryIds.length === 0) {
       return {
-        summary: insightsData.summary,
-        breakdown: insightsData.breakdown,
-        weeklyData: insightsData.weeklyData
+        summary: deferredInsightsData.summary,
+        breakdown: deferredInsightsData.breakdown,
+        weeklyData: deferredInsightsData.weeklyData
       }
     }
     
     // 필터가 적용된 경우, rawData에서 필터링 후 서버와 동일한 로직으로 재계산
-    const raw = (insightsData.rawData || []) as Activity[]
-    let filtered = raw
-    if (activityType !== 'ALL') filtered = filtered.filter(a => a.type === activityType)
-    if (selectedCategoryIds.length > 0) {
-      filtered = filtered.filter(a => a.categories?.some(c => selectedCategoryIds.includes(c.id)))
+    let filtered = rawActivities
+    if (deferredActivityType !== 'ALL') filtered = filtered.filter(a => a.type === deferredActivityType)
+    if (deferredSelectedCategoryIds.length > 0) {
+      filtered = filtered.filter(a => a.categories?.some(c => deferredSelectedCategoryIds.includes(c.id)))
     }
     
     const breakdown: Record<string, any> = {}
@@ -133,12 +142,12 @@ export default function OverviewTab() {
       breakdown,
       weeklyData
     }
-  }, [insightsData, activityType, selectedCategoryIds])
+  }, [deferredInsightsData, deferredActivityType, deferredSelectedCategoryIds, rawActivities])
 
   const prevProcessedData = useMemo(() => {
-    if (!prevInsightsData) return null
-    return prevInsightsData.summary
-  }, [prevInsightsData])
+    if (!deferredPrevInsightsData) return null
+    return deferredPrevInsightsData.summary
+  }, [deferredPrevInsightsData])
 
   // 레이더 차트 데이터
   const radarData = useMemo(() => {
@@ -273,8 +282,8 @@ export default function OverviewTab() {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-6">
             <div className="col-span-1 lg:col-span-8">
               <SmartInsightComment
-                activities={insightsData?.rawData as any || []}
-                prevActivities={prevInsightsData?.rawData as any || []}
+                activities={rawActivities}
+                prevActivities={prevRawActivities}
               />
             </div>
             <div className="col-span-1 lg:col-span-4">
@@ -325,10 +334,10 @@ export default function OverviewTab() {
 
             <div className="col-span-1 lg:col-span-12 flex overflow-x-auto lg:grid lg:grid-cols-12 gap-4 lg:gap-6 pb-2 hide-scrollbar snap-x snap-mandatory overscroll-x-contain touch-pan-x">
               <div className="min-w-[90vw] lg:min-w-0 lg:col-span-6 snap-center">
-                <ActivityHeatmap activities={insightsData?.rawData as any || []} />
+                <ActivityHeatmap activities={rawActivities} />
               </div>
               <div className="min-w-[90vw] lg:min-w-0 lg:col-span-6 snap-center">
-                <ActivityPunchCard activities={insightsData?.rawData as any || []} />
+                <ActivityPunchCard activities={rawActivities} />
               </div>
             </div>
           </div>

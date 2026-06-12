@@ -10,7 +10,7 @@ interface ActivityHeatmapProps {
   activities: Activity[];
 }
 
-export default function ActivityHeatmap({ activities }: ActivityHeatmapProps) {
+const ActivityHeatmap = React.memo(function ActivityHeatmap({ activities }: ActivityHeatmapProps) {
   const openAddEvent = useCalendarStore((state) => state.openAddEvent);
 
   const heatmapData = useMemo(() => {
@@ -122,4 +122,6 @@ export default function ActivityHeatmap({ activities }: ActivityHeatmapProps) {
       </div>
     </div>
   );
-}
+});
+
+export default ActivityHeatmap;

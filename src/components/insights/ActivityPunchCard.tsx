@@ -8,7 +8,7 @@ interface ActivityPunchCardProps {
   activities: Activity[];
 }
 
-export default function ActivityPunchCard({ activities }: ActivityPunchCardProps) {
+const ActivityPunchCard = React.memo(function ActivityPunchCard({ activities }: ActivityPunchCardProps) {
   const punchCardData = useMemo(() => {
     // 7 days (0: Sun, 1: Mon, ...), 24 hours (0..23)
     // We want Y-axis to be days (Mon-Sun), X-axis to be hours (0-23)
@@ -149,4 +149,6 @@ export default function ActivityPunchCard({ activities }: ActivityPunchCardProps
       </div>
     </div>
   );
-}
+});
+
+export default ActivityPunchCard;

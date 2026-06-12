@@ -1,11 +1,14 @@
 "use client";
 
 import { useInsightsFilterStore, type InsightsTab } from '@/store/useInsightsFilterStore';
-import OverviewTab from '@/components/insights/OverviewTab';
-import TimeAnalysisTab from '@/components/insights/TimeAnalysisTab';
-import ExecutionTab from '@/components/insights/ExecutionTab';
-import TemplateCenterTab from '@/components/insights/TemplateCenterTab';
+import dynamic from 'next/dynamic';
 import { LayoutDashboard, Clock, CheckSquare, Puzzle } from 'lucide-react';
+import { startTransition } from 'react';
+
+const OverviewTab = dynamic(() => import('@/components/insights/OverviewTab'), { ssr: false });
+const TimeAnalysisTab = dynamic(() => import('@/components/insights/TimeAnalysisTab'), { ssr: false });
+const ExecutionTab = dynamic(() => import('@/components/insights/ExecutionTab'), { ssr: false });
+const TemplateCenterTab = dynamic(() => import('@/components/insights/TemplateCenterTab'), { ssr: false });
 
 const TABS: { id: InsightsTab; label: string; icon: typeof LayoutDashboard }[] = [
   { id: 'overview', label: '종합 현황', icon: LayoutDashboard },
@@ -28,7 +31,7 @@ export default function InsightsClient() {
             return (
               <button
                 key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
+                onClick={() => startTransition(() => setActiveTab(tab.id))}
                 className={`flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl text-[13px] font-bold transition-all whitespace-nowrap ${
                   isActive
                     ? 'bg-gray-900 text-white shadow-md'
