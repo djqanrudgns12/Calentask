@@ -332,7 +332,7 @@ export function TemplateFormDialog({ isOpen, onClose, editingTemplate }: Templat
               {/* FEAT-02: Custom Unit Setting */}
               <div className="bg-white/60 rounded-xl p-4 border border-gray-100 shadow-sm space-y-3">
                 <div className="flex items-center justify-between">
-                  <Label className="text-gray-600 font-medium text-sm">커스텀 시간 단위</Label>
+                  <Label className="text-gray-600 font-medium text-sm">고정 시간(차시) 단위로 계산하기</Label>
                   <button
                     type="button"
                     onClick={() => setCustomUnitEnabled(!customUnitEnabled)}
@@ -344,7 +344,7 @@ export function TemplateFormDialog({ isOpen, onClose, editingTemplate }: Templat
                 {customUnitEnabled && (
                   <div className="space-y-2">
                     <div className="flex items-center gap-3 bg-white p-3 rounded-lg border border-gray-100">
-                      <span className="text-sm text-gray-500 font-medium shrink-0">1단위 =</span>
+                      <span className="text-sm text-gray-500 font-medium shrink-0">1차시 =</span>
                       <Input
                         type="number"
                         value={customUnitMinutes || ''}
@@ -355,13 +355,13 @@ export function TemplateFormDialog({ isOpen, onClose, editingTemplate }: Templat
                       <span className="text-sm text-gray-500 font-medium">분</span>
                     </div>
                     <p className="text-[11px] text-gray-400 pl-1">
-                      예: {customUnitMinutes}분 = 1단위 → {customUnitMinutes * 2}분 활동 = 2.0단위로 통계에 표시됩니다
+                      예: {customUnitMinutes}분 = 1차시 → {customUnitMinutes * 2}분 활동 = 2차시로 통계에 횟수가 카운트됩니다 (잔여 분 버림)
                     </p>
                   </div>
                 )}
                 {!customUnitEnabled && (
                   <p className="text-[11px] text-gray-400 pl-1">
-                    ON 시 설정한 분 수를 1단위로 환산하여 통계에 표시합니다
+                    ON 시 설정한 분 수를 1차시로 환산하여 통계에 표시합니다
                   </p>
                 )}
               </div>

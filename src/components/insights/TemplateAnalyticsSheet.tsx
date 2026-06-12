@@ -15,6 +15,8 @@ interface TemplateAnalyticsSheetProps {
   templateId: string | null
   templateTitle: string
   templateColor: string
+  customUnitEnabled?: boolean
+  customUnitMinutes?: number
   onClose: () => void
 }
 
@@ -31,7 +33,14 @@ const CustomTooltip = ({ active, payload, label }: any) => {
   )
 }
 
-export function TemplateAnalyticsSheet({ templateId, templateTitle, templateColor, onClose }: TemplateAnalyticsSheetProps) {
+export function TemplateAnalyticsSheet({ 
+  templateId, 
+  templateTitle, 
+  templateColor, 
+  customUnitEnabled = false,
+  customUnitMinutes = 60,
+  onClose 
+}: TemplateAnalyticsSheetProps) {
   const { data: stats, isLoading: isLoadingStats } = useTemplateUsageStats(templateId)
   const { data: monthlyTrend, isLoading: isLoadingMonthly } = useTemplateMonthlyTrend(templateId)
   const { data: weeklyTrend } = useTemplateWeeklyTrend(templateId)
@@ -57,23 +66,23 @@ export function TemplateAnalyticsSheet({ templateId, templateTitle, templateColo
     setMounted(true)
   }, [])
 
-  // 월별 차트 데이터
+  // 월별 바 차트 (최근 12개월)
   const monthlyChartData = useMemo(() => {
     if (!monthlyTrend) return []
     return monthlyTrend.map(m => ({
       month: m.month.split('-')[1] + '월',
-      hours: Number((m.minutes / 60).toFixed(1)),
+      hours: customUnitEnabled ? Number((m.minutes / customUnitMinutes).toFixed(1)) : Number((m.minutes / 60).toFixed(1)),
       count: m.count,
       fullMonth: m.month
     }))
-  }, [monthlyTrend])
+  }, [monthlyTrend, customUnitEnabled, customUnitMinutes])
 
   // 주간 차트 데이터 + 4주 이동 평균
   const weeklyChartData = useMemo(() => {
     if (!weeklyTrend) return []
     const data = weeklyTrend.map((w, idx) => ({
       week: `W${idx + 1}`,
-      hours: Number((w.minutes / 60).toFixed(1)),
+      hours: customUnitEnabled ? Number((w.minutes / customUnitMinutes).toFixed(1)) : Number((w.minutes / 60).toFixed(1)),
       count: w.count,
       weekStart: w.weekStart
     }))
@@ -83,21 +92,22 @@ export function TemplateAnalyticsSheet({ templateId, templateTitle, templateColo
       const avg = window.reduce((sum, w) => sum + w.hours, 0) / window.length
       return { ...d, movingAvg: Number(avg.toFixed(1)) }
     })
-  }, [weeklyTrend])
+  }, [weeklyTrend, customUnitEnabled, customUnitMinutes])
 
   // 성장 곡선 (누적)
   const cumulativeData = useMemo(() => {
     if (!dailyTrend) return []
     let cumulative = 0
     return dailyTrend.map(d => {
-      cumulative += d.minutes / 60
+      const val = customUnitEnabled ? d.minutes / customUnitMinutes : d.minutes / 60
+      cumulative += val
       return {
         date: d.date.split('-').slice(1).join('/'),
         cumHours: Number(cumulative.toFixed(1)),
-        dailyHours: Number((d.minutes / 60).toFixed(1))
+        dailyHours: Number(val.toFixed(1))
       }
     })
-  }, [dailyTrend])
+  }, [dailyTrend, customUnitEnabled, customUnitMinutes])
 
   // 요일별 패턴 레이더
   const weekdayRadarData = useMemo(() => {
@@ -148,14 +158,7 @@ export function TemplateAnalyticsSheet({ templateId, templateTitle, templateColo
     }
   }, [dailyTrend])
 
-  // 세션 간트 (최근 14일) — simplified bar representation
-  const ganttData = useMemo(() => {
-    if (!dailyTrend) return []
-    return dailyTrend.slice(-14).map(d => ({
-      date: d.date.split('-').slice(1).join('/'),
-      hours: Number((d.minutes / 60).toFixed(1))
-    })).filter(d => d.hours > 0)
-  }, [dailyTrend])
+
 
   const formatMinutes = (mins: number) => {
     if (mins >= 60) return `${Math.floor(mins / 60)}시간 ${mins % 60}분`
@@ -188,9 +191,18 @@ export function TemplateAnalyticsSheet({ templateId, templateTitle, templateColo
             <div className="flex items-center justify-between px-5 md:px-6 py-4 md:py-5 border-b border-gray-100 bg-white z-10 sticky top-0 pt-[max(1rem,env(safe-area-inset-top))]">
               <div className="flex items-center gap-3">
                 <div className="w-4 h-4 rounded-full shadow-sm" style={{ backgroundColor: templateColor }} />
-                <h2 className="text-xl font-bold text-gray-900 tracking-tight">
-                  <span style={{ color: templateColor }}>{templateTitle}</span> 상세 분석
-                </h2>
+                <div className="flex flex-col">
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-xl font-bold text-gray-900 tracking-tight">
+                      <span style={{ color: templateColor }}>{templateTitle}</span> 상세 분석
+                    </h2>
+                    {customUnitEnabled && (
+                      <span className="shrink-0 px-1.5 py-0.5 text-[9px] font-bold rounded-md bg-indigo-50 text-indigo-600 border border-indigo-100">
+                        {customUnitMinutes}분/1차시
+                      </span>
+                    )}
+                  </div>
+                </div>
               </div>
               <button onClick={onClose} className="p-2 -mr-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600 rounded-full transition-colors">
                 <X size={20} />
@@ -210,11 +222,16 @@ export function TemplateAnalyticsSheet({ templateId, templateTitle, templateColo
                   <div className="grid grid-cols-2 gap-3">
                     <div className="bg-white rounded-[20px] p-5 border border-gray-100 shadow-sm">
                       <div className="flex items-center gap-1.5 text-gray-400 font-bold text-[11px] mb-2">
-                        <Clock size={13} /> 총 누적 시간
+                        <Clock size={13} /> 총 누적 {customUnitEnabled ? '차시' : '시간'}
                       </div>
-                      <div className="text-[28px] font-black text-gray-900 tracking-tighter">
-                        {stats ? Math.round(stats.totalMinutes / 60) : 0}
-                        <span className="text-[14px] text-gray-400 font-bold ml-1">시간</span>
+                      <div className="flex items-baseline gap-1">
+                        <div className="text-[28px] font-black text-gray-900 tracking-tighter">
+                          {stats ? (customUnitEnabled ? stats.totalUnits : Math.round(stats.totalMinutes / 60)) : 0}
+                          <span className="text-[14px] text-gray-400 font-bold ml-1">{customUnitEnabled ? '차시' : '시간'}</span>
+                        </div>
+                        {customUnitEnabled && stats && (
+                          <span className="text-[10px] text-gray-400 font-medium ml-1">(실제 {Math.round(stats.totalMinutes / 60)}시간)</span>
+                        )}
                       </div>
                       {stats?.firstPerformedAt && (
                         <p className="text-[10px] text-gray-400 font-medium mt-1">
@@ -264,7 +281,7 @@ export function TemplateAnalyticsSheet({ templateId, templateTitle, templateColo
                           <XAxis dataKey="month" tick={{ fontSize: 11, fill: '#9CA3AF', fontWeight: 600 }} axisLine={false} tickLine={false} />
                           <YAxis tick={{ fontSize: 11, fill: '#9CA3AF' }} axisLine={false} tickLine={false} />
                           <Tooltip content={<CustomTooltip />} />
-                          <Bar dataKey="hours" name="시간" fill={templateColor} radius={[6, 6, 0, 0]} />
+                          <Bar dataKey="hours" name={customUnitEnabled ? "차시" : "시간"} fill={templateColor} radius={[6, 6, 0, 0]} />
                         </BarChart>
                       </ResponsiveContainer>
                     </div>
@@ -282,7 +299,7 @@ export function TemplateAnalyticsSheet({ templateId, templateTitle, templateColo
                             <XAxis dataKey="week" tick={{ fontSize: 11, fill: '#9CA3AF', fontWeight: 600 }} axisLine={false} tickLine={false} />
                             <YAxis tick={{ fontSize: 11, fill: '#9CA3AF' }} axisLine={false} tickLine={false} />
                             <Tooltip content={<CustomTooltip />} />
-                            <Line type="monotone" dataKey="hours" name="시간" stroke={templateColor} strokeWidth={2.5} dot={{ r: 4, fill: templateColor }} />
+                            <Line type="monotone" dataKey="hours" name={customUnitEnabled ? "차시" : "시간"} stroke={templateColor} strokeWidth={2.5} dot={{ r: 4, fill: templateColor }} />
                             <Line type="monotone" dataKey="movingAvg" name="이동평균" stroke="#9CA3AF" strokeWidth={1.5} strokeDasharray="5 5" dot={false} />
                           </LineChart>
                         </ResponsiveContainer>
@@ -294,7 +311,7 @@ export function TemplateAnalyticsSheet({ templateId, templateTitle, templateColo
                   {cumulativeData.length > 0 && (
                     <div className="bg-white rounded-[20px] p-5 border border-gray-100 shadow-sm">
                       <h3 className="text-[14px] font-bold text-gray-900 mb-1">성장 곡선</h3>
-                      <p className="text-[11px] text-gray-400 font-medium mb-4">최근 90일 누적 시간</p>
+                      <p className="text-[11px] text-gray-400 font-medium mb-4">최근 90일 누적 {customUnitEnabled ? '차시' : '시간'}</p>
                       <div className="h-[160px]">
                         <ResponsiveContainer width="100%" height="100%">
                           <AreaChart data={cumulativeData} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
@@ -307,7 +324,7 @@ export function TemplateAnalyticsSheet({ templateId, templateTitle, templateColo
                             <XAxis dataKey="date" tick={{ fontSize: 10, fill: '#9CA3AF' }} axisLine={false} tickLine={false} interval={14} />
                             <YAxis tick={{ fontSize: 11, fill: '#9CA3AF' }} axisLine={false} tickLine={false} />
                             <Tooltip content={<CustomTooltip />} />
-                            <Area type="monotone" dataKey="cumHours" name="누적 시간" stroke={templateColor} strokeWidth={2} fill="url(#cumGradient)" />
+                            <Area type="stepAfter" dataKey="cumHours" name={customUnitEnabled ? "누적 차시" : "누적 시간"} stroke={templateColor} strokeWidth={2} fill="url(#cumGradient)" />
                           </AreaChart>
                         </ResponsiveContainer>
                       </div>
@@ -371,22 +388,7 @@ export function TemplateAnalyticsSheet({ templateId, templateTitle, templateColo
                     </div>
                   )}
 
-                  {/* ── 최근 수행 간트 (가로 바) ── */}
-                  {ganttData.length > 0 && (
-                    <div className="bg-white rounded-[20px] p-5 border border-gray-100 shadow-sm">
-                      <h3 className="text-[14px] font-bold text-gray-900 mb-4">최근 14일 세션</h3>
-                      <div className="h-[160px]">
-                        <ResponsiveContainer width="100%" height="100%">
-                          <BarChart data={ganttData} layout="vertical" margin={{ top: 0, right: 10, left: 10, bottom: 0 }}>
-                            <XAxis type="number" tick={{ fontSize: 11, fill: '#9CA3AF' }} axisLine={false} tickLine={false} />
-                            <YAxis type="category" dataKey="date" tick={{ fontSize: 11, fill: '#9CA3AF', fontWeight: 600 }} axisLine={false} tickLine={false} width={40} />
-                            <Tooltip content={<CustomTooltip />} />
-                            <Bar dataKey="hours" name="시간" fill={templateColor} radius={[0, 6, 6, 0]} barSize={14} />
-                          </BarChart>
-                        </ResponsiveContainer>
-                      </div>
-                    </div>
-                  )}
+
 
                   {/* FEAT-01: 연결된 일정 목록 */}
                   <div className="bg-white rounded-[20px] p-5 shadow-sm border border-gray-100">

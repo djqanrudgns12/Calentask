@@ -160,13 +160,9 @@ export default function TemplateCenterTab() {
             // BUG-07 수정: categoryNames는 이제 실제 이름 배열
             const catNames = summary.categoryNames.join(', ') || '미분류'
             // FEAT-02: 커스텀 단위 계산
-            const displayCurrentHours = summary.customUnitEnabled
-              ? Number((summary.currentMonthHours * 60 / summary.customUnitMinutes).toFixed(1))
-              : summary.currentMonthHours
-            const displayPrevHours = summary.customUnitEnabled
-              ? Number((summary.prevMonthHours * 60 / summary.customUnitMinutes).toFixed(1))
-              : summary.prevMonthHours
-            const unitLabel = summary.customUnitEnabled ? '단위' : '시간'
+            const displayCurrentHours = summary.customUnitEnabled ? summary.currentMonthUnits : summary.currentMonthHours
+            const displayPrevHours = summary.customUnitEnabled ? summary.prevMonthUnits : summary.prevMonthHours
+            const unitLabel = summary.customUnitEnabled ? '차시' : '시간'
 
             return (
               <motion.div
@@ -184,8 +180,15 @@ export default function TemplateCenterTab() {
                   <div className="flex items-center gap-2.5 min-w-0">
                     <div className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: summary.hexColor }} />
                     <div className="min-w-0">
-                      <h4 className="text-[15px] font-bold text-gray-900 truncate">{summary.title}</h4>
-                      <p className="text-[11px] font-medium text-gray-400 truncate">{catNames}</p>
+                      <div className="flex items-center gap-2">
+                        <h4 className="text-[15px] font-bold text-gray-900 truncate">{summary.title}</h4>
+                        {summary.customUnitEnabled && (
+                          <span className="shrink-0 px-1.5 py-0.5 text-[9px] font-bold rounded-md bg-indigo-50 text-indigo-600 border border-indigo-100">
+                            {summary.customUnitMinutes}분/1차시
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-[11px] font-medium text-gray-400 truncate mt-0.5">{catNames}</p>
                     </div>
                   </div>
                   <div className="relative">
@@ -233,6 +236,9 @@ export default function TemplateCenterTab() {
                     <span className="text-[13px] font-bold text-gray-400">{unitLabel}</span>
                     <span className="text-[13px] font-bold text-gray-300">·</span>
                     <span className="text-[13px] font-bold text-gray-500">{summary.currentMonthCount}회</span>
+                    {summary.customUnitEnabled && (
+                      <span className="text-[10px] font-medium text-gray-400/60 ml-1">(실제 {summary.currentMonthHours}시간)</span>
+                    )}
                   </div>
                   <div className="flex items-baseline gap-1.5 mt-2 text-[12px] font-medium text-gray-400 bg-gray-50/80 px-2.5 py-1.5 rounded-lg w-fit">
                     <span className="font-bold text-gray-500">저번 달:</span>
@@ -247,7 +253,7 @@ export default function TemplateCenterTab() {
                 {/* 스파크라인 */}
                 <div className="h-[40px] w-full pl-3 mb-3">
                   <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={summary.dailyTrend} margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
+                    <AreaChart data={(summary.customUnitEnabled ? summary.dailyTrendUnits : summary.dailyTrend) as any[]} margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
                       <defs>
                         <linearGradient id={`spark-${summary.templateId}`} x1="0" y1="0" x2="0" y2="1">
                           <stop offset="0%" stopColor={summary.hexColor} stopOpacity={0.3} />
@@ -256,7 +262,7 @@ export default function TemplateCenterTab() {
                       </defs>
                       <Area
                         type="monotone"
-                        dataKey="minutes"
+                        dataKey={summary.customUnitEnabled ? "units" : "minutes"}
                         stroke={summary.hexColor}
                         strokeWidth={2}
                         fill={`url(#spark-${summary.templateId})`}

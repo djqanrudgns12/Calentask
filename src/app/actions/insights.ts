@@ -349,10 +349,15 @@ export type TemplateSummary = {
   // FEAT-02: 커스텀 시간 단위
   customUnitEnabled: boolean
   customUnitMinutes: number
+  currentMonthUnits: number
+  prevMonthUnits: number
+  totalUnits: number
+  dailyTrendUnits: { date: string; units: number }[]
 }
 
 export type TemplateUsageStats = {
   totalMinutes: number
+  totalUnits: number
   totalCount: number
   avgSessionMinutes: number
   maxSessionMinutes: number
@@ -484,20 +489,32 @@ export async function getAllTemplatesSummary(startDate: string, endDate: string)
     let maxSession = 0
     const dailyMap = new Map<string, number>()
 
+    let totalUnits = 0
+    let currentMonthUnits = 0
+    let prevMonthUnits = 0
+    const dailyUnitMap = new Map<string, number>()
+
+    const customUnitEnabled = (tmpl as any).custom_unit_enabled || false
+    const customUnitMinutes = (tmpl as any).custom_unit_minutes || 40
+
     acts.forEach((a: any) => {
       const start = new Date(a.start_time)
       const end = new Date(a.end_time)
       const mins = (end.getTime() - start.getTime()) / 60000
 
       totalMinutes += mins
+      const units = customUnitEnabled ? Math.floor(mins / customUnitMinutes) : 0
+      totalUnits += units
 
       if (a.start_time >= currentMonthStart && a.start_time <= currentMonthEnd) {
         currentMonthMinutes += mins
         currentMonthCount++
+        currentMonthUnits += units
       }
       if (a.start_time >= prevMonthStart && a.start_time <= prevMonthEnd) {
         prevMonthMinutes += mins
         prevMonthCount++
+        prevMonthUnits += units
       }
       if (mins > maxSession) maxSession = mins
 
@@ -506,15 +523,18 @@ export async function getAllTemplatesSummary(startDate: string, endDate: string)
         const actKST = getKSTDate(a.start_time)
         const dateKey = `${actKST.getUTCFullYear()}-${String(actKST.getUTCMonth() + 1).padStart(2, '0')}-${String(actKST.getUTCDate()).padStart(2, '0')}`
         dailyMap.set(dateKey, (dailyMap.get(dateKey) || 0) + mins)
+        dailyUnitMap.set(dateKey, (dailyUnitMap.get(dateKey) || 0) + units)
       }
     })
 
     // 최근 7일 배열 생성
     const dailyTrend: { date: string; minutes: number }[] = []
+    const dailyTrendUnits: { date: string; units: number }[] = []
     for (let i = 6; i >= 0; i--) {
       const d = new Date(kstNow.getTime() - i * 24 * 60 * 60 * 1000)
       const key = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}`
       dailyTrend.push({ date: key, minutes: dailyMap.get(key) || 0 })
+      dailyTrendUnits.push({ date: key, units: dailyUnitMap.get(key) || 0 })
     }
 
     const categoryIds = (tmpl as any).category_ids || []
@@ -536,8 +556,12 @@ export async function getAllTemplatesSummary(startDate: string, endDate: string)
       lastPerformedAt: acts.length > 0 ? acts[0].start_time : null,
       dailyTrend,
       // FEAT-02: 커스텀 시간 단위
-      customUnitEnabled: (tmpl as any).custom_unit_enabled || false,
-      customUnitMinutes: (tmpl as any).custom_unit_minutes || 60
+      customUnitEnabled,
+      customUnitMinutes,
+      currentMonthUnits,
+      prevMonthUnits,
+      totalUnits,
+      dailyTrendUnits
     }
   })
 
@@ -552,17 +576,28 @@ export async function getTemplateUsageStats(templateId: string, startDate: strin
   const { data: userData } = await supabase.auth.getUser()
   if (!userData.user) throw new Error('Not authenticated')
 
+  const { data: tmpl } = await supabase
+    .from('activity_templates')
+    .select('custom_unit_enabled, custom_unit_minutes')
+    .eq('id', templateId)
+    .single()
+
+  const customUnitEnabled = tmpl?.custom_unit_enabled || false
+  const customUnitMinutes = tmpl?.custom_unit_minutes || 40
+
   const rawActs = await getTemplateLinkedActivities(templateId)
   const data = rawActs.map(a => ({ start_time: a.startTime, end_time: a.endTime }))
   data.sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime())
 
   let totalMinutes = 0
+  let totalUnits = 0
   let maxSessionMinutes = 0
   let maxSessionDate: string | null = null
 
   ;(data || []).forEach((a: any) => {
     const mins = (new Date(a.end_time).getTime() - new Date(a.start_time).getTime()) / 60000
     totalMinutes += mins
+    totalUnits += customUnitEnabled ? Math.floor(mins / customUnitMinutes) : 0
     if (mins > maxSessionMinutes) {
       maxSessionMinutes = mins
       maxSessionDate = a.start_time
@@ -571,6 +606,7 @@ export async function getTemplateUsageStats(templateId: string, startDate: strin
 
   return {
     totalMinutes,
+    totalUnits,
     totalCount: (data || []).length,
     avgSessionMinutes: (data || []).length > 0 ? Math.round(totalMinutes / (data || []).length) : 0,
     maxSessionMinutes: Math.round(maxSessionMinutes),
