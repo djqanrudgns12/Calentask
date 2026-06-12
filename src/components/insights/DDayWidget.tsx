@@ -7,7 +7,8 @@ import { useInsightsFilterStore } from '@/store/useInsightsFilterStore';
 import { motion } from 'framer-motion';
 
 export default function DDayWidget() {
-  const { period, singleDate } = useInsightsFilterStore();
+  const period = useInsightsFilterStore(state => state.period);
+  const singleDate = useInsightsFilterStore(state => state.singleDate);
 
   const ddayInfo = useMemo(() => {
     if (period !== 'single' || !singleDate) return null;

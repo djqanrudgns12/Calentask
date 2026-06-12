@@ -18,7 +18,8 @@ const TABS: { id: InsightsTab; label: string; icon: typeof LayoutDashboard }[] =
 ];
 
 export default function InsightsClient() {
-  const { activeTab, setActiveTab } = useInsightsFilterStore();
+  const activeTab = useInsightsFilterStore(state => state.activeTab);
+  const setActiveTab = useInsightsFilterStore(state => state.setActiveTab);
 
   return (
     <div className="mt-2 pb-24 md:pb-10 relative min-h-screen">

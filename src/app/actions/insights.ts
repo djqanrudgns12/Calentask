@@ -279,7 +279,18 @@ export async function getInsightsData(startDate: string, endDate: string) {
     },
     breakdown,
     weeklyData,
-    rawData: activities
+    rawData: activities.map(act => ({
+      id: act.id,
+      title: act.title,
+      start_time: act.start_time,
+      end_time: act.end_time,
+      is_all_day: act.is_all_day,
+      categories: act.categories?.map((c: any) => ({
+        id: c.id,
+        name: c.name,
+        hex_color: c.hex_color
+      })) || []
+    }))
   }
 }
 
@@ -1309,4 +1320,37 @@ export async function searchActivitiesForLinking(
     isDirectlyCreated: a.template_id === templateId,
     isLinked: linkedIds.has(a.id)
   }))
+}
+
+/**
+ * FEAT-03: 연간 목표 달성률 (초경량 API)
+ * 전체 일정을 반환하지 않고, 서버에서 연산 후 시간 수치만 반환합니다.
+ */
+export async function getAnnualGoalProgress(startDate: string, endDate: string) {
+  const supabase = await createClient()
+  const { data: userData } = await supabase.auth.getUser()
+  if (!userData.user) throw new Error('Not authenticated')
+
+  const { data, error } = await supabase
+    .from('activities')
+    .select('start_time, end_time')
+    .eq('user_id', userData.user.id)
+    .gte('start_time', startDate)
+    .lte('end_time', endDate)
+    .is('deleted_at', null)
+
+  if (error) throw new Error(error.message)
+
+  let totalMins = 0
+  ;(data || []).forEach((act: any) => {
+    const start = new Date(act.start_time).getTime()
+    const end = new Date(act.end_time).getTime()
+    totalMins += (end - start) / 60000
+  })
+
+  const hours = Math.round(totalMins / 60)
+  const GOAL_HOURS = 1000
+  const percent = Math.min(Math.round((hours / GOAL_HOURS) * 100), 100)
+
+  return { hours, percent }
 }

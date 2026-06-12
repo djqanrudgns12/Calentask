@@ -58,7 +58,12 @@ const PieTooltip = ({ active, payload }: any) => {
 }
 
 export default function TimeAnalysisTab() {
-  const { period, customDateRange, singleDate, activityType, selectedCategoryIds, setCustomDateRange } = useInsightsFilterStore()
+  const period = useInsightsFilterStore(state => state.period)
+  const customDateRange = useInsightsFilterStore(state => state.customDateRange)
+  const singleDate = useInsightsFilterStore(state => state.singleDate)
+  const activityType = useInsightsFilterStore(state => state.activityType)
+  const selectedCategoryIds = useInsightsFilterStore(state => state.selectedCategoryIds)
+  const setCustomDateRange = useInsightsFilterStore(state => state.setCustomDateRange)
   const { data: categoriesData = [] } = useCategories()
   const categories = categoriesData
 

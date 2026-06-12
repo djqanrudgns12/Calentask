@@ -17,19 +17,17 @@ interface DashboardFilterBarProps {
 }
 
 export default function DashboardFilterBar({ categories }: DashboardFilterBarProps) {
-  const {
-    period,
-    setPeriod,
-    customDateRange,
-    setCustomDateRange,
-    singleDate,
-    setSingleDate,
-    activityType,
-    setActivityType,
-    selectedCategoryIds,
-    setSelectedCategoryIds,
-    resetFilter
-  } = useInsightsFilterStore();
+  const period = useInsightsFilterStore(state => state.period);
+  const setPeriod = useInsightsFilterStore(state => state.setPeriod);
+  const customDateRange = useInsightsFilterStore(state => state.customDateRange);
+  const setCustomDateRange = useInsightsFilterStore(state => state.setCustomDateRange);
+  const singleDate = useInsightsFilterStore(state => state.singleDate);
+  const setSingleDate = useInsightsFilterStore(state => state.setSingleDate);
+  const activityType = useInsightsFilterStore(state => state.activityType);
+  const setActivityType = useInsightsFilterStore(state => state.setActivityType);
+  const selectedCategoryIds = useInsightsFilterStore(state => state.selectedCategoryIds);
+  const setSelectedCategoryIds = useInsightsFilterStore(state => state.setSelectedCategoryIds);
+  const resetFilter = useInsightsFilterStore(state => state.resetFilter);
 
   const [calendarMode, setCalendarMode] = useState<'none' | 'single' | 'custom'>('none');
   const [isCategoryOpen, setIsCategoryOpen] = useState(false);

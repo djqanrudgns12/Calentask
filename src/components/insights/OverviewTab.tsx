@@ -37,9 +37,12 @@ function getPresetRange(period: string) {
 // 서버 getInsightsData()의 결과를 직접 사용하여 이중 처리 제거
 
 export default function OverviewTab() {
-  const {
-    period, customDateRange, singleDate, activityType, selectedCategoryIds, setCustomDateRange
-  } = useInsightsFilterStore()
+  const period = useInsightsFilterStore(state => state.period)
+  const customDateRange = useInsightsFilterStore(state => state.customDateRange)
+  const singleDate = useInsightsFilterStore(state => state.singleDate)
+  const activityType = useInsightsFilterStore(state => state.activityType)
+  const selectedCategoryIds = useInsightsFilterStore(state => state.selectedCategoryIds)
+  const setCustomDateRange = useInsightsFilterStore(state => state.setCustomDateRange)
   const { data: categoriesData = [] } = useCategories()
   const { data: templates = [] } = useActivityTemplates()
   // 기간 계산을 KPI 호출보다 먼저 수행해야 하므로 위치 조정

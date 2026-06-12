@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { getActivityTemplates, createActivityTemplate, updateActivityTemplate, deleteActivityTemplate, createActivityFromTemplate, getInsightsData, getSubjectDetails, getAllTemplatesSummary, getTemplateUsageStats, getTemplateMonthlyTrend, getTemplateWeeklyTrend, getTemplateDailyTrend, getCategoryMonthlyTrend, getCategoryDailyTrend, getOverviewKPI, getExecutionAnalytics, getTemplateLinkedActivities, linkActivityToTemplate, unlinkActivityFromTemplate, searchActivitiesForLinking } from '@/app/actions/insights'
+import { getActivityTemplates, createActivityTemplate, updateActivityTemplate, deleteActivityTemplate, createActivityFromTemplate, getInsightsData, getSubjectDetails, getAllTemplatesSummary, getTemplateUsageStats, getTemplateMonthlyTrend, getTemplateWeeklyTrend, getTemplateDailyTrend, getCategoryMonthlyTrend, getCategoryDailyTrend, getOverviewKPI, getExecutionAnalytics, getTemplateLinkedActivities, linkActivityToTemplate, unlinkActivityFromTemplate, searchActivitiesForLinking, getAnnualGoalProgress } from '@/app/actions/insights'
 import type { ActivityTemplate } from '@/app/actions/insights'
 
 export function useActivityTemplates() {
@@ -236,5 +236,13 @@ export function useSearchActivitiesForLinking(templateId: string | null, query: 
     queryKey: ['searchForLinking', templateId, query, dateFrom, dateTo],
     queryFn: () => searchActivitiesForLinking(templateId!, query, dateFrom, dateTo),
     enabled: !!templateId
+  })
+}
+
+export function useAnnualGoalProgress(startDate: string, endDate: string) {
+  return useQuery({
+    queryKey: ['annualGoalProgress', startDate, endDate],
+    queryFn: () => getAnnualGoalProgress(startDate, endDate),
+    staleTime: 10 * 60 * 1000 // 10분 캐시 (연간 데이터는 자주 안바뀜)
   })
 }

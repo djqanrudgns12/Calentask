@@ -2,33 +2,21 @@
 
 import { useMemo } from 'react';
 import { Target, Trophy } from 'lucide-react';
-import { useInsightsData } from '@/hooks/useInsightsQueries';
+import { useAnnualGoalProgress } from '@/hooks/useInsightsQueries';
 import { Activity } from '@/app/actions/calendar';
 import { startOfYear, endOfYear } from 'date-fns';
 
 export default function AnnualGoalWidget() {
   const yearStart = startOfYear(new Date()).toISOString();
   const yearEnd = endOfYear(new Date()).toISOString();
-  const { data: insightsData } = useInsightsData(yearStart, yearEnd);
+  const { data: progressData } = useAnnualGoalProgress(yearStart, yearEnd);
 
-  const GOAL_HOURS = 1000; // 1만 시간의 법칙 대신 현실적으로 연 1,000시간 (하루 약 2.7시간)
+  const GOAL_HOURS = 1000;
 
   const progress = useMemo(() => {
-    if (!insightsData?.rawData) return { hours: 0, percent: 0 };
-    const activities = insightsData.rawData as Activity[];
-    
-    let totalMins = 0;
-    activities.forEach(act => {
-      const start = new Date(act.start_time).getTime();
-      const end = new Date(act.end_time).getTime();
-      totalMins += (end - start) / 60000;
-    });
-
-    const hours = Math.round(totalMins / 60);
-    const percent = Math.min(Math.round((hours / GOAL_HOURS) * 100), 100);
-    
-    return { hours, percent };
-  }, [insightsData?.rawData]);
+    if (!progressData) return { hours: 0, percent: 0 };
+    return progressData;
+  }, [progressData]);
 
   return (
     <div className="bg-white rounded-[24px] p-6 border border-gray-100 shadow-sm flex items-center justify-between w-full h-[120px] relative overflow-hidden group">
