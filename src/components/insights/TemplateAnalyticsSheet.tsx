@@ -176,13 +176,13 @@ export function TemplateAnalyticsSheet({ templateId, templateTitle, templateColo
             onClick={onClose}
             className="fixed inset-0 bg-gray-900/40 backdrop-blur-sm z-[200]"
           />
-          {/* 시트: 모바일은 전체화면(아래→위), 데스크톱은 오른쪽 560px(오른쪽→왼쪽) */}
+          {/* 시트: 모바일은 전체화면(아래→위), 데스크톱은 가운데 560px */}
           <motion.div
             initial={{ y: '100%', x: 0 }}
             animate={{ y: 0, x: 0 }}
             exit={{ y: '100%', x: 0 }}
             transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-            className="fixed inset-0 md:inset-y-0 md:left-auto md:right-0 md:w-[560px] bg-white shadow-2xl z-[201] flex flex-col"
+            className="fixed inset-0 md:inset-auto md:top-1/2 md:left-1/2 md:-translate-x-1/2 md:-translate-y-1/2 md:w-[560px] md:max-h-[90vh] md:rounded-3xl bg-white shadow-2xl z-[201] flex flex-col"
           >
             {/* Header — safe-area 대응 포함 */}
             <div className="flex items-center justify-between px-5 md:px-6 py-4 md:py-5 border-b border-gray-100 bg-white z-10 sticky top-0 pt-[max(1rem,env(safe-area-inset-top))]">
