@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { getActivityTemplates, createActivityTemplate, updateActivityTemplate, deleteActivityTemplate, createActivityFromTemplate, getInsightsData, getSubjectDetails, getAllTemplatesSummary, getTemplateFullAnalytics, getCategoryMonthlyTrend, getCategoryDailyTrend, getOverviewKPI, getExecutionAnalytics, getTemplateLinkedActivities, linkActivityToTemplate, unlinkActivityFromTemplate, searchActivitiesForLinking, getAnnualGoalProgress } from '@/app/actions/insights'
+import { getActivityTemplates, createActivityTemplate, updateActivityTemplate, deleteActivityTemplate, createActivityFromTemplate, getInsightsData, getSubjectDetails, getAllTemplatesSummary, getTemplateFullAnalytics, getCategoryMonthlyTrend, getOverviewKPI, getExecutionAnalytics, getTemplateLinkedActivities, linkActivityToTemplate, unlinkActivityFromTemplate, searchActivitiesForLinking, getAnnualGoalProgress } from '@/app/actions/insights'
 import type { ActivityTemplate } from '@/app/actions/insights'
 
 export function useActivityTemplates() {
@@ -107,13 +107,7 @@ export function useCategoryMonthlyTrend(categoryId: string | null) {
   })
 }
 
-export function useCategoryDailyTrend(categoryId: string | null, days: number = 7) {
-  return useQuery({
-    queryKey: ['categoryDailyTrend', categoryId, days],
-    queryFn: () => getCategoryDailyTrend(categoryId!, days),
-    enabled: !!categoryId
-  })
-}
+
 
 // ─── 종합 현황 탭 Hooks ───
 

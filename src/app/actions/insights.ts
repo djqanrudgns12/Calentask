@@ -967,55 +967,7 @@ export async function getCategoryMonthlyTrend(categoryId: string): Promise<Month
   }))
 }
 
-/**
- * 특정 카테고리의 일별 트렌드 (스파크라인용)
- */
-export async function getCategoryDailyTrend(categoryId: string, days: number = 7): Promise<DailyTrendData[]> {
-  const supabase = await createClient()
-  const { data: userData } = await supabase.auth.getUser()
-  if (!userData.user) throw new Error('Not authenticated')
 
-  const kstNow = getKSTNow()
-  const startDateKST = new Date(kstNow.getTime() - days * 24 * 60 * 60 * 1000)
-  const startDate = new Date(startDateKST.getTime() - KST_OFFSET_MS).toISOString()
-
-  const { data, error } = await supabase
-    .from('activities')
-    .select(`
-      start_time, end_time,
-      activity_category_map!inner ( category_id )
-    `)
-    .eq('user_id', userData.user.id)
-    .eq('activity_category_map.category_id', categoryId)
-    .gte('start_time', startDate)
-    .is('deleted_at', null)
-
-  if (error) throw new Error(error.message)
-
-  const dayMap = new Map<string, { minutes: number; count: number }>()
-  for (let i = days - 1; i >= 0; i--) {
-    const d = new Date(kstNow.getTime() - i * 24 * 60 * 60 * 1000)
-    const key = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}`
-    dayMap.set(key, { minutes: 0, count: 0 })
-  }
-
-  ;(data || []).forEach((a: any) => {
-    const actKST = getKSTDate(a.start_time)
-    const key = `${actKST.getUTCFullYear()}-${String(actKST.getUTCMonth() + 1).padStart(2, '0')}-${String(actKST.getUTCDate()).padStart(2, '0')}`
-    const mins = (new Date(a.end_time).getTime() - new Date(a.start_time).getTime()) / 60000
-    const existing = dayMap.get(key)
-    if (existing) {
-      existing.minutes += mins
-      existing.count++
-    }
-  })
-
-  return Array.from(dayMap.entries()).map(([date, d]) => ({
-    date,
-    minutes: Math.round(d.minutes),
-    count: d.count
-  }))
-}
 
 // ─── 종합 현황 탭 서버 액션 ───
 

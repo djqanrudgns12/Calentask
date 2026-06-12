@@ -89,32 +89,7 @@ export default function TimeAnalysisTab() {
   // 최적화: 참조 안정성 확보
   const rawActivities = useMemo(() => (deferredInsightsData?.rawData || []) as Activity[], [deferredInsightsData?.rawData])
 
-  // ── 누적 영역 차트 데이터 (BUG-15 수정: 필터 적용) ──
-  const stackedAreaData = useMemo(() => {
-    if (!deferredInsightsData) return []
-    const days = eachDayOfInterval({ start: fromDate, end: toDate })
 
-    return days.map(day => {
-      const dayStr = format(day, 'M/d')
-      const entry: any = { date: dayStr }
-
-      rawActivities.forEach(act => {
-        // BUG-15: 필터 적용
-        if (deferredActivityType !== 'ALL' && act.type !== deferredActivityType) return
-        if (deferredSelectedCategoryIds.length > 0) {
-          if (!act.categories?.some(c => deferredSelectedCategoryIds.includes(c.id))) return
-        }
-
-        const actDate = startOfDay(new Date(act.start_time))
-        if (actDate.getTime() !== startOfDay(day).getTime()) return
-        const mins = (new Date(act.end_time).getTime() - new Date(act.start_time).getTime()) / 60000
-        const catName = act.categories?.[0]?.name || '미분류'
-        entry[catName] = (entry[catName] || 0) + Number((mins / 60).toFixed(2))
-      })
-
-      return entry
-    })
-  }, [deferredInsightsData, rawActivities, fromDate, toDate, deferredActivityType, deferredSelectedCategoryIds])
 
   // ── 카테고리별 집계 ──
   const categoryBreakdown = useMemo(() => {
@@ -141,30 +116,7 @@ export default function TimeAnalysisTab() {
     return { items, totalMinutes }
   }, [deferredInsightsData, rawActivities, deferredActivityType, deferredSelectedCategoryIds])
 
-  // ── 워터폴 차트 데이터 ──
-  const waterfallData = useMemo(() => {
-    if (!deferredInsightsData) return []
-    const days = eachDayOfInterval({ start: fromDate, end: toDate })
 
-    let cumulative = 0
-    const data = days.map(day => {
-      let dayTotal = 0
-      rawActivities.forEach(act => {
-        if (startOfDay(new Date(act.start_time)).getTime() !== startOfDay(day).getTime()) return
-        dayTotal += (new Date(act.end_time).getTime() - new Date(act.start_time).getTime()) / 60000
-      })
-      const hours = Number((dayTotal / 60).toFixed(1))
-      const prev = cumulative
-      cumulative += hours
-      return {
-        date: format(day, 'M/d(E)', { locale: ko }),
-        hours,
-        base: prev,
-        total: cumulative
-      }
-    })
-    return data
-  }, [deferredInsightsData, rawActivities, fromDate, toDate])
 
   // 도넛 데이터
   const donutData = useMemo(() => {
@@ -179,17 +131,7 @@ export default function TimeAnalysisTab() {
     }))
   }, [categoryBreakdown])
 
-  // 카테고리 색상 목록 (누적 영역 차트용)
-  const categoryColors = useMemo(() => {
-    const colorMap: Record<string, string> = {}
-    categoryBreakdown.items.forEach(item => {
-      colorMap[item.name] = item.color
-    })
-    colorMap['미분류'] = '#9CA3AF'
-    return colorMap
-  }, [categoryBreakdown])
 
-  const allCatNames = useMemo(() => Object.keys(categoryColors), [categoryColors])
 
   if (isLoading) {
     return (
@@ -205,38 +147,7 @@ export default function TimeAnalysisTab() {
     <div className="space-y-6">
       <DashboardFilterBar categories={categories} />
 
-      {/* ── 누적 영역 차트 ── */}
-      {stackedAreaData.length > 0 && allCatNames.length > 0 && (
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-white rounded-[24px] p-6 shadow-sm border border-gray-100"
-        >
-          <h3 className="text-[17px] font-extrabold text-gray-900 tracking-tight mb-1">카테고리별 시간 흐름</h3>
-          <p className="text-[12px] font-bold text-gray-400 mb-5">기간 내 카테고리별 시간 변화를 한눈에</p>
-          <div className="h-[260px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={stackedAreaData} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#F3F4F6" />
-                <XAxis dataKey="date" tick={{ fontSize: 11, fill: '#9CA3AF', fontWeight: 600 }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fontSize: 11, fill: '#9CA3AF' }} axisLine={false} tickLine={false} />
-                <Tooltip content={<CustomTooltip />} />
-                {allCatNames.map(name => (
-                  <Area
-                    key={name}
-                    type="monotone"
-                    dataKey={name}
-                    stackId="1"
-                    stroke={categoryColors[name]}
-                    fill={categoryColors[name]}
-                    fillOpacity={0.6}
-                  />
-                ))}
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
-        </motion.div>
-      )}
+
 
       {/* ── 시간 비율 스택 바 ── */}
       {donutData.length > 0 && (
@@ -311,46 +222,7 @@ export default function TimeAnalysisTab() {
         </motion.div>
       )}
 
-      {/* ── 워터폴 차트 ── */}
-      {waterfallData.length > 0 && (
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="bg-white rounded-[24px] p-6 shadow-sm border border-gray-100"
-        >
-          <h3 className="text-[17px] font-extrabold text-gray-900 tracking-tight mb-1">일별 시간 투입 폭포</h3>
-          <p className="text-[12px] font-bold text-gray-400 mb-5">하루하루의 시간 투입 변동을 한눈에</p>
-          <div className="h-[220px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={waterfallData} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#F3F4F6" />
-                <XAxis dataKey="date" tick={{ fontSize: 10, fill: '#9CA3AF', fontWeight: 600 }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fontSize: 11, fill: '#9CA3AF' }} axisLine={false} tickLine={false} />
-                <Tooltip
-                  content={({ active, payload, label }: any) => {
-                    if (!active || !payload?.length) return null
-                    const d = payload[0]?.payload
-                    return (
-                      <div className="bg-white/95 backdrop-blur-md px-3 py-2 rounded-xl border border-gray-100 shadow-lg text-[12px] font-bold">
-                        <p className="text-gray-500">{label}</p>
-                        <p className="text-blue-600">{d?.hours}시간</p>
-                        <p className="text-gray-400">누적: {d?.total?.toFixed(1)}h</p>
-                      </div>
-                    )
-                  }}
-                />
-                <Bar dataKey="base" stackId="a" fill="transparent" />
-                <Bar dataKey="hours" stackId="a" radius={[4, 4, 0, 0]}>
-                  {waterfallData.map((entry, idx) => (
-                    <Cell key={idx} fill={entry.hours > 0 ? '#60A5FA' : '#F3F4F6'} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </motion.div>
-      )}
+
 
       {/* ── 카테고리 카드 그리드 ── */}
       {categoryBreakdown.items.length > 0 && (
