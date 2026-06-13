@@ -8,6 +8,7 @@ import {
 import { differenceInDays, format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { useCategories } from '@/hooks/useCalendarQueries';
+import { AgendaTaskContextMenu } from '../AgendaTaskContextMenu';
 
 // ─── 분류 유틸 ───────────────────────────────────────────────
 
@@ -53,13 +54,15 @@ const getDeadlineInfo = (isoDate: string) => {
 const MatrixCard = ({
   task,
   openDetail,
+  onAddToCalendar,
   isDone = false
 }: {
   task: AgendaTask;
   openDetail: (t: AgendaTask) => void;
+  onAddToCalendar: (t: AgendaTask) => void;
   isDone?: boolean;
 }) => {
-  const { updateTask, setTaskStatus } = useAgendaStore();
+  const { updateTask, setTaskStatus, deleteTask } = useAgendaStore();
   const { data: categories = [] } = useCategories();
   const category = categories.find((c: any) => c.id === task.category_id);
   const deadlineInfo = task.status !== 'done' && task.deadline ? getDeadlineInfo(task.deadline) : null;
@@ -131,23 +134,34 @@ const MatrixCard = ({
         </div>
       </div>
 
-      {/* 중요도 토글 (우측, 항상 표시) */}
-      {!isDone && (
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            updateTask(task.id, { is_important: !task.is_important });
-          }}
-          className={cn(
-            'shrink-0 p-1 rounded-full transition-colors mt-0.5',
-            task.is_important
-              ? 'text-amber-400 hover:bg-amber-50'
-              : 'text-slate-300 hover:text-amber-400 hover:bg-slate-50'
-          )}
-        >
-          <Star className={cn('w-4 h-4', task.is_important ? 'fill-current' : '')} />
-        </button>
-      )}
+      {/* 우측 액션 버튼들 (중요도 토글 + 컨텍스트 메뉴) */}
+      <div className="flex items-center shrink-0 mt-0.5 gap-1">
+        {!isDone && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              updateTask(task.id, { is_important: !task.is_important });
+            }}
+            className={cn(
+              'p-1 rounded-full transition-colors',
+              task.is_important
+                ? 'text-amber-400 hover:bg-amber-50'
+                : 'text-slate-300 hover:text-amber-400 hover:bg-slate-50'
+            )}
+          >
+            <Star className={cn('w-4 h-4', task.is_important ? 'fill-current' : '')} />
+          </button>
+        )}
+        <div onPointerDown={(e) => e.stopPropagation()}>
+          <AgendaTaskContextMenu 
+            status={task.status} 
+            onEdit={() => openDetail(task)} 
+            onChangeStatus={(s) => setTaskStatus(task.id, s)} 
+            onPermanentDelete={() => deleteTask(task.id)}
+            onAddToCalendar={() => onAddToCalendar(task)}
+          />
+        </div>
+      </div>
     </div>
   );
 };
@@ -168,11 +182,13 @@ interface QuadrantConfig {
 const MatrixQuadrant = ({
   config,
   tasks,
-  openDetail
+  openDetail,
+  onAddToCalendar
 }: {
   config: QuadrantConfig;
   tasks: AgendaTask[];
   openDetail: (t: AgendaTask) => void;
+  onAddToCalendar: (t: AgendaTask) => void;
 }) => {
   const Icon = config.icon;
   const isDone = config.id === 'done';
@@ -218,6 +234,7 @@ const MatrixQuadrant = ({
               key={task.id}
               task={task}
               openDetail={openDetail}
+              onAddToCalendar={onAddToCalendar}
               isDone={isDone}
             />
           ))
@@ -229,7 +246,7 @@ const MatrixQuadrant = ({
 
 // ─── 메인 매트릭스 뷰 ──────────────────────────────────────
 
-export const AgendaMatrixView = ({ openDetail }: { openDetail: (t: AgendaTask) => void }) => {
+export const AgendaMatrixView = ({ openDetail, onAddToCalendar }: { openDetail: (t: AgendaTask) => void, onAddToCalendar: (t: AgendaTask) => void }) => {
   const { tasks } = useAgendaStore();
 
   // trash와 archive 상태는 매트릭스에서 완전 제외
@@ -286,6 +303,7 @@ export const AgendaMatrixView = ({ openDetail }: { openDetail: (t: AgendaTask) =
           config={config}
           tasks={visibleTasks.filter(t => getMatrixQuadrant(t) === config.id)}
           openDetail={openDetail}
+          onAddToCalendar={onAddToCalendar}
         />
       ))}
     </div>

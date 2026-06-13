@@ -700,8 +700,8 @@ export function ArchiveAgendaView() {
         </>
         )}
 
-        {viewMode === 'kanban' && <AgendaKanbanView openDetail={openDetail} />}
-        {viewMode === 'matrix' && <AgendaMatrixView openDetail={openDetail} />}
+        {viewMode === 'kanban' && <AgendaKanbanView openDetail={openDetail} onAddToCalendar={handleAddToCalendar} />}
+        {viewMode === 'matrix' && <AgendaMatrixView openDetail={openDetail} onAddToCalendar={handleAddToCalendar} />}
       </div>
       </div>
       

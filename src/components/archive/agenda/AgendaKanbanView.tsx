@@ -23,10 +23,11 @@ import { cn } from '@/lib/utils';
 import { Clock, Star, CheckCircle2 } from 'lucide-react';
 import { differenceInDays } from 'date-fns';
 import { useCategories } from '@/hooks/useCalendarQueries';
+import { AgendaTaskContextMenu } from '../AgendaTaskContextMenu';
 
-const KanbanCard = ({ task, id, openDetail }: { task: AgendaTask, id: string, openDetail: (t: AgendaTask) => void }) => {
+const KanbanCard = ({ task, id, openDetail, onAddToCalendar }: { task: AgendaTask, id: string, openDetail: (t: AgendaTask) => void, onAddToCalendar: (t: AgendaTask) => void }) => {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
-  const { updateTask } = useAgendaStore();
+  const { updateTask, setTaskStatus, deleteTask } = useAgendaStore();
   const { data: categories = [] } = useCategories();
 
   const style = {
@@ -62,17 +63,28 @@ const KanbanCard = ({ task, id, openDetail }: { task: AgendaTask, id: string, op
       onClick={() => openDetail(task)}
       className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 hover:shadow-md transition-shadow cursor-grab active:cursor-grabbing mb-3"
     >
-      <div className="flex justify-between items-start mb-2">
+      <div className="flex justify-between items-start mb-2 gap-2">
         <h4 className={cn("font-bold text-sm leading-tight line-clamp-2", task.status === 'done' ? "text-slate-400 line-through" : "text-slate-800")}>
           {task.title}
         </h4>
-        <button 
-          onPointerDown={(e) => e.stopPropagation()}
-          onClick={(e) => { e.stopPropagation(); updateTask(task.id, { is_important: !task.is_important }); }}
-          className={cn("p-1 -mr-1 rounded-full transition-colors", task.is_important ? "text-amber-400 hover:bg-amber-50" : "text-slate-200 hover:text-amber-400 hover:bg-slate-50")}
-        >
-          <Star className={cn("w-4 h-4", task.is_important ? "fill-current" : "")} />
-        </button>
+        <div className="flex items-center shrink-0">
+          <button 
+            onPointerDown={(e) => e.stopPropagation()}
+            onClick={(e) => { e.stopPropagation(); updateTask(task.id, { is_important: !task.is_important }); }}
+            className={cn("p-1 rounded-full transition-colors", task.is_important ? "text-amber-400 hover:bg-amber-50" : "text-slate-200 hover:text-amber-400 hover:bg-slate-50")}
+          >
+            <Star className={cn("w-4 h-4", task.is_important ? "fill-current" : "")} />
+          </button>
+          <div onPointerDown={(e) => e.stopPropagation()}>
+            <AgendaTaskContextMenu 
+              status={task.status} 
+              onEdit={() => openDetail(task)} 
+              onChangeStatus={(s) => setTaskStatus(task.id, s)} 
+              onPermanentDelete={() => deleteTask(task.id)}
+              onAddToCalendar={() => onAddToCalendar(task)}
+            />
+          </div>
+        </div>
       </div>
 
       <div className="flex flex-wrap items-center gap-1.5 mt-3">
@@ -93,7 +105,7 @@ const KanbanCard = ({ task, id, openDetail }: { task: AgendaTask, id: string, op
   );
 };
 
-const KanbanColumn = ({ id, title, tasks, openDetail }: { id: string, title: string, tasks: AgendaTask[], openDetail: (t: AgendaTask) => void }) => {
+const KanbanColumn = ({ id, title, tasks, openDetail, onAddToCalendar }: { id: string, title: string, tasks: AgendaTask[], openDetail: (t: AgendaTask) => void, onAddToCalendar: (t: AgendaTask) => void }) => {
   const { setNodeRef } = useDroppable({ id });
 
   return (
@@ -109,7 +121,7 @@ const KanbanColumn = ({ id, title, tasks, openDetail }: { id: string, title: str
       <SortableContext items={tasks.map(t => t.id)} strategy={verticalListSortingStrategy}>
         <div className="flex-1 min-h-[200px]">
           {tasks.map(task => (
-            <KanbanCard key={task.id} id={task.id} task={task} openDetail={openDetail} />
+            <KanbanCard key={task.id} id={task.id} task={task} openDetail={openDetail} onAddToCalendar={onAddToCalendar} />
           ))}
         </div>
       </SortableContext>
@@ -117,7 +129,7 @@ const KanbanColumn = ({ id, title, tasks, openDetail }: { id: string, title: str
   );
 };
 
-export const AgendaKanbanView = ({ openDetail }: { openDetail: (t: AgendaTask) => void }) => {
+export const AgendaKanbanView = ({ openDetail, onAddToCalendar }: { openDetail: (t: AgendaTask) => void, onAddToCalendar: (t: AgendaTask) => void }) => {
   const { tasks, setTaskStatus } = useAgendaStore();
   const [activeId, setActiveId] = React.useState<string | null>(null);
 
@@ -175,6 +187,7 @@ export const AgendaKanbanView = ({ openDetail }: { openDetail: (t: AgendaTask) =
             title={col.title} 
             tasks={tasks.filter(t => t.status === col.id)} 
             openDetail={openDetail}
+            onAddToCalendar={onAddToCalendar}
           />
         ))}
       </div>
@@ -182,7 +195,7 @@ export const AgendaKanbanView = ({ openDetail }: { openDetail: (t: AgendaTask) =
       <DragOverlay>
         {activeTask ? (
           <div className="opacity-90 scale-105 shadow-xl">
-             <KanbanCard id={activeTask.id} task={activeTask} openDetail={() => {}} />
+             <KanbanCard id={activeTask.id} task={activeTask} openDetail={() => {}} onAddToCalendar={() => {}} />
           </div>
         ) : null}
       </DragOverlay>
