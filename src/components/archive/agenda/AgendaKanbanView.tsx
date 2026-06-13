@@ -9,7 +9,8 @@ import {
   useSensors, 
   DragStartEvent, 
   DragOverEvent, 
-  DragEndEvent 
+  DragEndEvent,
+  useDroppable
 } from '@dnd-kit/core';
 import { 
   SortableContext, 
@@ -93,8 +94,13 @@ const KanbanCard = ({ task, id, openDetail }: { task: AgendaTask, id: string, op
 };
 
 const KanbanColumn = ({ id, title, tasks, openDetail }: { id: string, title: string, tasks: AgendaTask[], openDetail: (t: AgendaTask) => void }) => {
+  const { setNodeRef } = useDroppable({ id });
+
   return (
-    <div className="flex flex-col w-full min-w-[280px] bg-slate-50/50 rounded-3xl p-4 border border-slate-200/50">
+    <div 
+      ref={setNodeRef}
+      className="flex flex-col w-full min-w-[280px] bg-slate-50/50 rounded-3xl p-4 border border-slate-200/50"
+    >
       <div className="flex justify-between items-center mb-4 px-2">
         <h3 className="font-extrabold text-slate-700 text-sm">{title}</h3>
         <span className="text-xs font-bold text-slate-400 bg-white px-2 py-0.5 rounded-full shadow-sm">{tasks.length}</span>

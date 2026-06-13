@@ -9,7 +9,8 @@ import {
   useSensors, 
   DragStartEvent, 
   DragOverEvent, 
-  DragEndEvent 
+  DragEndEvent,
+  useDroppable
 } from '@dnd-kit/core';
 import { 
   SortableContext, 
@@ -83,8 +84,13 @@ const MatrixCard = ({ task, id, openDetail }: { task: AgendaTask, id: string, op
 };
 
 const MatrixQuadrant = ({ id, title, subtitle, icon: Icon, colorClass, bgClass, tasks, openDetail }: any) => {
+  const { setNodeRef } = useDroppable({ id });
+
   return (
-    <div className={cn("flex flex-col h-full rounded-3xl p-4 border transition-all", bgClass, colorClass.replace('text-', 'border-').replace('600', '100'))}>
+    <div 
+      ref={setNodeRef}
+      className={cn("flex flex-col h-full rounded-3xl p-4 border transition-all", bgClass, colorClass.replace('text-', 'border-').replace('600', '100'))}
+    >
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <div className={cn("p-1.5 rounded-lg bg-white shadow-sm", colorClass)}>
