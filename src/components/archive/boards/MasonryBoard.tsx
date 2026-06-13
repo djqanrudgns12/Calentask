@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef } from 'react';
-import { Upload, X, Maximize2, Image as ImageIcon, Trash2, Heart, Search } from 'lucide-react';
+import { Upload, X, Maximize2, Image as ImageIcon, Trash2, Heart, Search, Download, ZoomIn, ZoomOut } from 'lucide-react';
 import { useArchiveStore } from '@/store/useArchiveStore';
 import { motion, AnimatePresence } from 'framer-motion';
 import { createClient } from '@/lib/supabase/client';
@@ -15,6 +15,8 @@ export function MasonryBoard() {
   const [isUploading, setIsUploading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeImageId, setActiveImageId] = useState<string | null>(null);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [scale, setScale] = useState(1);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const activeImage = items.find(i => i.id === activeImageId);
@@ -58,6 +60,23 @@ export function MasonryBoard() {
     
     if (fileInputRef.current) fileInputRef.current.value = '';
     setIsUploading(false);
+  };
+
+  const handleDownload = async (imageUrl: string, fileName: string) => {
+    try {
+      const response = await fetch(imageUrl);
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = fileName || 'download';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Error downloading image:', error);
+    }
   };
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -213,7 +232,7 @@ export function MasonryBoard() {
             <motion.div 
               initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
               className="absolute inset-0 bg-slate-900/90 backdrop-blur-sm cursor-zoom-out"
-              onClick={() => setActiveImageId(null)}
+              onClick={() => { setActiveImageId(null); setIsFullscreen(false); setScale(1); }}
             />
             <motion.div 
               initial={{ opacity: 0, scale: 0.9, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.9, y: 20 }}
@@ -226,7 +245,10 @@ export function MasonryBoard() {
                   alt={activeImage.title} 
                   className="max-w-full max-h-[70vh] md:max-h-[90vh] object-contain"
                 />
-                <button className="absolute top-4 right-4 p-2 bg-black/50 hover:bg-black/70 rounded-full text-white opacity-0 group-hover:opacity-100 transition-opacity">
+                <button 
+                  onClick={(e) => { e.stopPropagation(); setIsFullscreen(true); }}
+                  className="absolute top-4 right-4 p-2 bg-black/50 hover:bg-black/70 rounded-full text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                >
                   <Maximize2 className="w-4 h-4" />
                 </button>
               </div>
@@ -238,7 +260,10 @@ export function MasonryBoard() {
                     onChange={(e) => updateItem(activeTabId!, activeImage.id, { title: e.target.value })}
                     className="font-extrabold text-2xl text-slate-800 bg-transparent border-none focus:outline-none focus:ring-0 p-0 w-full"
                   />
-                  <button onClick={() => setActiveImageId(null)} className="p-2 hover:bg-slate-100 rounded-full text-slate-500 transition-colors shrink-0 md:hidden">
+                  <button 
+                    onClick={() => { setActiveImageId(null); setIsFullscreen(false); setScale(1); }} 
+                    className="p-2 hover:bg-slate-100 rounded-full text-slate-500 transition-colors shrink-0 md:hidden"
+                  >
                     <X className="w-5 h-5" />
                   </button>
                 </div>
@@ -257,13 +282,92 @@ export function MasonryBoard() {
                   <div className="flex items-center gap-2 text-slate-500 font-bold text-sm">
                     <Heart className="w-4 h-4 text-red-500 fill-current" /> {activeImage.data?.likes || 0}
                   </div>
-                  <button onClick={() => deleteItem(activeTabId!, activeImage.id)} className="px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg text-sm font-bold transition-colors">
-                    삭제
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button 
+                      onClick={() => handleDownload(activeImage.data?.image, activeImage.data?.originalName || activeImage.title)} 
+                      className="px-3 py-2 text-indigo-600 hover:bg-indigo-50 rounded-lg text-sm font-bold transition-colors flex items-center gap-1"
+                    >
+                      <Download className="w-4 h-4" /> 다운로드
+                    </button>
+                    <button 
+                      onClick={() => deleteItem(activeTabId!, activeImage.id)} 
+                      className="px-3 py-2 text-red-600 hover:bg-red-50 rounded-lg text-sm font-bold transition-colors flex items-center gap-1"
+                    >
+                      삭제
+                    </button>
+                  </div>
                 </div>
               </div>
             </motion.div>
           </div>
+        )}
+      </AnimatePresence>
+
+      {/* Fullscreen Overlay */}
+      <AnimatePresence>
+        {isFullscreen && activeImage && (
+          <motion.div 
+            initial={{ opacity: 0 }} 
+            animate={{ opacity: 1 }} 
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[200] bg-black flex items-center justify-center overflow-hidden"
+          >
+            <div className="absolute top-6 right-6 flex items-center gap-3 z-10 bg-black/40 backdrop-blur-md p-2 rounded-2xl">
+              <button 
+                onClick={() => setScale(s => Math.max(0.1, s - 0.2))} 
+                className="p-3 bg-white/10 hover:bg-white/20 rounded-full text-white transition-colors"
+                title="축소"
+              >
+                <ZoomOut className="w-5 h-5" />
+              </button>
+              <button 
+                onClick={() => setScale(s => s + 0.2)} 
+                className="p-3 bg-white/10 hover:bg-white/20 rounded-full text-white transition-colors"
+                title="확대"
+              >
+                <ZoomIn className="w-5 h-5" />
+              </button>
+              <div className="w-[1px] h-6 bg-white/20 mx-1"></div>
+              <button 
+                onClick={() => handleDownload(activeImage.data?.image, activeImage.data?.originalName || activeImage.title)} 
+                className="p-3 bg-white/10 hover:bg-white/20 rounded-full text-white transition-colors"
+                title="원본 다운로드"
+              >
+                <Download className="w-5 h-5" />
+              </button>
+              <button 
+                onClick={() => { setIsFullscreen(false); setScale(1); }} 
+                className="p-3 bg-rose-500/80 hover:bg-rose-500 rounded-full text-white transition-colors"
+                title="닫기"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <div 
+              className="w-full h-full flex items-center justify-center cursor-move"
+              onWheel={(e) => {
+                if (e.deltaY > 0) setScale(s => Math.max(0.1, s - 0.1));
+                else setScale(s => s + 0.1);
+              }}
+            >
+              <motion.img 
+                src={activeImage.data?.image} 
+                alt={activeImage.title}
+                drag
+                dragConstraints={{ left: -2000, right: 2000, top: -2000, bottom: 2000 }}
+                dragElastic={0.1}
+                animate={{ scale }}
+                transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                className="max-w-none max-h-none select-none"
+                style={{ 
+                  maxWidth: '100vw', 
+                  maxHeight: '100vh',
+                  objectFit: 'contain'
+                }}
+              />
+            </div>
+          </motion.div>
         )}
       </AnimatePresence>
     </div>
