@@ -7,7 +7,8 @@ import { ko } from 'date-fns/locale';
 import { 
   CheckCircle2, Circle, Clock, Trash2, 
   Archive as ArchiveIcon, Calendar, 
-  Plus, Check, ChevronRight, CheckSquare, AlignLeft, Tag, X
+  Plus, Check, ChevronRight, CheckSquare, AlignLeft, Tag, X,
+  List, Columns, LayoutGrid, Star
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { parseNLPDate } from '@/lib/nlp';
@@ -18,6 +19,8 @@ import { EditAgendaTaskDialog } from './EditAgendaTaskDialog';
 import { useAgendaStore, TaskStatus, AgendaTask } from '@/store/useAgendaStore';
 import { useCategories } from '@/hooks/useCalendarQueries';
 import { useCalendarStore } from '@/store/useCalendarStore';
+import { AgendaKanbanView } from './agenda/AgendaKanbanView';
+import { AgendaMatrixView } from './agenda/AgendaMatrixView';
 
 const TABS = [
   { id: 'inbox', label: 'Inbox', icon: Circle },
@@ -57,7 +60,7 @@ export function ArchiveAgendaView() {
     setSelectedTaskIds(new Set());
   };
 
-  const { tasks, fetchTasks, isInitialized, addTask, updateTask, setTaskStatus, addSubtask, updateSubtask, deleteSubtask, deleteTask } = useAgendaStore();
+  const { tasks, fetchTasks, isInitialized, addTask, updateTask, setTaskStatus, addSubtask, updateSubtask, deleteSubtask, deleteTask, viewMode, setViewMode } = useAgendaStore();
   const { data: categories = [] } = useCategories();
   const { openAddEvent, openAddEventWithPrefill } = useCalendarStore();
 
@@ -71,7 +74,10 @@ export function ArchiveAgendaView() {
   };
 
 
-  const filteredTasks = tasks.filter(t => t.status === activeTab);
+  const filteredTasks = tasks.filter(t => {
+    if (activeTab === 'inbox') return t.status === 'inbox' || t.status === 'in_progress';
+    return t.status === activeTab;
+  });
   
   const handleSelectAll = () => {
     if (selectedTaskIds.size === filteredTasks.length) {
@@ -221,6 +227,14 @@ export function ArchiveAgendaView() {
       <div className="relative z-10 flex-1 overflow-y-auto hide-scrollbar w-full">
         <div className="flex flex-col min-h-full max-w-5xl mx-auto w-full px-4 md:px-8 py-6">
 
+        {/* View Mode Switcher */}
+        <div className="flex justify-end mb-4">
+          <div className="flex items-center bg-white/80 backdrop-blur-md border border-slate-200 rounded-xl p-1 shadow-sm">
+            <button onClick={() => setViewMode('list')} className={cn("p-1.5 rounded-lg transition-colors", viewMode === 'list' ? "bg-slate-100 text-indigo-600" : "text-slate-400 hover:text-slate-600")} title="리스트 뷰"><List className="w-5 h-5"/></button>
+            <button onClick={() => setViewMode('kanban')} className={cn("p-1.5 rounded-lg transition-colors", viewMode === 'kanban' ? "bg-slate-100 text-indigo-600" : "text-slate-400 hover:text-slate-600")} title="칸반 보드 뷰"><Columns className="w-5 h-5"/></button>
+            <button onClick={() => setViewMode('matrix')} className={cn("p-1.5 rounded-lg transition-colors", viewMode === 'matrix' ? "bg-slate-100 text-indigo-600" : "text-slate-400 hover:text-slate-600")} title="우선순위 매트릭스 뷰"><LayoutGrid className="w-5 h-5"/></button>
+          </div>
+        </div>
 
         {/* Quick Add Form (Minimalist & Professional) */}
         <motion.div 
@@ -392,8 +406,11 @@ export function ArchiveAgendaView() {
           </AnimatePresence>
         </motion.div>
 
-        {/* Tabs */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 shrink-0">
+        {/* Views */}
+        {viewMode === 'list' && (
+          <>
+            {/* Tabs */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 shrink-0">
           <div className="flex items-center p-1.5 bg-slate-100 rounded-[1.25rem] w-full sm:w-auto overflow-x-auto hide-scrollbar border border-slate-200/60 shadow-inner">
             {TABS.map(tab => {
               const Icon = tab.icon;
@@ -501,7 +518,13 @@ export function ArchiveAgendaView() {
 
                   {/* Task Content */}
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-3 mb-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      <button 
+                        onClick={(e) => { e.stopPropagation(); updateTask(task.id, { is_important: !task.is_important }); }}
+                        className={cn("p-1 -ml-1 rounded-full transition-colors flex-shrink-0", task.is_important ? "text-amber-400 hover:bg-amber-50" : "text-slate-300 hover:text-amber-400 hover:bg-slate-50")}
+                      >
+                        <Star className={cn("w-5 h-5", task.is_important ? "fill-current" : "")} />
+                      </button>
                       <h3 className={cn("text-[17px] font-extrabold truncate transition-all", task.status === 'done' ? "text-slate-400 line-through" : "text-slate-800")}>
                         {task.title}
                       </h3>
@@ -674,6 +697,11 @@ export function ArchiveAgendaView() {
             })
           )}
         </div>
+        </>
+        )}
+
+        {viewMode === 'kanban' && <AgendaKanbanView openDetail={openDetail} />}
+        {viewMode === 'matrix' && <AgendaMatrixView openDetail={openDetail} />}
       </div>
       </div>
       

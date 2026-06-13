@@ -2,7 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server'
 
-export type TaskStatus = 'inbox' | 'done' | 'archive' | 'trash'
+export type TaskStatus = 'inbox' | 'in_progress' | 'done' | 'archive' | 'trash'
 
 export interface AgendaSubtask {
   id: string
@@ -20,6 +20,7 @@ export interface AgendaTask {
   memo: string | null
   deadline: string | null
   category_id: string | null
+  is_important: boolean
   status: TaskStatus
   created_at: string
   updated_at: string
@@ -49,7 +50,7 @@ export async function getAgendaTasks() {
 }
 
 // 할 일 생성
-export async function createAgendaTask(payload: { title: string; memo?: string | null; deadline?: string | null; category_id?: string | null; subtasks?: string[] }) {
+export async function createAgendaTask(payload: { title: string; memo?: string | null; deadline?: string | null; category_id?: string | null; subtasks?: string[]; is_important?: boolean }) {
   const supabase = await createClient()
   const { data: userData } = await supabase.auth.getUser()
   if (!userData.user) throw new Error('Not authenticated')
@@ -62,6 +63,7 @@ export async function createAgendaTask(payload: { title: string; memo?: string |
       memo: payload.memo || null,
       deadline: payload.deadline || null,
       category_id: payload.category_id || null,
+      is_important: payload.is_important || false,
       status: 'inbox'
     }])
     .select()

@@ -12,13 +12,16 @@ import {
   AgendaSubtask
 } from '@/app/actions/agenda';
 
-// re-export types so we don't break existing imports in components
+export type AgendaViewMode = 'list' | 'kanban' | 'matrix';
+
 export type { TaskStatus, AgendaTask, AgendaSubtask };
 
 interface AgendaState {
   tasks: AgendaTask[];
   isLoading: boolean;
   isInitialized: boolean;
+  viewMode: AgendaViewMode;
+  setViewMode: (mode: AgendaViewMode) => void;
   fetchTasks: () => Promise<void>;
   addTask: (task: { title: string; memo?: string | null; deadline?: string | null; category_id?: string | null; subtasks?: string[] }) => Promise<void>;
   updateTask: (id: string, updates: Partial<AgendaTask>) => Promise<void>;
@@ -33,6 +36,9 @@ export const useAgendaStore = create<AgendaState>()((set, get) => ({
   tasks: [],
   isLoading: false,
   isInitialized: false,
+  viewMode: 'list',
+
+  setViewMode: (mode) => set({ viewMode: mode }),
 
   fetchTasks: async () => {
     set({ isLoading: true });
