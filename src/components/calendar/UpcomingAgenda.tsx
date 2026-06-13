@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState } from 'react'
-import { isToday, isThisWeek, parseISO, format, isValid } from 'date-fns'
+import { isToday, isThisWeek, parseISO, format, isValid, addDays, startOfWeek } from 'date-fns'
 import { Clock, Inbox } from 'lucide-react'
 
 interface Category {
@@ -25,7 +25,7 @@ interface UpcomingAgendaProps {
 }
 
 export const UpcomingAgenda = React.memo(function UpcomingAgenda({ events }: UpcomingAgendaProps) {
-  const [activeTab, setActiveTab] = useState<'today' | 'week'>('today')
+  const [activeTab, setActiveTab] = useState<'today' | 'week' | 'nextWeek'>('today')
 
   // 이벤트 필터링 및 정렬
   const filteredEvents = events.filter((event) => {
@@ -35,10 +35,16 @@ export const UpcomingAgenda = React.memo(function UpcomingAgenda({ events }: Upc
 
     if (activeTab === 'today') {
       return isToday(eventDate)
-    } else {
+    } else if (activeTab === 'week') {
       // 이번 주 필터링 (weekStartsOn: 0 (일요일) 기준)
       return isThisWeek(eventDate, { weekStartsOn: 0 })
+    } else if (activeTab === 'nextWeek') {
+      // 다음 주 필터링
+      const nextWeekStart = addDays(startOfWeek(new Date(), { weekStartsOn: 0 }), 7)
+      const nextWeekEnd = addDays(nextWeekStart, 7)
+      return eventDate >= nextWeekStart && eventDate < nextWeekEnd
     }
+    return false
   }).sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime())
 
   // 시간을 예쁘게 포맷팅
@@ -72,6 +78,16 @@ export const UpcomingAgenda = React.memo(function UpcomingAgenda({ events }: Upc
         >
           이번 주
         </button>
+        <button
+          onClick={() => setActiveTab('nextWeek')}
+          className={`relative px-3 py-1.5 text-sm font-extrabold rounded-full transition-all ${
+            activeTab === 'nextWeek' 
+            ? 'text-indigo-600 bg-indigo-50 shadow-sm' 
+            : 'text-slate-400 hover:text-slate-600 hover:bg-slate-50'
+          }`}
+        >
+          다음 주
+        </button>
       </div>
 
       {/* 타임라인 컨텐츠 영역 */}
@@ -92,9 +108,9 @@ export const UpcomingAgenda = React.memo(function UpcomingAgenda({ events }: Upc
               const timeString = formatTime(event)
               const categoryName = event.categories?.[0]?.name
               
-              // 날짜가 이번주 탭일 경우 요일/날짜 표시 추가
+              // 날짜가 이번 주 또는 다음 주 탭일 경우 요일/날짜 표시 추가
               let dateHeader = null
-              if (activeTab === 'week') {
+              if (activeTab === 'week' || activeTab === 'nextWeek') {
                 const prevEvent = index > 0 ? filteredEvents[index - 1] : null
                 const currentDateStr = format(parseISO(event.start_time), 'yyyy-MM-dd')
                 const prevDateStr = prevEvent ? format(parseISO(prevEvent.start_time), 'yyyy-MM-dd') : null
