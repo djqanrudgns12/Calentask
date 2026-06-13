@@ -282,18 +282,20 @@ export function MasonryBoard() {
                   <div className="flex items-center gap-2 text-slate-500 font-bold text-sm">
                     <Heart className="w-4 h-4 text-red-500 fill-current" /> {activeImage.data?.likes || 0}
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1">
                     <button 
                       onClick={() => handleDownload(activeImage.data?.image, activeImage.data?.originalName || activeImage.title)} 
-                      className="px-3 py-2 text-indigo-600 hover:bg-indigo-50 rounded-lg text-sm font-bold transition-colors flex items-center gap-1"
+                      className="p-2.5 text-indigo-600 hover:bg-indigo-50 rounded-full transition-colors"
+                      title="다운로드"
                     >
-                      <Download className="w-4 h-4" /> 다운로드
+                      <Download className="w-5 h-5" />
                     </button>
                     <button 
                       onClick={() => deleteItem(activeTabId!, activeImage.id)} 
-                      className="px-3 py-2 text-red-600 hover:bg-red-50 rounded-lg text-sm font-bold transition-colors flex items-center gap-1"
+                      className="p-2.5 text-red-600 hover:bg-red-50 rounded-full transition-colors"
+                      title="삭제"
                     >
-                      삭제
+                      <Trash2 className="w-5 h-5" />
                     </button>
                   </div>
                 </div>
