@@ -41,6 +41,7 @@ import { AnniversarySettingsView } from '@/components/anniversary/AnniversarySet
 import InsightsClient from '@/app/insights/InsightsClient'
 import { ArchiveNotesView } from '@/components/archive/ArchiveNotesView'
 import { ArchiveAgendaView } from '@/components/archive/ArchiveAgendaView'
+import { HomeDashboard } from '@/components/home/HomeDashboard'
 import { BottomNavigation } from '@/components/ui/BottomNavigation'
 import { CommandPalette } from '@/components/ui/CommandPalette'
 import { MobileCategoryBar } from '@/components/calendar/MobileCategoryBar'
@@ -60,6 +61,7 @@ export default function CalendarPage() {
     semesterYear, semesterTerm, activeCategories, resetStore 
   } = useCalendarStore()
 
+  const isHome = viewMode === 'home'
   const isCalendarMenuOpen = ['monthly', 'weekly', 'list', 'semester', 'nice_import', 'anniversary'].includes(viewMode)
   const isMyCalendarActive = ['monthly', 'weekly', 'list', 'semester'].includes(viewMode)
   const isArchiveMenuOpen = ['archive_notes', 'archive_agenda'].includes(viewMode)
@@ -183,6 +185,22 @@ export default function CalendarPage() {
 
           <div className="pb-3 mb-2 relative">
             <div className="flex flex-col space-y-1.5">
+            {/* 홈(대시보드) 버튼 */}
+            <button 
+              onClick={() => setViewMode('home')}
+              className={`group relative w-full text-left px-4 py-3.5 rounded-2xl text-[15px] transition-all duration-300 ease-out flex items-center gap-3 ${
+                isHome 
+                ? 'bg-gradient-to-r from-violet-50/80 to-white text-violet-700 font-bold shadow-[0_2px_10px_-3px_rgba(139,92,246,0.2)] border border-violet-100 translate-y-[-1px]' 
+                : 'bg-transparent text-slate-500 hover:bg-white hover:shadow-sm hover:text-slate-900 border border-transparent'
+              }`}
+            >
+              {isHome && (
+                <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-violet-500 rounded-r-full shadow-[0_0_8px_rgba(139,92,246,0.6)]" />
+              )}
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={`w-5 h-5 transition-colors ${isHome ? 'text-violet-600' : 'text-slate-400 group-hover:text-violet-500'}`}><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+              <span>홈</span>
+            </button>
+
             <button 
               onClick={() => {
                 if (!isCalendarMenuOpen) setViewMode('monthly')
@@ -403,6 +421,11 @@ export default function CalendarPage() {
             {viewMode === 'archive_agenda' && (
               <div className="h-full bg-[#FAFAFA] rounded-xl md:rounded-3xl overflow-hidden shadow-sm border border-slate-100">
                 <ArchiveAgendaView />
+              </div>
+            )}
+            {viewMode === 'home' && (
+              <div className="min-h-full bg-gradient-to-b from-[#f7f9fb] to-[#f2f2f7] rounded-xl md:rounded-3xl overflow-hidden">
+                <HomeDashboard />
               </div>
             )}
           </div>

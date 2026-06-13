@@ -14,7 +14,7 @@ import type { ActivityTemplate } from '@/app/actions/insights'
 import { useTemplatePeriod, PeriodPreset } from '@/hooks/useTemplatePeriod'
 
 export default function TemplateCenterTab() {
-  const { preset, setPreset, isLoaded, startDate, endDate, prevStartDate, prevEndDate, trendType, currentLabel, prevLabel } = useTemplatePeriod()
+  const { preset, setPreset, customRange, setCustomRange, isLoaded, startDate, endDate, prevStartDate, prevEndDate, trendType, currentLabel, prevLabel } = useTemplatePeriod()
 
   const { data: summaries = [], isLoading } = useAllTemplatesSummary(startDate, endDate, prevStartDate, prevEndDate, trendType)
   const { data: categories = [] } = useCategories()
@@ -136,7 +136,7 @@ export default function TemplateCenterTab() {
 
   return (
     <div className="space-y-6 mt-2">
-      <div className="flex justify-end px-1 mb-[-12px]">
+      <div className="flex flex-col items-end px-1 mb-[-12px] gap-2 relative z-10">
         <select 
           value={preset}
           onChange={(e) => setPreset(e.target.value as PeriodPreset)}
@@ -147,7 +147,30 @@ export default function TemplateCenterTab() {
           <option value="semester2">2학기</option>
           <option value="this_year">올해</option>
           <option value="all">전체</option>
+          <option value="custom">직접 선택 (캘린더)</option>
         </select>
+
+        {preset === 'custom' && (
+          <motion.div 
+            initial={{ opacity: 0, y: -5 }} 
+            animate={{ opacity: 1, y: 0 }} 
+            className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-xl shadow-sm border border-indigo-100"
+          >
+            <input 
+              type="date" 
+              value={customRange.start} 
+              onChange={e => setCustomRange(e.target.value, customRange.end)}
+              className="text-[12px] text-gray-600 font-medium border-none focus:ring-0 p-0 bg-transparent cursor-pointer"
+            />
+            <span className="text-gray-300 font-bold">~</span>
+            <input 
+              type="date" 
+              value={customRange.end} 
+              onChange={e => setCustomRange(customRange.start, e.target.value)}
+              className="text-[12px] text-gray-600 font-medium border-none focus:ring-0 p-0 bg-transparent cursor-pointer"
+            />
+          </motion.div>
+        )}
       </div>
 
       {/* ── 랭킹 요약 바 ── */}

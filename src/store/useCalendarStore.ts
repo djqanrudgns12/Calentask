@@ -2,7 +2,7 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { Activity, Category } from '@/app/actions/calendar'
 
-export type ViewMode = 'monthly' | 'weekly' | 'list' | 'semester' | 'nice_import' | 'anniversary' | 'insights' | 'archive_notes' | 'archive_agenda'
+export type ViewMode = 'home' | 'monthly' | 'weekly' | 'list' | 'semester' | 'nice_import' | 'anniversary' | 'insights' | 'archive_notes' | 'archive_agenda'
 
 interface CalendarState {
   currentDate: Date
@@ -59,7 +59,7 @@ export const useCalendarStore = create<CalendarState>()(
   persist(
     (set) => ({
       currentDate: new Date(),
-      viewMode: 'monthly',
+      viewMode: 'home',
       activeCategories: [], // Empty means all categories
       activePresetId: null,
       activePresetName: null,

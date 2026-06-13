@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 
-export type PeriodPreset = 'this_month' | 'semester1' | 'semester2' | 'this_year' | 'all'
+export type PeriodPreset = 'this_month' | 'semester1' | 'semester2' | 'this_year' | 'all' | 'custom'
 
 export interface PeriodDates {
   startDate: string
@@ -16,11 +16,18 @@ export function useTemplatePeriod() {
   const [preset, setPreset] = useState<PeriodPreset>('this_year')
   const [isLoaded, setIsLoaded] = useState(false)
 
+  const [customRange, setCustomRange] = useState<{ start: string; end: string }>({ start: '', end: '' })
+
   // Load from localStorage on mount
   useEffect(() => {
     const saved = localStorage.getItem('templateCenterPeriod') as PeriodPreset
-    if (saved && ['this_month', 'semester1', 'semester2', 'this_year', 'all'].includes(saved)) {
+    if (saved && ['this_month', 'semester1', 'semester2', 'this_year', 'all', 'custom'].includes(saved)) {
       setPreset(saved)
+    }
+    const savedStart = localStorage.getItem('templateCenterCustomStart')
+    const savedEnd = localStorage.getItem('templateCenterCustomEnd')
+    if (savedStart && savedEnd) {
+      setCustomRange({ start: savedStart, end: savedEnd })
     }
     setIsLoaded(true)
   }, [])
@@ -28,6 +35,13 @@ export function useTemplatePeriod() {
   const handleSetPreset = (newPreset: PeriodPreset) => {
     setPreset(newPreset)
     localStorage.setItem('templateCenterPeriod', newPreset)
+  }
+
+  const handleSetCustomRange = (start: string, end: string) => {
+    setCustomRange({ start, end })
+    localStorage.setItem('templateCenterCustomStart', start)
+    localStorage.setItem('templateCenterCustomEnd', end)
+    handleSetPreset('custom')
   }
 
   // Calculate dates based on current preset
@@ -82,6 +96,40 @@ export function useTemplatePeriod() {
         prevLabel = '작년'
         break
 
+      case 'custom': {
+        if (!customRange.start || !customRange.end) {
+          // 기본값 폴백 (이번 달)
+          startDate = new Date(year, now.getMonth(), 1)
+          endDate = new Date(year, now.getMonth() + 1, 0, 23, 59, 59)
+          prevStartDate = new Date(year, now.getMonth() - 1, 1)
+          prevEndDate = new Date(year, now.getMonth(), 0, 23, 59, 59)
+          trendType = 'daily'
+          currentLabel = '사용자 지정'
+          prevLabel = '직전 동일 기간'
+          break
+        }
+        
+        startDate = new Date(`${customRange.start}T00:00:00`)
+        endDate = new Date(`${customRange.end}T23:59:59`)
+        
+        const diffTime = endDate.getTime() - startDate.getTime()
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+        
+        // 이전 기간: 선택한 일수만큼 뒤로
+        prevStartDate = new Date(startDate.getTime() - diffTime)
+        prevEndDate = new Date(endDate.getTime() - diffTime)
+        
+        if (diffDays <= 31) trendType = 'daily'
+        else if (diffDays <= 180) trendType = 'weekly'
+        else trendType = 'monthly'
+        
+        const startStr = customRange.start.replace(/-/g, '.')
+        const endStr = customRange.end.replace(/-/g, '.')
+        currentLabel = `${startStr} ~ ${endStr}`
+        prevLabel = '직전 동일 기간'
+        break
+      }
+
       case 'all':
       default:
         startDate = new Date(2000, 0, 1)
@@ -110,6 +158,8 @@ export function useTemplatePeriod() {
   return {
     preset,
     setPreset: handleSetPreset,
+    customRange,
+    setCustomRange: handleSetCustomRange,
     isLoaded,
     ...periodDates
   }

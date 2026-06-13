@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { format, subMonths, addMonths, subWeeks, addWeeks, startOfWeek, endOfWeek, isSameMonth, isSameYear } from 'date-fns'
-import { Menu, ChevronLeft, ChevronRight, Search, Sparkles, Bell, CalendarHeart, Activity, BrainCircuit } from 'lucide-react'
+import { Menu, ChevronLeft, ChevronRight, Search, Sparkles, Bell, CalendarHeart, Activity, BrainCircuit, Home } from 'lucide-react'
 import { useCalendarStore } from '@/store/useCalendarStore'
 import { GlobalCategoryFilter } from '@/components/calendar/GlobalCategoryFilter'
 import { CategoryPresetMenu } from '@/components/calendar/CategoryPresetMenu'
@@ -108,10 +108,13 @@ export function CalendarHeader({ onOpenSettings }: CalendarHeaderProps) {
   const isAnniversary = viewMode === 'anniversary'
   const isInsights = viewMode === 'insights'
   const isAgenda = viewMode === 'archive_agenda'
+  const isHome = viewMode === 'home'
 
   let wrapperClassName = "flex-1 flex flex-row items-center justify-between rounded-xl md:rounded-[2rem] px-2 py-1.5 md:px-4 md:py-2.5 gap-2 md:gap-4 transition-all duration-500 overflow-hidden relative "
 
-  if (isCalendarView) {
+  if (isHome) {
+    wrapperClassName += "bg-white/90 backdrop-blur-xl shadow-[0_10px_40px_-10px_rgba(139,92,246,0.15)] border border-violet-100/80"
+  } else if (isCalendarView) {
     wrapperClassName += "bg-white shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] border border-slate-100"
   } else if (isNiceImport) {
     wrapperClassName += "bg-white/80 backdrop-blur-md shadow-[0_0_30px_-5px_rgba(99,102,241,0.15)] border border-indigo-100/50"
@@ -125,6 +128,31 @@ export function CalendarHeader({ onOpenSettings }: CalendarHeaderProps) {
 
   // --- Slots ---
   const renderLeftSlot = () => {
+    if (isHome) {
+      return (
+        <motion.div 
+          key="home-left"
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={{ opacity: 0, x: -20 }}
+          className="flex items-center shrink-0 gap-4 py-1"
+        >
+          <div className="relative w-10 h-10 md:w-12 md:h-12 rounded-xl bg-gradient-to-br from-violet-100 to-purple-100 flex items-center justify-center shrink-0 shadow-inner border border-white">
+            <Home className="w-5 h-5 md:w-6 md:h-6 text-violet-600 relative z-10" />
+          </div>
+          <div className="flex flex-col">
+            <h2 className="font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-violet-700 to-purple-700 text-base md:text-xl tracking-tight">홈 대시보드</h2>
+            <div className="hidden md:flex items-center gap-2 mt-0.5">
+              <span className="relative flex w-2 h-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-violet-500 opacity-75" />
+                <span className="relative inline-flex rounded-full w-2 h-2 bg-violet-500" />
+              </span>
+              <p className="text-xs text-violet-500 font-mono tracking-wider font-bold">TODAY&apos;S COMMAND CENTER</p>
+            </div>
+          </div>
+        </motion.div>
+      )
+    }
     if (isCalendarView) {
       return (
         <motion.div 
@@ -340,6 +368,12 @@ export function CalendarHeader({ onOpenSettings }: CalendarHeaderProps) {
           {/* Unified Dynamic Wrapper */}
           <div className={wrapperClassName}>
             {/* Background Glows for Premium Vibe */}
+            {isHome && (
+              <>
+                <div className="absolute inset-0 bg-gradient-to-r from-violet-50/50 via-purple-50/30 to-pink-50/50 pointer-events-none" />
+                <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-white/40 via-transparent to-transparent pointer-events-none" />
+              </>
+            )}
             {isNiceImport && (
               <div className="absolute inset-0 bg-gradient-to-r from-indigo-50/50 to-purple-50/50 pointer-events-none" />
             )}
