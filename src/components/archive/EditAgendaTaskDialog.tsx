@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { CheckCircle2, Circle, Clock, Trash2, Plus, ChevronRight, CheckSquare, AlignLeft, Tag, NotebookTabs, Pencil } from 'lucide-react';
+import { CheckCircle2, Circle, Clock, Trash2, Plus, ChevronRight, CheckSquare, AlignLeft, Tag, NotebookTabs, Pencil, Star } from 'lucide-react';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { DateTimePickerPopover } from '@/components/ui/DateTimePickerPopover';
@@ -84,7 +84,7 @@ export function EditAgendaTaskDialog({
           </div>
 
           {/* Properties */}
-          <div className="grid grid-cols-2 gap-4 mb-8">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
             <div>
               <Label className="block text-[13px] font-bold text-slate-500 mb-2 flex items-center gap-1.5"><Tag className="w-3.5 h-3.5"/> 카테고리</Label>
               <select 
@@ -112,6 +112,22 @@ export function EditAgendaTaskDialog({
                   </span>
                 </div>
               </DateTimePickerPopover>
+            </div>
+            <div>
+              <Label className="block text-[13px] font-bold text-slate-500 mb-2 flex items-center gap-1.5"><Star className="w-3.5 h-3.5"/> 중요도</Label>
+              <button
+                type="button"
+                onClick={() => setEditForm({ ...editForm, is_important: !editForm.is_important })}
+                className={cn(
+                  "w-full flex items-center justify-center gap-2 h-10 border shadow-sm rounded-xl px-3 font-bold text-[13px] transition-all",
+                  editForm.is_important 
+                    ? "bg-amber-50 text-amber-600 border-amber-200" 
+                    : "bg-white/60 text-slate-500 border-slate-200 hover:bg-white hover:text-slate-700"
+                )}
+              >
+                <Star className={cn("w-4 h-4", editForm.is_important ? "fill-current" : "")} />
+                {editForm.is_important ? '중요함' : '일반'}
+              </button>
             </div>
           </div>
 
