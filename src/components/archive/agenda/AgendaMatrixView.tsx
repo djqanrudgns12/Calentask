@@ -275,7 +275,7 @@ export const AgendaMatrixView = ({ openDetail, onAddToCalendar }: { openDetail: 
     },
     {
       id: 'later',
-      title: '여유',
+      title: 'Later',
       subtitle: '여유 있는 항목',
       icon: Coffee,
       colorClass: 'text-teal-600',
@@ -285,7 +285,7 @@ export const AgendaMatrixView = ({ openDetail, onAddToCalendar }: { openDetail: 
     },
     {
       id: 'done',
-      title: '완료',
+      title: 'Done',
       subtitle: '완료된 항목',
       icon: CheckCircle2,
       colorClass: 'text-slate-500',
