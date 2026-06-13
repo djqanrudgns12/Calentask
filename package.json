@@ -26,7 +26,7 @@
     "@tanstack/react-table": "^8.21.3",
     "@tiptap/extension-bubble-menu": "^3.24.0",
     "@tiptap/extension-color": "^3.24.0",
-    "@tiptap/extension-font-family": "^3.26.1",
+    "@tiptap/extension-font-family": "^3.24.0",
     "@tiptap/extension-highlight": "^3.24.0",
     "@tiptap/extension-image": "^3.24.0",
     "@tiptap/extension-link": "^3.24.0",
