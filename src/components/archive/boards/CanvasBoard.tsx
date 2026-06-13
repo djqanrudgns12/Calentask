@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback, useEffect, useMemo } from 'react';
+import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import ReactFlow, { 
   Background, 
   Controls, 
@@ -153,7 +153,7 @@ const nodeTypes = {
 const EMPTY_ARRAY: any[] = [];
 
 export function CanvasBoard() {
-  const { activeTabId, items: storeItems, updateItem, addItem, deleteItem, boardConfigs, setBoardConfig } = useArchiveStore();
+  const { activeTabId, items: storeItems, updateItem, addItem, deleteItem, boardConfigs, setBoardConfig, flushPendingUpdates } = useArchiveStore();
   const items = activeTabId ? (storeItems[activeTabId] || EMPTY_ARRAY) : EMPTY_ARRAY;
   const config = activeTabId ? boardConfigs[activeTabId] : null;
 
@@ -161,20 +161,72 @@ export function CanvasBoard() {
   const [nodes, setNodes] = useState<Node[]>([]);
   const [edges, setEdges] = useState<Edge[]>([]);
 
-  // Sync Store Items -> ReactFlow Nodes
+  // 드래그 상태 추적: 드래그 중에는 items→nodes 재동기화를 차단
+  const isDraggingRef = useRef(false);
+  // 직전 items 참조: 서버에서 온 변경인지 로컬 변경인지 구분하기 위해 사용
+  const prevItemsRef = useRef<typeof items>(items);
+  // 현재 activeTabId 추적 (언마운트 시 flush 용)
+  const activeTabIdRef = useRef(activeTabId);
+  activeTabIdRef.current = activeTabId;
+
+  // Sync Store Items -> ReactFlow Nodes (스마트 동기화)
   useEffect(() => {
     if (!activeTabId) return;
-    const loadedNodes: Node[] = items.map(item => ({
-      id: item.id,
-      type: item.data?.type || 'sticky',
-      position: { x: item.data?.x || 0, y: item.data?.y || 0 },
-      data: { 
-        item, 
-        updateItem: (id: string, updates: any) => updateItem(activeTabId, id, updates),
-        deleteItem: (id: string) => deleteItem(activeTabId, id)
-      }
-    }));
-    setNodes(loadedNodes);
+    // 드래그 중이면 노드 재동기화를 완전히 건너뜀
+    if (isDraggingRef.current) {
+      prevItemsRef.current = items;
+      return;
+    }
+
+    setNodes((prevNodes) => {
+      // 기존 노드의 위치 맵 (ReactFlow가 관리하는 실제 시각적 위치)
+      const prevPositionMap = new Map(prevNodes.map(n => [n.id, n.position]));
+
+      const newNodes: Node[] = items.map(item => {
+        const storePos = { x: item.data?.x || 0, y: item.data?.y || 0 };
+        const prevPos = prevPositionMap.get(item.id);
+
+        // 이전 items에서 해당 아이템의 store 좌표
+        const prevItem = prevItemsRef.current.find(i => i.id === item.id);
+        const prevStorePos = prevItem ? { x: prevItem.data?.x || 0, y: prevItem.data?.y || 0 } : null;
+
+        let position: { x: number; y: number };
+
+        if (!prevPos) {
+          // 새로 추가된 노드: store 좌표 사용
+          position = storePos;
+        } else if (prevStorePos && (prevStorePos.x !== storePos.x || prevStorePos.y !== storePos.y)) {
+          // store 좌표가 변경됨 (= 드래그 후 updateItem이 적용된 것 또는 서버에서 갱신된 것)
+          // 로컬 드래그에 의한 변경이면 ReactFlow의 현재 위치를 유지
+          // (드래그 후 updateItem → items 변경 → 이 useEffect 순환을 방지)
+          if (Math.abs(prevPos.x - storePos.x) < 1 && Math.abs(prevPos.y - storePos.y) < 1) {
+            // ReactFlow 위치와 store 위치가 거의 동일 → 이미 동기화됨
+            position = prevPos;
+          } else {
+            // store 좌표가 의미 있게 변경됨 → store 값 반영
+            position = storePos;
+          }
+        } else {
+          // store 좌표 변경 없음 → ReactFlow의 현재 위치 유지 (드래그 중간 상태 보호)
+          position = prevPos;
+        }
+
+        return {
+          id: item.id,
+          type: item.data?.type || 'sticky',
+          position,
+          data: {
+            item,
+            updateItem: (id: string, updates: any) => updateItem(activeTabId, id, updates),
+            deleteItem: (id: string) => deleteItem(activeTabId, id)
+          }
+        };
+      });
+
+      return newNodes;
+    });
+
+    prevItemsRef.current = items;
 
     if (config?.edges) {
       setEdges(config.edges);
@@ -182,6 +234,13 @@ export function CanvasBoard() {
       setEdges([]);
     }
   }, [items, config?.edges, activeTabId, updateItem, deleteItem]);
+
+  // 컴포넌트 언마운트 시 (탭 전환) 미저장 데이터를 즉시 서버에 저장
+  useEffect(() => {
+    return () => {
+      flushPendingUpdates();
+    };
+  }, [flushPendingUpdates]);
 
   const onNodesChangeWrapper = useCallback(
     (changes: any) => {
@@ -195,8 +254,29 @@ export function CanvasBoard() {
     [setNodes, activeTabId, deleteItem]
   );
 
+  // 드래그 시작 시 플래그 설정
+  const onNodeDragStart = useCallback(() => {
+    isDraggingRef.current = true;
+  }, []);
+
+  // 드래그 중 실시간 좌표를 store에 반영 (디바운스가 적용된 updateItem 사용)
+  const onNodeDrag = useCallback(
+    (_: React.MouseEvent, node: Node) => {
+      if (activeTabId) {
+        const item = items.find(i => i.id === node.id);
+        if (item) {
+          updateItem(activeTabId, item.id, {
+            data: { ...item.data, x: node.position.x, y: node.position.y }
+          });
+        }
+      }
+    },
+    [activeTabId, items, updateItem]
+  );
+
   const onNodeDragStop = useCallback(
     (_: React.MouseEvent, node: Node) => {
+      isDraggingRef.current = false;
       if (activeTabId) {
         const item = items.find(i => i.id === node.id);
         if (item) {
@@ -300,6 +380,8 @@ export function CanvasBoard() {
         edges={edges}
         onNodesChange={onNodesChangeWrapper}
         onEdgesChange={onEdgesChangeWrapper}
+        onNodeDragStart={onNodeDragStart}
+        onNodeDrag={onNodeDrag}
         onNodeDragStop={onNodeDragStop}
         onConnect={onConnect}
         onEdgeDoubleClick={onEdgeDoubleClick}

@@ -20,7 +20,7 @@ import { useHotkeys } from 'react-hotkeys-hook';
 import { useEffect } from 'react';
 
 export function ArchiveNotesView() {
-  const { tabs, activeTabId, setActiveTabId, setCommandPaletteOpen, fetchTabs, fetchItems, updateTab, deleteTab, reorderTabs, isPrefetched, focusModeTabId } = useArchiveStore();
+  const { tabs, activeTabId, setActiveTabId, setCommandPaletteOpen, fetchTabs, fetchItems, updateTab, deleteTab, reorderTabs, isPrefetched, focusModeTabId, flushPendingUpdates } = useArchiveStore();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isSynapseOpen, setIsSynapseOpen] = useState(false);
   const [editingTabId, setEditingTabId] = useState<string | null>(null);
@@ -70,8 +70,11 @@ export function ArchiveNotesView() {
 
   useEffect(() => {
     if (activeTabId) {
-      // 전략 2: fetchItems 내부에서 Stale cache flash 방지 및 백그라운드 동기화 처리
-      fetchItems(activeTabId);
+      // 탭 전환 시: 이전 탭의 미저장 데이터를 먼저 flush한 후 새 탭 데이터 fetch
+      flushPendingUpdates().then(() => {
+        // 전략 2: fetchItems 내부에서 Stale cache flash 방지 및 백그라운드 동기화 처리
+        fetchItems(activeTabId);
+      });
     }
   }, [activeTabId]);
 
