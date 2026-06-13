@@ -200,7 +200,7 @@ export function PinPadOverlay({ children }: { children: React.ReactNode }) {
       if (result.success) {
         setPinLocked(false);
         setMode('locked');
-        toast.success('보안 질문 및 비밀번호가 성공적으로 설정되었습니다.');
+        toast.success('보안 질문 및 2차 비밀번호가 성공적으로 설정되었습니다.');
       } else {
         toast.error(result.error || '보안 설정에 실패했습니다. 다시 시도해주세요.');
       }
@@ -226,7 +226,7 @@ export function PinPadOverlay({ children }: { children: React.ReactNode }) {
         setAnswer('');
         setQuestionType('');
         setMode('setup_pin');
-        toast.success('인증 성공! 새 비밀번호를 설정해주세요.');
+        toast.success('인증 성공! 새 2차 비밀번호를 설정해주세요.');
       } else {
         toast.error('답변이 일치하지 않습니다.');
       }
@@ -239,21 +239,21 @@ export function PinPadOverlay({ children }: { children: React.ReactNode }) {
   }
 
   let title = "아카이브 잠김";
-  let subtitle = "비밀번호를 입력하세요";
+  let subtitle = "2차 비밀번호를 입력하세요";
   if (mode === 'loading') {
     title = "보안 확인 중";
     subtitle = "잠시만 기다려주세요...";
   } else if (mode === 'setup_pin') {
-    title = "비밀번호 설정";
+    title = "2차 비밀번호 설정";
     subtitle = "새로운 4자리 PIN을 입력하세요";
   } else if (mode === 'setup_confirm') {
-    title = "비밀번호 확인";
+    title = "2차 비밀번호 확인";
     subtitle = "PIN을 한 번 더 입력하세요";
   } else if (mode === 'setup_security') {
     title = "보안 질문 설정";
-    subtitle = "비밀번호 분실을 대비해 보안 질문을 설정합니다.";
+    subtitle = "2차 비밀번호 분실을 대비해 보안 질문을 설정합니다.";
   } else if (mode === 'reset') {
-    title = "비밀번호 재설정";
+    title = "2차 비밀번호 재설정";
     subtitle = "등록된 보안 질문의 답변을 입력하세요";
   }
 
@@ -347,7 +347,7 @@ export function PinPadOverlay({ children }: { children: React.ReactNode }) {
                       }}
                       className="mt-6 text-sm text-slate-400 hover:text-indigo-600 font-medium transition-colors"
                     >
-                      비밀번호를 잊으셨나요? (재설정)
+                      2차 비밀번호를 잊으셨나요? (재설정)
                     </button>
                   )}
                 </>

@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { getSecurityPinStatus, setupSecurityPin, verifySecurityPin, verifySecurityAnswer } from '@/app/actions/security'
+import { getSecurityPinStatus, setupSecurityPin, verifySecurityPin, verifySecurityAnswer, updateSecurityPin } from '@/app/actions/security'
 
 import { createClient } from '@/lib/supabase/client'
 
@@ -58,6 +58,20 @@ export function useVerifySecurityAnswer() {
   return useMutation({
     mutationFn: async (answer: string) => {
       return verifySecurityAnswer(answer)
+    },
+    onSuccess: (data) => {
+      if (data.success) {
+        queryClient.invalidateQueries({ queryKey: ['securityPinStatus'] })
+      }
+    }
+  })
+}
+
+export function useUpdateSecurityPin() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (pin: string) => {
+      return updateSecurityPin(pin)
     },
     onSuccess: (data) => {
       if (data.success) {

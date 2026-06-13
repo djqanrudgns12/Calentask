@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Loader2, KeyRound, Monitor, Smartphone, Tablet, Globe2, LogOut, CheckCircle2, Download, Share, X, MoreVertical, ArrowUp } from 'lucide-react'
 import { PinPadOverlay } from '@/components/archive/PinPadOverlay'
-import { useUserSessions, useDeleteSession, useSignOutOtherDevices } from '@/hooks/useSecurityQueries'
+import { useUserSessions, useDeleteSession, useSignOutOtherDevices, useSecurityPinStatus, useVerifyPin, useUpdateSecurityPin } from '@/hooks/useSecurityQueries'
 import { parseUserAgent } from '@/lib/uaParser'
 import { getLocationFromIP } from '@/lib/ipLocation'
 import { createClient } from '@/lib/supabase/client'
@@ -214,6 +214,26 @@ export function ProfileTab() {
   const [passwordError, setPasswordError] = useState('')
   const [isVerifying, setIsVerifying] = useState(false)
 
+  // 2차 비밀번호 변경 관련 상태
+  const { data: secPinStatus } = useSecurityPinStatus()
+  const verifyPinMutation = useVerifyPin()
+  const { mutateAsync: updateSecPin, isPending: isUpdatingSecPin } = useUpdateSecurityPin()
+
+  const [secPasswordStep, setSecPasswordStep] = useState<'idle' | 'verify' | 'change'>('idle')
+  const [currentSecPassword, setCurrentSecPassword] = useState('')
+  const [newSecPassword, setNewSecPassword] = useState('')
+  const [confirmSecPassword, setConfirmSecPassword] = useState('')
+  const [secPasswordError, setSecPasswordError] = useState('')
+  const [isVerifyingSec, setIsVerifyingSec] = useState(false)
+
+  async function hashText(text: string) {
+    const encoder = new TextEncoder()
+    const data = encoder.encode(text)
+    const hashBuffer = await crypto.subtle.digest('SHA-256', data)
+    const hashArray = Array.from(new Uint8Array(hashBuffer))
+    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('')
+  }
+
   // PWA 설치 상태
   const { isStandalone, isIos, browserType, installApp } = usePwaInstall()
   const [showIosGuide, setShowIosGuide] = useState(false)
@@ -278,6 +298,58 @@ export function ProfileTab() {
     setNewPassword('')
     setConfirmPassword('')
     setPasswordError('')
+  }
+
+  const handleVerifySecPassword = async () => {
+    if (!currentSecPassword || currentSecPassword.length !== 4) {
+      setSecPasswordError('현재 2차 비밀번호 4자리를 입력해주세요.')
+      return
+    }
+    setIsVerifyingSec(true)
+    setSecPasswordError('')
+    try {
+      const hashedPin = await hashText(currentSecPassword)
+      const result = await verifyPinMutation.mutateAsync(hashedPin)
+      if (result.success) {
+        setSecPasswordStep('change')
+        setCurrentSecPassword('')
+      } else {
+        setSecPasswordError('현재 2차 비밀번호가 올바르지 않습니다.')
+      }
+    } catch {
+      setSecPasswordError('2차 비밀번호 확인 중 오류가 발생했습니다.')
+    } finally {
+      setIsVerifyingSec(false)
+    }
+  }
+
+  const handleSaveSecPassword = async () => {
+    if (!newSecPassword || newSecPassword.length !== 4 || newSecPassword !== confirmSecPassword) {
+      setSecPasswordError('새로운 2차 비밀번호(4자리 숫자)가 일치하지 않거나 입력되지 않았습니다.')
+      return
+    }
+    setSecPasswordError('')
+    try {
+      const hashedPin = await hashText(newSecPassword)
+      const result = await updateSecPin(hashedPin)
+      if (result.success) {
+        alert('2차 비밀번호가 성공적으로 변경되었습니다.')
+        resetSecPasswordState()
+      } else {
+        setSecPasswordError(result.error || '2차 비밀번호 변경에 실패했습니다.')
+      }
+    } catch (err) {
+      console.error(err)
+      setSecPasswordError('2차 비밀번호 변경에 실패했습니다.')
+    }
+  }
+
+  const resetSecPasswordState = () => {
+    setSecPasswordStep('idle')
+    setCurrentSecPassword('')
+    setNewSecPassword('')
+    setConfirmSecPassword('')
+    setSecPasswordError('')
   }
 
   return (
@@ -373,16 +445,28 @@ export function ProfileTab() {
       <section className="space-y-3 md:space-y-4 pt-4 md:pt-6 border-t border-slate-100">
         <div className="flex items-center justify-between">
           <h3 className="text-base md:text-lg font-bold text-slate-800">보안</h3>
-          {passwordStep === 'idle' && (
-            <Button 
-              variant="outline" 
-              onClick={() => setPasswordStep('verify')}
-              className="text-slate-600 border-slate-300 hover:bg-slate-50"
-            >
-              <KeyRound className="w-4 h-4 mr-2 text-slate-400" />
-              비밀번호 변경
-            </Button>
-          )}
+          <div className="flex gap-2">
+            {passwordStep === 'idle' && secPasswordStep === 'idle' && (
+              <Button 
+                variant="outline" 
+                onClick={() => { setPasswordStep('verify'); resetSecPasswordState() }}
+                className="text-slate-600 border-slate-300 hover:bg-slate-50"
+              >
+                <KeyRound className="w-4 h-4 mr-2 text-slate-400" />
+                비밀번호 변경
+              </Button>
+            )}
+            {secPinStatus?.isSetup && passwordStep === 'idle' && secPasswordStep === 'idle' && (
+              <Button 
+                variant="outline" 
+                onClick={() => { setSecPasswordStep('verify'); resetPasswordState() }}
+                className="text-slate-600 border-slate-300 hover:bg-slate-50"
+              >
+                <KeyRound className="w-4 h-4 mr-2 text-slate-400" />
+                2차 비밀번호 변경
+              </Button>
+            )}
+          </div>
         </div>
 
         {/* Step 1: 현재 비밀번호 확인 */}
@@ -463,6 +547,93 @@ export function ProfileTab() {
                 className="bg-slate-800 hover:bg-slate-900 text-white"
               >
                 {isUpdatingPassword ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+                비밀번호 업데이트
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* Step 1: 현재 2차 비밀번호 확인 */}
+        {secPasswordStep === 'verify' && (
+          <div className="bg-slate-50 p-5 rounded-2xl border border-slate-100 space-y-4 mb-8">
+            <p className="text-sm text-slate-600 font-medium">2차 비밀번호를 변경하려면 먼저 현재 2차 비밀번호를 입력해주세요.</p>
+            <div className="max-w-sm space-y-2">
+              <Label htmlFor="currentSecPassword">현재 2차 비밀번호 (4자리)</Label>
+              <Input 
+                id="currentSecPassword" 
+                type="password"
+                maxLength={4}
+                value={currentSecPassword}
+                onChange={e => { setCurrentSecPassword(e.target.value.replace(/[^0-9]/g, '')); setSecPasswordError('') }}
+                onKeyDown={e => e.key === 'Enter' && handleVerifySecPassword()}
+                placeholder="숫자 4자리"
+                className="bg-white border-slate-200 tracking-widest"
+                autoFocus
+              />
+            </div>
+            {secPasswordError && (
+              <p className="text-sm text-rose-500 font-medium">{secPasswordError}</p>
+            )}
+            <div className="flex justify-end gap-2 pt-2">
+              <Button variant="ghost" onClick={resetSecPasswordState} className="text-slate-500 hover:text-slate-700 hover:bg-slate-200">
+                취소
+              </Button>
+              <Button 
+                onClick={handleVerifySecPassword}
+                disabled={isVerifyingSec || currentSecPassword.length !== 4}
+                className="bg-slate-800 hover:bg-slate-900 text-white"
+              >
+                {isVerifyingSec ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+                확인
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* Step 2: 새 2차 비밀번호 입력 */}
+        {secPasswordStep === 'change' && (
+          <div className="bg-slate-50 p-5 rounded-2xl border border-slate-100 space-y-4 mb-8">
+            <p className="text-sm text-emerald-600 font-medium">✓ 현재 2차 비밀번호가 확인되었습니다. 새로운 2차 비밀번호를 입력해주세요.</p>
+            <div className="grid sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="newSecPassword">새 2차 비밀번호</Label>
+                <Input 
+                  id="newSecPassword" 
+                  type="password"
+                  maxLength={4}
+                  value={newSecPassword}
+                  onChange={e => { setNewSecPassword(e.target.value.replace(/[^0-9]/g, '')); setSecPasswordError('') }}
+                  placeholder="숫자 4자리"
+                  className="bg-white border-slate-200 tracking-widest"
+                  autoFocus
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="confirmSecPassword">2차 비밀번호 확인</Label>
+                <Input 
+                  id="confirmSecPassword" 
+                  type="password"
+                  maxLength={4}
+                  value={confirmSecPassword}
+                  onChange={e => { setConfirmSecPassword(e.target.value.replace(/[^0-9]/g, '')); setSecPasswordError('') }}
+                  placeholder="숫자 4자리 확인"
+                  className="bg-white border-slate-200 tracking-widest"
+                />
+              </div>
+            </div>
+            {secPasswordError && (
+              <p className="text-sm text-rose-500 font-medium">{secPasswordError}</p>
+            )}
+            <div className="flex justify-end gap-2 pt-2">
+              <Button variant="ghost" onClick={resetSecPasswordState} className="text-slate-500 hover:text-slate-700 hover:bg-slate-200">
+                취소
+              </Button>
+              <Button 
+                onClick={handleSaveSecPassword}
+                disabled={isUpdatingSecPin || newSecPassword.length !== 4 || newSecPassword !== confirmSecPassword}
+                className="bg-slate-800 hover:bg-slate-900 text-white"
+              >
+                {isUpdatingSecPin ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
                 비밀번호 업데이트
               </Button>
             </div>

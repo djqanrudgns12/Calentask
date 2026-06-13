@@ -132,9 +132,11 @@ export function TemplateFormDialog({ isOpen, onClose, editingTemplate, mode = 'm
 
   const getGradient = () => {
     if (customColor) return `linear-gradient(to right, ${customColor}, ${customColor})`
-    if (categoryIds.length === 0) return 'linear-gradient(to right, #e2e8f0, #e2e8f0)'
+    
+    const validCategoryIds = categoryIds.filter(id => categories.some(c => c.id === id))
+    if (validCategoryIds.length === 0) return 'linear-gradient(to right, #e2e8f0, #e2e8f0)'
 
-    const colors = categoryIds.map(id => {
+    const colors = validCategoryIds.map(id => {
       const cat = categories.find(c => c.id === id)
       return cat?.hex_color || '#4f46e5'
     })
@@ -185,15 +187,18 @@ export function TemplateFormDialog({ isOpen, onClose, editingTemplate, mode = 'm
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    if (categoryIds.length === 0) {
+    
+    const validCategoryIds = categoryIds.filter(id => categories.some(c => c.id === id))
+    
+    if (validCategoryIds.length === 0) {
       alert('카테고리를 하나 이상 선택해주세요.')
       return
     }
 
     const payload = {
       title,
-      category_id: categoryIds[0],
-      category_ids: categoryIds,
+      category_id: validCategoryIds[0],
+      category_ids: validCategoryIds,
       duration_minutes: durationMinutes,
       hex_color: customColor || undefined,
       memo: memo || undefined,
