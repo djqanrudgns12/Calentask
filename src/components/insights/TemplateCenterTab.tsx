@@ -10,15 +10,13 @@ import { TemplateFormDialog } from './TemplateFormDialog'
 import { TemplateAnalyticsSheet } from './TemplateAnalyticsSheet'
 import { format, formatDistanceToNow } from 'date-fns'
 import { ko } from 'date-fns/locale'
-import { startOfMonth, endOfMonth } from 'date-fns'
 import type { ActivityTemplate } from '@/app/actions/insights'
+import { useTemplatePeriod, PeriodPreset } from '@/hooks/useTemplatePeriod'
 
 export default function TemplateCenterTab() {
-  const now = new Date()
-  const startDateIso = startOfMonth(now).toISOString()
-  const endDateIso = endOfMonth(now).toISOString()
+  const { preset, setPreset, isLoaded, startDate, endDate, prevStartDate, prevEndDate, trendType, currentLabel, prevLabel } = useTemplatePeriod()
 
-  const { data: summaries = [], isLoading } = useAllTemplatesSummary(startDateIso, endDateIso)
+  const { data: summaries = [], isLoading } = useAllTemplatesSummary(startDate, endDate, prevStartDate, prevEndDate, trendType)
   const { data: categories = [] } = useCategories()
   const { mutate: deleteTemplate } = useDeleteTemplate()
 
@@ -124,9 +122,10 @@ export default function TemplateCenterTab() {
 
   const analyticsTemplate = summaries.find(s => s.templateId === analyticsTemplateId)
 
-  if (isLoading) {
+  if (!isLoaded || isLoading) {
     return (
       <div className="space-y-6 animate-pulse mt-4">
+        <div className="h-10 w-24 bg-gray-100 rounded-xl ml-auto" />
         <div className="h-16 bg-gray-100 rounded-2xl" />
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {[1,2,3].map(i => <div key={i} className="h-64 bg-gray-100 rounded-3xl" />)}
@@ -137,6 +136,20 @@ export default function TemplateCenterTab() {
 
   return (
     <div className="space-y-6 mt-2">
+      <div className="flex justify-end px-1 mb-[-12px]">
+        <select 
+          value={preset}
+          onChange={(e) => setPreset(e.target.value as PeriodPreset)}
+          className="text-[13px] font-bold text-indigo-600 bg-indigo-50 border-none rounded-xl px-3 py-1.5 cursor-pointer hover:bg-indigo-100 transition-colors focus:ring-0 outline-none"
+        >
+          <option value="this_month">이번 달</option>
+          <option value="semester1">1학기</option>
+          <option value="semester2">2학기</option>
+          <option value="this_year">올해</option>
+          <option value="all">전체</option>
+        </select>
+      </div>
+
       {/* ── 랭킹 요약 바 ── */}
       {ranked.length > 0 && totalMonthHours > 0 && (
         <motion.div
@@ -145,7 +158,7 @@ export default function TemplateCenterTab() {
           className="bg-white rounded-[20px] p-5 shadow-sm border border-gray-100"
         >
           <div className="flex items-center justify-between mb-3">
-            <h3 className="text-[13px] font-bold text-gray-400 tracking-wider">이번 달 템플릿 랭킹</h3>
+            <h3 className="text-[13px] font-bold text-gray-400 tracking-wider">{currentLabel} 템플릿 랭킹</h3>
             <span className="text-[13px] font-bold text-gray-900">총 {totalMonthHours.toFixed(1)}시간</span>
           </div>
 
@@ -210,10 +223,11 @@ export default function TemplateCenterTab() {
 
             return (
               <motion.div
+                layout
                 key={summary.templateId}
                 initial={{ opacity: 0, y: 15 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: idx * 0.05 }}
+                transition={{ duration: 0.3 }}
                 className="bg-white rounded-[24px] p-5 shadow-sm border border-gray-100 hover:shadow-lg transition-all group relative overflow-hidden"
               >
                 {/* 좌측 색상 스트립 */}
@@ -265,8 +279,8 @@ export default function TemplateCenterTab() {
                 {/* 이번 달 / 저번 달 통계 */}
                 <div className="pl-3 mb-3">
                   <div className="flex items-baseline gap-2 mb-1">
-                    <span className="text-[11px] font-bold text-gray-400">이번 달</span>
-                    {!isNeutral && (
+                    <span className="text-[11px] font-bold text-gray-400">{currentLabel}</span>
+                    {preset !== 'all' && !isNeutral && (
                       <span className={`flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-0.5 rounded-md ${
                         isPositive ? 'text-emerald-500 bg-emerald-50' : 'text-red-500 bg-red-50'
                       }`}>
@@ -291,24 +305,26 @@ export default function TemplateCenterTab() {
                       </>
                     )}
                   </div>
-                  <div className="flex items-baseline gap-1.5 mt-2 text-[12px] font-medium text-gray-400 bg-gray-50/80 px-2.5 py-1.5 rounded-lg w-fit">
-                    <span className="font-bold text-gray-500">저번 달:</span>
-                    {summary.customUnitEnabled ? (
-                      <>
-                        <span className="font-bold text-gray-700">{summary.prevMonthUnits}</span>
-                        <span className="text-[11px]">차시</span>
-                        <span className="text-gray-300">/</span>
-                        <span className="font-bold text-gray-700">{formatMinutesText(summary.prevMonthMinutes)}</span>
-                      </>
-                    ) : (
-                      <>
-                        <span className="font-bold text-gray-700">{formatMinutesText(summary.prevMonthMinutes)}</span>
-                        <span className="text-gray-300">/</span>
-                        <span className="font-bold text-gray-700">{summary.prevMonthCount}</span>
-                        <span className="text-[11px]">회</span>
-                      </>
-                    )}
-                  </div>
+                  {preset !== 'all' && (
+                    <div className="flex items-baseline gap-1.5 mt-2 text-[12px] font-medium text-gray-400 bg-gray-50/80 px-2.5 py-1.5 rounded-lg w-fit">
+                      <span className="font-bold text-gray-500">{prevLabel}:</span>
+                      {summary.customUnitEnabled ? (
+                        <>
+                          <span className="font-bold text-gray-700">{summary.prevMonthUnits}</span>
+                          <span className="text-[11px]">차시</span>
+                          <span className="text-gray-300">/</span>
+                          <span className="font-bold text-gray-700">{formatMinutesText(summary.prevMonthMinutes)}</span>
+                        </>
+                      ) : (
+                        <>
+                          <span className="font-bold text-gray-700">{formatMinutesText(summary.prevMonthMinutes)}</span>
+                          <span className="text-gray-300">/</span>
+                          <span className="font-bold text-gray-700">{summary.prevMonthCount}</span>
+                          <span className="text-[11px]">회</span>
+                        </>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 {/* 스파크라인 */}

@@ -77,11 +77,11 @@ export function useDeleteTemplate() {
 
 // ─── 템플릿 센터 Hooks ───
 
-export function useAllTemplatesSummary(startDate: string, endDate: string) {
+export function useAllTemplatesSummary(startDate: string, endDate: string, prevStartDate: string, prevEndDate: string, trendType: 'daily' | 'weekly' | 'monthly' = 'daily') {
   return useQuery({
-    queryKey: ['templatesSummary', startDate, endDate],
-    queryFn: () => getAllTemplatesSummary(startDate, endDate),
-    enabled: !!startDate && !!endDate,
+    queryKey: ['templatesSummary', startDate, endDate, prevStartDate, prevEndDate, trendType],
+    queryFn: () => getAllTemplatesSummary(startDate, endDate, prevStartDate, prevEndDate, trendType),
+    enabled: !!startDate && !!endDate && !!prevStartDate && !!prevEndDate,
     staleTime: 5 * 60 * 1000,
     gcTime: 15 * 60 * 1000,
   })

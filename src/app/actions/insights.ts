@@ -425,7 +425,13 @@ function getKSTNow() {
 /**
  * 전체 템플릿의 요약 통계 (카드 그리드용)
  */
-export async function getAllTemplatesSummary(startDate: string, endDate: string): Promise<TemplateSummary[]> {
+export async function getAllTemplatesSummary(
+  startDate: string,
+  endDate: string,
+  prevStartDate: string,
+  prevEndDate: string,
+  trendType: 'daily' | 'weekly' | 'monthly' = 'daily'
+): Promise<TemplateSummary[]> {
   const supabase = await createClient()
   const { data: userData } = await supabase.auth.getUser()
   if (!userData.user) throw new Error('Not authenticated')
@@ -433,16 +439,8 @@ export async function getAllTemplatesSummary(startDate: string, endDate: string)
   // 기간 계산
   const currentMonthStart = startDate
   const currentMonthEnd = endDate
-  
-  const currentStartKST = getKSTDate(startDate)
-  const prevMonthStartKST = new Date(currentStartKST)
-  prevMonthStartKST.setUTCMonth(prevMonthStartKST.getUTCMonth() - 1)
-  
-  const prevMonthEndKST = new Date(currentStartKST)
-  prevMonthEndKST.setUTCMilliseconds(-1)
-  
-  const prevMonthStart = new Date(prevMonthStartKST.getTime() - KST_OFFSET_MS).toISOString()
-  const prevMonthEnd = new Date(prevMonthEndKST.getTime() - KST_OFFSET_MS).toISOString()
+  const prevMonthStart = prevStartDate
+  const prevMonthEnd = prevEndDate
 
   // 1단계: 템플릿, 직접생성 활동, 수동 연결, 카테고리 병렬 조회
   const [
@@ -504,10 +502,34 @@ export async function getAllTemplatesSummary(startDate: string, endDate: string)
   const categoryNameMap: Record<string, string> = {}
   ;(allCategories || []).forEach((c: any) => { categoryNameMap[c.id] = c.name })
 
-  // 4. 최근 7일 일별 데이터 계산
-  const kstNow = getKSTNow()
-  const sevenDaysAgoKST = new Date(kstNow.getTime() - 7 * 24 * 60 * 60 * 1000)
-  const sevenDaysAgo = new Date(sevenDaysAgoKST.getTime() - KST_OFFSET_MS).toISOString()
+  // 4. 트렌드 버킷 구조 생성
+  const currentStartKST = getKSTDate(startDate)
+  const currentEndKST = getKSTDate(endDate)
+  
+  const getTrendKey = (date: Date) => {
+    if (trendType === 'monthly') {
+      return `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, '0')}`
+    } else if (trendType === 'weekly') {
+      const d = new Date(date)
+      d.setUTCDate(d.getUTCDate() - d.getUTCDay())
+      return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}`
+    } else {
+      return `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, '0')}-${String(date.getUTCDate()).padStart(2, '0')}`
+    }
+  }
+
+  const baseTrendBuckets: { date: string, minutes: number, units: number }[] = []
+  const bucketMap = new Map<string, number>()
+  
+  let iterDate = new Date(currentStartKST)
+  while (iterDate <= currentEndKST) {
+    const key = getTrendKey(iterDate)
+    if (!bucketMap.has(key)) {
+      bucketMap.set(key, baseTrendBuckets.length)
+      baseTrendBuckets.push({ date: key, minutes: 0, units: 0 })
+    }
+    iterDate.setUTCDate(iterDate.getUTCDate() + 1)
+  }
 
   const summaries: TemplateSummary[] = templates.map(tmpl => {
     const acts = allActivities.filter((a: any) => a.template_id === tmpl.id)
@@ -518,12 +540,13 @@ export async function getAllTemplatesSummary(startDate: string, endDate: string)
     let prevMonthMinutes = 0
     let prevMonthCount = 0
     let maxSession = 0
-    const dailyMap = new Map<string, number>()
+    
+    // 복사하여 독립적인 트렌드 배열 생성
+    const trendBuckets = baseTrendBuckets.map(b => ({ ...b }))
 
     let totalUnits = 0
     let currentMonthUnits = 0
     let prevMonthUnits = 0
-    const dailyUnitMap = new Map<string, number>()
 
     const customUnitEnabled = (tmpl as any).custom_unit_enabled || false
     const customUnitMinutes = (tmpl as any).custom_unit_minutes || 40
@@ -549,24 +572,20 @@ export async function getAllTemplatesSummary(startDate: string, endDate: string)
       }
       if (mins > maxSession) maxSession = mins
 
-      // 최근 7일 일별
-      if (a.start_time >= sevenDaysAgo) {
+      // 트렌드 데이터 (선택된 기간 내)
+      if (a.start_time >= currentMonthStart && a.start_time <= currentMonthEnd) {
         const actKST = getKSTDate(a.start_time)
-        const dateKey = `${actKST.getUTCFullYear()}-${String(actKST.getUTCMonth() + 1).padStart(2, '0')}-${String(actKST.getUTCDate()).padStart(2, '0')}`
-        dailyMap.set(dateKey, (dailyMap.get(dateKey) || 0) + mins)
-        dailyUnitMap.set(dateKey, (dailyUnitMap.get(dateKey) || 0) + units)
+        const key = getTrendKey(actKST)
+        const bucketIndex = bucketMap.get(key)
+        if (bucketIndex !== undefined) {
+          trendBuckets[bucketIndex].minutes += mins
+          trendBuckets[bucketIndex].units += units
+        }
       }
     })
 
-    // 최근 7일 배열 생성
-    const dailyTrend: { date: string; minutes: number }[] = []
-    const dailyTrendUnits: { date: string; units: number }[] = []
-    for (let i = 6; i >= 0; i--) {
-      const d = new Date(kstNow.getTime() - i * 24 * 60 * 60 * 1000)
-      const key = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}`
-      dailyTrend.push({ date: key, minutes: dailyMap.get(key) || 0 })
-      dailyTrendUnits.push({ date: key, units: dailyUnitMap.get(key) || 0 })
-    }
+    const dailyTrend = trendBuckets.map(b => ({ date: b.date, minutes: b.minutes }))
+    const dailyTrendUnits = trendBuckets.map(b => ({ date: b.date, units: b.units }))
 
     const categoryIds = (tmpl as any).category_ids || []
     const categoryNames = categoryIds.map((id: string) => categoryNameMap[id] || '미분류')
