@@ -149,7 +149,6 @@ export const useCalendarStore = create<CalendarState>()(
     {
       name: 'calendar-storage',
       partialize: (state) => ({
-        viewMode: state.viewMode,
         activeCategories: state.activeCategories,
         activePresetId: state.activePresetId,
         activePresetName: state.activePresetName,
