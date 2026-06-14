@@ -3,7 +3,7 @@
 import { useState, useRef, useMemo } from 'react';
 import { useArchiveStore } from '@/store/useArchiveStore';
 import { AddBookmarkModal } from './extensions/AddBookmarkModal';
-import { Plus, Search, ChevronDown, LayoutList, LayoutGrid, Maximize2, ExternalLink, Edit2, Trash2, Tag, Bookmark as BookmarkIcon } from 'lucide-react';
+import { Plus, Search, ChevronDown, LayoutList, LayoutGrid, Maximize2, ExternalLink, Edit2, Trash2, Tag, Bookmark as BookmarkIcon, AlignLeft } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const EMPTY_ARRAY: any[] = [];
