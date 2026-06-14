@@ -291,7 +291,7 @@ export default function CalendarPage() {
               )}
               <div className="relative z-10 flex items-center gap-3">
                 <Archive className={`w-5 h-5 transition-colors ${isArchiveMenuOpen ? 'text-slate-600' : 'text-slate-300 group-hover:text-slate-600'}`} />
-                <span>아카이브 관리</span>
+                <span>아카이브</span>
               </div>
               <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${isArchiveMenuOpen ? 'rotate-180 text-slate-600' : 'text-slate-400'}`} />
             </button>
@@ -305,7 +305,6 @@ export default function CalendarPage() {
                   transition={{ duration: 0.3, ease: 'easeInOut' }}
                   className="overflow-hidden"
                 >
-                  <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3 px-3">아카이브 관리</h3>
                   <div className="flex flex-col space-y-1 mt-1 pb-3 mb-2 border-b border-slate-100/50">
                     <button 
                       onClick={() => setViewMode('archive_notes')}
@@ -314,7 +313,7 @@ export default function CalendarPage() {
                       }`}
                     >
                       <NotebookPen className={`w-4 h-4 ${viewMode === 'archive_notes' ? 'text-slate-600' : 'text-slate-300'}`} />
-                      아카이브 노트
+                      노트
                     </button>
 
                     <button 
@@ -334,7 +333,7 @@ export default function CalendarPage() {
                       }`}
                     >
                       <Sparkles className={`w-4 h-4 ${viewMode === 'archive_agenda' ? 'text-indigo-600' : 'text-slate-300'}`} />
-                      오늘의 할 일 (아젠다)
+                      아젠다
                     </button>
                   </div>
                 </motion.div>
