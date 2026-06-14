@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, LayoutList, Image as ImageIcon, LayoutGrid, Table, Columns, Clock, Check, Network, Calendar } from 'lucide-react';
+import { X, LayoutList, Image as ImageIcon, LayoutGrid, Table, Columns, Clock, Check, Network, Calendar, Bookmark } from 'lucide-react';
 import { useArchiveStore } from '@/store/useArchiveStore';
 
 import { Video, FileText } from 'lucide-react';
@@ -14,6 +14,7 @@ const BOARD_TYPES = [
   { id: 'table', name: '데이터베이스', icon: Table, desc: '자유도 높은 스프레드시트' },
   { id: 'kanban', name: '미디어 라이브러리', icon: Video, desc: '유튜브 등 미디어 시청 및 아카이브' },
   { id: 'journal', name: '저널', icon: Clock, desc: '시간 순으로 기록하는 다이어리' },
+  { id: 'link_lounge', name: '링크 라운지', icon: Bookmark, desc: '웹사이트 북마크 및 썸네일 디렉토리' },
 ];
 
 export function AddNoteDialog({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
