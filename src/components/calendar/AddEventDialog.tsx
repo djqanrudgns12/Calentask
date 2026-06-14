@@ -211,6 +211,8 @@ export function AddEventDialog({ children }: { children?: React.ReactNode }) {
   /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
      RENDER
      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+  const previewColor = customColor || (selectedCategories.length > 0 ? categories.find(c => c.id === selectedCategories[0])?.hex_color : null)
+
   return (
     <Dialog open={isAddEventOpen} onOpenChange={(open) => !open ? closeAddEvent() : openAddEvent()}>
       {children && <div onClick={() => openAddEvent()}>{children}</div>}
@@ -220,6 +222,9 @@ export function AddEventDialog({ children }: { children?: React.ReactNode }) {
         className="w-[95vw] max-w-[460px] p-0 overflow-hidden flex flex-col max-h-[90vh] border border-white/50 rounded-[28px]"
         style={{ background: 'linear-gradient(180deg, #f8f9fc 0%, #f0f2f7 100%)', boxShadow: '0 24px 80px -12px rgba(0,0,0,0.12)' }}
       >
+        {previewColor && (
+          <div className="absolute top-0 left-0 right-0 h-[6px] z-10 transition-colors duration-300" style={{ backgroundColor: previewColor }} />
+        )}
         {/* ── HEADER: 제목만 (Shadcn 기본 닫기 버튼 활용) ── */}
         <DialogHeader className="flex-shrink-0 px-6 py-5 flex flex-row items-center justify-center relative" style={{ borderBottom: '1px solid rgba(0,0,0,0.04)' }}>
           <DialogTitle className="text-[17px] font-bold text-slate-800 tracking-tight">
@@ -328,11 +333,12 @@ export function AddEventDialog({ children }: { children?: React.ReactNode }) {
                 return (
                   <div key={cat.id} className="relative group/cat">
                     <button type="button" onClick={() => toggleCategory(cat.id)}
-                      className={`px-3 py-1.5 text-[12px] font-semibold rounded-full transition-all flex items-center gap-1.5 ${sel ? 'bg-slate-100 text-slate-800 border-slate-200' : 'text-slate-600 bg-white border-slate-200 hover:bg-slate-50'} border`}
+                      className={`px-3 py-1.5 text-[12px] font-semibold rounded-full transition-all flex items-center gap-1.5 border ${sel ? 'shadow-sm' : 'text-slate-600 bg-white border-slate-200 hover:bg-slate-50'}`}
+                      style={sel ? { backgroundColor: `${cat.hex_color || '#007AFF'}1A`, borderColor: cat.hex_color || '#007AFF', color: '#0f172a' } : undefined}
                     >
                       <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: cat.hex_color || '#007AFF' }} />
                       {cat.name}
-                      {sel && <X className="w-3 h-3 text-slate-400 ml-0.5" />}
+                      {sel && <X className="w-3 h-3 ml-0.5" style={{ color: cat.hex_color || '#007AFF' }} />}
                     </button>
                     <div className="absolute -top-2 -right-2 hidden group-hover/cat:flex items-center gap-0.5 bg-white shadow-lg rounded-full px-1 py-0.5 z-10 border border-slate-100">
                       <div className="cursor-pointer hover:bg-slate-100 p-1 rounded-full text-[#007AFF]" onClick={e => { e.stopPropagation(); openEditCategory(cat) }}><Pencil className="w-3 h-3" /></div>

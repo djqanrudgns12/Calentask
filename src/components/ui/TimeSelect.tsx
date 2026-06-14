@@ -64,50 +64,15 @@ export function TimeSelect({ value, onChange, disabled, className = '', required
   }, [open, value])
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    let raw = e.target.value.replace(/[^0-9]/g, '')
-    if (raw.length > 4) raw = raw.slice(0, 4)
-
-    let masked = raw
-    if (raw.length >= 3) {
-      masked = `${raw.slice(0, 2)}:${raw.slice(2)}`
-    } else if (raw.length === 2 && e.target.value.includes(':')) {
-       masked = `${raw}:`
-    }
-    
-    setInputValue(masked)
-
-    // Validate and auto-update if fully typed
-    if (raw.length === 4) {
-      let h = parseInt(raw.slice(0, 2), 10)
-      let m = parseInt(raw.slice(2, 4), 10)
-      
-      // Auto correct invalid times
-      if (h > 23) h = 23
-      if (m > 59) m = 59
-      
-      const corrected = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`
-      setInputValue(corrected)
-      onChange(corrected)
-      setOpen(false)
+    setInputValue(e.target.value)
+    if (e.target.value) {
+      onChange(e.target.value)
     }
   }
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
       e.preventDefault()
-      // Fallback validate
-      const [hStr, mStr] = inputValue.split(':')
-      if (hStr && mStr) {
-        let h = parseInt(hStr, 10)
-        let m = parseInt(mStr, 10)
-        if (!isNaN(h) && !isNaN(m)) {
-          if (h > 23) h = 23
-          if (m > 59) m = 59
-          const corrected = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`
-          onChange(corrected)
-          setInputValue(corrected)
-        }
-      }
       setOpen(false)
     } else if (e.key === 'ArrowDown') {
       e.preventDefault()
@@ -125,14 +90,13 @@ export function TimeSelect({ value, onChange, disabled, className = '', required
           <Clock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
           <input
             ref={inputRef}
-            type="text"
+            type="time"
             value={inputValue}
             onChange={handleInputChange}
             onKeyDown={handleKeyDown}
             disabled={disabled}
             required={required}
-            placeholder="00:00"
-            className="w-full h-full pl-9 pr-3 bg-transparent text-gray-900 font-medium focus:outline-none placeholder:text-gray-300"
+            className="w-full h-full pl-9 pr-3 bg-transparent text-gray-900 font-medium focus:outline-none placeholder:text-gray-300 [&::-webkit-calendar-picker-indicator]:hidden"
           />
         </div>
       } />
