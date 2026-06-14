@@ -88,12 +88,8 @@ export function LinkLoungeView() {
       <div className="px-4 py-4 md:px-8 md:py-6 bg-white/80 backdrop-blur-xl border-b border-slate-200/60 z-20 flex flex-col gap-4 shrink-0">
         <div className="flex items-center justify-between gap-4">
           
-          {/* Title & Search */}
+          {/* Search */}
           <div className="flex items-center gap-6 flex-1">
-            <h1 className="text-xl md:text-2xl font-extrabold text-slate-800 flex items-center gap-2 shrink-0">
-              <BookmarkIcon className="w-6 h-6 text-indigo-500" />
-              링크 라운지
-            </h1>
             <div className="relative flex-1 max-w-md hidden sm:block">
               <Search className="w-4 h-4 md:w-5 md:h-5 absolute left-3 md:left-4 top-1/2 -translate-y-1/2 text-slate-400" />
               <input 

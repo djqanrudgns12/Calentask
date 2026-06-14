@@ -308,7 +308,7 @@ export default function CalendarPage() {
                   <div className="flex flex-col space-y-1 mt-1 pb-3 mb-2 border-b border-slate-100/50">
                     <button 
                       onClick={() => setViewMode('archive_notes')}
-                      className={`flex items-center gap-3 w-full px-3 py-2.5 rounded-xl transition-all font-medium text-sm group ${
+                      className={`w-[calc(100%-1.25rem)] ml-5 text-left px-4 py-2.5 rounded-xl text-sm transition-all duration-300 flex items-center gap-2.5 group ${
                         viewMode === 'archive_notes' ? 'bg-slate-100 text-slate-800 font-bold shadow-sm' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-700'
                       }`}
                     >
@@ -318,7 +318,7 @@ export default function CalendarPage() {
 
                     <button 
                       onClick={() => setViewMode('link_lounge')}
-                      className={`flex items-center gap-3 w-full px-3 py-2.5 rounded-xl transition-all font-medium text-sm group ${
+                      className={`w-[calc(100%-1.25rem)] ml-5 text-left px-4 py-2.5 rounded-xl text-sm transition-all duration-300 flex items-center gap-2.5 group ${
                         viewMode === 'link_lounge' ? 'bg-indigo-50 text-indigo-700 font-bold shadow-sm ring-1 ring-indigo-500/20' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-700'
                       }`}
                     >
@@ -328,7 +328,7 @@ export default function CalendarPage() {
 
                     <button 
                       onClick={() => setViewMode('archive_agenda')}
-                      className={`flex items-center gap-3 w-full px-3 py-2.5 rounded-xl transition-all font-medium text-sm group ${
+                      className={`w-[calc(100%-1.25rem)] ml-5 text-left px-4 py-2.5 rounded-xl text-sm transition-all duration-300 flex items-center gap-2.5 group ${
                         viewMode === 'archive_agenda' ? 'bg-indigo-50 text-indigo-700 font-bold shadow-sm ring-1 ring-indigo-500/20' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-700'
                       }`}
                     >

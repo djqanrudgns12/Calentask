@@ -25,44 +25,10 @@ export function ArchiveNotesView() {
   const [isSynapseOpen, setIsSynapseOpen] = useState(false);
   const [editingTabId, setEditingTabId] = useState<string | null>(null);
   const [editingTabName, setEditingTabName] = useState('');
-  const [isScrolled, setIsScrolled] = useState(false);
   const boardContainerRef = useRef<HTMLDivElement>(null);
 
   const isFocusMode = focusModeTabId !== null && focusModeTabId === activeTabId;
 
-  // Board 컨테이너의 스크롤을 감지하여 헤더 축소 트리거
-  const handleBoardScroll = useCallback(() => {
-    if (boardContainerRef.current) {
-      // Board 내부의 스크롤 가능한 첫 번째 자식 요소를 감지
-      const scrollable = boardContainerRef.current.querySelector('[data-scroll-detect]') as HTMLElement;
-      if (scrollable) {
-        setIsScrolled(scrollable.scrollTop > 10);
-      }
-    }
-  }, []);
-
-  useEffect(() => {
-    const container = boardContainerRef.current;
-    if (!container) return;
-    // MutationObserver로 내부 스크롤 요소가 마운트되면 이벤트 리스너 부착
-    const attachScrollListener = () => {
-      const scrollable = container.querySelector('[data-scroll-detect]') as HTMLElement;
-      if (scrollable) {
-        scrollable.addEventListener('scroll', handleBoardScroll, { passive: true });
-        return () => scrollable.removeEventListener('scroll', handleBoardScroll);
-      }
-    };
-    const cleanup = attachScrollListener();
-    const observer = new MutationObserver(() => {
-      cleanup?.();
-      attachScrollListener();
-    });
-    observer.observe(container, { childList: true, subtree: true });
-    return () => {
-      cleanup?.();
-      observer.disconnect();
-    };
-  }, [handleBoardScroll, activeTabId]);
 
   useEffect(() => {
     fetchTabs();
@@ -106,67 +72,16 @@ export function ArchiveNotesView() {
         {/* Header & Tabs — 집중 모드 시 전체 숨김 */}
         {!isFocusMode && (
           <div className="border-b border-slate-200 bg-white/50 backdrop-blur-md sticky top-0 z-10 shrink-0">
-            {/* 타이틀 영역 — 스크롤 시 접힘 */}
-            <div className={cn(
-              "overflow-hidden transition-all duration-300 ease-out",
-              isScrolled ? "max-h-0 opacity-0 pt-0 pb-0 px-4 md:px-8" : "max-h-40 opacity-100 px-4 md:px-8 pt-4 md:pt-6 pb-2 md:pb-3"
-            )}>
-              <div className="flex items-center justify-between gap-3">
-                {/* 왜: 모바일에서 제목+설명이 버튼과 같은 줄에 배치될 때 넘침 방지를 위해 min-w-0 추가 */}
-                <div className="min-w-0">
-                  <h1 className="text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight">아카이브 노트</h1>
-                  {/* 왜: 모바일에서는 잘리지 않는 짧은 대체 문장으로 교체 (사용자 피드백 반영) */}
-                  <p className="text-slate-500 mt-1 text-sm font-medium">
-                    <span className="hidden md:inline">나만의 지식 보관소이자 창의력을 펼치는 캔버스입니다.</span>
-                    <span className="md:hidden">노트와 아이디어를 관리하세요.</span>
-                  </p>
-                </div>
-                <div className="flex items-center gap-2 md:gap-3">
-                  <button 
-                    onClick={() => setIsSynapseOpen(true)}
-                    className="relative flex items-center gap-1.5 md:gap-2 px-3 md:px-4 py-2 md:py-2.5 bg-gradient-to-br from-slate-900 to-indigo-950 text-white rounded-xl text-xs md:text-sm font-bold shadow-lg shadow-indigo-500/20 transition-all duration-300 hover:scale-105 active:scale-95 shrink-0 overflow-hidden group border border-indigo-500/30 hover:border-indigo-400"
-                  >
-                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]" />
-                    <Network className="w-4 h-4 text-indigo-300 group-hover:text-indigo-200 transition-colors relative z-10" />
-                    <span className="hidden md:inline relative z-10 bg-clip-text text-transparent bg-gradient-to-r from-indigo-100 to-white">시냅스</span>
-                    <span className="md:hidden relative z-10 bg-clip-text text-transparent bg-gradient-to-r from-indigo-100 to-white">시냅스</span>
-                  </button>
-                  <button 
-                    onClick={handleAddNewTab}
-                    className="flex items-center gap-1.5 md:gap-2 px-3 md:px-4 py-2 md:py-2.5 bg-indigo-600 text-white rounded-xl text-xs md:text-sm font-bold hover:bg-indigo-700 shadow-sm shadow-indigo-600/20 transition-all hover:scale-105 active:scale-95 shrink-0"
-                  >
-                    <Plus className="w-4 h-4" />
-                    {/* 왜: 모바일에서 버튼 텍스트를 축약하여 헤더 한 줄 유지 */}
-                    <span className="hidden md:inline">새 노트 추가</span>
-                    <span className="md:hidden">새 노트</span>
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            {/* 탭 네비게이션 영역 — 항상 표시, 스크롤 시 패딩 축소 */}
-            <div className={cn(
-              "transition-all duration-300 ease-out",
-              isScrolled ? "px-4 md:px-6 pt-1.5 pb-1.5" : "px-4 md:px-8 pt-1 pb-3"
-            )}>
-              {!isPrefetched ? (
-                <div className="flex items-center space-x-2 overflow-x-auto hide-scrollbar">
-                  {Array.from({ length: 4 }).map((_, i) => (
-                    <div key={i} className="h-9 w-24 bg-slate-100 animate-pulse rounded-lg" />
-                  ))}
-                </div>
-              ) : tabs.length > 0 && (
-                <div className="flex items-center space-x-2 overflow-x-auto hide-scrollbar">
-                  {/* 스크롤 상태에서 축소된 새 노트 추가 버튼 */}
-                  {isScrolled && (
-                    <button 
-                      onClick={handleAddNewTab}
-                      className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 text-white rounded-lg text-xs font-bold hover:bg-indigo-700 shadow-sm transition-all shrink-0"
-                    >
-                      <Plus className="w-3.5 h-3.5" />
-                      추가
-                    </button>
-                  )}
+            {/* 탭 네비게이션 영역 및 우측 액션 버튼 */}
+            <div className="px-4 md:px-6 lg:px-8 py-2.5 flex items-center justify-between w-full gap-4">
+              <div className="flex-1 min-w-0 flex items-center overflow-x-auto hide-scrollbar">
+                {!isPrefetched ? (
+                  <div className="flex items-center space-x-2">
+                    {Array.from({ length: 4 }).map((_, i) => (
+                      <div key={i} className="h-9 w-24 bg-slate-100 animate-pulse rounded-lg shrink-0" />
+                    ))}
+                  </div>
+                ) : tabs.length > 0 ? (
                   <Reorder.Group 
                     as="div"
                     axis="x" 
@@ -248,8 +163,29 @@ export function ArchiveNotesView() {
                       );
                     })}
                   </Reorder.Group>
-                </div>
-              )}
+                ) : (
+                  <div className="text-slate-400 text-sm font-medium py-2 px-1">노트가 없습니다</div>
+                )}
+              </div>
+
+              {/* 우측 액션 버튼들 (스크롤에 상관없이 고정 유지) */}
+              <div className="flex items-center gap-2 shrink-0 border-l border-slate-200/60 pl-4 ml-2">
+                <button 
+                  onClick={() => setIsSynapseOpen(true)}
+                  className="relative flex items-center gap-1.5 px-3 py-2 bg-gradient-to-br from-slate-900 to-indigo-950 text-white rounded-lg text-xs font-bold shadow-sm shadow-indigo-500/20 transition-all duration-300 hover:scale-105 active:scale-95 group border border-indigo-500/30 hover:border-indigo-400 overflow-hidden"
+                >
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]" />
+                  <Network className="w-3.5 h-3.5 text-indigo-300 group-hover:text-indigo-200 transition-colors relative z-10" />
+                  <span className="hidden md:inline relative z-10 bg-clip-text text-transparent bg-gradient-to-r from-indigo-100 to-white">시냅스</span>
+                </button>
+                <button 
+                  onClick={handleAddNewTab}
+                  className="flex items-center gap-1.5 px-3 py-2 bg-indigo-600 text-white rounded-lg text-xs font-bold hover:bg-indigo-700 shadow-sm shadow-indigo-600/20 transition-all hover:scale-105 active:scale-95"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">새 노트 추가</span>
+                </button>
+              </div>
             </div>
           </div>
         )}
