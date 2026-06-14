@@ -38,7 +38,6 @@ import { DataHubModal } from '@/components/profile/DataHubModal'
 import { ClearAllDataDialog } from '@/components/profile/ClearAllDataDialog'
 import { CalendarHeader } from '@/components/calendar/CalendarHeader'
 import { AnniversaryConfetti } from '@/components/anniversary/AnniversaryConfetti'
-import { UpcomingAgenda } from '@/components/calendar/UpcomingAgenda'
 import { UpcomingAnniversaryWidget } from '@/components/anniversary/UpcomingAnniversaryWidget'
 import { useAnniversaryOverlay } from '@/hooks/useAnniversaryOverlay'
 import { AnniversarySettingsView } from '@/components/anniversary/AnniversarySettingsView'
@@ -363,9 +362,6 @@ export default function CalendarPage() {
           </div>
 
         </div>
-
-        {/* 다가오는 일정 타임라인 */}
-        <UpcomingAgenda events={events} />
 
         <div className="px-4 py-6 flex flex-col space-y-1 shrink-0">
           {/* Keep uploader and trash at the bottom or below */}

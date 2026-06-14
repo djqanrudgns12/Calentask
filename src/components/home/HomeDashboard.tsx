@@ -1,15 +1,15 @@
 'use client'
 
-import { useMemo } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { motion } from 'framer-motion'
-import { format } from 'date-fns'
+import { format, startOfYesterday, endOfYesterday, startOfToday, endOfToday, startOfTomorrow, endOfTomorrow, startOfMonth, endOfMonth, subMonths, addMonths } from 'date-fns'
 import { ko } from 'date-fns/locale'
 import { useUserProfile } from '@/hooks/useCalendarQueries'
 import { useAgendaStore } from '@/store/useAgendaStore'
 import { useActivities } from '@/hooks/useCalendarQueries'
 import { useAnniversaryOverlay } from '@/hooks/useAnniversaryOverlay'
 import type { Activity } from '@/app/actions/calendar'
-import { TodayTimeline } from './TodayTimeline'
+import { ScheduleTimeline } from './ScheduleTimeline'
 import { SmartAgenda } from './SmartAgenda'
 import { QuickActions } from './QuickActions'
 import { DDayCard } from './DDayCard'
@@ -42,25 +42,63 @@ function getGreeting(): string {
   return '좋은 저녁이에요'
 }
 
+export type TimelineRange = 'yesterday' | 'today' | 'tomorrow' | 'last_month' | 'this_month' | 'next_month'
+
 export function HomeDashboard() {
   const { data: profile } = useUserProfile()
   const { tasks, isInitialized } = useAgendaStore()
 
-  // 오늘의 일정 데이터 가져오기
-  const today = useMemo(() => new Date(), [])
-  const todayStart = useMemo(() => {
-    const d = new Date(today)
-    d.setHours(0, 0, 0, 0)
-    return d.toISOString()
-  }, [today])
-  const todayEnd = useMemo(() => {
-    const d = new Date(today)
-    d.setHours(23, 59, 59, 999)
-    return d.toISOString()
-  }, [today])
+  const [selectedRange, setSelectedRange] = useState<TimelineRange>('today')
 
-  const { data: activitiesData } = useActivities(todayStart, todayEnd)
-  const { data: anniversaryEvents } = useAnniversaryOverlay(todayStart, todayEnd)
+  useEffect(() => {
+    const saved = localStorage.getItem('calentask_timeline_range') as TimelineRange | null
+    if (saved) {
+      setSelectedRange(saved)
+    }
+  }, [])
+
+  const handleRangeChange = (range: TimelineRange) => {
+    setSelectedRange(range)
+    localStorage.setItem('calentask_timeline_range', range)
+  }
+
+  const { dateStart, dateEnd } = useMemo(() => {
+    const now = new Date()
+    let start: Date
+    let end: Date
+
+    switch (selectedRange) {
+      case 'yesterday':
+        start = startOfYesterday()
+        end = endOfYesterday()
+        break
+      case 'tomorrow':
+        start = startOfTomorrow()
+        end = endOfTomorrow()
+        break
+      case 'last_month':
+        start = startOfMonth(subMonths(now, 1))
+        end = endOfMonth(subMonths(now, 1))
+        break
+      case 'this_month':
+        start = startOfMonth(now)
+        end = endOfMonth(now)
+        break
+      case 'next_month':
+        start = startOfMonth(addMonths(now, 1))
+        end = endOfMonth(addMonths(now, 1))
+        break
+      case 'today':
+      default:
+        start = startOfToday()
+        end = endOfToday()
+        break
+    }
+    return { dateStart: start.toISOString(), dateEnd: end.toISOString() }
+  }, [selectedRange])
+
+  const { data: activitiesData } = useActivities(dateStart, dateEnd)
+  const { data: anniversaryEvents } = useAnniversaryOverlay(dateStart, dateEnd)
 
   // 아젠다 이벤트 (캘린더 등록된 것만, 오늘 날짜 범위)
   const agendaEvents = useMemo(() => {
@@ -82,21 +120,21 @@ export function HomeDashboard() {
       }) as unknown as Activity[]
   }, [tasks])
 
-  const todayEvents = useMemo(() => {
+  const timelineEvents = useMemo(() => {
+    const rangeStart = new Date(dateStart)
+    const rangeEnd = new Date(dateEnd)
+
     return [
       ...(activitiesData || []),
       ...((anniversaryEvents || []) as unknown as Activity[]),
       ...agendaEvents,
     ].filter(event => {
-      const eventDate = new Date(event.start_time)
-      const todayDate = new Date()
-      return (
-        eventDate.getFullYear() === todayDate.getFullYear() &&
-        eventDate.getMonth() === todayDate.getMonth() &&
-        eventDate.getDate() === todayDate.getDate()
-      ) || event.is_all_day
+      const eventStart = new Date(event.start_time)
+      const eventEnd = event.end_time ? new Date(event.end_time) : eventStart
+      
+      return (eventStart <= rangeEnd && eventEnd >= rangeStart)
     }).sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime())
-  }, [activitiesData, anniversaryEvents, agendaEvents])
+  }, [activitiesData, anniversaryEvents, agendaEvents, dateStart, dateEnd])
 
   // 할 일 통계
   const activeTasks = useMemo(() => {
@@ -105,15 +143,36 @@ export function HomeDashboard() {
 
   const greeting = getGreeting()
   const userName = profile?.full_name || ''
-  const dateString = format(today, 'yyyy년 M월 d일 EEEE', { locale: ko })
+  const dateString = format(new Date(), 'yyyy년 M월 d일 EEEE', { locale: ko })
 
-  // 요약 문구
-  const summaryParts: string[] = []
-  if (todayEvents.length > 0) summaryParts.push(`${todayEvents.length}개의 일정`)
-  if (activeTasks.length > 0) summaryParts.push(`${activeTasks.length}개의 할 일`)
-  const summaryText = summaryParts.length > 0
-    ? `오늘은 ${summaryParts.join('과 ')}이 기다리고 있어요.`
-    : '오늘은 여유로운 하루예요. 🎉'
+  const getRangeLabelText = (range: TimelineRange) => {
+    switch (range) {
+      case 'yesterday': return '어제는'
+      case 'tomorrow': return '내일은'
+      case 'last_month': return '저번달은'
+      case 'this_month': return '이번달은'
+      case 'next_month': return '다음달은'
+      case 'today':
+      default: return '오늘은'
+    }
+  }
+
+  const getSummaryText = () => {
+    const parts: string[] = []
+    if (timelineEvents.length > 0) parts.push(`${timelineEvents.length}개의 일정`)
+    if (activeTasks.length > 0 && selectedRange === 'today') parts.push(`${activeTasks.length}개의 할 일`)
+
+    if (parts.length === 0) {
+      if (selectedRange === 'yesterday' || selectedRange === 'last_month') return `${getRangeLabelText(selectedRange)} 여유로웠어요. 🎉`
+      return `${getRangeLabelText(selectedRange)} 여유로운 시간이에요. 🎉`
+    }
+
+    const joined = parts.join('과 ')
+    if (selectedRange === 'yesterday' || selectedRange === 'last_month') return `${getRangeLabelText(selectedRange)} ${joined}이 있었어요.`
+    return `${getRangeLabelText(selectedRange)} ${joined}이 기다리고 있어요.`
+  }
+
+  const summaryText = getSummaryText()
 
   return (
     <motion.div
@@ -151,7 +210,11 @@ export function HomeDashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 md:gap-6">
         {/* 오늘의 타임라인 — 메인 영역 (2/3) */}
         <motion.div variants={itemVariants} className="lg:col-span-2">
-          <TodayTimeline events={todayEvents} />
+          <ScheduleTimeline 
+            events={timelineEvents} 
+            currentRange={selectedRange} 
+            onRangeChange={handleRangeChange} 
+          />
         </motion.div>
 
         {/* 할 일 — 사이드 영역 (1/3) */}
