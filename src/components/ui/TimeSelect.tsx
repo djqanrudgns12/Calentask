@@ -14,7 +14,14 @@ interface TimeSelectProps {
 
 export function TimeSelect({ value, onChange, disabled, className = '', required }: TimeSelectProps) {
   const [open, setOpen] = useState(false)
+  const [inputValue, setInputValue] = useState(value)
   const scrollRef = useRef<HTMLDivElement>(null)
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  // Sync external value
+  useEffect(() => {
+    setInputValue(value)
+  }, [value])
 
   const timeOptions = useMemo(() => {
     const options: string[] = []
@@ -29,12 +36,11 @@ export function TimeSelect({ value, onChange, disabled, className = '', required
   useEffect(() => {
     if (open && scrollRef.current) {
       setTimeout(() => {
-        // Find closest element
         let closestEl: HTMLElement | null = null
         let minDiff = Infinity
         
         const [vH, vM] = (value || '00:00').split(':').map(Number)
-        const vTotal = vH * 60 + vM
+        const vTotal = (isNaN(vH) ? 0 : vH) * 60 + (isNaN(vM) ? 0 : vM)
 
         const items = scrollRef.current!.querySelectorAll<HTMLElement>('[data-time]')
         items.forEach(item => {
@@ -53,29 +59,88 @@ export function TimeSelect({ value, onChange, disabled, className = '', required
         if (closestEl) {
           (closestEl as HTMLElement).scrollIntoView({ block: 'center' })
         }
-      }, 10) // small delay to ensure DOM is ready
+      }, 10)
     }
   }, [open, value])
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let raw = e.target.value.replace(/[^0-9]/g, '')
+    if (raw.length > 4) raw = raw.slice(0, 4)
+
+    let masked = raw
+    if (raw.length >= 3) {
+      masked = `${raw.slice(0, 2)}:${raw.slice(2)}`
+    } else if (raw.length === 2 && e.target.value.includes(':')) {
+       masked = `${raw}:`
+    }
+    
+    setInputValue(masked)
+
+    // Validate and auto-update if fully typed
+    if (raw.length === 4) {
+      let h = parseInt(raw.slice(0, 2), 10)
+      let m = parseInt(raw.slice(2, 4), 10)
+      
+      // Auto correct invalid times
+      if (h > 23) h = 23
+      if (m > 59) m = 59
+      
+      const corrected = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`
+      setInputValue(corrected)
+      onChange(corrected)
+      setOpen(false)
+    }
+  }
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault()
+      // Fallback validate
+      const [hStr, mStr] = inputValue.split(':')
+      if (hStr && mStr) {
+        let h = parseInt(hStr, 10)
+        let m = parseInt(mStr, 10)
+        if (!isNaN(h) && !isNaN(m)) {
+          if (h > 23) h = 23
+          if (m > 59) m = 59
+          const corrected = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`
+          onChange(corrected)
+          setInputValue(corrected)
+        }
+      }
+      setOpen(false)
+    } else if (e.key === 'ArrowDown') {
+      e.preventDefault()
+      setOpen(true)
+    }
+  }
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger render={
-        <button
-          type="button"
-          disabled={disabled}
-          className={`relative w-full flex items-center text-left pl-9 pr-3 border rounded-lg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed h-10 ${className}`}
+        <div
+          className={`relative w-full flex items-center bg-white border border-gray-200 rounded-xl transition-colors focus-within:ring-2 focus-within:ring-indigo-500 focus-within:border-transparent overflow-hidden h-10 ${disabled ? 'opacity-50 cursor-not-allowed' : ''} ${className}`}
+          onClick={() => { if (!disabled) inputRef.current?.focus() }}
         >
-          <Clock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-          <span className={`block truncate ${!value ? 'text-gray-400' : 'text-gray-900 font-medium'}`}>
-            {value || '시간 선택'}
-          </span>
-        </button>
+          <Clock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+          <input
+            ref={inputRef}
+            type="text"
+            value={inputValue}
+            onChange={handleInputChange}
+            onKeyDown={handleKeyDown}
+            disabled={disabled}
+            required={required}
+            placeholder="00:00"
+            className="w-full h-full pl-9 pr-3 bg-transparent text-gray-900 font-medium focus:outline-none placeholder:text-gray-300"
+          />
+        </div>
       } />
       <PopoverContent 
         align="start" 
-        className="w-[160px] p-1.5 shadow-xl border-gray-100 rounded-xl bg-white z-[200]"
+        className="w-[160px] p-1.5 shadow-xl border-gray-100 rounded-xl bg-white/95 backdrop-blur-xl z-[200]"
       >
-        <div ref={scrollRef} className="max-h-[220px] overflow-y-auto overscroll-contain rounded-lg scrollbar-thin scrollbar-thumb-gray-200">
+        <div ref={scrollRef} className="max-h-[220px] overflow-y-auto overscroll-contain rounded-lg hide-scrollbar">
           <div className="flex flex-col gap-0.5">
             {timeOptions.map((time) => {
               const isSelected = value === time
@@ -87,12 +152,13 @@ export function TimeSelect({ value, onChange, disabled, className = '', required
                   data-active={isSelected}
                   onClick={() => {
                     onChange(time)
+                    setInputValue(time)
                     setOpen(false)
                   }}
-                  className={`px-3 py-2 text-sm font-medium rounded-md text-left transition-colors
+                  className={`px-3 py-2 text-sm font-medium rounded-lg text-left transition-colors
                     ${isSelected 
                       ? 'bg-indigo-50 text-indigo-700 font-bold' 
-                      : 'text-gray-700 hover:bg-gray-50'}`}
+                      : 'text-gray-700 hover:bg-gray-50 active:bg-gray-100'}`}
                 >
                   {time}
                 </button>

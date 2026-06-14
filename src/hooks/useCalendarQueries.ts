@@ -170,7 +170,8 @@ export function useCreateActivity(startDate: string, endDate: string) {
           hex_color: newActivityData.payload.hex_color || null,
           template_id: newActivityData.payload.template_id || null,
           deleted_at: null,
-          categories: []
+          categories: [],
+          attachments: []
         }
         
         queryClient.setQueryData(['activities', startDate, endDate], [...previousActivities, optimisticActivity])

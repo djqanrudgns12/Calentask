@@ -17,6 +17,7 @@ export type Activity = {
   template_id: string | null
   deleted_at: string | null
   categories: Category[]
+  attachments: any[]
 }
 
 export type Category = {
