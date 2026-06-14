@@ -26,7 +26,7 @@ import { SemesterView } from '@/components/calendar/SemesterView'
 
 
 import { LinkLoungeView } from '@/components/link-lounge/LinkLoungeView';
-import { ArchiveStoreProvider } from '@/components/providers/ArchiveStoreProvider';
+
 import { DaySummarySheet } from '@/components/calendar/DaySummarySheet'
 import { EventDetailPopover } from '@/components/calendar/EventDetailPopover'
 import { NiceImportView } from '@/components/calendar/NiceImportView'
