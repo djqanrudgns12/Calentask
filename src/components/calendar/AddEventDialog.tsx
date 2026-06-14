@@ -15,6 +15,7 @@ import { useActivityTemplates } from '@/hooks/useInsightsQueries'
 import type { ActivityTemplate } from '@/app/actions/insights'
 import { useCalendarStore } from '@/store/useCalendarStore'
 import { useAgendaStore } from '@/store/useAgendaStore'
+import { TimeSelect } from '@/components/ui/TimeSelect'
 
 /**
  * 모바일 키보드가 올라올 때 visualViewport를 감지하여
@@ -110,6 +111,7 @@ export function AddEventDialog({ children }: { children?: React.ReactNode }) {
   const [startTime, setStartTime] = useState('09:00')
   const [endDate, setEndDate] = useState(format(new Date(), 'yyyy-MM-dd'))
   const [endTime, setEndTime] = useState('10:00')
+  const prevStartRef = useRef<string>(startTime)
   
   const [selectedCategories, setSelectedCategories] = useState<string[]>([])
   const [customColor, setCustomColor] = useState<string | null>(null)
@@ -206,6 +208,37 @@ export function AddEventDialog({ children }: { children?: React.ReactNode }) {
       }
     }
   }, [isAddEventOpen, addEventDate, prefillEventData, editingEvent])
+
+  const handleStartTimeChange = (newStartTime: string) => {
+    if (isAllDay) {
+      setStartTime(newStartTime)
+      return
+    }
+    
+    const startObj = new Date(`${startDate}T${newStartTime}:00`)
+    const prevStartObj = new Date(`${startDate}T${startTime}:00`)
+    const endObj = new Date(`${endDate}T${endTime}:00`)
+    
+    const duration = endObj.getTime() - prevStartObj.getTime()
+    
+    setStartTime(newStartTime)
+    prevStartRef.current = newStartTime
+    
+    if (duration > 0 && duration < 24 * 60 * 60 * 1000 * 365) {
+      const newEndObj = new Date(startObj.getTime() + duration)
+      setEndDate(format(newEndObj, 'yyyy-MM-dd'))
+      setEndTime(format(newEndObj, 'HH:mm'))
+    }
+  }
+
+  const applyQuickDuration = (minutes: number) => {
+    const startObj = new Date(`${startDate}T${startTime}:00`)
+    const newEndObj = new Date(startObj.getTime() + minutes * 60 * 1000)
+    setEndDate(format(newEndObj, 'yyyy-MM-dd'))
+    setEndTime(format(newEndObj, 'HH:mm'))
+  }
+
+  const currentDurationMinutes = Math.round((new Date(`${endDate}T${endTime}:00`).getTime() - new Date(`${startDate}T${startTime}:00`).getTime()) / 60000)
 
   const toggleCategory = (id: string) => {
     setSelectedCategories(prev => {
@@ -448,12 +481,9 @@ export function AddEventDialog({ children }: { children?: React.ReactNode }) {
                   </div>
                   {!isAllDay && (
                     <div className="relative flex-1">
-                      <Clock className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
-                      <Input 
-                        type="time" 
+                      <TimeSelect 
                         value={startTime} 
-                        onChange={e => setStartTime(e.target.value)}
-                        className="pl-9 bg-white border-gray-200 focus-visible:ring-indigo-500"
+                        onChange={handleStartTimeChange}
                         required
                       />
                     </div>
@@ -477,12 +507,9 @@ export function AddEventDialog({ children }: { children?: React.ReactNode }) {
                   </div>
                   {!isAllDay && (
                     <div className="relative flex-1">
-                      <Clock className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
-                      <Input 
-                        type="time" 
+                      <TimeSelect 
                         value={endTime} 
-                        onChange={e => setEndTime(e.target.value)}
-                        className="pl-9 bg-white border-gray-200 focus-visible:ring-indigo-500"
+                        onChange={setEndTime}
                         required
                       />
                     </div>
@@ -490,6 +517,25 @@ export function AddEventDialog({ children }: { children?: React.ReactNode }) {
                 </div>
               </div>
             </div>
+
+            {!isAllDay && (
+              <div className="flex flex-wrap items-center gap-2 pt-1 pb-1">
+                {[30, 60, 90, 120].map(mins => (
+                  <button
+                    key={mins}
+                    type="button"
+                    onClick={() => applyQuickDuration(mins)}
+                    className={`px-3 py-1.5 rounded-full text-xs font-bold border transition-all ${
+                      currentDurationMinutes === mins
+                        ? 'bg-indigo-100 text-indigo-700 border-indigo-200'
+                        : 'bg-white text-gray-500 border-gray-200 hover:bg-gray-50 hover:text-gray-700'
+                    }`}
+                  >
+                    {mins >= 60 ? `${Math.floor(mins/60)}시간${mins%60>0 ? ` ${mins%60}분` : ''}` : `${mins}분`}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Categories block */}

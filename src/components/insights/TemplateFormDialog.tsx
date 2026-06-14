@@ -10,6 +10,7 @@ import { useCategories, useCreateCategory, useDeleteCategory } from '@/hooks/use
 import { useCreateTemplate, useUpdateTemplate, useCreateActivityFromTemplate } from '@/hooks/useInsightsQueries'
 import type { ActivityTemplate } from '@/app/actions/insights'
 import { format } from 'date-fns'
+import { TimeSelect } from '@/components/ui/TimeSelect'
 
 const COLOR_SWATCHES = [
   '#ef4444', '#f97316', '#eab308', '#22c55e', '#14b8a6', '#0ea5e9', '#3b82f6', '#6366f1',
@@ -278,10 +279,9 @@ export function TemplateFormDialog({ isOpen, onClose, editingTemplate, mode = 'm
                   </div>
                   <div className="flex-1 space-y-1.5">
                     <Label className="text-indigo-600 font-bold text-[13px] pl-1 flex items-center gap-1"><Clock className="w-3.5 h-3.5" />시작 시각</Label>
-                    <Input
-                      type="time"
+                    <TimeSelect
                       value={quickAddStartTime}
-                      onChange={e => setQuickAddStartTime(e.target.value)}
+                      onChange={setQuickAddStartTime}
                       className="bg-indigo-50/50 border-indigo-100 focus-visible:ring-indigo-500 rounded-xl h-11 text-[15px] font-semibold"
                       required
                     />
@@ -455,10 +455,9 @@ export function TemplateFormDialog({ isOpen, onClose, editingTemplate, mode = 'm
                 <div className="space-y-2">
                   <Label className="text-gray-600 font-medium text-sm pl-1">기본 시작 시각 (선택)</Label>
                   <div className="flex items-center gap-3">
-                    <Input
-                      type="time"
+                    <TimeSelect
                       value={defaultStartTime}
-                      onChange={e => setDefaultStartTime(e.target.value)}
+                      onChange={setDefaultStartTime}
                       className="flex-1 bg-white border-gray-200 focus-visible:ring-indigo-500 rounded-lg h-11"
                     />
                     {defaultStartTime && (
