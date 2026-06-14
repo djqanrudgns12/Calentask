@@ -23,7 +23,7 @@ import { MonthlyView } from '@/components/calendar/MonthlyView'
 import { WeeklyView } from '@/components/calendar/WeeklyView'
 import { ListView } from '@/components/calendar/ListView'
 import { SemesterView } from '@/components/calendar/SemesterView'
-import { AgendaView } from '@/components/agenda/AgendaView';
+
 import { SettingsView } from '@/components/settings/SettingsView';
 import { LinkLoungeView } from '@/components/link-lounge/LinkLoungeView';
 import { ArchiveStoreProvider } from '@/components/providers/ArchiveStoreProvider';
