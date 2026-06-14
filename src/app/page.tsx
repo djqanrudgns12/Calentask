@@ -24,7 +24,7 @@ import { WeeklyView } from '@/components/calendar/WeeklyView'
 import { ListView } from '@/components/calendar/ListView'
 import { SemesterView } from '@/components/calendar/SemesterView'
 
-import { SettingsView } from '@/components/settings/SettingsView';
+
 import { LinkLoungeView } from '@/components/link-lounge/LinkLoungeView';
 import { ArchiveStoreProvider } from '@/components/providers/ArchiveStoreProvider';
 import { DaySummarySheet } from '@/components/calendar/DaySummarySheet'
