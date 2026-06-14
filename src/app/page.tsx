@@ -23,6 +23,10 @@ import { MonthlyView } from '@/components/calendar/MonthlyView'
 import { WeeklyView } from '@/components/calendar/WeeklyView'
 import { ListView } from '@/components/calendar/ListView'
 import { SemesterView } from '@/components/calendar/SemesterView'
+import { AgendaView } from '@/components/agenda/AgendaView';
+import { SettingsView } from '@/components/settings/SettingsView';
+import { LinkLoungeView } from '@/components/link-lounge/LinkLoungeView';
+import { ArchiveStoreProvider } from '@/components/providers/ArchiveStoreProvider';
 import { DaySummarySheet } from '@/components/calendar/DaySummarySheet'
 import { EventDetailPopover } from '@/components/calendar/EventDetailPopover'
 import { NiceImportView } from '@/components/calendar/NiceImportView'
@@ -64,7 +68,7 @@ export default function CalendarPage() {
   const isHome = viewMode === 'home'
   const isCalendarMenuOpen = ['monthly', 'weekly', 'list', 'semester', 'nice_import', 'anniversary'].includes(viewMode)
   const isMyCalendarActive = ['monthly', 'weekly', 'list', 'semester'].includes(viewMode)
-  const isArchiveMenuOpen = ['archive_notes', 'archive_agenda'].includes(viewMode)
+  const isArchiveMenuOpen = ['archive_notes', 'archive_agenda', 'link_lounge'].includes(viewMode)
 
   const handleLogout = async () => {
     resetStore()
@@ -301,13 +305,12 @@ export default function CalendarPage() {
                   transition={{ duration: 0.3, ease: 'easeInOut' }}
                   className="overflow-hidden"
                 >
+                  <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3 px-3">아카이브 관리</h3>
                   <div className="flex flex-col space-y-1 mt-1 pb-3 mb-2 border-b border-slate-100/50">
                     <button 
                       onClick={() => setViewMode('archive_notes')}
-                      className={`w-[calc(100%-1.25rem)] ml-5 text-left px-4 py-2.5 rounded-xl text-sm transition-all duration-300 flex items-center gap-2.5 ${
-                        viewMode === 'archive_notes'
-                        ? 'bg-slate-100/80 text-slate-800 font-bold shadow-sm border border-slate-200/50' 
-                        : 'bg-transparent text-slate-400 hover:bg-white hover:shadow-sm hover:text-slate-700 border border-transparent'
+                      className={`flex items-center gap-3 w-full px-3 py-2.5 rounded-xl transition-all font-medium text-sm group ${
+                        viewMode === 'archive_notes' ? 'bg-slate-100 text-slate-800 font-bold shadow-sm' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-700'
                       }`}
                     >
                       <NotebookPen className={`w-4 h-4 ${viewMode === 'archive_notes' ? 'text-slate-600' : 'text-slate-300'}`} />
@@ -315,14 +318,22 @@ export default function CalendarPage() {
                     </button>
 
                     <button 
-                      onClick={() => setViewMode('archive_agenda')}
-                      className={`w-[calc(100%-1.25rem)] ml-5 text-left px-4 py-2.5 rounded-xl text-sm transition-all duration-300 flex items-center gap-2.5 ${
-                        viewMode === 'archive_agenda'
-                        ? 'bg-indigo-50/80 text-indigo-700 font-bold shadow-sm border border-indigo-100/50' 
-                        : 'bg-transparent text-slate-400 hover:bg-white hover:shadow-sm hover:text-slate-700 border border-transparent'
+                      onClick={() => setViewMode('link_lounge')}
+                      className={`flex items-center gap-3 w-full px-3 py-2.5 rounded-xl transition-all font-medium text-sm group ${
+                        viewMode === 'link_lounge' ? 'bg-indigo-50 text-indigo-700 font-bold shadow-sm ring-1 ring-indigo-500/20' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-700'
                       }`}
                     >
-                      <Sparkles className={`w-4 h-4 ${viewMode === 'archive_agenda' ? 'text-indigo-500' : 'text-slate-300'}`} />
+                      <Bookmark className={`w-4 h-4 ${viewMode === 'link_lounge' ? 'text-indigo-600' : 'text-slate-300'}`} />
+                      링크 라운지
+                    </button>
+
+                    <button 
+                      onClick={() => setViewMode('archive_agenda')}
+                      className={`flex items-center gap-3 w-full px-3 py-2.5 rounded-xl transition-all font-medium text-sm group ${
+                        viewMode === 'archive_agenda' ? 'bg-indigo-50 text-indigo-700 font-bold shadow-sm ring-1 ring-indigo-500/20' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-700'
+                      }`}
+                    >
+                      <Sparkles className={`w-4 h-4 ${viewMode === 'archive_agenda' ? 'text-indigo-600' : 'text-slate-300'}`} />
                       오늘의 할 일 (아젠다)
                     </button>
                   </div>
@@ -416,6 +427,11 @@ export default function CalendarPage() {
             {viewMode === 'archive_notes' && (
               <div className="h-full bg-[#FAFAFA] rounded-xl md:rounded-3xl overflow-hidden shadow-sm border border-slate-100">
                 <ArchiveNotesView />
+              </div>
+            )}
+            {viewMode === 'link_lounge' && (
+              <div className="h-full bg-[#FAFAFA] rounded-xl md:rounded-3xl overflow-hidden shadow-sm border border-slate-100">
+                <LinkLoungeView />
               </div>
             )}
             {viewMode === 'archive_agenda' && (
