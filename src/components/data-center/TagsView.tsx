@@ -39,7 +39,7 @@ export function TagsView() {
       <div className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
         
         {/* 상단 스마트 인사이트 위젯 */}
-        <SmartInsightWidget categories={categories} getUsageCount={getUsageCount} />
+        <SmartInsightWidget categories={categories || null} getUsageCount={getUsageCount} />
 
         <div className="flex flex-col xl:flex-row gap-6 w-full max-w-[1600px] mx-auto h-[calc(100%-100px)]">
           
