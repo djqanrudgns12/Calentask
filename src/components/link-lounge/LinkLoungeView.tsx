@@ -1,30 +1,37 @@
 'use client'
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import { useLinkLoungeStore, Bookmark } from '@/store/useLinkLoungeStore';
 import { AddBookmarkModal } from './components/AddBookmarkModal';
-import { Plus, Search, ChevronDown, LayoutList, LayoutGrid, Maximize2, ExternalLink, Edit2, Trash2, Bookmark as BookmarkIcon, AlignLeft } from 'lucide-react';
+import { ImportPreviewModal } from './components/ImportPreviewModal';
+import { parseChromeBookmarks, downloadBookmarksFile, type ParsedBookmark } from '@/lib/chromeBookmarkUtils';
+import { Plus, Search, ChevronDown, LayoutList, LayoutGrid, Maximize2, ExternalLink, Edit2, Trash2, Bookmark as BookmarkIcon, AlignLeft, FolderOpen, Upload, Download } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export function LinkLoungeView() {
-  const { bookmarks, viewMode, setViewMode, addBookmark, updateBookmark, deleteBookmark } = useLinkLoungeStore();
+  const { bookmarks, viewMode, setViewMode, addBookmark, updateBookmark, deleteBookmark, importBookmarks } = useLinkLoungeStore();
   
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedTag, setSelectedTag] = useState<string | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<Bookmark | null>(null);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   
+  // 가져오기/내보내기 상태
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isImportPreviewOpen, setIsImportPreviewOpen] = useState(false);
+  const [parsedBookmarks, setParsedBookmarks] = useState<ParsedBookmark[]>([]);
+  
   // Focus mode specific state
   const [focusedItemId, setFocusedItemId] = useState<string | null>(null);
 
-  // Extract all unique tags
-  const allTags = useMemo(() => {
-    const tags = new Set<string>();
+  // 모든 고유 카테고리 추출 (폴더 개념)
+  const allCategories = useMemo(() => {
+    const cats = new Set<string>();
     bookmarks.forEach(item => {
-      (item.tags || []).forEach((t: string) => tags.add(t));
+      if (item.category) cats.add(item.category);
     });
-    return Array.from(tags).sort();
+    return Array.from(cats).sort();
   }, [bookmarks]);
 
   const filteredItems = useMemo(() => {
@@ -32,10 +39,10 @@ export function LinkLoungeView() {
       const matchesSearch = item.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
                            (item.description || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
                            (item.url || '').toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesTag = selectedTag ? (item.tags || []).includes(selectedTag) : true;
-      return matchesSearch && matchesTag;
+      const matchesCategory = selectedCategory ? item.category === selectedCategory : true;
+      return matchesSearch && matchesCategory;
     });
-  }, [bookmarks, searchQuery, selectedTag]);
+  }, [bookmarks, searchQuery, selectedCategory]);
 
   const handleSaveBookmark = (data: any) => {
     if (editingItem) {
@@ -44,7 +51,7 @@ export function LinkLoungeView() {
         url: data.url,
         description: data.description,
         image: data.image,
-        tags: data.tags
+        category: data.category
       });
     } else {
       addBookmark({
@@ -52,7 +59,8 @@ export function LinkLoungeView() {
         url: data.url,
         description: data.description,
         image: data.image,
-        tags: data.tags
+        category: data.category,
+        icon: ''
       });
     }
   };
@@ -79,6 +87,46 @@ export function LinkLoungeView() {
   const handleSetViewMode = (mode: 'lineup' | 'showcase' | 'focus') => {
     setViewMode(mode);
     setIsDropdownOpen(false);
+  };
+
+  // 기존 URL 집합 (중복 판별용)
+  const existingUrls = useMemo(() => new Set(bookmarks.map(b => b.url)), [bookmarks]);
+
+  // 크롬 북마크 HTML 파일 선택 핸들러
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const html = ev.target?.result as string;
+      const parsed = parseChromeBookmarks(html);
+      setParsedBookmarks(parsed);
+      setIsImportPreviewOpen(true);
+    };
+    reader.readAsText(file);
+
+    // 같은 파일을 다시 선택해도 onChange가 발동하도록 초기화
+    e.target.value = '';
+  };
+
+  // 미리보기에서 확인 → 선택된 항목을 스토어에 벌크 추가
+  const handleImportConfirm = (selectedItems: ParsedBookmark[]) => {
+    const itemsToImport = selectedItems.map(item => ({
+      url: item.url,
+      title: item.title,
+      description: '',
+      image: '',
+      category: item.category,
+      icon: item.icon,
+    }));
+    importBookmarks(itemsToImport);
+  };
+
+  // 내보내기 핸들러
+  const handleExport = () => {
+    if (bookmarks.length === 0) return;
+    downloadBookmarksFile(bookmarks);
   };
 
   return (
@@ -157,32 +205,63 @@ export function LinkLoungeView() {
               <Plus className="w-4 h-4" />
               <span className="hidden sm:inline">새 북마크</span>
             </button>
+
+            {/* 북마크 가져오기 버튼 */}
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              className="flex items-center gap-1.5 px-3 md:px-4 py-2.5 bg-card border border-border text-foreground font-bold rounded-xl hover:bg-muted transition-colors text-sm whitespace-nowrap shadow-sm"
+              title="크롬 북마크 가져오기"
+            >
+              <Upload className="w-4 h-4 text-emerald-500" />
+              <span className="hidden lg:inline">가져오기</span>
+            </button>
+
+            {/* 북마크 내보내기 버튼 */}
+            <button
+              onClick={handleExport}
+              disabled={bookmarks.length === 0}
+              className="flex items-center gap-1.5 px-3 md:px-4 py-2.5 bg-card border border-border text-foreground font-bold rounded-xl hover:bg-muted transition-colors text-sm whitespace-nowrap shadow-sm disabled:opacity-40 disabled:cursor-not-allowed"
+              title="크롬 북마크 내보내기"
+            >
+              <Download className="w-4 h-4 text-blue-500" />
+              <span className="hidden lg:inline">내보내기</span>
+            </button>
+
+            {/* 숨겨진 파일 input — 가져오기 버튼 클릭 시 트리거 */}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".html"
+              onChange={handleFileSelect}
+              className="hidden"
+            />
           </div>
         </div>
 
-        {/* Tags Filter Pill Navigation */}
+        {/* 카테고리 필터 필(Pill) 네비게이션 */}
         <div className="flex items-center gap-2 overflow-x-auto hide-scrollbar pb-1 pt-1">
           <button 
-            onClick={() => setSelectedTag(null)}
+            onClick={() => setSelectedCategory(null)}
             className={`px-4 py-1.5 rounded-full text-sm font-bold whitespace-nowrap transition-all ${
-              selectedTag === null 
+              selectedCategory === null 
               ? 'bg-slate-800 text-white shadow-md' 
               : 'bg-card text-foreground hover:bg-muted border border-border/60'
             }`}
           >
             전체 보기
           </button>
-          {allTags.map(tag => (
+          {allCategories.map(cat => (
             <button 
-              key={tag}
-              onClick={() => setSelectedTag(tag)}
-              className={`px-4 py-1.5 rounded-full text-sm font-bold whitespace-nowrap transition-all ${
-                selectedTag === tag 
+              key={cat}
+              onClick={() => setSelectedCategory(cat)}
+              className={`px-4 py-1.5 rounded-full text-sm font-bold whitespace-nowrap transition-all flex items-center gap-1.5 ${
+                selectedCategory === cat 
                 ? 'bg-indigo-600 text-white shadow-md' 
                 : 'bg-card text-foreground hover:bg-muted border border-border/60'
               }`}
             >
-              {tag}
+              <FolderOpen className="w-3.5 h-3.5" />
+              {cat}
             </button>
           ))}
         </div>
@@ -233,11 +312,11 @@ export function LinkLoungeView() {
                       <p className="text-xs md:text-sm text-muted-foreground truncate mb-1">{item.url}</p>
                       <p className="text-xs md:text-sm text-foreground font-medium truncate mb-2">{item.description}</p>
                       
-                      <div className="flex flex-wrap gap-1.5">
-                        {(item.tags || []).slice(0, 4).map((tag: string) => (
-                          <span key={tag} className="px-2 py-0.5 bg-muted text-foreground text-[10px] md:text-xs font-bold rounded-md">{tag}</span>
-                        ))}
-                      </div>
+                      {item.category && (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-muted text-foreground text-[10px] md:text-xs font-bold rounded-md">
+                          <FolderOpen className="w-3 h-3" />{item.category}
+                        </span>
+                      )}
                     </div>
                   </div>
                 ))}
@@ -267,9 +346,11 @@ export function LinkLoungeView() {
                       <p className="text-xs text-muted-foreground font-medium line-clamp-2 mb-3 flex-1">{item.description}</p>
                       
                       <div className="flex flex-wrap gap-1.5 mt-auto pt-2 border-t border-border">
-                        {(item.tags || []).slice(0, 3).map((tag: string) => (
-                          <span key={tag} className="px-2 py-1 bg-muted text-foreground text-[10px] font-bold rounded-lg border border-border/60">{tag}</span>
-                        ))}
+                        {item.category && (
+                          <span className="inline-flex items-center gap-1 px-2 py-1 bg-muted text-foreground text-[10px] font-bold rounded-lg border border-border/60">
+                            <FolderOpen className="w-3 h-3" />{item.category}
+                          </span>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -340,9 +421,11 @@ export function LinkLoungeView() {
                           <div className="p-8 flex flex-col gap-6">
                             <div>
                               <div className="flex flex-wrap gap-2 mb-4">
-                                {(item.tags || []).map((tag: string) => (
-                                  <span key={tag} className="px-3 py-1.5 bg-indigo-50 text-indigo-700 text-xs font-bold rounded-lg border border-indigo-100">{tag}</span>
-                                ))}
+                                {item.category && (
+                                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 text-indigo-700 text-xs font-bold rounded-lg border border-indigo-100">
+                                    <FolderOpen className="w-3.5 h-3.5" />{item.category}
+                                  </span>
+                                )}
                               </div>
                               <h2 className="text-2xl md:text-3xl font-extrabold text-foreground mb-2">{item.title}</h2>
                               <a href={item.url} target="_blank" rel="noopener noreferrer" className="text-sm text-indigo-500 hover:text-indigo-600 hover:underline font-medium break-all">
@@ -389,7 +472,15 @@ export function LinkLoungeView() {
         onClose={() => setIsModalOpen(false)} 
         onSave={handleSaveBookmark}
         initialData={editingItem}
-        existingTags={allTags}
+        existingCategories={allCategories}
+      />
+
+      <ImportPreviewModal
+        isOpen={isImportPreviewOpen}
+        onClose={() => setIsImportPreviewOpen(false)}
+        onConfirm={handleImportConfirm}
+        parsedBookmarks={parsedBookmarks}
+        existingUrls={existingUrls}
       />
     </div>
   );

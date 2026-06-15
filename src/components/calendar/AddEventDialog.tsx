@@ -256,28 +256,28 @@ export function AddEventDialog({ children }: { children?: React.ReactNode }) {
               </button>
             </div>
 
-            {/* 시작 */}
-            <div className="flex items-center gap-3 py-3" style={{ borderBottom: '1px solid rgba(0,0,0,0.04)' }}>
-              <span className={`${LABEL} min-w-[70px]`}><Play className="w-4 h-4 mr-1.5 text-muted-foreground"/>시작</span>
-              <div className="flex-1 min-w-0 flex items-center gap-2 justify-end">
+            {/* 시작 — 모바일에서 라벨/패딩 축소, TimeSelect 너비 확대로 한국어 시간 표기(오전/오후) 잘림 방지 */}
+            <div className="flex items-center gap-2 md:gap-3 py-3" style={{ borderBottom: '1px solid rgba(0,0,0,0.04)' }}>
+              <span className={`${LABEL} min-w-[52px] md:min-w-[70px]`}><Play className="w-4 h-4 mr-1 md:mr-1.5 text-muted-foreground"/>시작</span>
+              <div className="flex-1 min-w-0 flex items-center gap-1.5 md:gap-2 justify-end">
                 <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} required
-                  className="bg-muted/60 hover:bg-muted text-foreground font-medium text-[13px] rounded-xl px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 transition-colors min-w-0" />
+                  className="bg-muted/60 hover:bg-muted text-foreground font-medium text-[13px] rounded-xl px-2 md:px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 transition-colors min-w-0" />
                 {!isAllDay && (
-                  <div className="w-[85px] shrink-0">
+                  <div className="w-[105px] shrink-0">
                     <TimeSelect value={startTime} onChange={handleStartTimeChange} required className="!h-[34px] !text-[13px] !rounded-xl !bg-muted/60 hover:!bg-muted !border-0 transition-colors" />
                   </div>
                 )}
               </div>
             </div>
 
-            {/* 종료 */}
-            <div className={`flex items-center gap-3 py-3 ${!isAllDay ? '' : 'opacity-40 pointer-events-none'}`} style={{ borderBottom: !isAllDay ? '1px solid rgba(0,0,0,0.04)' : 'none' }}>
-              <span className={`${LABEL} min-w-[70px]`}><Square className="w-4 h-4 mr-1.5 text-muted-foreground"/>종료</span>
-              <div className="flex-1 min-w-0 flex items-center gap-2 justify-end">
+            {/* 종료 — 시작과 동일한 모바일 최적화 적용 */}
+            <div className={`flex items-center gap-2 md:gap-3 py-3 ${!isAllDay ? '' : 'opacity-40 pointer-events-none'}`} style={{ borderBottom: !isAllDay ? '1px solid rgba(0,0,0,0.04)' : 'none' }}>
+              <span className={`${LABEL} min-w-[52px] md:min-w-[70px]`}><Square className="w-4 h-4 mr-1 md:mr-1.5 text-muted-foreground"/>종료</span>
+              <div className="flex-1 min-w-0 flex items-center gap-1.5 md:gap-2 justify-end">
                 <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} required={!isAllDay} disabled={isAllDay}
-                  className="bg-muted/60 hover:bg-muted text-foreground font-medium text-[13px] rounded-xl px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 disabled:opacity-50 transition-colors min-w-0" />
+                  className="bg-muted/60 hover:bg-muted text-foreground font-medium text-[13px] rounded-xl px-2 md:px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 disabled:opacity-50 transition-colors min-w-0" />
                 {!isAllDay && (
-                  <div className="w-[85px] shrink-0">
+                  <div className="w-[105px] shrink-0">
                     <TimeSelect value={endTime} onChange={setEndTime} required className="!h-[34px] !text-[13px] !rounded-xl !bg-muted/60 hover:!bg-muted !border-0 transition-colors" />
                   </div>
                 )}
@@ -286,8 +286,8 @@ export function AddEventDialog({ children }: { children?: React.ReactNode }) {
 
             {/* 소요시간 */}
             {!isAllDay && (
-              <div className="flex items-center gap-3 pt-3">
-                <span className={`${LABEL} min-w-[80px]`}><Clock className="w-4 h-4 mr-1.5 text-muted-foreground"/>소요시간</span>
+              <div className="flex items-center gap-2 md:gap-3 pt-3">
+                <span className={`${LABEL} min-w-[66px] md:min-w-[80px]`}><Clock className="w-4 h-4 mr-1 md:mr-1.5 text-muted-foreground"/>소요시간</span>
                 <div className="flex-1 min-w-0 flex justify-end">
                   <div className="flex bg-black/[0.03] rounded-xl p-[3px]">
                     {[30, 60, 90, 120].map(m => (

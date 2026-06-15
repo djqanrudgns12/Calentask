@@ -40,13 +40,14 @@ export default function InsightsClient() {
               <button
                 key={tab.id}
                 onClick={() => startTransition(() => setActiveTab(tab.id))}
-                className={`flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl text-[13px] font-bold transition-all whitespace-nowrap ${
+                className={`flex items-center gap-1 md:gap-1.5 px-2 md:px-3.5 py-2 md:py-2.5 rounded-xl text-[11px] md:text-[13px] font-bold transition-all whitespace-nowrap ${
                   isActive
                     ? 'bg-gray-900 text-white shadow-md'
                     : 'text-muted-foreground hover:text-foreground hover:bg-muted'
                 }`}
               >
-                <Icon size={15} className={isActive ? 'text-muted-foreground/50' : 'text-muted-foreground'} />
+                {/* 모바일: 13px, 데스크톱: 15px — 4개 탭이 좁은 화면에도 잘림 없이 수용되도록 축소 */}
+                <Icon size={15} className={`w-[13px] h-[13px] md:w-[15px] md:h-[15px] shrink-0 ${isActive ? 'text-muted-foreground/50' : 'text-muted-foreground'}`} />
                 {tab.label}
               </button>
             );

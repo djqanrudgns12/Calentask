@@ -2,34 +2,34 @@
 
 import React, { useState, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Bookmark as BookmarkIcon, ExternalLink, ArrowRight, Link, Copy, Check } from 'lucide-react'
+import { Bookmark as BookmarkIcon, ExternalLink, ArrowRight, Link, Copy, Check, FolderOpen } from 'lucide-react'
 import { useLinkLoungeStore } from '@/store/useLinkLoungeStore'
 import { useCalendarStore } from '@/store/useCalendarStore'
 
 export function LinkLoungeCard() {
   const { bookmarks } = useLinkLoungeStore()
   const { setViewMode } = useCalendarStore()
-  const [selectedTag, setSelectedTag] = useState<string>('전체')
+  const [selectedCategory, setSelectedCategory] = useState<string>('전체')
   const [copiedId, setCopiedId] = useState<string | null>(null)
 
-  // 추출된 모든 고유 태그들
-  const allTags = useMemo(() => {
-    const tags = new Set<string>()
+  // 추출된 모든 고유 카테고리들 (폴더 개념)
+  const allCategories = useMemo(() => {
+    const cats = new Set<string>()
     bookmarks.forEach(bm => {
-      bm.tags.forEach(tag => tags.add(tag))
+      if (bm.category) cats.add(bm.category)
     })
-    return ['전체', ...Array.from(tags)]
+    return ['전체', ...Array.from(cats)]
   }, [bookmarks])
 
   // 필터링 및 정렬된 북마크
   const displayedBookmarks = useMemo(() => {
     let filtered = bookmarks
-    if (selectedTag !== '전체') {
-      filtered = bookmarks.filter(bm => bm.tags.includes(selectedTag))
+    if (selectedCategory !== '전체') {
+      filtered = bookmarks.filter(bm => bm.category === selectedCategory)
     }
     // 최신순 정렬
     return [...filtered].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-  }, [bookmarks, selectedTag])
+  }, [bookmarks, selectedCategory])
 
   const handleCopyUrl = async (e: React.MouseEvent, id: string, url: string) => {
     e.stopPropagation()
@@ -71,20 +71,21 @@ export function LinkLoungeCard() {
           </button>
         </div>
 
-        {/* 태그 필터 영역 */}
-        {allTags.length > 1 && (
+        {/* 카테고리 필터 영역 */}
+        {allCategories.length > 1 && (
           <div className="mt-4 flex gap-2 overflow-x-auto hide-scrollbar pb-1">
-            {allTags.map(tag => (
+            {allCategories.map(cat => (
               <button
-                key={tag}
-                onClick={() => setSelectedTag(tag)}
-                className={`shrink-0 px-3 py-1 rounded-full text-[11px] font-bold transition-all ${
-                  selectedTag === tag
+                key={cat}
+                onClick={() => setSelectedCategory(cat)}
+                className={`shrink-0 px-3 py-1 rounded-full text-[11px] font-bold transition-all flex items-center gap-1 ${
+                  selectedCategory === cat
                     ? 'bg-emerald-500 text-white shadow-md shadow-emerald-500/20'
                     : 'bg-muted/80 text-muted-foreground hover:bg-accent/80'
                 }`}
               >
-                {tag}
+                {cat !== '전체' && <FolderOpen className="w-3 h-3" />}
+                {cat}
               </button>
             ))}
           </div>
@@ -99,7 +100,7 @@ export function LinkLoungeCard() {
               <Link className="w-5 h-5 text-emerald-300" />
             </div>
             <p className="text-sm font-bold text-muted-foreground">
-              {selectedTag === '전체' ? '아직 저장된 링크가 없어요' : '해당 태그의 링크가 없어요'}
+                {selectedCategory === '전체' ? '아직 저장된 링크가 없어요' : '해당 카테고리의 링크가 없어요'}
             </p>
           </div>
         ) : (
@@ -134,17 +135,13 @@ export function LinkLoungeCard() {
                     </p>
                   </div>
 
-                  {/* 호버 시 액션 버튼들 & 평상시 태그 */}
+                  {/* 호버 시 액션 버튼들 & 평상시 카테고리 */}
                   <div className="flex items-center shrink-0">
                     <div className="flex gap-1.5 opacity-100 group-hover:hidden pr-1 transition-all">
-                      {bm.tags.slice(0, 1).map(tag => (
-                        <span key={tag} className="px-2 py-0.5 rounded text-[10px] font-bold bg-muted text-muted-foreground">
-                          {tag}
-                        </span>
-                      ))}
-                      {bm.tags.length > 1 && (
-                        <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-muted text-muted-foreground">
-                          +{bm.tags.length - 1}
+                      {bm.category && (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-muted text-muted-foreground">
+                          <FolderOpen className="w-3 h-3" />
+                          {bm.category}
                         </span>
                       )}
                     </div>

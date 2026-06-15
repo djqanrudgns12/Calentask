@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { useArchiveStore } from '@/store/useArchiveStore';
 import { PinPadOverlay } from '@/components/archive/PinPadOverlay';
 import { DocumentBoard } from '@/components/archive/boards/DocumentBoard';
@@ -11,13 +11,194 @@ import { MediaBoard } from '@/components/archive/boards/MediaBoard';
 import { JournalBoard } from '@/components/archive/boards/JournalBoard';
 import { GraphBoard } from '@/components/archive/boards/GraphBoard';
 import { CalendarBoard } from '@/components/archive/boards/CalendarBoard';
-import { Plus, LayoutGrid, LayoutList, Grip, Image as ImageIcon, Table, Columns, Clock, FolderOpen, Video, FileText, Network, Calendar, Trash2, Bookmark } from 'lucide-react';
+import { Plus, LayoutGrid, LayoutList, Grip, GripVertical, Image as ImageIcon, Table, Columns, Clock, FolderOpen, Video, FileText, Network, Calendar, Trash2, Bookmark } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { AddNoteDialog } from './AddNoteDialog';
 import { CommandPalette } from './CommandPalette';
-import { motion, AnimatePresence, Reorder } from 'framer-motion';
+import { motion, AnimatePresence, Reorder, useDragControls } from 'framer-motion';
 import { useHotkeys } from 'react-hotkeys-hook';
-import { useEffect } from 'react';
+
+// ============================================================
+// DraggableTab: 모바일 터치 스크롤 / 드래그 충돌 해소를 위한 개별 탭 컴포넌트
+// - useDragControls 훅을 탭마다 독립적으로 사용하기 위해 분리
+// - 모바일: 드래그 핸들(≡)을 눌러야만 드래그 발동 → 나머지 영역은 스크롤 가능
+// - 데스크톱: 탭 전체 영역 드래그로 기존 UX 유지
+// ============================================================
+function DraggableTab({
+  tab,
+  isActive,
+  isEditing,
+  editingTabName,
+  setEditingTabName,
+  setEditingTabId,
+  setActiveTabId,
+  updateTab,
+  deleteTab,
+  getIconForType,
+}: {
+  tab: any;
+  isActive: boolean;
+  isEditing: boolean;
+  editingTabName: string;
+  setEditingTabName: (name: string) => void;
+  setEditingTabId: (id: string | null) => void;
+  setActiveTabId: (id: string) => void;
+  updateTab: (id: string, updates: any) => void;
+  deleteTab: (id: string) => void;
+  getIconForType: (type: string) => any;
+}) {
+  // 각 탭마다 독립적인 드래그 컨트롤러 — 모바일에서 핸들 방식 드래그를 가능하게 함
+  const dragControls = useDragControls();
+  const Icon = getIconForType(tab.board_type);
+
+  return (
+    <Reorder.Item
+      as="div"
+      key={tab.id}
+      value={tab}
+      dragMomentum={false}
+      dragListener={false}       /* 기본 터치 드래그 비활성화 — 스크롤과 충돌 방지 */
+      dragControls={dragControls} /* 수동 제어: 핸들 또는 데스크톱 전체 영역에서만 발동 */
+      className="relative group flex items-center shrink-0"
+      data-tab-id={tab.id}       /* scrollIntoView 타겟용 식별자 */
+    >
+      {/* 모바일 전용 드래그 핸들 — md 이상에서는 숨김 */}
+      <button
+        className="md:hidden flex items-center justify-center w-6 h-9 text-muted-foreground/60 active:text-indigo-500 touch-none cursor-grab active:cursor-grabbing shrink-0 -mr-1"
+        onPointerDown={(e) => {
+          // 터치 이벤트를 드래그 컨트롤러에 전달하여 탭 위치 이동 시작
+          e.preventDefault();
+          dragControls.start(e);
+        }}
+        aria-label="탭 순서 변경"
+      >
+        <GripVertical className="w-3.5 h-3.5" />
+      </button>
+
+      {/* 데스크톱 전용: 탭 전체 영역에서 드래그 발동 (기존 UX 유지) */}
+      <div
+        className="hidden md:block"
+        onPointerDown={(e) => dragControls.start(e)}
+        style={{ cursor: 'grab' }}
+      >
+        <button
+          onClick={() => !isEditing && setActiveTabId(tab.id)}
+          onDoubleClick={() => {
+            setEditingTabId(tab.id);
+            setEditingTabName(tab.name);
+          }}
+          className={cn(
+            "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all whitespace-nowrap",
+            isActive
+              ? "bg-card text-indigo-600 shadow-sm border border-border"
+              : "text-muted-foreground hover:bg-card/60 hover:text-foreground border border-transparent"
+          )}
+        >
+          <Icon className={cn("w-4 h-4 shrink-0", isActive ? "text-indigo-600" : "text-muted-foreground")} />
+
+          {isEditing ? (
+            <input
+              autoFocus
+              value={editingTabName}
+              onChange={(e) => setEditingTabName(e.target.value)}
+              onBlur={() => {
+                if (editingTabName.trim() && editingTabName !== tab.name) {
+                  updateTab(tab.id, { name: editingTabName.trim() });
+                }
+                setEditingTabId(null);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  if (editingTabName.trim() && editingTabName !== tab.name) {
+                    updateTab(tab.id, { name: editingTabName.trim() });
+                  }
+                  setEditingTabId(null);
+                } else if (e.key === 'Escape') {
+                  setEditingTabId(null);
+                }
+              }}
+              className="w-24 bg-indigo-50/50 border-none outline-none focus:ring-2 focus:ring-indigo-500/30 rounded px-1 -mx-1 text-indigo-700"
+            />
+          ) : (
+            <span className="select-none">{tab.name || '제목 없음'}</span>
+          )}
+        </button>
+      </div>
+
+      {/* 모바일 전용: 탭 클릭 영역 (드래그 핸들과 분리) */}
+      <button
+        className="md:hidden flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-bold transition-all whitespace-nowrap"
+        onClick={() => !isEditing && setActiveTabId(tab.id)}
+        onDoubleClick={() => {
+          setEditingTabId(tab.id);
+          setEditingTabName(tab.name);
+        }}
+      >
+        <span className={cn(
+          "flex items-center gap-2",
+          isActive
+            ? "text-indigo-600"
+            : "text-muted-foreground"
+        )}>
+          <Icon className={cn("w-4 h-4 shrink-0", isActive ? "text-indigo-600" : "text-muted-foreground")} />
+
+          {isEditing ? (
+            <input
+              autoFocus
+              value={editingTabName}
+              onChange={(e) => setEditingTabName(e.target.value)}
+              onBlur={() => {
+                if (editingTabName.trim() && editingTabName !== tab.name) {
+                  updateTab(tab.id, { name: editingTabName.trim() });
+                }
+                setEditingTabId(null);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  if (editingTabName.trim() && editingTabName !== tab.name) {
+                    updateTab(tab.id, { name: editingTabName.trim() });
+                  }
+                  setEditingTabId(null);
+                } else if (e.key === 'Escape') {
+                  setEditingTabId(null);
+                }
+              }}
+              className="w-24 bg-indigo-50/50 border-none outline-none focus:ring-2 focus:ring-indigo-500/30 rounded px-1 -mx-1 text-indigo-700"
+            />
+          ) : (
+            <span className="select-none">{tab.name || '제목 없음'}</span>
+          )}
+        </span>
+      </button>
+
+      {/* 활성 탭 하단 인디케이터 — 모바일에서도 현재 탭 시각 확인 */}
+      {isActive && (
+        <motion.div
+          layoutId="active-tab-indicator"
+          className="absolute bottom-0 left-2 right-2 h-0.5 bg-indigo-500 rounded-full"
+          transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+        />
+      )}
+
+      {/* 삭제 버튼 — 데스크톱: 호버 시 표시, 모바일: 항상 숨김(길게 눌러 삭제는 별도 구현 가능) */}
+      {!isEditing && (
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            if (confirm(`'${tab.name}' 노트를 정말 삭제하시겠습니까?`)) {
+              deleteTab(tab.id);
+            }
+          }}
+          className="absolute right-1 opacity-0 group-hover:opacity-100 p-1 text-muted-foreground hover:text-rose-500 transition-opacity bg-card/80 backdrop-blur rounded hidden md:block"
+        >
+          <Trash2 className="w-3.5 h-3.5" />
+        </button>
+      )}
+    </Reorder.Item>
+  );
+}
 
 export function ArchiveNotesView() {
   const { tabs, activeTabId, setActiveTabId, setCommandPaletteOpen, fetchTabs, fetchItems, updateTab, deleteTab, reorderTabs, isPrefetched, focusModeTabId, flushPendingUpdates } = useArchiveStore();
@@ -26,6 +207,8 @@ export function ArchiveNotesView() {
   const [editingTabId, setEditingTabId] = useState<string | null>(null);
   const [editingTabName, setEditingTabName] = useState('');
   const boardContainerRef = useRef<HTMLDivElement>(null);
+  // 탭 스크롤 컨테이너 ref — activeTabId 변경 시 해당 탭으로 자동 스크롤
+  const tabContainerRef = useRef<HTMLDivElement>(null);
 
   const isFocusMode = focusModeTabId !== null && focusModeTabId === activeTabId;
 
@@ -40,6 +223,17 @@ export function ArchiveNotesView() {
       flushPendingUpdates().then(() => {
         // 전략 2: fetchItems 내부에서 Stale cache flash 방지 및 백그라운드 동기화 처리
         fetchItems(activeTabId);
+      });
+
+      // 보이지 않는 탭으로 전환 시, 해당 탭이 화면 내로 스크롤되도록 자동 이동
+      // (커맨드 팔레트나 키보드 단축키로 전환해도 정확히 보이는 위치로 이동)
+      requestAnimationFrame(() => {
+        if (tabContainerRef.current) {
+          const activeEl = tabContainerRef.current.querySelector(
+            `[data-tab-id="${activeTabId}"]`
+          );
+          activeEl?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+        }
       });
     }
   }, [activeTabId]);
@@ -74,7 +268,10 @@ export function ArchiveNotesView() {
           <div className="border-b border-border bg-card/50 backdrop-blur-md sticky top-0 z-10 shrink-0">
             {/* 탭 네비게이션 영역 및 우측 액션 버튼 */}
             <div className="px-4 md:px-6 lg:px-8 py-2.5 flex items-center justify-between w-full gap-4">
-              <div className="flex-1 min-w-0 flex items-center overflow-x-auto hide-scrollbar">
+              <div
+                ref={tabContainerRef}
+                className="flex-1 min-w-0 flex items-center overflow-x-auto hide-scrollbar overscroll-x-contain touch-pan-x"
+              >
                 {!isPrefetched ? (
                   <div className="flex items-center space-x-2">
                     {Array.from({ length: 4 }).map((_, i) => (
@@ -87,81 +284,23 @@ export function ArchiveNotesView() {
                     axis="x" 
                     values={tabs} 
                     onReorder={reorderTabs} 
-                    className="flex items-center space-x-2 shrink-0"
+                    className="flex items-center space-x-1 md:space-x-2 shrink-0"
                   >
-                    {tabs.map((tab: any) => {
-                      const Icon = getIconForType(tab.board_type);
-                      const isActive = activeTabId === tab.id;
-                      const isEditing = editingTabId === tab.id;
-                      
-                      return (
-                        <Reorder.Item 
-                          as="div"
-                          key={tab.id} 
-                          value={tab}
-                          dragMomentum={false}
-                          className="relative group flex items-center shrink-0"
-                        >
-                          <button
-                            onClick={() => !isEditing && setActiveTabId(tab.id)}
-                            onDoubleClick={() => {
-                              setEditingTabId(tab.id);
-                              setEditingTabName(tab.name);
-                            }}
-                            className={cn(
-                              "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all whitespace-nowrap",
-                              isActive 
-                                ? "bg-card text-indigo-600 shadow-sm border border-border" 
-                                : "text-muted-foreground hover:bg-card/60 hover:text-foreground border border-transparent"
-                            )}
-                          >
-                            <Icon className={cn("w-4 h-4 shrink-0", isActive ? "text-indigo-600" : "text-muted-foreground")} />
-                            
-                            {isEditing ? (
-                              <input 
-                                autoFocus
-                                value={editingTabName}
-                                onChange={(e) => setEditingTabName(e.target.value)}
-                                onBlur={() => {
-                                  if (editingTabName.trim() && editingTabName !== tab.name) {
-                                    updateTab(tab.id, { name: editingTabName.trim() });
-                                  }
-                                  setEditingTabId(null);
-                                }}
-                                onKeyDown={(e) => {
-                                  if (e.key === 'Enter') {
-                                    e.preventDefault();
-                                    if (editingTabName.trim() && editingTabName !== tab.name) {
-                                      updateTab(tab.id, { name: editingTabName.trim() });
-                                    }
-                                    setEditingTabId(null);
-                                  } else if (e.key === 'Escape') {
-                                    setEditingTabId(null);
-                                  }
-                                }}
-                                className="w-24 bg-indigo-50/50 border-none outline-none focus:ring-2 focus:ring-indigo-500/30 rounded px-1 -mx-1 text-indigo-700"
-                              />
-                            ) : (
-                              <span className="select-none">{tab.name || '제목 없음'}</span>
-                            )}
-                          </button>
-                          
-                          {!isEditing && (
-                            <button 
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                if (confirm(`'${tab.name}' 노트를 정말 삭제하시겠습니까?`)) {
-                                  deleteTab(tab.id);
-                                }
-                              }}
-                              className="absolute right-1 opacity-0 group-hover:opacity-100 p-1 text-muted-foreground hover:text-rose-500 transition-opacity bg-card/80 backdrop-blur rounded"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          )}
-                        </Reorder.Item>
-                      );
-                    })}
+                    {tabs.map((tab: any) => (
+                      <DraggableTab
+                        key={tab.id}
+                        tab={tab}
+                        isActive={activeTabId === tab.id}
+                        isEditing={editingTabId === tab.id}
+                        editingTabName={editingTabName}
+                        setEditingTabName={setEditingTabName}
+                        setEditingTabId={setEditingTabId}
+                        setActiveTabId={setActiveTabId}
+                        updateTab={updateTab}
+                        deleteTab={deleteTab}
+                        getIconForType={getIconForType}
+                      />
+                    ))}
                   </Reorder.Group>
                 ) : (
                   <div className="text-muted-foreground text-sm font-medium py-2 px-1">노트가 없습니다</div>

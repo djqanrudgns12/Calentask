@@ -254,19 +254,21 @@ export const ScheduleTimeline = React.memo(function ScheduleTimeline({ events, c
 
   return (
     <div className="relative flex flex-col bg-card/85 backdrop-blur-xl rounded-3xl border border-border shadow-[0_8px_32px_-8px_rgba(0,0,0,0.08)] overflow-hidden h-full max-h-[700px] min-h-[420px]">
-      {/* 헤더 */}
-      <div className="px-6 pt-6 pb-4 flex items-center justify-between shrink-0">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-blue-100 to-indigo-100 flex items-center justify-center shadow-inner border border-transparent/50">
+      {/* 헤더 — 모바일에서 좌측 아이콘 숨김, 패딩/간격 축소로 한 줄 유지 */}
+      <div className="px-4 md:px-6 pt-5 md:pt-6 pb-3 md:pb-4 flex items-center justify-between shrink-0 gap-2">
+        <div className="flex items-center gap-2 md:gap-3 min-w-0">
+          {/* 좌측 아이콘 — 모바일에서 숨겨 공간 확보 */}
+          <div className="hidden md:flex w-10 h-10 rounded-2xl bg-gradient-to-br from-blue-100 to-indigo-100 items-center justify-center shadow-inner border border-transparent/50 shrink-0">
             <CalendarDays className="w-5 h-5 text-blue-600" />
           </div>
-          <div className="flex flex-col">
-            <h2 className="text-base font-extrabold text-foreground tracking-tight flex items-center gap-2">
+          <div className="flex flex-col min-w-0">
+            {/* whitespace-nowrap으로 "일정(캘린더)" + 드롭다운이 한 줄 강제 유지 */}
+            <h2 className="text-sm md:text-base font-extrabold text-foreground tracking-tight flex items-center gap-1.5 md:gap-2 whitespace-nowrap">
               일정(캘린더)
               <div className="relative" ref={dropdownRef}>
                 <button
                   onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                  className="flex items-center gap-1 text-xs font-bold text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-lg hover:bg-indigo-100 transition-colors"
+                  className="flex items-center gap-1 text-xs font-bold text-indigo-600 bg-indigo-50 px-2 md:px-2.5 py-0.5 md:py-1 rounded-lg hover:bg-indigo-100 transition-colors"
                 >
                   {RANGE_LABELS[currentRange]}
                   <ChevronDown className={`w-3 h-3 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
@@ -304,17 +306,18 @@ export const ScheduleTimeline = React.memo(function ScheduleTimeline({ events, c
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex items-center gap-1.5 md:gap-2 shrink-0">
           <button
             onClick={() => setViewMode('monthly')}
             className="flex items-center gap-1 text-xs font-bold text-muted-foreground hover:text-foreground transition-colors"
           >
-            전체 보기
+            {/* "전체 보기" 텍스트 — 모바일에서 숨기고 화살표만 표시하여 공간 절약 */}
+            <span className="hidden md:inline">전체 보기</span>
             <ArrowRight className="w-3 h-3" />
           </button>
           <button
             onClick={handleAddEvent}
-            className="px-3 py-1.5 rounded-full bg-blue-50 hover:bg-blue-100 text-blue-600 text-xs font-bold transition-colors"
+            className="px-2.5 md:px-3 py-1.5 rounded-full bg-blue-50 hover:bg-blue-100 text-blue-600 text-xs font-bold transition-colors whitespace-nowrap"
           >
             + 일정 추가
           </button>

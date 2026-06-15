@@ -1,15 +1,17 @@
 'use client'
 
-import { useState, useEffect } from 'react';
-import { X, Link as LinkIcon, Loader2, Image as ImageIcon, Tag, Type, AlignLeft } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { X, Link as LinkIcon, Loader2, Image as ImageIcon, FolderOpen, Type, AlignLeft, ChevronDown } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
+// 북마크 저장/수정 시 전달되는 데이터 구조
+// tags 배열 → 단일 category 문자열로 전환 (폴더 개념)
 interface BookmarkData {
   url: string;
   title: string;
   description: string;
   image: string;
-  tags: string[];
+  category: string;
 }
 
 interface AddBookmarkModalProps {
@@ -17,19 +19,22 @@ interface AddBookmarkModalProps {
   onClose: () => void;
   onSave: (data: BookmarkData) => void;
   initialData?: BookmarkData | null;
-  existingTags: string[];
+  existingCategories: string[];
 }
 
-export function AddBookmarkModal({ isOpen, onClose, onSave, initialData, existingTags }: AddBookmarkModalProps) {
+export function AddBookmarkModal({ isOpen, onClose, onSave, initialData, existingCategories }: AddBookmarkModalProps) {
   const [url, setUrl] = useState('');
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [image, setImage] = useState('');
-  const [tags, setTags] = useState<string[]>([]);
+  // 단일 카테고리 (폴더 개념) — 다중 태그 대신 하나만 선택
+  const [category, setCategory] = useState('');
+  const [categoryInput, setCategoryInput] = useState('');
+  const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
   
-  const [tagInput, setTagInput] = useState('');
   const [isFetching, setIsFetching] = useState(false);
   const [error, setError] = useState('');
+  const categoryRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (isOpen) {
@@ -38,18 +43,33 @@ export function AddBookmarkModal({ isOpen, onClose, onSave, initialData, existin
         setTitle(initialData.title || '');
         setDescription(initialData.description || '');
         setImage(initialData.image || '');
-        setTags(initialData.tags || []);
+        setCategory(initialData.category || '');
+        setCategoryInput(initialData.category || '');
       } else {
         setUrl('');
         setTitle('');
         setDescription('');
         setImage('');
-        setTags([]);
+        setCategory('');
+        setCategoryInput('');
       }
       setError('');
-      setTagInput('');
+      setShowCategoryDropdown(false);
     }
   }, [isOpen, initialData]);
+
+  // 카테고리 드롭다운 외부 클릭 시 닫기
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (categoryRef.current && !categoryRef.current.contains(e.target as Node)) {
+        setShowCategoryDropdown(false);
+      }
+    };
+    if (showCategoryDropdown) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [showCategoryDropdown]);
 
   const fetchMetadata = async (targetUrl: string) => {
     if (!targetUrl || !targetUrl.startsWith('http')) return;
@@ -67,7 +87,6 @@ export function AddBookmarkModal({ isOpen, onClose, onSave, initialData, existin
       if (data.image && !image) setImage(data.image);
     } catch (err) {
       console.error('Metadata fetch failed:', err);
-      // Don't show error to user, just let them manually input
     } finally {
       setIsFetching(false);
     }
@@ -79,20 +98,24 @@ export function AddBookmarkModal({ isOpen, onClose, onSave, initialData, existin
     }
   };
 
-  const handleAddTag = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' && tagInput.trim()) {
-      e.preventDefault();
-      const newTag = tagInput.trim();
-      if (!tags.includes(newTag)) {
-        setTags([...tags, newTag]);
-      }
-      setTagInput('');
-    }
+  // 카테고리 선택: 기존 카테고리 클릭 시
+  const handleSelectCategory = (cat: string) => {
+    setCategory(cat);
+    setCategoryInput(cat);
+    setShowCategoryDropdown(false);
   };
 
-  const removeTag = (tagToRemove: string) => {
-    setTags(tags.filter(t => t !== tagToRemove));
+  // 카테고리 입력: 직접 타이핑하여 새 카테고리 생성 또는 기존 카테고리 검색
+  const handleCategoryInputChange = (value: string) => {
+    setCategoryInput(value);
+    setCategory(value.trim());
+    setShowCategoryDropdown(true);
   };
+
+  // 입력값 기준으로 필터링된 기존 카테고리 목록
+  const filteredCategories = existingCategories.filter(
+    cat => cat.toLowerCase().includes(categoryInput.toLowerCase().trim())
+  );
 
   const handleSave = () => {
     if (!url.trim()) {
@@ -105,7 +128,7 @@ export function AddBookmarkModal({ isOpen, onClose, onSave, initialData, existin
       title: title.trim() || url,
       description: description.trim(),
       image: image.trim(),
-      tags
+      category: category.trim() || '기타'
     });
     onClose();
   };
@@ -193,7 +216,7 @@ export function AddBookmarkModal({ isOpen, onClose, onSave, initialData, existin
                   />
                 </div>
 
-                {/* Title and Tags */}
+                {/* Title and Category */}
                 <div className="sm:col-span-2 space-y-5">
                   <div className="space-y-1.5">
                     <label className="text-sm font-bold text-foreground flex items-center gap-1.5">
@@ -208,28 +231,60 @@ export function AddBookmarkModal({ isOpen, onClose, onSave, initialData, existin
                     />
                   </div>
 
-                  <div className="space-y-1.5">
+                  {/* 단일 카테고리 선택 — 기존 다중 태그 칩 UI를 드롭다운+입력 콤보박스로 교체
+                     - 기존 카테고리 목록에서 선택하거나, 직접 입력하여 새 카테고리 생성 가능
+                     - 같은 이름의 카테고리가 이미 있으면 해당 카테고리에 자동 합류 */}
+                  <div className="space-y-1.5" ref={categoryRef}>
                     <label className="text-sm font-bold text-foreground flex items-center gap-1.5">
-                      <Tag className="w-4 h-4 text-rose-500" /> 카테고리 태그
+                      <FolderOpen className="w-4 h-4 text-rose-500" /> 카테고리
                     </label>
-                    <div className="p-2 bg-muted border border-border rounded-xl focus-within:ring-2 focus-within:ring-rose-500/20 focus-within:border-rose-500 transition-all flex flex-wrap gap-2 items-center min-h-[50px]">
-                      {tags.map(tag => (
-                        <span key={tag} className="flex items-center gap-1 px-2.5 py-1 bg-card border border-border text-foreground rounded-lg text-xs font-bold shadow-sm">
-                          {tag}
-                          <button onClick={() => removeTag(tag)} className="text-muted-foreground hover:text-rose-500">
-                            <X className="w-3 h-3" />
-                          </button>
-                        </span>
-                      ))}
+                    <div className="relative">
                       <input 
                         type="text"
-                        value={tagInput}
-                        onChange={(e) => setTagInput(e.target.value)}
-                        onKeyDown={handleAddTag}
-                        placeholder={tags.length === 0 ? "태그 입력 후 Enter" : ""}
-                        className="flex-1 min-w-[100px] bg-transparent border-none focus:outline-none text-sm font-medium px-1 placeholder:text-muted-foreground"
+                        value={categoryInput}
+                        onChange={(e) => handleCategoryInputChange(e.target.value)}
+                        onFocus={() => setShowCategoryDropdown(true)}
+                        placeholder="카테고리 선택 또는 입력"
+                        className="w-full px-4 py-3 pr-10 bg-muted border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 transition-all font-bold text-foreground placeholder:font-medium"
                       />
+                      <ChevronDown 
+                        className={`w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground transition-transform ${showCategoryDropdown ? 'rotate-180' : ''}`}
+                        onClick={() => setShowCategoryDropdown(!showCategoryDropdown)}
+                      />
+
+                      {/* 기존 카테고리 드롭다운 */}
+                      <AnimatePresence>
+                        {showCategoryDropdown && filteredCategories.length > 0 && (
+                          <motion.div
+                            initial={{ opacity: 0, y: -4 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -4 }}
+                            className="absolute z-50 left-0 right-0 top-full mt-1 bg-card border border-border rounded-xl shadow-lg max-h-[180px] overflow-y-auto custom-scrollbar py-1"
+                          >
+                            {filteredCategories.map(cat => (
+                              <button
+                                key={cat}
+                                type="button"
+                                onClick={() => handleSelectCategory(cat)}
+                                className={`w-full text-left px-4 py-2.5 text-sm font-bold transition-colors flex items-center gap-2 ${
+                                  category === cat 
+                                    ? 'bg-rose-50 text-rose-700' 
+                                    : 'text-foreground hover:bg-muted'
+                                }`}
+                              >
+                                <FolderOpen className="w-3.5 h-3.5 text-muted-foreground" />
+                                {cat}
+                              </button>
+                            ))}
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
                     </div>
+                    {categoryInput.trim() && !existingCategories.includes(categoryInput.trim()) && (
+                      <p className="text-xs text-emerald-600 font-bold pl-1">
+                        💡 새 카테고리 &quot;{categoryInput.trim()}&quot; 가 생성됩니다
+                      </p>
+                    )}
                   </div>
                 </div>
               </div>
