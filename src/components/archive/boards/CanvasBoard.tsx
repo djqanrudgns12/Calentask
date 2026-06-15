@@ -16,7 +16,8 @@ import ReactFlow, {
   addEdge,
   MarkerType,
   applyNodeChanges,
-  applyEdgeChanges
+  applyEdgeChanges,
+  Viewport
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 import { MousePointer2, Type, Square, Circle, Trash2, Bold, AlignLeft, AlignCenter, AlignRight, RectangleHorizontal } from 'lucide-react';
@@ -30,6 +31,17 @@ const StickyNode = ({ data, selected }: any) => {
   const { item, updateItem, deleteItem } = data;
   const itemColor = item.data?.color || COLORS[0];
   const textAlign = item.data?.textAlign || 'left';
+  
+  const [localTitle, setLocalTitle] = useState(item.title || '');
+  const [localContent, setLocalContent] = useState(item.content || '');
+
+  useEffect(() => {
+    setLocalTitle(item.title || '');
+  }, [item.title]);
+
+  useEffect(() => {
+    setLocalContent(item.content || '');
+  }, [item.content]);
   
   return (
     <div 
@@ -56,15 +68,17 @@ const StickyNode = ({ data, selected }: any) => {
       
       <input
         type="text"
-        value={item.title}
-        onChange={(e) => updateItem(item.id, { title: e.target.value })}
+        value={localTitle}
+        onChange={(e) => setLocalTitle(e.target.value)}
+        onBlur={() => updateItem(item.id, { title: localTitle })}
         className="w-full bg-transparent border-none focus:outline-none focus:ring-0 font-bold text-slate-800 text-lg mb-2 nodrag"
         placeholder="제목..."
         style={{ textAlign }}
       />
       <textarea
-        value={item.content || ''}
-        onChange={(e) => updateItem(item.id, { content: e.target.value })}
+        value={localContent}
+        onChange={(e) => setLocalContent(e.target.value)}
+        onBlur={() => updateItem(item.id, { content: localContent })}
         className="w-full h-[calc(100%-2.5rem)] bg-transparent border-none focus:outline-none focus:ring-0 text-slate-700 font-medium resize-none leading-relaxed nodrag"
         placeholder="내용을 자유롭게 입력하세요..."
         style={{ textAlign }}
@@ -81,6 +95,12 @@ const ShapeNode = ({ data, selected }: any) => {
   const { item, updateItem, deleteItem } = data;
   const itemColor = item.data?.color || '#ffffff';
   const shapeType = item.data?.shape || 'square'; // 'square' | 'circle'
+  
+  const [localTitle, setLocalTitle] = useState(item.title || '');
+
+  useEffect(() => {
+    setLocalTitle(item.title || '');
+  }, [item.title]);
   
   return (
     <div 
@@ -102,8 +122,9 @@ const ShapeNode = ({ data, selected }: any) => {
       )}
       
       <textarea
-        value={item.title || ''}
-        onChange={(e) => updateItem(item.id, { title: e.target.value })}
+        value={localTitle}
+        onChange={(e) => setLocalTitle(e.target.value)}
+        onBlur={() => updateItem(item.id, { title: localTitle })}
         className="w-full bg-transparent border-none focus:outline-none focus:ring-0 font-bold text-slate-700 text-center resize-none nodrag"
         placeholder="텍스트 입력"
         rows={2}
@@ -119,6 +140,12 @@ const ShapeNode = ({ data, selected }: any) => {
 const TextNode = ({ data, selected }: any) => {
   const { item, updateItem, deleteItem } = data;
   
+  const [localContent, setLocalContent] = useState(item.content || '');
+
+  useEffect(() => {
+    setLocalContent(item.content || '');
+  }, [item.content]);
+  
   return (
     <div className={`relative min-w-[200px] p-2 transition-all ${selected ? 'ring-1 ring-dashed ring-indigo-400 bg-indigo-50/50 rounded-lg' : ''}`}>
       <Handle type="target" position={Position.Left} className="opacity-0" />
@@ -132,8 +159,9 @@ const TextNode = ({ data, selected }: any) => {
       )}
       
       <textarea
-        value={item.content || ''}
-        onChange={(e) => updateItem(item.id, { content: e.target.value })}
+        value={localContent}
+        onChange={(e) => setLocalContent(e.target.value)}
+        onBlur={() => updateItem(item.id, { content: localContent })}
         className="w-full bg-transparent border-none focus:outline-none focus:ring-0 font-extrabold text-slate-800 text-2xl resize-none nodrag text-center placeholder:text-slate-300"
         placeholder="큰 제목 텍스트"
         rows={1}
@@ -184,6 +212,7 @@ export function CanvasBoard() {
 
       const newNodes: Node[] = items.map(item => {
         const storePos = { x: item.data?.x || 0, y: item.data?.y || 0 };
+        const prevNode = prevNodes.find(n => n.id === item.id);
         const prevPos = prevPositionMap.get(item.id);
 
         // 이전 items에서 해당 아이템의 store 좌표
@@ -215,6 +244,10 @@ export function CanvasBoard() {
           id: item.id,
           type: item.data?.type || 'sticky',
           position,
+          selected: prevNode?.selected,
+          dragging: prevNode?.dragging,
+          width: prevNode?.width,
+          height: prevNode?.height,
           data: {
             item,
             updateItem: (id: string, updates: any) => updateItem(activeTabId, id, updates),
@@ -330,10 +363,19 @@ export function CanvasBoard() {
        setEdges((eds) => {
           const newEdges = eds.map(e => e.id === edge.id ? { ...e, label, labelStyle: { fill: '#4f46e5', fontWeight: 700, fontSize: 12 }, labelBgStyle: { fill: '#e0e7ff', fillOpacity: 0.8, rx: 4 } } : e);
           if (activeTabId) setBoardConfig(activeTabId, { edges: newEdges });
-          return newEdges;
-       });
-    }
+           return newEdges;
+        });
+     }
   }, [activeTabId, setBoardConfig, setEdges]);
+
+  const onMoveEnd = useCallback(
+    (event: any, viewport: Viewport) => {
+      if (activeTabId) {
+        setBoardConfig(activeTabId, { viewport });
+      }
+    },
+    [activeTabId, setBoardConfig]
+  );
 
   // Toolbar Actions
   const getCenterOffset = (index: number) => {
@@ -385,8 +427,10 @@ export function CanvasBoard() {
         onNodeDragStop={onNodeDragStop}
         onConnect={onConnect}
         onEdgeDoubleClick={onEdgeDoubleClick}
+        onMoveEnd={onMoveEnd}
         nodeTypes={nodeTypes}
-        fitView
+        defaultViewport={config?.viewport || { x: 0, y: 0, zoom: 1 }}
+        fitView={!config?.viewport}
         className="bg-slate-50"
         deleteKeyCode={['Backspace', 'Delete']}
       >
