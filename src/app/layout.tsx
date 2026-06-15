@@ -4,6 +4,7 @@ import "./globals.css";
 import { QueryProvider } from "@/providers/QueryProvider";
 import { Toaster } from "sonner";
 import { GlobalShortcutsProvider } from "@/providers/GlobalShortcutsProvider";
+import { ThemeProvider } from "@/providers/ThemeProvider";
 
 const customFont = localFont({
   src: "./fonts/RIDIBatang.otf",
@@ -40,8 +41,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="ko" className={customFont.variable}>
-      <body className={`antialiased font-sans bg-[#f7f9fb]`}>
+    <html lang="ko" className={customFont.variable} suppressHydrationWarning>
+      <body className={`antialiased font-sans`}>
         <script dangerouslySetInnerHTML={{
           __html: `
             window.deferredPWAEvent = null;
@@ -60,11 +61,18 @@ export default function RootLayout({
             }
           `
         }} />
-        <QueryProvider>
-          {children}
-        </QueryProvider>
-        <GlobalShortcutsProvider />
-        <Toaster position="bottom-center" richColors />
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          <QueryProvider>
+            {children}
+          </QueryProvider>
+          <GlobalShortcutsProvider />
+          <Toaster position="bottom-center" richColors />
+        </ThemeProvider>
       </body>
     </html>
   );
