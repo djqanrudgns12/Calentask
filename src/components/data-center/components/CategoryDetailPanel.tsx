@@ -2,7 +2,7 @@
 
 import { Category, Activity } from '@/app/actions/calendar'
 import { FolderOpen, CalendarDays, Inbox, CheckCircle2, Clock, Calendar as CalendarIcon } from 'lucide-react'
-import dayjs from 'dayjs'
+import { format } from 'date-fns'
 
 interface CategoryDetailPanelProps {
   category: Category | null
@@ -94,7 +94,7 @@ export function CategoryDetailPanel({ category, usageCount, activities = [] }: C
                     <div className="flex items-center gap-3 text-xs font-medium text-slate-400">
                       <span className="flex items-center gap-1">
                         <Clock className="w-3.5 h-3.5" />
-                        {dayjs(activity.start_time).format('YYYY.MM.DD HH:mm')}
+                        {format(new Date(activity.start_time), 'yyyy.MM.dd HH:mm')}
                       </span>
                     </div>
                   </div>
