@@ -63,10 +63,10 @@ export default function CalendarPage() {
   } = useCalendarStore()
 
   const isHome = viewMode === 'home'
-  const isCalendarMenuOpen = ['monthly', 'weekly', 'list', 'semester', 'nice_import', 'anniversary'].includes(viewMode)
+  const isCalendarMenuOpen = ['monthly', 'weekly', 'list', 'semester', 'archive_agenda', 'anniversary'].includes(viewMode)
   const isMyCalendarActive = ['monthly', 'weekly', 'list', 'semester'].includes(viewMode)
-  const isArchiveMenuOpen = ['archive_notes', 'archive_agenda', 'link_lounge'].includes(viewMode)
-  const isDataCenterMenuOpen = ['tags', 'trash'].includes(viewMode)
+  const isArchiveMenuOpen = ['archive_notes', 'link_lounge'].includes(viewMode)
+  const isDataCenterMenuOpen = ['nice_import', 'tags', 'trash'].includes(viewMode)
 
   const handleLogout = async () => {
     resetStore()
@@ -246,6 +246,18 @@ export default function CalendarPage() {
                     </button>
 
                     <button 
+                      onClick={() => setViewMode('archive_agenda')}
+                      className={`w-[calc(100%-1.25rem)] ml-5 text-left px-4 py-2.5 rounded-xl text-sm transition-all duration-300 flex items-center gap-2.5 ${
+                        viewMode === 'archive_agenda' 
+                        ? 'bg-purple-50/80 text-purple-700 font-semibold shadow-sm border border-purple-100/50' 
+                        : 'bg-transparent text-slate-400 hover:bg-white hover:shadow-sm hover:text-slate-700 border border-transparent'
+                      }`}
+                    >
+                      <Sparkles className={`w-4 h-4 ${viewMode === 'archive_agenda' ? 'text-purple-500' : 'text-slate-300'}`} />
+                      아젠다
+                    </button>
+
+                    <button 
                       onClick={() => setViewMode('anniversary')}
                       className={`w-[calc(100%-1.25rem)] ml-5 text-left px-4 py-2.5 rounded-xl text-sm transition-all duration-300 flex items-center gap-2.5 ${
                         viewMode === 'anniversary' 
@@ -255,18 +267,6 @@ export default function CalendarPage() {
                     >
                       <Gift className={`w-4 h-4 ${viewMode === 'anniversary' ? 'text-pink-500' : 'text-slate-300'}`} />
                       기념일 설정
-                    </button>
-
-                    <button 
-                      onClick={() => setViewMode('nice_import')}
-                      className={`w-[calc(100%-1.25rem)] ml-5 text-left px-4 py-2.5 rounded-xl text-sm transition-all duration-300 flex items-center gap-2.5 ${
-                        viewMode === 'nice_import' 
-                        ? 'bg-indigo-50/80 text-indigo-700 font-semibold shadow-sm border border-indigo-100/50' 
-                        : 'bg-transparent text-slate-400 hover:bg-white hover:shadow-sm hover:text-slate-700 border border-transparent'
-                      }`}
-                    >
-                      <DownloadCloud className={`w-4 h-4 ${viewMode === 'nice_import' ? 'text-indigo-500' : 'text-slate-300'}`} />
-                      나이스 복무 불러오기
                     </button>
                   </div>
                 </motion.div>
@@ -324,14 +324,6 @@ export default function CalendarPage() {
                       링크 라운지
                     </button>
 
-                    <button 
-                      onClick={() => setViewMode('archive_agenda')}
-                      className={`w-[calc(100%-1.25rem)] ml-5 text-left px-4 py-2.5 rounded-xl text-sm transition-all duration-300 flex items-center gap-2.5 group ${
-                        viewMode === 'archive_agenda' ? 'bg-indigo-50 text-indigo-700 font-bold shadow-sm ring-1 ring-indigo-500/20' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-700'
-                      }`}
-                    >
-                      <Sparkles className={`w-4 h-4 ${viewMode === 'archive_agenda' ? 'text-indigo-600' : 'text-slate-300'}`} />
-                      아젠다
                     </button>
                   </div>
                 </motion.div>
@@ -391,6 +383,16 @@ export default function CalendarPage() {
                   className="overflow-hidden"
                 >
                   <div className="flex flex-col space-y-1 mt-1 pb-3 mb-2 border-b border-slate-100/50">
+                    <button 
+                      onClick={() => setViewMode('nice_import')}
+                      className={`w-[calc(100%-1.25rem)] ml-5 text-left px-4 py-2.5 rounded-xl text-sm transition-all duration-300 flex items-center gap-2.5 group ${
+                        viewMode === 'nice_import' ? 'bg-indigo-50 text-indigo-700 font-bold shadow-sm ring-1 ring-indigo-500/20' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-700'
+                      }`}
+                    >
+                      <DownloadCloud className={`w-4 h-4 ${viewMode === 'nice_import' ? 'text-indigo-600' : 'text-slate-300'}`} />
+                      나이스 복무 불러오기
+                    </button>
+
                     <button 
                       onClick={() => setViewMode('tags')}
                       className={`w-[calc(100%-1.25rem)] ml-5 text-left px-4 py-2.5 rounded-xl text-sm transition-all duration-300 flex items-center gap-2.5 group ${

@@ -38,9 +38,9 @@ export function BottomNavigation({ viewMode, setViewMode, onOpenSettings, onOpen
         {tabs.map((tab) => {
           const isActive = 
             (tab.id === 'home' && viewMode === 'home') ||
-            (tab.id === 'archive' && ['archive_notes', 'archive_agenda'].includes(viewMode)) ||
+            (tab.id === 'archive' && ['archive_notes', 'link_lounge'].includes(viewMode)) ||
             (viewMode === tab.id) || 
-            (tab.id === 'monthly' && ['weekly', 'list', 'semester', 'nice_import', 'anniversary'].includes(viewMode))
+            (tab.id === 'monthly' && ['weekly', 'list', 'semester', 'archive_agenda', 'anniversary'].includes(viewMode))
           const Icon = tab.icon
 
           return (
