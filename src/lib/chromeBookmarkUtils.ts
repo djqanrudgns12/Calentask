@@ -49,10 +49,13 @@ export function parseChromeBookmarks(html: string): ParsedBookmark[] {
         // 일반 폴더는 말단 폴더명을 카테고리로 사용
         const nextCategory = isSpecialFolder ? currentCategory : (folderName || '기타');
 
-        // 이 <DT> 바로 다음 형제 요소가 <DL>인지 확인
-        const siblingDL = findNextSiblingDL(child);
-        if (siblingDL) {
-          walkDL(siblingDL, nextCategory);
+        // DOMParser는 크롬 HTML의 <DL><p> 구조를 파싱할 때
+        // <DL>을 <DT>의 자식(child)으로 넣는 경우가 있음 (형제가 아님!)
+        // 따라서 자식 → 형제 순서로 <DL>을 탐색
+        const childDL = child.querySelector(':scope > DL');
+        const targetDL = childDL || findNextSiblingDL(child);
+        if (targetDL) {
+          walkDL(targetDL, nextCategory);
         }
         continue;
       }

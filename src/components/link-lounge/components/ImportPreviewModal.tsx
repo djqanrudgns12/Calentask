@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { X, FileUp, ChevronDown, ChevronRight, AlertTriangle, CheckCircle2, Globe, FolderOpen } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { ParsedBookmark } from '@/lib/chromeBookmarkUtils';
@@ -34,20 +34,24 @@ export function ImportPreviewModal({ isOpen, onClose, onConfirm, parsedBookmarks
   // 중복 여부 판별 함수 — URL 기준으로 비교
   const isDuplicate = (url: string) => existingUrls.has(url);
 
-  // 각 항목별 체크 상태 (URL을 키로 사용)
-  const [checkedItems, setCheckedItems] = useState<Set<string>>(() => {
-    // 초기값: 중복이 아닌 항목만 체크
-    const initial = new Set<string>();
-    parsedBookmarks.forEach(bm => {
-      if (!isDuplicate(bm.url)) initial.add(bm.url);
-    });
-    return initial;
-  });
+  // 각 항목별 체크 상태 — parsedBookmarks가 변경될 때마다 재초기화
+  // (useState 초기화 함수는 최초 마운트 시 1회만 실행되므로 useEffect 필요)
+  const [checkedItems, setCheckedItems] = useState<Set<string>>(new Set());
+  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
 
-  // 카테고리별 펼침/접힘 상태
-  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(() => {
-    return new Set(groupedByCategory.keys());
-  });
+  // parsedBookmarks가 업데이트될 때 (파일 파싱 완료 시) 체크 상태를 초기화
+  useEffect(() => {
+    if (parsedBookmarks.length > 0) {
+      // 비중복 항목을 모두 체크
+      const initial = new Set<string>();
+      parsedBookmarks.forEach(bm => {
+        if (!existingUrls.has(bm.url)) initial.add(bm.url);
+      });
+      setCheckedItems(initial);
+      // 모든 카테고리를 펼침 상태로 초기화하되, 기본은 접힘(빈 Set)
+      setExpandedCategories(new Set());
+    }
+  }, [parsedBookmarks, existingUrls]);
 
   // 통계 계산
   const totalCount = parsedBookmarks.length;

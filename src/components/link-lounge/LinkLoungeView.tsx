@@ -296,6 +296,11 @@ export function LinkLoungeView() {
                       {item.image ? (
                         // eslint-disable-next-line @next/next/no-img-element
                         <img src={item.image} alt={item.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                      ) : item.icon ? (
+                        <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-900">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={item.icon} alt="" className="w-6 h-6" onError={(e) => { e.currentTarget.style.display = 'none' }} />
+                        </div>
                       ) : (
                         <div className="w-full h-full flex items-center justify-center"><BookmarkIcon className="w-6 h-6 text-muted-foreground/50" /></div>
                       )}
@@ -332,6 +337,13 @@ export function LinkLoungeView() {
                       {item.image ? (
                         // eslint-disable-next-line @next/next/no-img-element
                         <img src={item.image} alt={item.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                      ) : item.icon ? (
+                        /* 커버 이미지가 없고 파비콘만 있을 때: 파비콘을 중앙에 크게 표시 */
+                        <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-900">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={item.icon} alt="" className="w-10 h-10 mb-2 drop-shadow-md" onError={(e) => { e.currentTarget.style.display = 'none' }} />
+                          <span className="text-[10px] font-bold text-muted-foreground/60 truncate max-w-[80%]">{new URL(item.url).hostname.replace('www.','')}</span>
+                        </div>
                       ) : (
                         <div className="w-full h-full flex items-center justify-center"><BookmarkIcon className="w-10 h-10 text-muted-foreground/50" /></div>
                       )}
@@ -377,6 +389,11 @@ export function LinkLoungeView() {
                         {item.image ? (
                            // eslint-disable-next-line @next/next/no-img-element
                           <img src={item.image} alt={item.title} className="w-full h-full object-cover" />
+                        ) : item.icon ? (
+                          <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-900">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src={item.icon} alt="" className="w-5 h-5" onError={(e) => { e.currentTarget.style.display = 'none' }} />
+                          </div>
                         ) : (
                           <div className="w-full h-full flex items-center justify-center"><BookmarkIcon className="w-4 h-4 text-muted-foreground/50" /></div>
                         )}
@@ -402,6 +419,12 @@ export function LinkLoungeView() {
                             {item.image ? (
                                // eslint-disable-next-line @next/next/no-img-element
                               <img src={item.image} alt={item.title} className="w-full h-full object-cover" />
+                            ) : item.icon ? (
+                              <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-900">
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                <img src={item.icon} alt="" className="w-16 h-16 mb-3 drop-shadow-lg" onError={(e) => { e.currentTarget.style.display = 'none' }} />
+                                <span className="text-sm font-bold text-muted-foreground">{new URL(item.url).hostname.replace('www.','')}</span>
+                              </div>
                             ) : (
                               <div className="w-full h-full flex flex-col items-center justify-center">
                                 <BookmarkIcon className="w-16 h-16 text-slate-200 mb-4" />

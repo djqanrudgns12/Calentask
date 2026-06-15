@@ -119,7 +119,11 @@ export function LinkLoungeCard() {
                   {/* 왼쪽 파비콘/아이콘 */}
                   <div className="w-10 h-10 shrink-0 rounded-xl bg-card border border-border shadow-sm flex items-center justify-center overflow-hidden">
                     {bm.image ? (
+                      // eslint-disable-next-line @next/next/no-img-element
                       <img src={bm.image} alt="" className="w-6 h-6 object-cover" onError={(e) => { e.currentTarget.style.display = 'none' }} />
+                    ) : bm.icon ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={bm.icon} alt="" className="w-5 h-5" onError={(e) => { e.currentTarget.style.display = 'none' }} />
                     ) : (
                       <Link className="w-4 h-4 text-muted-foreground/60" />
                     )}
