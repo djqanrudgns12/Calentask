@@ -29,20 +29,20 @@ export default function SharedPeriodDropdown({ className = '' }: SharedPeriodDro
         <motion.div 
           initial={{ opacity: 0, y: -5 }} 
           animate={{ opacity: 1, y: 0 }} 
-          className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-xl shadow-sm border border-indigo-100"
+          className="flex items-center gap-2 bg-card px-3 py-1.5 rounded-xl shadow-sm border border-indigo-100"
         >
           <input 
             type="date" 
             value={customRange.start} 
             onChange={e => setCustomRange(e.target.value, customRange.end)}
-            className="text-[12px] text-gray-600 font-medium border-none focus:ring-0 p-0 bg-transparent cursor-pointer"
+            className="text-[12px] text-foreground font-medium border-none focus:ring-0 p-0 bg-transparent cursor-pointer"
           />
-          <span className="text-gray-300 font-bold">~</span>
+          <span className="text-muted-foreground/50 font-bold">~</span>
           <input 
             type="date" 
             value={customRange.end} 
             onChange={e => setCustomRange(customRange.start, e.target.value)}
-            className="text-[12px] text-gray-600 font-medium border-none focus:ring-0 p-0 bg-transparent cursor-pointer"
+            className="text-[12px] text-foreground font-medium border-none focus:ring-0 p-0 bg-transparent cursor-pointer"
           />
         </motion.div>
       )}

@@ -96,21 +96,21 @@ export function DateTimePickerPopover({ date, setDate, children, align = "center
         {children}
       </PopoverTrigger>
       
-      <PopoverContent className="z-50 w-[340px] p-0 rounded-3xl shadow-[0_20px_60px_-15px_rgba(0,0,0,0.1)] border border-slate-100 overflow-hidden bg-white/95 backdrop-blur-3xl" align={align} sideOffset={12}>
+      <PopoverContent className="z-50 w-[340px] p-0 rounded-3xl shadow-[0_20px_60px_-15px_rgba(0,0,0,0.1)] border border-border overflow-hidden bg-card/95 backdrop-blur-3xl" align={align} sideOffset={12}>
         <div className="flex flex-col">
           {/* Presets Header */}
-          <div className="bg-slate-50/80 p-3 border-b border-slate-100 flex flex-col gap-2">
-            <div className="flex items-center text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+          <div className="bg-muted/80 p-3 border-b border-border flex flex-col gap-2">
+            <div className="flex items-center text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
               <Zap className="w-3.5 h-3.5 mr-1 text-amber-500" /> 빠른 선택
             </div>
             <div className="flex flex-wrap gap-1.5">
-              <button onClick={() => applyPreset(() => setHours(setMinutes(new Date(), 0), 18))} className="px-2.5 py-1.5 rounded-md bg-white text-[11px] font-bold text-slate-600 border border-slate-200 hover:border-indigo-300 hover:text-indigo-600 shadow-sm transition-colors">
+              <button onClick={() => applyPreset(() => setHours(setMinutes(new Date(), 0), 18))} className="px-2.5 py-1.5 rounded-md bg-card text-[11px] font-bold text-foreground border border-border hover:border-indigo-300 hover:text-indigo-600 shadow-sm transition-colors">
                 오늘 퇴근 (18:00)
               </button>
-              <button onClick={() => applyPreset(() => setHours(setMinutes(addDays(new Date(), 1), 0), 9))} className="px-2.5 py-1.5 rounded-md bg-white text-[11px] font-bold text-slate-600 border border-slate-200 hover:border-indigo-300 hover:text-indigo-600 shadow-sm transition-colors">
+              <button onClick={() => applyPreset(() => setHours(setMinutes(addDays(new Date(), 1), 0), 9))} className="px-2.5 py-1.5 rounded-md bg-card text-[11px] font-bold text-foreground border border-border hover:border-indigo-300 hover:text-indigo-600 shadow-sm transition-colors">
                 내일 출근 (09:00)
               </button>
-              <button onClick={() => applyPreset(() => setHours(setMinutes(nextFriday(new Date()), 0), 18))} className="px-2.5 py-1.5 rounded-md bg-white text-[11px] font-bold text-slate-600 border border-slate-200 hover:border-indigo-300 hover:text-indigo-600 shadow-sm transition-colors">
+              <button onClick={() => applyPreset(() => setHours(setMinutes(nextFriday(new Date()), 0), 18))} className="px-2.5 py-1.5 rounded-md bg-card text-[11px] font-bold text-foreground border border-border hover:border-indigo-300 hover:text-indigo-600 shadow-sm transition-colors">
                 이번 주 금요일
               </button>
             </div>
@@ -119,13 +119,13 @@ export function DateTimePickerPopover({ date, setDate, children, align = "center
           <div className="p-5">
             {/* Calendar Header */}
             <div className="flex justify-between items-center mb-4">
-              <button onClick={() => setCurrentMonth(subMonths(currentMonth, 1))} className="p-2 rounded-full hover:bg-slate-100 text-slate-500 transition-colors">
+              <button onClick={() => setCurrentMonth(subMonths(currentMonth, 1))} className="p-2 rounded-full hover:bg-muted text-muted-foreground transition-colors">
                 <ChevronLeft className="w-4 h-4" />
               </button>
-              <h3 className="font-extrabold text-slate-800 text-sm">
+              <h3 className="font-extrabold text-foreground text-sm">
                 {format(currentMonth, dateFormat)}
               </h3>
-              <button onClick={() => setCurrentMonth(addMonths(currentMonth, 1))} className="p-2 rounded-full hover:bg-slate-100 text-slate-500 transition-colors">
+              <button onClick={() => setCurrentMonth(addMonths(currentMonth, 1))} className="p-2 rounded-full hover:bg-muted text-muted-foreground transition-colors">
                 <ChevronRight className="w-4 h-4" />
               </button>
             </div>
@@ -133,7 +133,7 @@ export function DateTimePickerPopover({ date, setDate, children, align = "center
             {/* Calendar Grid */}
             <div className="grid grid-cols-7 gap-1 mb-2 text-center">
               {['일', '월', '화', '수', '목', '금', '토'].map(d => (
-                <div key={d} className="text-[10px] font-bold text-slate-400 mb-2">{d}</div>
+                <div key={d} className="text-[10px] font-bold text-muted-foreground mb-2">{d}</div>
               ))}
               {days.map((d, i) => {
                 const isSelected = selectedDate && isSameDay(d, selectedDate);
@@ -147,9 +147,9 @@ export function DateTimePickerPopover({ date, setDate, children, align = "center
                     onClick={() => handleDayClick(d)}
                     className={cn(
                       "h-8 w-8 rounded-full flex items-center justify-center text-xs font-semibold mx-auto transition-all",
-                      !isCurrentMonth && "text-slate-300",
-                      isCurrentMonth && !isSelected && !isPast && "text-slate-700 hover:bg-slate-100",
-                      isCurrentMonth && isPast && !isSelected && "text-slate-400 hover:bg-slate-100",
+                      !isCurrentMonth && "text-muted-foreground/50",
+                      isCurrentMonth && !isSelected && !isPast && "text-foreground hover:bg-muted",
+                      isCurrentMonth && isPast && !isSelected && "text-muted-foreground hover:bg-muted",
                       isSelected && "bg-indigo-600 text-white shadow-md font-bold scale-110",
                       isToday && !isSelected && "ring-2 ring-indigo-500/30 text-indigo-600"
                     )}
@@ -160,38 +160,38 @@ export function DateTimePickerPopover({ date, setDate, children, align = "center
               })}
             </div>
 
-            <div className="h-px bg-slate-100 my-4" />
+            <div className="h-px bg-muted my-4" />
 
             {/* Time Picker */}
             <div className="flex items-center justify-center gap-3">
-              <Clock className="w-4 h-4 text-slate-400" />
-              <div className="flex items-center gap-1 bg-slate-50 rounded-xl p-1.5 border border-slate-200 focus-within:border-indigo-400 focus-within:ring-2 focus-within:ring-indigo-100 transition-all">
+              <Clock className="w-4 h-4 text-muted-foreground" />
+              <div className="flex items-center gap-1 bg-muted rounded-xl p-1.5 border border-border focus-within:border-indigo-400 focus-within:ring-2 focus-within:ring-indigo-100 transition-all">
                 <input 
                   type="text" 
                   value={hour} 
                   onChange={(e) => setHour(e.target.value.replace(/[^0-9]/g, '').slice(0, 2))}
-                  className="w-8 text-center bg-transparent outline-none text-sm font-bold text-slate-700" 
+                  className="w-8 text-center bg-transparent outline-none text-sm font-bold text-foreground" 
                   placeholder="12"
                 />
-                <span className="text-slate-400 font-bold">:</span>
+                <span className="text-muted-foreground font-bold">:</span>
                 <input 
                   type="text" 
                   value={minute} 
                   onChange={(e) => setMinute(e.target.value.replace(/[^0-9]/g, '').slice(0, 2))}
-                  className="w-8 text-center bg-transparent outline-none text-sm font-bold text-slate-700"
+                  className="w-8 text-center bg-transparent outline-none text-sm font-bold text-foreground"
                   placeholder="00" 
                 />
               </div>
-              <div className="flex bg-slate-100 rounded-lg p-0.5 border border-slate-200">
+              <div className="flex bg-muted rounded-lg p-0.5 border border-border">
                 <button 
                   onClick={() => setAmpm('AM')} 
-                  className={cn("px-2.5 py-1 text-[11px] font-bold rounded-md transition-all", ampm === 'AM' ? "bg-white text-indigo-700 shadow-sm" : "text-slate-500 hover:text-slate-700")}
+                  className={cn("px-2.5 py-1 text-[11px] font-bold rounded-md transition-all", ampm === 'AM' ? "bg-card text-indigo-700 shadow-sm" : "text-muted-foreground hover:text-foreground")}
                 >
                   오전
                 </button>
                 <button 
                   onClick={() => setAmpm('PM')} 
-                  className={cn("px-2.5 py-1 text-[11px] font-bold rounded-md transition-all", ampm === 'PM' ? "bg-white text-indigo-700 shadow-sm" : "text-slate-500 hover:text-slate-700")}
+                  className={cn("px-2.5 py-1 text-[11px] font-bold rounded-md transition-all", ampm === 'PM' ? "bg-card text-indigo-700 shadow-sm" : "text-muted-foreground hover:text-foreground")}
                 >
                   오후
                 </button>
@@ -202,7 +202,7 @@ export function DateTimePickerPopover({ date, setDate, children, align = "center
             <div className="flex gap-2 mt-5">
               <button 
                 onClick={() => { setDate(null); setOpen(false); }} 
-                className="flex-1 py-2.5 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-600 text-sm font-bold transition-colors"
+                className="flex-1 py-2.5 rounded-xl bg-muted hover:bg-muted text-foreground text-sm font-bold transition-colors"
               >
                 초기화
               </button>

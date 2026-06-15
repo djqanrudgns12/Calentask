@@ -47,24 +47,24 @@ export function LinkLoungeCard() {
   }
 
   return (
-    <div className="relative bg-white/85 backdrop-blur-xl rounded-3xl border border-white/60 shadow-[0_8px_32px_-8px_rgba(0,0,0,0.08)] overflow-hidden h-full flex flex-col">
+    <div className="relative bg-card/85 backdrop-blur-xl rounded-3xl border border-border shadow-[0_8px_32px_-8px_rgba(0,0,0,0.08)] overflow-hidden h-full flex flex-col">
       {/* 헤더 */}
       <div className="px-6 pt-6 pb-4 flex flex-col shrink-0">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-emerald-100 to-green-100 flex items-center justify-center shadow-inner border border-white/50">
+            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-emerald-100 to-green-100 flex items-center justify-center shadow-inner border border-transparent/50">
               <BookmarkIcon className="w-5 h-5 text-emerald-600" />
             </div>
             <div>
-              <h2 className="text-base font-extrabold text-slate-800 tracking-tight">링크 라운지</h2>
-              <p className="text-xs text-slate-400 font-medium">
+              <h2 className="text-base font-extrabold text-foreground tracking-tight">링크 라운지</h2>
+              <p className="text-xs text-muted-foreground font-medium">
                 {bookmarks.length > 0 ? `총 ${bookmarks.length}개의 링크` : '저장된 링크 없음'}
               </p>
             </div>
           </div>
           <button
             onClick={() => setViewMode('link_lounge')}
-            className="flex items-center gap-1 text-xs font-bold text-slate-400 hover:text-slate-600 transition-colors"
+            className="flex items-center gap-1 text-xs font-bold text-muted-foreground hover:text-foreground transition-colors"
           >
             전체 보기
             <ArrowRight className="w-3 h-3" />
@@ -81,7 +81,7 @@ export function LinkLoungeCard() {
                 className={`shrink-0 px-3 py-1 rounded-full text-[11px] font-bold transition-all ${
                   selectedTag === tag
                     ? 'bg-emerald-500 text-white shadow-md shadow-emerald-500/20'
-                    : 'bg-slate-100/80 text-slate-500 hover:bg-slate-200/80'
+                    : 'bg-muted/80 text-muted-foreground hover:bg-accent/80'
                 }`}
               >
                 {tag}
@@ -98,7 +98,7 @@ export function LinkLoungeCard() {
             <div className="w-12 h-12 bg-gradient-to-br from-slate-50 to-emerald-50 rounded-2xl flex items-center justify-center mb-3 shadow-inner border border-emerald-100/50">
               <Link className="w-5 h-5 text-emerald-300" />
             </div>
-            <p className="text-sm font-bold text-slate-400">
+            <p className="text-sm font-bold text-muted-foreground">
               {selectedTag === '전체' ? '아직 저장된 링크가 없어요' : '해당 태그의 링크가 없어요'}
             </p>
           </div>
@@ -113,23 +113,23 @@ export function LinkLoungeCard() {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, scale: 0.95 }}
                   onClick={() => handleOpenLink(bm.url)}
-                  className="group relative flex items-center gap-3 p-3 rounded-2xl bg-slate-50/60 hover:bg-white border border-transparent hover:border-emerald-100/50 hover:shadow-[0_4px_16px_-6px_rgba(16,185,129,0.12)] transition-all cursor-pointer overflow-hidden hover:-translate-y-[1px]"
+                  className="group relative flex items-center gap-3 p-3 rounded-2xl bg-muted/60 hover:bg-card border border-transparent hover:border-emerald-100/50 hover:shadow-[0_4px_16px_-6px_rgba(16,185,129,0.12)] transition-all cursor-pointer overflow-hidden hover:-translate-y-[1px]"
                 >
                   {/* 왼쪽 파비콘/아이콘 */}
-                  <div className="w-10 h-10 shrink-0 rounded-xl bg-white border border-slate-100 shadow-sm flex items-center justify-center overflow-hidden">
+                  <div className="w-10 h-10 shrink-0 rounded-xl bg-card border border-border shadow-sm flex items-center justify-center overflow-hidden">
                     {bm.image ? (
                       <img src={bm.image} alt="" className="w-6 h-6 object-cover" onError={(e) => { e.currentTarget.style.display = 'none' }} />
                     ) : (
-                      <Link className="w-4 h-4 text-slate-300" />
+                      <Link className="w-4 h-4 text-muted-foreground/60" />
                     )}
                   </div>
 
                   {/* 중앙 텍스트 */}
                   <div className="flex-1 min-w-0 flex flex-col justify-center">
-                    <p className="text-sm font-extrabold text-slate-700 truncate group-hover:text-emerald-700 transition-colors">
+                    <p className="text-sm font-extrabold text-foreground truncate group-hover:text-emerald-700 transition-colors">
                       {bm.title || bm.url}
                     </p>
-                    <p className="text-[11px] font-medium text-slate-400 truncate mt-0.5">
+                    <p className="text-[11px] font-medium text-muted-foreground truncate mt-0.5">
                       {bm.url.replace(/^https?:\/\//, '')}
                     </p>
                   </div>
@@ -138,12 +138,12 @@ export function LinkLoungeCard() {
                   <div className="flex items-center shrink-0">
                     <div className="flex gap-1.5 opacity-100 group-hover:hidden pr-1 transition-all">
                       {bm.tags.slice(0, 1).map(tag => (
-                        <span key={tag} className="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-500">
+                        <span key={tag} className="px-2 py-0.5 rounded text-[10px] font-bold bg-muted text-muted-foreground">
                           {tag}
                         </span>
                       ))}
                       {bm.tags.length > 1 && (
-                        <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-400">
+                        <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-muted text-muted-foreground">
                           +{bm.tags.length - 1}
                         </span>
                       )}
@@ -152,7 +152,7 @@ export function LinkLoungeCard() {
                     <div className="hidden group-hover:flex items-center gap-1 animate-in fade-in slide-in-from-right-2 duration-200 pr-1">
                       <button
                         onClick={(e) => handleCopyUrl(e, bm.id, bm.url)}
-                        className="p-1.5 rounded-lg text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 transition-colors"
+                        className="p-1.5 rounded-lg text-muted-foreground hover:text-emerald-600 hover:bg-emerald-50 transition-colors"
                         title="URL 복사"
                       >
                         {copiedId === bm.id ? (
@@ -163,7 +163,7 @@ export function LinkLoungeCard() {
                       </button>
                       <button
                         onClick={(e) => { e.stopPropagation(); handleOpenLink(bm.url); }}
-                        className="p-1.5 rounded-lg text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 transition-colors"
+                        className="p-1.5 rounded-lg text-muted-foreground hover:text-emerald-600 hover:bg-emerald-50 transition-colors"
                         title="새 창으로 열기"
                       >
                         <ExternalLink className="w-4 h-4" />

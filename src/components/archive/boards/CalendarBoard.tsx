@@ -84,15 +84,15 @@ export function CalendarBoard() {
   };
 
   return (
-    <div className="w-full h-full bg-white rounded-3xl p-6 shadow-sm border border-slate-200 overflow-y-auto hide-scrollbar flex flex-col">
+    <div className="w-full h-full bg-card rounded-3xl p-6 shadow-sm border border-border overflow-y-auto hide-scrollbar flex flex-col">
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 bg-indigo-50 rounded-xl flex items-center justify-center border border-indigo-100">
             <CalendarIcon className="w-5 h-5 text-indigo-500" />
           </div>
           <div>
-            <h2 className="text-xl font-bold text-slate-800">일정 캘린더</h2>
-            <p className="text-sm font-medium text-slate-500">시간을 마우스로 드래그하여 타임블로킹을 완성하세요.</p>
+            <h2 className="text-xl font-bold text-foreground">일정 캘린더</h2>
+            <p className="text-sm font-medium text-muted-foreground">시간을 마우스로 드래그하여 타임블로킹을 완성하세요.</p>
           </div>
         </div>
       </div>

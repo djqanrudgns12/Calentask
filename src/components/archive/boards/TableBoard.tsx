@@ -176,7 +176,7 @@ export function TableBoard() {
         header: ({ column }: any) => {
           return (
             <div 
-              className="flex items-center gap-1.5 md:gap-2 cursor-pointer select-none group w-full text-slate-500 font-bold text-xs md:text-sm whitespace-nowrap"
+              className="flex items-center gap-1.5 md:gap-2 cursor-pointer select-none group w-full text-muted-foreground font-bold text-xs md:text-sm whitespace-nowrap"
               onClick={column.getToggleSortingHandler()}
             >
               {getColIcon(col.type)}
@@ -184,7 +184,7 @@ export function TableBoard() {
               {column.getIsSorted() ? (
                 <ArrowUpDown className="w-3 h-3 text-indigo-500 ml-auto shrink-0" />
               ) : (
-                <ArrowUpDown className="w-3 h-3 text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity ml-auto shrink-0" />
+                <ArrowUpDown className="w-3 h-3 text-muted-foreground/50 opacity-0 group-hover:opacity-100 transition-opacity ml-auto shrink-0" />
               )}
             </div>
           );
@@ -265,15 +265,15 @@ export function TableBoard() {
                        handleUpdateCell(item.id, col.id, finalVal);
                     }}
                     onBlur={() => setIsEditing(false)}
-                    className="w-full bg-transparent border-none outline-none p-0 text-xs md:text-sm font-semibold text-slate-800"
+                    className="w-full bg-transparent border-none outline-none p-0 text-xs md:text-sm font-semibold text-foreground"
                   />
                 )
               ) : (
-                <div className={cn("truncate whitespace-nowrap", col.type === 'number' && "text-right w-full font-mono text-slate-600", col.id === 'title' && "font-bold text-slate-900")}>
+                <div className={cn("truncate whitespace-nowrap", col.type === 'number' && "text-right w-full font-mono text-foreground", col.id === 'title' && "font-bold text-foreground")}>
                   {col.type === 'status' ? (
                      <span className={cn(
                        "px-2 md:px-2.5 py-0.5 md:py-1 rounded-full text-[10px] md:text-xs font-bold uppercase tracking-wider",
-                       val === 'done' ? 'bg-emerald-100 text-emerald-700' : val === 'in-progress' ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-600'
+                       val === 'done' ? 'bg-emerald-100 text-emerald-700' : val === 'in-progress' ? 'bg-amber-100 text-amber-700' : 'bg-muted text-foreground'
                      )}>
                        {val === 'done' ? '완료' : val === 'in-progress' ? '진행 중' : '진행 전'}
                      </span>
@@ -290,13 +290,13 @@ export function TableBoard() {
     cols.push({
         id: 'actions',
         header: () => (
-          <div className="flex justify-center text-slate-400 cursor-pointer hover:text-slate-600 transition-colors" onClick={handleAddColumn} title="새 컬럼 추가">
+          <div className="flex justify-center text-muted-foreground cursor-pointer hover:text-foreground transition-colors" onClick={handleAddColumn} title="새 컬럼 추가">
             <Plus className="w-4 h-4" />
           </div>
         ),
         cell: () => (
           <div className="flex justify-center">
-            <button className="opacity-0 group-hover:opacity-100 p-1 hover:bg-slate-200 rounded transition-all text-slate-400">
+            <button className="opacity-0 group-hover:opacity-100 p-1 hover:bg-slate-200 rounded transition-all text-muted-foreground">
               <MoreHorizontal className="w-4 h-4" />
             </button>
           </div>
@@ -322,21 +322,21 @@ export function TableBoard() {
   });
 
   return (
-    <div className="w-full h-full bg-white flex flex-col relative overflow-hidden focus:outline-none pb-24 md:pb-0" tabIndex={0} ref={tableRef} onPaste={handlePaste}>
+    <div className="w-full h-full bg-card flex flex-col relative overflow-hidden focus:outline-none pb-24 md:pb-0" tabIndex={0} ref={tableRef} onPaste={handlePaste}>
       {/* Toolbar */}
-      <div className="px-4 md:px-8 py-3 md:py-4 border-b border-slate-100 flex items-center justify-between shrink-0 bg-white gap-2 overflow-x-auto hide-scrollbar">
+      <div className="px-4 md:px-8 py-3 md:py-4 border-b border-border flex items-center justify-between shrink-0 bg-card gap-2 overflow-x-auto hide-scrollbar">
         <div className="flex items-center gap-2 md:gap-4 shrink-0">
           <div className="relative">
-            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
             <input 
               type="text"
               value={globalFilter ?? ''}
               onChange={(e) => setGlobalFilter(e.target.value)}
               placeholder="전체 셀 검색..."
-              className="pl-9 pr-4 py-1.5 md:py-2 bg-slate-50 border-none rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:bg-white transition-all w-48 md:w-72 shadow-sm font-medium"
+              className="pl-9 pr-4 py-1.5 md:py-2 bg-muted border-none rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:bg-card transition-all w-48 md:w-72 shadow-sm font-medium"
             />
           </div>
-          <button className="flex items-center gap-1.5 md:gap-2 px-2 md:px-3 py-1.5 md:py-2 text-sm font-bold text-slate-600 hover:bg-slate-100 rounded-lg transition-colors whitespace-nowrap">
+          <button className="flex items-center gap-1.5 md:gap-2 px-2 md:px-3 py-1.5 md:py-2 text-sm font-bold text-foreground hover:bg-muted rounded-lg transition-colors whitespace-nowrap">
             <Settings2 className="w-4 h-4" /> 필터
           </button>
         </div>
@@ -348,16 +348,16 @@ export function TableBoard() {
       </div>
 
       {/* Spreadsheet Rendering */}
-      <div className="flex-1 overflow-auto hide-scrollbar bg-slate-50/30">
+      <div className="flex-1 overflow-auto hide-scrollbar bg-muted/30">
         <div className="min-w-full inline-block align-middle">
-          <table className="w-full text-left text-slate-700 border-collapse">
-            <thead className="bg-slate-100/80 sticky top-0 z-10 select-none shadow-sm backdrop-blur-md">
+          <table className="w-full text-left text-foreground border-collapse">
+            <thead className="bg-muted/80 sticky top-0 z-10 select-none shadow-sm backdrop-blur-md">
               {table.getHeaderGroups().map(headerGroup => (
                 <tr key={headerGroup.id}>
                   {headerGroup.headers.map(header => (
                     <th 
                       key={header.id} 
-                      className="px-2 md:px-3 py-2 md:py-2.5 font-bold text-slate-600 border-r border-b border-slate-200/60 last:border-r-0 hover:bg-slate-200/50 transition-colors whitespace-nowrap"
+                      className="px-2 md:px-3 py-2 md:py-2.5 font-bold text-foreground border-r border-b border-border/60 last:border-r-0 hover:bg-slate-200/50 transition-colors whitespace-nowrap"
                       style={{ width: header.getSize() !== 150 ? header.getSize() : 'auto' }}
                     >
                       {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
@@ -368,9 +368,9 @@ export function TableBoard() {
             </thead>
             <tbody>
               {table.getRowModel().rows.map((row, index) => (
-                <tr key={row.id} className="border-b border-slate-100 bg-white hover:bg-indigo-50/30 transition-colors group">
+                <tr key={row.id} className="border-b border-border bg-card hover:bg-indigo-50/30 transition-colors group">
                   {row.getVisibleCells().map(cell => (
-                    <td key={cell.id} className="p-0 border-r border-slate-100 last:border-r-0">
+                    <td key={cell.id} className="p-0 border-r border-border last:border-r-0">
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}
                     </td>
                   ))}
@@ -379,23 +379,23 @@ export function TableBoard() {
               
               {/* Summary Row */}
               {items.length > 0 && (
-                 <tr className="bg-slate-50/50 border-b border-slate-200 font-medium text-slate-500 text-xs">
-                    <td className="px-4 py-2 border-r border-slate-200 text-center bg-slate-100">{items.length}행</td>
+                 <tr className="bg-muted/50 border-b border-border font-medium text-muted-foreground text-xs">
+                    <td className="px-4 py-2 border-r border-border text-center bg-muted">{items.length}행</td>
                     {columnsConfig.map((col, idx) => {
-                       if (idx === 0) return <td key={col.id} className="px-4 py-3 border-r border-slate-200 bg-slate-50">Count: {items.length}</td>;
-                       return <td key={col.id} className="px-4 py-3 border-r border-slate-200 text-right bg-slate-50"></td>;
+                       if (idx === 0) return <td key={col.id} className="px-4 py-3 border-r border-border bg-muted">Count: {items.length}</td>;
+                       return <td key={col.id} className="px-4 py-3 border-r border-border text-right bg-muted"></td>;
                     })}
-                    <td className="bg-slate-50"></td>
+                    <td className="bg-muted"></td>
                  </tr>
               )}
 
               {/* Add New Row Button */}
-              <tr className="bg-white hover:bg-slate-50 cursor-pointer group" onClick={handleAddRow}>
-                <td className="px-4 py-3 border-r border-slate-100 text-center text-slate-300 group-hover:text-indigo-500 transition-colors">
+              <tr className="bg-card hover:bg-muted cursor-pointer group" onClick={handleAddRow}>
+                <td className="px-4 py-3 border-r border-border text-center text-muted-foreground/50 group-hover:text-indigo-500 transition-colors">
                    <Plus className="w-4 h-4 mx-auto" />
                 </td>
                 <td colSpan={columns.length} className="px-4 py-3">
-                  <div className="text-slate-400 font-bold text-sm group-hover:text-indigo-600 transition-colors">
+                  <div className="text-muted-foreground font-bold text-sm group-hover:text-indigo-600 transition-colors">
                     새 항목 추가...
                   </div>
                 </td>
@@ -408,8 +408,8 @@ export function TableBoard() {
                 <div className="w-12 h-12 md:w-16 md:h-16 bg-indigo-50 rounded-2xl flex items-center justify-center mb-4 md:mb-6 shadow-inner">
                    <CheckSquare className="w-6 h-6 md:w-8 md:h-8 text-indigo-400" />
                 </div>
-                <h3 className="text-lg md:text-xl font-black text-slate-800 mb-2 truncate px-4 w-full">데이터베이스를 구축하세요</h3>
-                <p className="text-slate-500 font-medium text-xs md:text-sm mb-6 max-w-sm text-center px-4">방향키로 이동하고, Enter로 편집하며, Ctrl+V로 붙여넣는 강력한 스프레드시트를 경험하세요.</p>
+                <h3 className="text-lg md:text-xl font-black text-foreground mb-2 truncate px-4 w-full">데이터베이스를 구축하세요</h3>
+                <p className="text-muted-foreground font-medium text-xs md:text-sm mb-6 max-w-sm text-center px-4">방향키로 이동하고, Enter로 편집하며, Ctrl+V로 붙여넣는 강력한 스프레드시트를 경험하세요.</p>
                 <button onClick={handleAddRow} className="px-5 md:px-6 py-2 md:py-2.5 bg-slate-900 text-white rounded-xl font-bold text-xs md:text-sm shadow-lg hover:bg-slate-800 transition-all active:scale-95 whitespace-nowrap">
                   첫 행 만들기
                 </button>

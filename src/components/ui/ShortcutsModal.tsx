@@ -15,13 +15,13 @@ export function ShortcutsModal() {
   }, [])
 
   const ModKey = () => (
-    <kbd className="inline-flex items-center justify-center rounded border border-slate-200 bg-slate-50 px-1.5 py-0.5 text-xs font-semibold text-slate-600 shadow-sm">
+    <kbd className="inline-flex items-center justify-center rounded border border-border bg-muted px-1.5 py-0.5 text-xs font-semibold text-foreground shadow-sm">
       {isMac ? <Command className="w-3 h-3" /> : 'Ctrl'}
     </kbd>
   )
 
   const Key = ({ children }: { children: React.ReactNode }) => (
-    <kbd className="inline-flex items-center justify-center rounded border border-slate-200 bg-slate-50 px-1.5 py-0.5 text-xs font-semibold text-slate-600 shadow-sm">
+    <kbd className="inline-flex items-center justify-center rounded border border-border bg-muted px-1.5 py-0.5 text-xs font-semibold text-foreground shadow-sm">
       {children}
     </kbd>
   )
@@ -54,14 +54,14 @@ export function ShortcutsModal() {
 
   return (
     <Dialog open={isShortcutsModalOpen} onOpenChange={closeShortcutsModal}>
-      <DialogContent className="sm:max-w-[480px] p-0 overflow-hidden bg-white/95 backdrop-blur-xl border-slate-200/60 shadow-2xl rounded-2xl">
-        <div className="p-6 pb-4 bg-slate-50/50 border-b border-slate-100">
+      <DialogContent className="sm:max-w-[480px] p-0 overflow-hidden bg-card/95 backdrop-blur-xl border-border/60 shadow-2xl rounded-2xl">
+        <div className="p-6 pb-4 bg-muted/50 border-b border-border">
           <DialogHeader>
-            <DialogTitle className="text-xl font-bold flex items-center gap-2 text-slate-800">
+            <DialogTitle className="text-xl font-bold flex items-center gap-2 text-foreground">
               <Command className="w-5 h-5 text-indigo-500" />
               키보드 단축키
             </DialogTitle>
-            <DialogDescription className="text-slate-500 mt-1.5">
+            <DialogDescription className="text-muted-foreground mt-1.5">
               Calentask를 마우스 없이 더 빠르게 사용하세요.
             </DialogDescription>
           </DialogHeader>
@@ -70,12 +70,12 @@ export function ShortcutsModal() {
         <div className="p-6 pt-2 max-h-[60vh] overflow-y-auto space-y-6">
           {shortcuts.map((group, i) => (
             <div key={i} className="space-y-3">
-              <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">{group.category}</h4>
+              <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">{group.category}</h4>
               <div className="space-y-1">
                 {group.items.map((item, j) => (
-                  <div key={j} className="flex items-center justify-between py-2 px-3 hover:bg-slate-50 rounded-lg transition-colors">
-                    <div className="flex items-center gap-3 text-sm font-medium text-slate-700">
-                      <div className="text-slate-400">{item.icon}</div>
+                  <div key={j} className="flex items-center justify-between py-2 px-3 hover:bg-muted rounded-lg transition-colors">
+                    <div className="flex items-center gap-3 text-sm font-medium text-foreground">
+                      <div className="text-muted-foreground">{item.icon}</div>
                       {item.label}
                     </div>
                     <div className="flex items-center gap-1">

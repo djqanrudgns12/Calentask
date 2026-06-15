@@ -66,8 +66,8 @@ type Attachment = { id: string; type: 'link' | 'image' | 'file'; url: string; na
 /* ─────────────────────────────────────────
    PRD 정밀 CSS 토큰
    ───────────────────────────────────────── */
-const CARD = 'bg-white/85 backdrop-blur-[16px] rounded-[20px] border border-white/70 shadow-[0_2px_12px_-2px_rgba(0,0,0,0.04),0_8px_32px_-8px_rgba(0,0,0,0.06)]'
-const LABEL = 'text-[14px] font-bold text-slate-700 flex items-center whitespace-nowrap shrink-0'
+const CARD = 'bg-card/85 backdrop-blur-[16px] rounded-[20px] border border-transparent/70 shadow-[0_2px_12px_-2px_rgba(0,0,0,0.04),0_8px_32px_-8px_rgba(0,0,0,0.06)]'
+const LABEL = 'text-[14px] font-bold text-foreground flex items-center whitespace-nowrap shrink-0'
 
 export function AddEventDialog({ children }: { children?: React.ReactNode }) {
   const { isAddEventOpen, closeAddEvent, addEventDate, prefillEventData, prefillAgendaTaskId, openAddEvent, editingEvent, openEditCategory } = useCalendarStore()
@@ -219,7 +219,7 @@ export function AddEventDialog({ children }: { children?: React.ReactNode }) {
 
       <DialogContent
         ref={dialogRef}
-        className="w-[95vw] max-w-[460px] p-0 overflow-hidden flex flex-col max-h-[90vh] border border-white/50 rounded-[28px]"
+        className="w-[95vw] max-w-[460px] p-0 overflow-hidden flex flex-col max-h-[90vh] border border-transparent/50 rounded-[28px]"
         style={{ background: 'linear-gradient(180deg, #f8f9fc 0%, #f0f2f7 100%)', boxShadow: '0 24px 80px -12px rgba(0,0,0,0.12)' }}
       >
         {previewColor && (
@@ -227,7 +227,7 @@ export function AddEventDialog({ children }: { children?: React.ReactNode }) {
         )}
         {/* ── HEADER: 제목만 (Shadcn 기본 닫기 버튼 활용) ── */}
         <DialogHeader className="flex-shrink-0 px-6 py-5 flex flex-row items-center justify-center relative" style={{ borderBottom: '1px solid rgba(0,0,0,0.04)' }}>
-          <DialogTitle className="text-[17px] font-bold text-slate-800 tracking-tight">
+          <DialogTitle className="text-[17px] font-bold text-foreground tracking-tight">
             {editingEvent ? '일정 수정' : '새 일정 추가'}
           </DialogTitle>
           <DialogDescription className="sr-only">일정 추가 다이얼로그</DialogDescription>
@@ -241,7 +241,7 @@ export function AddEventDialog({ children }: { children?: React.ReactNode }) {
             <input
               id="title" value={title} onChange={e => setTitle(e.target.value)}
               placeholder="일정 제목" required
-              className="w-full bg-transparent text-[17px] text-slate-900 font-bold focus:outline-none placeholder:text-slate-400"
+              className="w-full bg-transparent text-[17px] text-foreground font-bold focus:outline-none placeholder:text-muted-foreground"
             />
           </div>
 
@@ -249,22 +249,22 @@ export function AddEventDialog({ children }: { children?: React.ReactNode }) {
           <div className={`${CARD} px-5 py-4`}>
             {/* 종일 */}
             <div className="flex items-center justify-between pb-3" style={{ borderBottom: '1px solid rgba(0,0,0,0.04)' }}>
-              <span className={LABEL}><ToggleRight className="w-4 h-4 mr-1.5 text-slate-500"/>종일</span>
+              <span className={LABEL}><ToggleRight className="w-4 h-4 mr-1.5 text-muted-foreground"/>종일</span>
               <button type="button" onClick={() => setIsAllDay(!isAllDay)}
                 className={`w-[50px] h-[30px] rounded-full transition-colors relative shrink-0 ${isAllDay ? 'bg-[#34C759]' : 'bg-slate-200'}`}>
-                <div className={`w-[26px] h-[26px] bg-white rounded-full shadow-sm transition-transform absolute top-[2px] ${isAllDay ? 'left-[22px]' : 'left-[2px]'}`} />
+                <div className={`w-[26px] h-[26px] bg-card rounded-full shadow-sm transition-transform absolute top-[2px] ${isAllDay ? 'left-[22px]' : 'left-[2px]'}`} />
               </button>
             </div>
 
             {/* 시작 */}
             <div className="flex items-center gap-3 py-3" style={{ borderBottom: '1px solid rgba(0,0,0,0.04)' }}>
-              <span className={`${LABEL} min-w-[70px]`}><Play className="w-4 h-4 mr-1.5 text-slate-500"/>시작</span>
+              <span className={`${LABEL} min-w-[70px]`}><Play className="w-4 h-4 mr-1.5 text-muted-foreground"/>시작</span>
               <div className="flex-1 min-w-0 flex items-center gap-2 justify-end">
                 <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} required
-                  className="bg-slate-100/60 hover:bg-slate-100 text-slate-700 font-medium text-[13px] rounded-xl px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 transition-colors min-w-0" />
+                  className="bg-muted/60 hover:bg-muted text-foreground font-medium text-[13px] rounded-xl px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 transition-colors min-w-0" />
                 {!isAllDay && (
                   <div className="w-[85px] shrink-0">
-                    <TimeSelect value={startTime} onChange={handleStartTimeChange} required className="!h-[34px] !text-[13px] !rounded-xl !bg-slate-100/60 hover:!bg-slate-100 !border-0 transition-colors" />
+                    <TimeSelect value={startTime} onChange={handleStartTimeChange} required className="!h-[34px] !text-[13px] !rounded-xl !bg-muted/60 hover:!bg-muted !border-0 transition-colors" />
                   </div>
                 )}
               </div>
@@ -272,13 +272,13 @@ export function AddEventDialog({ children }: { children?: React.ReactNode }) {
 
             {/* 종료 */}
             <div className={`flex items-center gap-3 py-3 ${!isAllDay ? '' : 'opacity-40 pointer-events-none'}`} style={{ borderBottom: !isAllDay ? '1px solid rgba(0,0,0,0.04)' : 'none' }}>
-              <span className={`${LABEL} min-w-[70px]`}><Square className="w-4 h-4 mr-1.5 text-slate-500"/>종료</span>
+              <span className={`${LABEL} min-w-[70px]`}><Square className="w-4 h-4 mr-1.5 text-muted-foreground"/>종료</span>
               <div className="flex-1 min-w-0 flex items-center gap-2 justify-end">
                 <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} required={!isAllDay} disabled={isAllDay}
-                  className="bg-slate-100/60 hover:bg-slate-100 text-slate-700 font-medium text-[13px] rounded-xl px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 disabled:opacity-50 transition-colors min-w-0" />
+                  className="bg-muted/60 hover:bg-muted text-foreground font-medium text-[13px] rounded-xl px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 disabled:opacity-50 transition-colors min-w-0" />
                 {!isAllDay && (
                   <div className="w-[85px] shrink-0">
-                    <TimeSelect value={endTime} onChange={setEndTime} required className="!h-[34px] !text-[13px] !rounded-xl !bg-slate-100/60 hover:!bg-slate-100 !border-0 transition-colors" />
+                    <TimeSelect value={endTime} onChange={setEndTime} required className="!h-[34px] !text-[13px] !rounded-xl !bg-muted/60 hover:!bg-muted !border-0 transition-colors" />
                   </div>
                 )}
               </div>
@@ -287,13 +287,13 @@ export function AddEventDialog({ children }: { children?: React.ReactNode }) {
             {/* 소요시간 */}
             {!isAllDay && (
               <div className="flex items-center gap-3 pt-3">
-                <span className={`${LABEL} min-w-[80px]`}><Clock className="w-4 h-4 mr-1.5 text-slate-500"/>소요시간</span>
+                <span className={`${LABEL} min-w-[80px]`}><Clock className="w-4 h-4 mr-1.5 text-muted-foreground"/>소요시간</span>
                 <div className="flex-1 min-w-0 flex justify-end">
                   <div className="flex bg-black/[0.03] rounded-xl p-[3px]">
                     {[30, 60, 90, 120].map(m => (
                       <button key={m} type="button" onClick={() => applyQuickDuration(m)}
                         className={`px-2.5 py-[5px] text-[12px] font-bold rounded-[10px] transition-all whitespace-nowrap ${
-                          currentDurationMinutes === m ? 'bg-white text-[#007AFF] shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>
+                          currentDurationMinutes === m ? 'bg-card text-[#007AFF] shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}>
                         {m === 30 ? '30분' : m === 60 ? '1시간' : m === 90 ? '1.5시간' : '2시간'}
                       </button>
                     ))}
@@ -306,20 +306,20 @@ export function AddEventDialog({ children }: { children?: React.ReactNode }) {
           {/* ▸ 카테고리 + 색상 카드 */}
           <div className={`${CARD} px-5 py-4`}>
             <div className="flex items-center justify-between mb-3">
-              <span className={LABEL}><Tag className="w-4 h-4 mr-1.5 text-slate-500"/>카테고리</span>
+              <span className={LABEL}><Tag className="w-4 h-4 mr-1.5 text-muted-foreground"/>카테고리</span>
               <Popover open={isTemplateOpen} onOpenChange={setIsTemplateOpen}>
                 <PopoverTrigger render={
                   <button type="button" className="flex items-center gap-1.5 text-[12px] text-[#007AFF] font-bold hover:bg-[#007AFF]/10 px-2.5 py-1 rounded-full transition-colors">
                     <Zap className="w-3.5 h-3.5" /> 템플릿
                   </button>
                 } />
-                <PopoverContent align="end" className="w-56 p-2 shadow-xl border-slate-100 rounded-[20px] bg-white/95 backdrop-blur-xl z-[110]">
-                  <PopoverHeader className="px-3 py-2 mb-1 border-b border-slate-50"><PopoverTitle className="text-xs font-bold text-slate-400">템플릿 목록</PopoverTitle></PopoverHeader>
+                <PopoverContent align="end" className="w-56 p-2 shadow-xl border-border rounded-[20px] bg-card/95 backdrop-blur-xl z-[110]">
+                  <PopoverHeader className="px-3 py-2 mb-1 border-b border-border"><PopoverTitle className="text-xs font-bold text-muted-foreground">템플릿 목록</PopoverTitle></PopoverHeader>
                   <div className="max-h-[200px] overflow-y-auto space-y-0.5">
-                    {templates.length === 0 ? <div className="py-4 text-center text-xs text-slate-400">등록된 템플릿이 없습니다.</div> : templates.map(t => (
-                      <button key={t.id} type="button" onClick={() => handleLoadTemplate(t)} className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl hover:bg-slate-50 text-left transition-colors">
+                    {templates.length === 0 ? <div className="py-4 text-center text-xs text-muted-foreground">등록된 템플릿이 없습니다.</div> : templates.map(t => (
+                      <button key={t.id} type="button" onClick={() => handleLoadTemplate(t)} className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl hover:bg-muted text-left transition-colors">
                         <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: t.hex_color || '#007AFF' }} />
-                        <span className="text-sm font-semibold text-slate-800 truncate">{t.title}</span>
+                        <span className="text-sm font-semibold text-foreground truncate">{t.title}</span>
                       </button>
                     ))}
                   </div>
@@ -333,15 +333,15 @@ export function AddEventDialog({ children }: { children?: React.ReactNode }) {
                 return (
                   <div key={cat.id} className="relative group/cat">
                     <button type="button" onClick={() => toggleCategory(cat.id)}
-                      className={`px-3 py-1.5 text-[12px] font-semibold rounded-full transition-all flex items-center gap-1.5 border ${sel ? 'shadow-sm' : 'text-slate-600 bg-white border-slate-200 hover:bg-slate-50'}`}
+                      className={`px-3 py-1.5 text-[12px] font-semibold rounded-full transition-all flex items-center gap-1.5 border ${sel ? 'shadow-sm' : 'text-foreground bg-card border-border hover:bg-muted'}`}
                       style={sel ? { backgroundColor: `${cat.hex_color || '#007AFF'}1A`, borderColor: cat.hex_color || '#007AFF', color: '#0f172a' } : undefined}
                     >
                       <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: cat.hex_color || '#007AFF' }} />
                       {cat.name}
                       {sel && <X className="w-3 h-3 ml-0.5" style={{ color: cat.hex_color || '#007AFF' }} />}
                     </button>
-                    <div className="absolute -top-2 -right-2 hidden group-hover/cat:flex items-center gap-0.5 bg-white shadow-lg rounded-full px-1 py-0.5 z-10 border border-slate-100">
-                      <div className="cursor-pointer hover:bg-slate-100 p-1 rounded-full text-[#007AFF]" onClick={e => { e.stopPropagation(); openEditCategory(cat) }}><Pencil className="w-3 h-3" /></div>
+                    <div className="absolute -top-2 -right-2 hidden group-hover/cat:flex items-center gap-0.5 bg-card shadow-lg rounded-full px-1 py-0.5 z-10 border border-border">
+                      <div className="cursor-pointer hover:bg-muted p-1 rounded-full text-[#007AFF]" onClick={e => { e.stopPropagation(); openEditCategory(cat) }}><Pencil className="w-3 h-3" /></div>
                       {!cat.is_default && <div className="cursor-pointer hover:bg-red-50 p-1 rounded-full text-red-500" onClick={e => handleDeleteCategory(e, cat.id)}><X className="w-3 h-3" /></div>}
                     </div>
                   </div>
@@ -351,13 +351,13 @@ export function AddEventDialog({ children }: { children?: React.ReactNode }) {
                 <div className="flex items-center gap-1.5">
                   <Input autoFocus value={newCategoryName} onChange={e => setNewCategoryName(e.target.value)}
                     onKeyDown={e => { if (e.key === 'Enter') handleAddCategorySubmit(e as any) }}
-                    className="w-24 h-[28px] text-[12px] font-medium rounded-full px-3 bg-white border-slate-200 focus-visible:ring-indigo-500/30" placeholder="이름..." />
+                    className="w-24 h-[28px] text-[12px] font-medium rounded-full px-3 bg-card border-border focus-visible:ring-indigo-500/30" placeholder="이름..." />
                   <button type="button" onClick={handleAddCategorySubmit} className="h-[28px] px-3 rounded-full bg-[#007AFF] text-white text-[12px] font-bold shadow-md shadow-[#007AFF]/20 active:scale-95 transition-transform">추가</button>
-                  <button type="button" onClick={() => setIsAddingCategory(false)} className="h-[28px] w-[28px] rounded-full hover:bg-slate-100 flex items-center justify-center"><X className="w-3.5 h-3.5 text-slate-400" /></button>
+                  <button type="button" onClick={() => setIsAddingCategory(false)} className="h-[28px] w-[28px] rounded-full hover:bg-muted flex items-center justify-center"><X className="w-3.5 h-3.5 text-muted-foreground" /></button>
                 </div>
               ) : (
                 <button type="button" onClick={() => setIsAddingCategory(true)}
-                  className="px-3 py-1.5 text-[12px] font-semibold rounded-full bg-white border border-dashed border-slate-300 text-slate-500 hover:bg-slate-50 hover:text-slate-700 flex items-center gap-1 transition-colors">
+                  className="px-3 py-1.5 text-[12px] font-semibold rounded-full bg-card border border-dashed border-slate-300 text-muted-foreground hover:bg-muted hover:text-foreground flex items-center gap-1 transition-colors">
                   <Plus className="w-3.5 h-3.5" /> 추가
                 </button>
               )}
@@ -365,7 +365,7 @@ export function AddEventDialog({ children }: { children?: React.ReactNode }) {
 
             {/* 색상 */}
             <div className="flex items-center gap-4 pt-3" style={{ borderTop: '1px solid rgba(0,0,0,0.04)' }}>
-              <span className={`${LABEL} min-w-[70px]`}><Palette className="w-4 h-4 mr-1.5 text-slate-500"/>색상</span>
+              <span className={`${LABEL} min-w-[70px]`}><Palette className="w-4 h-4 mr-1.5 text-muted-foreground"/>색상</span>
               <div className="flex flex-wrap items-center gap-[6px]">
                 {COLOR_SWATCHES.slice(0, 14).map(c => (
                   <button key={c} type="button" onClick={() => setCustomColor(c === customColor ? null : c)}
@@ -378,34 +378,34 @@ export function AddEventDialog({ children }: { children?: React.ReactNode }) {
 
           {/* ▸ 메모 카드 */}
           <div className={`${CARD} px-5 py-4 focus-within:ring-2 focus-within:ring-indigo-500/20 transition-shadow`}>
-            <span className={`${LABEL} block mb-2`}><AlignLeft className="w-4 h-4 mr-1.5 text-slate-500"/>상세 메모</span>
+            <span className={`${LABEL} block mb-2`}><AlignLeft className="w-4 h-4 mr-1.5 text-muted-foreground"/>상세 메모</span>
             <textarea value={memo} onChange={e => setMemo(e.target.value)} placeholder="일정에 대한 추가 메모를 남겨주세요."
-              className="w-full min-h-[64px] text-[14px] text-slate-800 font-medium bg-transparent focus:outline-none resize-none placeholder:text-slate-400" />
+              className="w-full min-h-[64px] text-[14px] text-foreground font-medium bg-transparent focus:outline-none resize-none placeholder:text-muted-foreground" />
           </div>
 
           {/* ▸ 첨부파일 카드 */}
           <div className={`${CARD} px-5 py-4`}>
-            <span className={`${LABEL} block mb-3`}><Paperclip className="w-4 h-4 mr-1.5 text-slate-500"/>첨부파일</span>
+            <span className={`${LABEL} block mb-3`}><Paperclip className="w-4 h-4 mr-1.5 text-muted-foreground"/>첨부파일</span>
             {attachments.length > 0 && (
               <div className="space-y-2 mb-3">
                 {attachments.map(a => (
-                  <div key={a.id} className="flex items-center justify-between p-2.5 rounded-2xl bg-slate-50/80 border border-slate-100/80">
+                  <div key={a.id} className="flex items-center justify-between p-2.5 rounded-2xl bg-muted/80 border border-border/80">
                     <div className="flex items-center gap-2.5 overflow-hidden">
-                      <div className="w-8 h-8 rounded-lg bg-white shadow-sm flex items-center justify-center shrink-0">
-                        {a.type === 'image' ? <ImageIcon className="w-4 h-4 text-sky-500" /> : a.type === 'link' ? <LinkIcon className="w-4 h-4 text-violet-500" /> : <FileText className="w-4 h-4 text-slate-500" />}
+                      <div className="w-8 h-8 rounded-lg bg-card shadow-sm flex items-center justify-center shrink-0">
+                        {a.type === 'image' ? <ImageIcon className="w-4 h-4 text-sky-500" /> : a.type === 'link' ? <LinkIcon className="w-4 h-4 text-violet-500" /> : <FileText className="w-4 h-4 text-muted-foreground" />}
                       </div>
                       <div className="flex flex-col truncate">
-                        <span className="text-[13px] font-bold text-slate-800 truncate">{a.name}</span>
+                        <span className="text-[13px] font-bold text-foreground truncate">{a.name}</span>
                         <a href={a.url} target="_blank" rel="noreferrer" className="text-[11px] font-medium text-[#007AFF] hover:underline truncate">{a.url}</a>
                       </div>
                     </div>
-                    <button type="button" onClick={() => setAttachments(p => p.filter(x => x.id !== a.id))} className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors shrink-0"><X className="w-4 h-4" /></button>
+                    <button type="button" onClick={() => setAttachments(p => p.filter(x => x.id !== a.id))} className="p-1.5 text-muted-foreground hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors shrink-0"><X className="w-4 h-4" /></button>
                   </div>
                 ))}
               </div>
             )}
             <button type="button" onClick={handleAddAttachment}
-              className="w-full py-3 border-2 border-dashed border-slate-200 rounded-2xl flex items-center justify-center gap-2 text-slate-400 hover:text-[#007AFF] hover:border-[#007AFF]/40 hover:bg-[#007AFF]/5 transition-all group">
+              className="w-full py-3 border-2 border-dashed border-border rounded-2xl flex items-center justify-center gap-2 text-muted-foreground hover:text-[#007AFF] hover:border-[#007AFF]/40 hover:bg-[#007AFF]/5 transition-all group">
               <Plus className="w-4 h-4 group-hover:text-[#007AFF] transition-colors" />
               <span className="text-[13px] font-bold">첨부파일 추가</span>
             </button>
@@ -415,7 +415,7 @@ export function AddEventDialog({ children }: { children?: React.ReactNode }) {
         {/* ── FOOTER: 취소/저장 하단 고정 ── */}
         <div className="flex-shrink-0 flex items-center justify-between px-6 py-4" style={{ borderTop: '1px solid rgba(0,0,0,0.04)', background: 'rgba(255,255,255,0.9)', backdropFilter: 'blur(12px)' }}>
           <Button type="button" variant="ghost" onClick={closeAddEvent}
-            className="text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-full px-5 h-10 text-[15px] font-medium">
+            className="text-muted-foreground hover:text-foreground hover:bg-muted rounded-full px-5 h-10 text-[15px] font-medium">
             취소
           </Button>
           <Button type="button" onClick={() => handleSubmit()} disabled={isCreating || isUpdating}

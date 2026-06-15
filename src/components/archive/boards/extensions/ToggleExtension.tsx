@@ -7,19 +7,19 @@ const ToggleComponent = (props: any) => {
   const title = props.node.attrs.title;
 
   return (
-    <NodeViewWrapper className="my-2 border border-slate-200 rounded-lg bg-white overflow-hidden" data-type="toggle">
+    <NodeViewWrapper className="my-2 border border-border rounded-lg bg-card overflow-hidden" data-type="toggle">
       <div 
-        className="flex items-center gap-2 px-3 py-2 bg-slate-50 border-b border-slate-200 hover:bg-slate-100 transition-colors"
+        className="flex items-center gap-2 px-3 py-2 bg-muted border-b border-border hover:bg-muted transition-colors"
       >
         <button 
           onClick={() => props.updateAttributes({ isOpen: !isOpen })}
           className="p-0.5 rounded hover:bg-slate-200 transition-colors shrink-0 outline-none"
           contentEditable={false}
         >
-          {isOpen ? <ChevronDown className="w-4 h-4 text-slate-500" /> : <ChevronRight className="w-4 h-4 text-slate-500" />}
+          {isOpen ? <ChevronDown className="w-4 h-4 text-muted-foreground" /> : <ChevronRight className="w-4 h-4 text-muted-foreground" />}
         </button>
         <div 
-          className="text-sm font-semibold text-slate-700 flex-1 outline-none min-w-0"
+          className="text-sm font-semibold text-foreground flex-1 outline-none min-w-0"
           contentEditable={true}
           suppressContentEditableWarning
           onBlur={(e) => {

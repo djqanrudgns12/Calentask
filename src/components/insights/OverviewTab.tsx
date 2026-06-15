@@ -163,13 +163,13 @@ export default function OverviewTab() {
           className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6"
         >
           {/* 투입 시간 */}
-          <div className="bg-white rounded-[20px] p-4 shadow-sm border border-gray-100">
-            <div className="flex items-center gap-1.5 text-gray-400 font-bold text-[11px] mb-2">
+          <div className="bg-card rounded-[20px] p-4 shadow-sm border border-border">
+            <div className="flex items-center gap-1.5 text-muted-foreground font-bold text-[11px] mb-2">
               <Clock size={13} className="text-blue-400" /> 투입 시간
             </div>
             <div className="flex items-baseline gap-1.5">
-              <span className="text-[26px] font-black text-gray-900 tracking-tighter">{kpi.currentWeekHours}</span>
-              <span className="text-[13px] font-bold text-gray-400">h</span>
+              <span className="text-[26px] font-black text-foreground tracking-tighter">{kpi.currentWeekHours}</span>
+              <span className="text-[13px] font-bold text-muted-foreground">h</span>
             </div>
             {(() => {
               const ch = getChange(kpi.currentWeekHours, kpi.prevWeekHours)
@@ -184,13 +184,13 @@ export default function OverviewTab() {
           </div>
 
           {/* 완료한 할 일 */}
-          <div className="bg-white rounded-[20px] p-4 shadow-sm border border-gray-100">
-            <div className="flex items-center gap-1.5 text-gray-400 font-bold text-[11px] mb-2">
+          <div className="bg-card rounded-[20px] p-4 shadow-sm border border-border">
+            <div className="flex items-center gap-1.5 text-muted-foreground font-bold text-[11px] mb-2">
               <CheckSquare size={13} className="text-emerald-400" /> 완료한 할 일
             </div>
             <div className="flex items-baseline gap-1.5">
-              <span className="text-[26px] font-black text-gray-900 tracking-tighter">{kpi.currentWeekDone}</span>
-              <span className="text-[13px] font-bold text-gray-400">건</span>
+              <span className="text-[26px] font-black text-foreground tracking-tighter">{kpi.currentWeekDone}</span>
+              <span className="text-[13px] font-bold text-muted-foreground">건</span>
             </div>
             {(() => {
               const ch = getChange(kpi.currentWeekDone, kpi.prevWeekDone)
@@ -205,13 +205,13 @@ export default function OverviewTab() {
           </div>
 
           {/* 아카이브 메모 */}
-          <div className="bg-white rounded-[20px] p-4 shadow-sm border border-gray-100">
-            <div className="flex items-center gap-1.5 text-gray-400 font-bold text-[11px] mb-2">
+          <div className="bg-card rounded-[20px] p-4 shadow-sm border border-border">
+            <div className="flex items-center gap-1.5 text-muted-foreground font-bold text-[11px] mb-2">
               <FileText size={13} className="text-purple-400" /> 아카이브 메모
             </div>
             <div className="flex items-baseline gap-1.5">
-              <span className="text-[26px] font-black text-gray-900 tracking-tighter">{kpi.currentWeekNotes}</span>
-              <span className="text-[13px] font-bold text-gray-400">건</span>
+              <span className="text-[26px] font-black text-foreground tracking-tighter">{kpi.currentWeekNotes}</span>
+              <span className="text-[13px] font-bold text-muted-foreground">건</span>
             </div>
             {(() => {
               const ch = getChange(kpi.currentWeekNotes, kpi.prevWeekNotes)
@@ -226,15 +226,15 @@ export default function OverviewTab() {
           </div>
 
           {/* 연속 기록일 */}
-          <div className="bg-white rounded-[20px] p-4 shadow-sm border border-gray-100">
-            <div className="flex items-center gap-1.5 text-gray-400 font-bold text-[11px] mb-2">
+          <div className="bg-card rounded-[20px] p-4 shadow-sm border border-border">
+            <div className="flex items-center gap-1.5 text-muted-foreground font-bold text-[11px] mb-2">
               <Flame size={13} className="text-orange-400" /> 연속 기록일
             </div>
             <div className="flex items-baseline gap-1.5">
-              <span className="text-[26px] font-black text-gray-900 tracking-tighter">{kpi.currentStreak}</span>
-              <span className="text-[13px] font-bold text-gray-400">일</span>
+              <span className="text-[26px] font-black text-foreground tracking-tighter">{kpi.currentStreak}</span>
+              <span className="text-[13px] font-bold text-muted-foreground">일</span>
             </div>
-            <div className="text-[11px] font-bold text-gray-400 mt-1">
+            <div className="text-[11px] font-bold text-muted-foreground mt-1">
               최고 {kpi.maxStreak}일
             </div>
           </div>
@@ -244,10 +244,10 @@ export default function OverviewTab() {
       {isLoadingInsights ? (
         <div className="flex flex-col gap-6 animate-pulse">
           <div className="flex gap-4">
-            <div className="h-[120px] bg-gray-100 rounded-3xl flex-1" />
-            <div className="h-[120px] bg-gray-100 rounded-3xl w-32" />
+            <div className="h-[120px] bg-muted rounded-3xl flex-1" />
+            <div className="h-[120px] bg-muted rounded-3xl w-32" />
           </div>
-          <div className="h-[280px] bg-gray-100 rounded-3xl w-full" />
+          <div className="h-[280px] bg-muted rounded-3xl w-full" />
         </div>
       ) : (
         <>
@@ -286,10 +286,10 @@ export default function OverviewTab() {
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.1 }}
-                  className="bg-white rounded-[24px] p-6 shadow-sm border border-gray-100"
+                  className="bg-card rounded-[24px] p-6 shadow-sm border border-border"
                 >
-                  <h3 className="text-[17px] font-extrabold text-gray-900 tracking-tight mb-1">생산성 균형 레이더</h3>
-                  <p className="text-[12px] font-bold text-gray-400 mb-2">이번 주(실선) vs 전주(점선) 비교</p>
+                  <h3 className="text-[17px] font-extrabold text-foreground tracking-tight mb-1">생산성 균형 레이더</h3>
+                  <p className="text-[12px] font-bold text-muted-foreground mb-2">이번 주(실선) vs 전주(점선) 비교</p>
                   <div className="h-[260px]">
                     <ResponsiveContainer width="100%" height="100%">
                       <RadarChart data={radarData} cx="50%" cy="50%" outerRadius="70%">

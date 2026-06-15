@@ -12,12 +12,12 @@ export function DDayCard() {
 
   if (isLoading) {
     return (
-      <div className="bg-white/85 backdrop-blur-xl rounded-3xl border border-white/60 shadow-[0_8px_32px_-8px_rgba(0,0,0,0.08)] p-6 animate-pulse">
+      <div className="bg-card/85 backdrop-blur-xl rounded-3xl border border-border shadow-[0_8px_32px_-8px_rgba(0,0,0,0.08)] p-6 animate-pulse">
         <div className="flex items-center gap-3">
-          <div className="w-12 h-12 bg-slate-100 rounded-2xl" />
+          <div className="w-12 h-12 bg-muted rounded-2xl" />
           <div className="flex-1 space-y-2">
-            <div className="h-3 bg-slate-100 rounded w-20" />
-            <div className="h-4 bg-slate-100 rounded w-32" />
+            <div className="h-3 bg-muted rounded w-20" />
+            <div className="h-4 bg-muted rounded w-32" />
           </div>
         </div>
       </div>
@@ -26,14 +26,14 @@ export function DDayCard() {
 
   if (!data) {
     return (
-      <div className="bg-white/85 backdrop-blur-xl rounded-3xl border border-white/60 shadow-[0_8px_32px_-8px_rgba(0,0,0,0.08)] p-6">
+      <div className="bg-card/85 backdrop-blur-xl rounded-3xl border border-border shadow-[0_8px_32px_-8px_rgba(0,0,0,0.08)] p-6">
         <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center shadow-inner border border-white/50">
-            <PartyPopper className="w-5 h-5 text-slate-300" />
+          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center shadow-inner border border-transparent/50">
+            <PartyPopper className="w-5 h-5 text-muted-foreground/60" />
           </div>
           <div>
-            <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">D-Day</p>
-            <p className="text-sm font-bold text-slate-400 mt-0.5">등록된 기념일이 없습니다</p>
+            <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">D-Day</p>
+            <p className="text-sm font-bold text-muted-foreground mt-0.5">등록된 기념일이 없습니다</p>
           </div>
         </div>
       </div>
@@ -57,7 +57,7 @@ export function DDayCard() {
       <motion.div
         onClick={() => setIsModalOpen(true)}
         whileHover={{ y: -2 }}
-        className="relative bg-white/85 backdrop-blur-xl rounded-3xl border border-white/60 shadow-[0_8px_32px_-8px_rgba(0,0,0,0.08)] overflow-hidden cursor-pointer group transition-shadow hover:shadow-[0_12px_40px_-8px_rgba(0,0,0,0.12)]"
+        className="relative bg-card/85 backdrop-blur-xl rounded-3xl border border-border shadow-[0_8px_32px_-8px_rgba(0,0,0,0.08)] overflow-hidden cursor-pointer group transition-shadow hover:shadow-[0_12px_40px_-8px_rgba(0,0,0,0.12)]"
       >
         {/* 배경 그라데이션 */}
         <div
@@ -68,7 +68,7 @@ export function DDayCard() {
         <div className="relative p-6 flex items-center justify-between gap-4">
           <div className="flex items-center gap-4 min-w-0 flex-1">
             <div
-              className="w-12 h-12 shrink-0 rounded-2xl flex items-center justify-center shadow-inner border border-white/50"
+              className="w-12 h-12 shrink-0 rounded-2xl flex items-center justify-center shadow-inner border border-transparent/50"
               style={{ backgroundColor: `${themeColor}12`, color: themeColor }}
             >
               <Icon className="w-6 h-6" />
@@ -80,7 +80,7 @@ export function DDayCard() {
               >
                 Upcoming Anniversary
               </span>
-              <p className="text-sm font-extrabold text-slate-800 line-clamp-1 leading-tight mt-0.5">
+              <p className="text-sm font-extrabold text-foreground line-clamp-1 leading-tight mt-0.5">
                 {event.title}
               </p>
             </div>

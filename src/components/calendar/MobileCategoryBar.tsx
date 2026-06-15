@@ -55,16 +55,16 @@ export function MobileCategoryBar() {
           >
             <button
               onClick={() => setCategoryBarExpanded(true)}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-white/80 border border-slate-200/60 shadow-sm hover:shadow transition-all active:scale-95"
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-card/80 border border-border/60 shadow-sm hover:shadow transition-all active:scale-95"
             >
               <Folder className="w-3.5 h-3.5 text-indigo-500" />
-              <span className="text-xs font-bold text-slate-600">카테고리</span>
+              <span className="text-xs font-bold text-foreground">카테고리</span>
               {activeCount > 0 && (
                 <div className="flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-md bg-indigo-50 border border-indigo-100 text-indigo-600 text-[10px] font-extrabold">
                   {activeCount}
                 </div>
               )}
-              <ChevronDown className="w-3 h-3 text-slate-400" />
+              <ChevronDown className="w-3 h-3 text-muted-foreground" />
             </button>
           </motion.div>
         ) : (
@@ -79,16 +79,16 @@ export function MobileCategoryBar() {
             <div className="flex items-center gap-1.5 overflow-x-auto hide-scrollbar touch-pan-x snap-x py-0.5">
               {/* 1. 카테고리 관리 팝오버 트리거 */}
               <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
-                <PopoverTrigger className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-white border border-slate-200/60 shadow-sm hover:shadow hover:border-indigo-200 transition-all shrink-0 active:scale-95 snap-start">
+                <PopoverTrigger className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-card border border-border/60 shadow-sm hover:shadow hover:border-indigo-200 transition-all shrink-0 active:scale-95 snap-start">
                   <Folder className="w-3.5 h-3.5 text-indigo-500" />
-                  <span className="text-xs font-bold text-slate-700 whitespace-nowrap">카테고리</span>
+                  <span className="text-xs font-bold text-foreground whitespace-nowrap">카테고리</span>
                   {activeCount > 0 && (
                     <div className="flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-md bg-indigo-50 border border-indigo-100 text-indigo-600 text-[10px] font-extrabold">
                       {activeCount}
                     </div>
                   )}
                 </PopoverTrigger>
-                <PopoverContent className="w-72 p-0 shadow-xl border-slate-100 rounded-2xl overflow-hidden" align="start" sideOffset={8}>
+                <PopoverContent className="w-72 p-0 shadow-xl border-border rounded-2xl overflow-hidden" align="start" sideOffset={8}>
                   <CategoryPopoverContent />
                 </PopoverContent>
               </Popover>
@@ -97,18 +97,18 @@ export function MobileCategoryBar() {
               {activeCategoryObjects.map(cat => (
                 <div
                   key={cat.id}
-                  className="flex items-center gap-1 pl-2 pr-1 py-1 bg-white rounded-lg shadow-sm border border-slate-100/80 hover:border-slate-200 transition-all shrink-0 snap-start"
+                  className="flex items-center gap-1 pl-2 pr-1 py-1 bg-card rounded-lg shadow-sm border border-border/80 hover:border-border transition-all shrink-0 snap-start"
                 >
                   <div
                     className="w-2 h-2 rounded-full shadow-sm shrink-0"
                     style={{ backgroundColor: cat.hex_color || '#4f46e5' }}
                   />
-                  <span className="text-[11px] font-bold text-slate-700 whitespace-nowrap">
+                  <span className="text-[11px] font-bold text-foreground whitespace-nowrap">
                     {cat.name}
                   </span>
                   <button
                     onClick={() => toggleCategory(cat.id)}
-                    className="p-0.5 rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
+                    className="p-0.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
                   >
                     <X className="w-3 h-3" />
                   </button>
@@ -123,10 +123,10 @@ export function MobileCategoryBar() {
               {/* 4. 접기 버튼 — 항상 우측 끝 */}
               <button
                 onClick={() => setCategoryBarExpanded(false)}
-                className="flex items-center justify-center p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 border border-slate-200/60 transition-colors shrink-0 snap-end active:scale-95"
+                className="flex items-center justify-center p-1.5 rounded-lg bg-muted hover:bg-slate-200 border border-border/60 transition-colors shrink-0 snap-end active:scale-95"
                 title="카테고리 바 접기"
               >
-                <ChevronUp className="w-3.5 h-3.5 text-slate-500" />
+                <ChevronUp className="w-3.5 h-3.5 text-muted-foreground" />
               </button>
             </div>
           </motion.div>

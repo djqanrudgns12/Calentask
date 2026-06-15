@@ -63,35 +63,35 @@ export function SpotlightSearch({ open, onOpenChange }: SpotlightSearchProps) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent showCloseButton={false} className="sm:max-w-xl p-0 gap-0 overflow-hidden bg-white/95 backdrop-blur-xl border border-white/50 shadow-2xl rounded-2xl">
+      <DialogContent showCloseButton={false} className="sm:max-w-xl p-0 gap-0 overflow-hidden bg-card/95 backdrop-blur-xl border border-transparent/50 shadow-2xl rounded-2xl">
         <DialogHeader className="sr-only">
           <DialogTitle>통합 검색</DialogTitle>
           <DialogDescription>일정 제목이나 메모를 검색하세요.</DialogDescription>
         </DialogHeader>
         
-        <div className="flex items-center px-4 py-3 border-b border-slate-100">
-          <Search className="w-5 h-5 text-slate-400 mr-3 shrink-0" />
+        <div className="flex items-center px-4 py-3 border-b border-border">
+          <Search className="w-5 h-5 text-muted-foreground mr-3 shrink-0" />
           <input
             autoFocus
             type="text"
             placeholder="일정, 할 일, 메모 검색..."
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            className="flex-1 bg-transparent border-none outline-none text-lg text-slate-800 placeholder-slate-400 focus:ring-0"
+            className="flex-1 bg-transparent border-none outline-none text-lg text-foreground placeholder-slate-400 focus:ring-0"
           />
           {isLoading && <Loader2 className="w-5 h-5 text-blue-500 animate-spin shrink-0" />}
         </div>
 
-        <div className="max-h-[60vh] overflow-y-auto bg-slate-50/50">
+        <div className="max-h-[60vh] overflow-y-auto bg-muted/50">
           {!query && (
-            <div className="py-12 text-center text-slate-500">
+            <div className="py-12 text-center text-muted-foreground">
               <Search className="w-10 h-10 text-slate-200 mx-auto mb-3" />
               <p>원하는 일정을 검색해 보세요.</p>
             </div>
           )}
 
           {query && !isLoading && results?.length === 0 && (
-            <div className="py-12 text-center text-slate-500">
+            <div className="py-12 text-center text-muted-foreground">
               <p>검색 결과가 없습니다.</p>
             </div>
           )}
@@ -102,7 +102,7 @@ export function SpotlightSearch({ open, onOpenChange }: SpotlightSearchProps) {
                 <div 
                   key={activity.id} 
                   onClick={() => handleResultClick(activity)}
-                  className="flex flex-col p-3 rounded-xl hover:bg-white hover:shadow-sm border border-transparent hover:border-slate-100 transition-all cursor-pointer group"
+                  className="flex flex-col p-3 rounded-xl hover:bg-card hover:shadow-sm border border-transparent hover:border-border transition-all cursor-pointer group"
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-3">
@@ -110,17 +110,17 @@ export function SpotlightSearch({ open, onOpenChange }: SpotlightSearchProps) {
                         className="w-3 h-3 rounded-full shrink-0" 
                         style={{ backgroundColor: activity.hex_color || '#3b82f6' }}
                       />
-                      <span className="font-semibold text-slate-800 group-hover:text-blue-600 transition-colors">
+                      <span className="font-semibold text-foreground group-hover:text-blue-600 transition-colors">
                         {activity.title}
                       </span>
                     </div>
-                    <span className="text-xs font-medium text-slate-400 bg-slate-100 px-2 py-1 rounded-md">
+                    <span className="text-xs font-medium text-muted-foreground bg-muted px-2 py-1 rounded-md">
                       {format(new Date(activity.start_time), 'yyyy. M. d. (E)', { locale: ko })}
                     </span>
                   </div>
                   {activity.memo && (
-                    <div className="flex items-start mt-2 pl-6 text-sm text-slate-500">
-                      <FileText className="w-4 h-4 mr-1.5 shrink-0 mt-0.5 text-slate-400" />
+                    <div className="flex items-start mt-2 pl-6 text-sm text-muted-foreground">
+                      <FileText className="w-4 h-4 mr-1.5 shrink-0 mt-0.5 text-muted-foreground" />
                       <p className="line-clamp-2">{activity.memo}</p>
                     </div>
                   )}

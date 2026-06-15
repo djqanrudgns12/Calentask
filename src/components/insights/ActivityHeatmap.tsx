@@ -70,13 +70,13 @@ const ActivityHeatmap = React.memo(function ActivityHeatmap({ activities }: Acti
   };
 
   return (
-    <div className="bg-white rounded-[24px] p-6 shadow-sm border border-gray-100 mt-4">
+    <div className="bg-card rounded-[24px] p-6 shadow-sm border border-border mt-4">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h3 className="text-[17px] font-extrabold text-gray-900 tracking-tight">활동 잔디밭</h3>
-          <p className="text-[12px] font-bold text-gray-400 mt-0.5">매일의 꾸준함을 확인하세요</p>
+          <h3 className="text-[17px] font-extrabold text-foreground tracking-tight">활동 잔디밭</h3>
+          <p className="text-[12px] font-bold text-muted-foreground mt-0.5">매일의 꾸준함을 확인하세요</p>
         </div>
-        <div className="flex items-center gap-1.5 text-[11px] font-bold text-gray-400">
+        <div className="flex items-center gap-1.5 text-[11px] font-bold text-muted-foreground">
           <span>Less</span>
           <div className="flex gap-1">
             <div className="w-3 h-3 rounded-[3px] bg-[#F3F4F6]" />
@@ -109,7 +109,7 @@ const ActivityHeatmap = React.memo(function ActivityHeatmap({ activities }: Acti
                     <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-max px-3 py-1.5 bg-gray-900 text-white text-[11px] font-bold rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-10 pointer-events-none">
                       {format(dayData.date, 'M월 d일', { locale: ko })} 
                       {dayData.minutes > 0 ? ` (${Math.round(dayData.minutes / 60 * 10) / 10}시간)` : ' (기록 없음)'}
-                      <div className="text-gray-400 font-normal mt-0.5 border-t border-gray-700 pt-0.5">
+                      <div className="text-muted-foreground font-normal mt-0.5 border-t border-gray-700 pt-0.5">
                         클릭하여 일정 추가
                       </div>
                     </div>

@@ -127,52 +127,52 @@ export default function TemplateActivityLinker({
             animate={{ y: 0 }}
             exit={{ y: '100%' }}
             transition={{ type: 'spring', damping: 28, stiffness: 220 }}
-            className="fixed inset-x-0 bottom-0 h-[85vh] md:inset-auto md:top-1/2 md:left-1/2 md:-translate-x-1/2 md:-translate-y-1/2 md:w-[520px] md:max-h-[80vh] md:rounded-3xl bg-white shadow-2xl z-[301] flex flex-col rounded-t-[28px] md:rounded-3xl"
+            className="fixed inset-x-0 bottom-0 h-[85vh] md:inset-auto md:top-1/2 md:left-1/2 md:-translate-x-1/2 md:-translate-y-1/2 md:w-[520px] md:max-h-[80vh] md:rounded-3xl bg-card shadow-2xl z-[301] flex flex-col rounded-t-[28px] md:rounded-3xl"
           >
             {/* Header */}
-            <div className="flex items-center justify-between px-6 pt-5 pb-4 border-b border-gray-100 shrink-0">
+            <div className="flex items-center justify-between px-6 pt-5 pb-4 border-b border-border shrink-0">
               <div>
-                <h3 className="text-lg font-extrabold text-gray-900 tracking-tight">
+                <h3 className="text-lg font-extrabold text-foreground tracking-tight">
                   📎 일정 연결 관리
                 </h3>
-                <p className="text-sm text-gray-500 mt-0.5">
+                <p className="text-sm text-muted-foreground mt-0.5">
                   &apos;{templateTitle}&apos; 템플릿에 일정을 연결하여 통계에 반영합니다
                 </p>
               </div>
-              <button onClick={onClose} className="p-2 -mr-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600 rounded-full transition-colors">
+              <button onClick={onClose} className="p-2 -mr-2 text-muted-foreground hover:bg-muted hover:text-foreground rounded-full transition-colors">
                 <X size={20} />
               </button>
             </div>
 
             {/* 검색 필터 */}
-            <div className="px-6 py-4 border-b border-gray-50 space-y-3 shrink-0">
+            <div className="px-6 py-4 border-b border-border space-y-3 shrink-0">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={16} />
                 <Input
                   placeholder="일정 제목으로 검색..."
                   value={searchQuery}
                   onChange={e => setSearchQuery(e.target.value)}
-                  className="pl-9 h-10 bg-gray-50 border-gray-200 rounded-xl text-sm"
+                  className="pl-9 h-10 bg-muted border-border rounded-xl text-sm"
                 />
               </div>
               <div className="flex gap-2">
                 <div className="flex-1 flex items-center gap-2">
-                  <Calendar size={14} className="text-gray-400 shrink-0" />
+                  <Calendar size={14} className="text-muted-foreground shrink-0" />
                   <Input
                     type="date"
                     value={dateFrom}
                     onChange={e => setDateFrom(e.target.value)}
-                    className="h-9 text-xs bg-gray-50 border-gray-200 rounded-lg"
+                    className="h-9 text-xs bg-muted border-border rounded-lg"
                     placeholder="시작일"
                   />
                 </div>
-                <span className="text-gray-400 self-center text-xs">~</span>
+                <span className="text-muted-foreground self-center text-xs">~</span>
                 <div className="flex-1">
                   <Input
                     type="date"
                     value={dateTo}
                     onChange={e => setDateTo(e.target.value)}
-                    className="h-9 text-xs bg-gray-50 border-gray-200 rounded-lg"
+                    className="h-9 text-xs bg-muted border-border rounded-lg"
                     placeholder="종료일"
                   />
                 </div>
@@ -181,18 +181,18 @@ export default function TemplateActivityLinker({
 
             {/* 액션 바 */}
             {searchResults && searchResults.length > 0 && (
-              <div className="px-6 py-2 border-b border-gray-50 flex items-center justify-between shrink-0 bg-gray-50/50">
+              <div className="px-6 py-2 border-b border-border flex items-center justify-between shrink-0 bg-muted/50">
                 <label className="flex items-center gap-2 cursor-pointer group" onClick={() => setShowLinkedOnly(!showLinkedOnly)}>
-                  <div className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${showLinkedOnly ? 'bg-indigo-500 border-indigo-500' : 'bg-white border-gray-300 group-hover:border-indigo-400'}`}>
+                  <div className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${showLinkedOnly ? 'bg-indigo-500 border-indigo-500' : 'bg-card border-gray-300 group-hover:border-indigo-400'}`}>
                     {showLinkedOnly && <svg className="w-2.5 h-2.5 text-white" viewBox="0 0 12 12" fill="none"><path d="M2 6L5 9L10 3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>}
                   </div>
-                  <span className="text-[12px] font-bold text-gray-600 select-none">연결된 일정만 보기</span>
+                  <span className="text-[12px] font-bold text-foreground select-none">연결된 일정만 보기</span>
                 </label>
                 <div className="flex items-center gap-1.5">
-                  <Button variant="ghost" size="sm" onClick={handleBulkLink} disabled={isLinking} className="h-7 px-2.5 text-[11px] font-bold text-gray-500 hover:text-indigo-600 hover:bg-indigo-50">
+                  <Button variant="ghost" size="sm" onClick={handleBulkLink} disabled={isLinking} className="h-7 px-2.5 text-[11px] font-bold text-muted-foreground hover:text-indigo-600 hover:bg-indigo-50">
                     모두 연결
                   </Button>
-                  <Button variant="ghost" size="sm" onClick={handleBulkUnlink} disabled={isUnlinking} className="h-7 px-2.5 text-[11px] font-bold text-gray-500 hover:text-rose-600 hover:bg-rose-50">
+                  <Button variant="ghost" size="sm" onClick={handleBulkUnlink} disabled={isUnlinking} className="h-7 px-2.5 text-[11px] font-bold text-muted-foreground hover:text-rose-600 hover:bg-rose-50">
                     모두 해제
                   </Button>
                 </div>
@@ -202,13 +202,13 @@ export default function TemplateActivityLinker({
             {/* 검색 결과 */}
             <div className="flex-1 overflow-y-auto px-4 py-3">
               {isLoading ? (
-                <div className="flex items-center justify-center py-12 text-gray-400">
+                <div className="flex items-center justify-center py-12 text-muted-foreground">
                   <Loader2 className="animate-spin mr-2" size={20} />
                   <span className="text-sm font-medium">검색 중...</span>
                 </div>
               ) : !searchResults || searchResults.length === 0 ? (
-                <div className="text-center py-12 text-gray-400">
-                  <Calendar className="mx-auto mb-3 text-gray-300" size={32} />
+                <div className="text-center py-12 text-muted-foreground">
+                  <Calendar className="mx-auto mb-3 text-muted-foreground/50" size={32} />
                   <p className="text-sm font-medium">검색 결과가 없습니다</p>
                   <p className="text-xs mt-1">검색어나 날짜 범위를 조정해보세요</p>
                 </div>
@@ -225,7 +225,7 @@ export default function TemplateActivityLinker({
                         className={`w-full text-left p-3.5 rounded-2xl border transition-all ${
                           isChecked 
                             ? 'bg-indigo-50/60 border-indigo-200 shadow-sm' 
-                            : 'bg-white border-gray-100 hover:border-gray-200 hover:shadow-sm'
+                            : 'bg-card border-border hover:border-border hover:shadow-sm'
                         } ${act.isDirectlyCreated ? 'opacity-80 cursor-default' : 'cursor-pointer active:scale-[0.98]'}`}
                       >
                         <div className="flex items-start gap-3">
@@ -233,7 +233,7 @@ export default function TemplateActivityLinker({
                             <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-colors ${
                               isChecked 
                                 ? 'bg-indigo-500 border-indigo-500' 
-                                : 'border-gray-300 bg-white'
+                                : 'border-gray-300 bg-card'
                             } ${act.isDirectlyCreated ? 'opacity-60' : ''}`}>
                               {isChecked && (
                                 <svg className="w-3 h-3 text-white" viewBox="0 0 12 12" fill="none">
@@ -244,7 +244,7 @@ export default function TemplateActivityLinker({
                           </div>
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 mb-1">
-                              <span className="text-sm font-bold text-gray-900 truncate">{act.title}</span>
+                              <span className="text-sm font-bold text-foreground truncate">{act.title}</span>
                               {act.isDirectlyCreated && (
                                 <span className="shrink-0 px-2 py-0.5 text-[10px] font-bold rounded-full bg-indigo-100 text-indigo-600 flex items-center gap-0.5">
                                   <Link2 size={9} />직접 생성
@@ -256,9 +256,9 @@ export default function TemplateActivityLinker({
                                 </span>
                               )}
                             </div>
-                            <div className="text-xs text-gray-500 font-medium space-y-0.5">
+                            <div className="text-xs text-muted-foreground font-medium space-y-0.5">
                               <div>{formatDateTime(act.startTime)} ~ {format(new Date(act.endTime), 'HH:mm')}</div>
-                              <div className="text-gray-400">{formatDuration(act.durationMinutes)}</div>
+                              <div className="text-muted-foreground">{formatDuration(act.durationMinutes)}</div>
                             </div>
                           </div>
                         </div>
@@ -270,7 +270,7 @@ export default function TemplateActivityLinker({
             </div>
 
             {/* 하단 */}
-            <div className="flex-shrink-0 px-6 py-4 border-t border-gray-100 bg-white md:rounded-b-3xl">
+            <div className="flex-shrink-0 px-6 py-4 border-t border-border bg-card md:rounded-b-3xl">
               <Button
                 onClick={onClose}
                 className="w-full h-12 rounded-2xl bg-gray-900 hover:bg-gray-800 text-white font-bold text-sm shadow-sm"

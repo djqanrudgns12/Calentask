@@ -272,20 +272,20 @@ export function PinPadOverlay({ children }: { children: React.ReactNode }) {
             animate={{ opacity: 1, backdropFilter: "blur(24px)" }}
             exit={{ opacity: 0, backdropFilter: "blur(0px)" }}
             transition={{ duration: 0.5 }}
-            className="absolute inset-0 z-50 flex items-center justify-center bg-white/40"
+            className="absolute inset-0 z-50 flex items-center justify-center bg-card/40"
           >
             <motion.div 
               initial={{ scale: 0.9, y: 30, opacity: 0 }}
               animate={{ scale: 1, y: 0, opacity: 1 }}
               exit={{ scale: 0.95, y: -20, opacity: 0 }}
               transition={{ type: "spring", stiffness: 300, damping: 25 }}
-              className="bg-white/80 p-6 sm:p-8 rounded-3xl shadow-2xl backdrop-blur-3xl border border-white flex flex-col items-center w-[90%] max-w-[360px]"
+              className="bg-card/80 p-6 sm:p-8 rounded-3xl shadow-2xl backdrop-blur-3xl border border-transparent flex flex-col items-center w-[90%] max-w-[360px]"
             >
               <div className="w-14 h-14 bg-gradient-to-tr from-slate-800 to-slate-900 text-white rounded-2xl flex items-center justify-center mb-6 shadow-xl shadow-slate-900/20">
                 {mode === 'loading' ? <Loader2 className="w-7 h-7 animate-spin" /> : mode.startsWith('setup') ? <ShieldAlert className="w-7 h-7" /> : <Lock className="w-7 h-7" />}
               </div>
-              <h2 className="text-xl font-bold text-slate-800 mb-2">{title}</h2>
-              <p className="text-sm text-slate-500 mb-8 font-medium text-center px-4">
+              <h2 className="text-xl font-bold text-foreground mb-2">{title}</h2>
+              <p className="text-sm text-muted-foreground mb-8 font-medium text-center px-4">
                 {lockoutTime > 0 
                   ? <span className="text-rose-500 font-bold">{lockoutTime}초 후 다시 시도하세요</span>
                   : subtitle}
@@ -317,7 +317,7 @@ export function PinPadOverlay({ children }: { children: React.ReactNode }) {
                         key={num}
                         onClick={() => handleKeyPress(num.toString())}
                         disabled={isProcessing}
-                        className="h-[60px] md:h-[68px] rounded-2xl bg-white/60 hover:bg-white active:bg-slate-100 active:scale-95 text-slate-800 text-2xl font-medium transition-all shadow-sm hover:shadow-md border border-slate-100 disabled:opacity-50 touch-manipulation"
+                        className="h-[60px] md:h-[68px] rounded-2xl bg-card/60 hover:bg-card active:bg-muted active:scale-95 text-foreground text-2xl font-medium transition-all shadow-sm hover:shadow-md border border-border disabled:opacity-50 touch-manipulation"
                       >
                         {num}
                       </button>
@@ -326,14 +326,14 @@ export function PinPadOverlay({ children }: { children: React.ReactNode }) {
                     <button
                       onClick={() => handleKeyPress('0')}
                       disabled={isProcessing}
-                      className="h-[60px] md:h-[68px] rounded-2xl bg-white/60 hover:bg-white active:bg-slate-100 active:scale-95 text-slate-800 text-2xl font-medium transition-all shadow-sm hover:shadow-md border border-slate-100 disabled:opacity-50 touch-manipulation"
+                      className="h-[60px] md:h-[68px] rounded-2xl bg-card/60 hover:bg-card active:bg-muted active:scale-95 text-foreground text-2xl font-medium transition-all shadow-sm hover:shadow-md border border-border disabled:opacity-50 touch-manipulation"
                     >
                       0
                     </button>
                     <button
                       onClick={handleDelete}
                       disabled={isProcessing}
-                      className="h-[60px] md:h-[68px] rounded-2xl flex items-center justify-center bg-white/60 hover:bg-white active:bg-slate-100 active:scale-95 text-slate-500 hover:text-rose-500 transition-all shadow-sm hover:shadow-md border border-slate-100 disabled:opacity-50 touch-manipulation"
+                      className="h-[60px] md:h-[68px] rounded-2xl flex items-center justify-center bg-card/60 hover:bg-card active:bg-muted active:scale-95 text-muted-foreground hover:text-rose-500 transition-all shadow-sm hover:shadow-md border border-border disabled:opacity-50 touch-manipulation"
                     >
                       <Delete className="w-6 h-6" />
                     </button>
@@ -345,7 +345,7 @@ export function PinPadOverlay({ children }: { children: React.ReactNode }) {
                         setAnswer('');
                         setMode('reset');
                       }}
-                      className="mt-6 text-sm text-slate-400 hover:text-indigo-600 font-medium transition-colors"
+                      className="mt-6 text-sm text-muted-foreground hover:text-indigo-600 font-medium transition-colors"
                     >
                       2차 비밀번호를 잊으셨나요? (재설정)
                     </button>
@@ -356,11 +356,11 @@ export function PinPadOverlay({ children }: { children: React.ReactNode }) {
               {mode === 'setup_security' && (
                 <div className="w-full space-y-4">
                   <div className="space-y-2">
-                    <Label className="text-slate-600">질문 선택</Label>
+                    <Label className="text-foreground">질문 선택</Label>
                     <select
                       value={questionType}
                       onChange={(e) => setQuestionType(e.target.value)}
-                      className="flex h-11 w-full items-center justify-between rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm ring-offset-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                      className="flex h-11 w-full items-center justify-between rounded-xl border border-border bg-card px-3 py-2 text-sm ring-offset-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                     >
                       <option value="" disabled>보안 질문을 선택하세요</option>
                       {PRESET_QUESTIONS.map(q => (
@@ -373,23 +373,23 @@ export function PinPadOverlay({ children }: { children: React.ReactNode }) {
                   
                   {questionType === 'CUSTOM' && (
                     <div className="space-y-2">
-                      <Label className="text-slate-600">질문 직접 입력</Label>
+                      <Label className="text-foreground">질문 직접 입력</Label>
                       <Input 
                         value={customQuestion}
                         onChange={(e) => setCustomQuestion(e.target.value)}
                         placeholder="자신만의 질문을 입력하세요"
-                        className="bg-white rounded-xl border-slate-200"
+                        className="bg-card rounded-xl border-border"
                       />
                     </div>
                   )}
 
                   <div className="space-y-2 pt-2">
-                    <Label className="text-slate-600">답변 입력</Label>
+                    <Label className="text-foreground">답변 입력</Label>
                     <Input 
                       value={answer}
                       onChange={(e) => setAnswer(e.target.value)}
                       placeholder="답변을 입력하세요"
-                      className="bg-white rounded-xl border-slate-200"
+                      className="bg-card rounded-xl border-border"
                     />
                   </div>
 
@@ -406,19 +406,19 @@ export function PinPadOverlay({ children }: { children: React.ReactNode }) {
 
               {mode === 'reset' && (
                 <div className="w-full space-y-4">
-                  <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 mb-4">
-                    <p className="text-sm font-semibold text-slate-700 text-center">
+                  <div className="bg-muted p-4 rounded-xl border border-border mb-4">
+                    <p className="text-sm font-semibold text-foreground text-center">
                       Q. {status?.question || "보안 질문이 설정되지 않았습니다."}
                     </p>
                   </div>
                   
                   <div className="space-y-2">
-                    <Label className="text-slate-600">답변 입력</Label>
+                    <Label className="text-foreground">답변 입력</Label>
                     <Input 
                       value={answer}
                       onChange={(e) => setAnswer(e.target.value)}
                       placeholder="설정했던 답변을 입력하세요"
-                      className="bg-white rounded-xl border-slate-200 text-center font-bold tracking-wider py-5"
+                      className="bg-card rounded-xl border-border text-center font-bold tracking-wider py-5"
                       onKeyDown={(e) => e.key === 'Enter' && handleResetVerify()}
                     />
                   </div>
@@ -427,7 +427,7 @@ export function PinPadOverlay({ children }: { children: React.ReactNode }) {
                     <Button 
                       variant="ghost"
                       onClick={() => setMode('locked')}
-                      className="flex-1 text-slate-500 hover:bg-slate-100 rounded-xl"
+                      className="flex-1 text-muted-foreground hover:bg-muted rounded-xl"
                     >
                       취소
                     </Button>

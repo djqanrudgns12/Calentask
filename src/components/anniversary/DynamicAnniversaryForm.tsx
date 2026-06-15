@@ -200,7 +200,7 @@ export const DynamicAnniversaryForm = React.memo(function DynamicAnniversaryForm
     if (preset === 'CUSTOM' && customRuleType === 'YEAR_MONTH_DAY') {
       return (
         <div className="p-4 text-center">
-          <span className="text-sm font-medium text-slate-500">
+          <span className="text-sm font-medium text-muted-foreground">
             연월일 표기 방식은 오버레이 캘린더 표시 기능이 없습니다. 위젯에서만 확인하실 수 있습니다.
           </span>
         </div>
@@ -212,42 +212,42 @@ export const DynamicAnniversaryForm = React.memo(function DynamicAnniversaryForm
         {/* 마스터 토글 1: 사이드바 위젯 표시 (항상 보임) */}
         <label className="flex items-center justify-between cursor-pointer group pb-2">
           <div className="flex flex-col">
-            <span className="text-sm font-bold text-slate-700">사이드바 위젯에 표시하기</span>
-            <span className="text-xs text-slate-400 mt-0.5">D-Day 위젯에 이 항목을 띄웁니다</span>
+            <span className="text-sm font-bold text-foreground">사이드바 위젯에 표시하기</span>
+            <span className="text-xs text-muted-foreground mt-0.5">D-Day 위젯에 이 항목을 띄웁니다</span>
           </div>
           <div className="relative flex items-center justify-center shrink-0">
             <input type="checkbox" className="sr-only peer" checked={showInSidebar} onChange={(e) => setShowInSidebar(e.target.checked)} />
-            <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-500"></div>
+            <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-transparent after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-card after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-500"></div>
           </div>
         </label>
         
-        <div className="w-full h-px bg-slate-100" />
+        <div className="w-full h-px bg-muted" />
 
         {/* 마스터 토글 2: 캘린더 표시 */}
         <label className="flex items-center justify-between cursor-pointer group">
-          <span className="text-sm font-bold text-slate-700">나의 캘린더에 표시하기</span>
+          <span className="text-sm font-bold text-foreground">나의 캘린더에 표시하기</span>
           <div className="relative flex items-center justify-center">
             <input type="checkbox" className="sr-only peer" checked={showInCalendar} onChange={(e) => setShowInCalendar(e.target.checked)} />
-            <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-500"></div>
+            <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-transparent after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-card after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-500"></div>
           </div>
         </label>
 
         {showInCalendar && (
-          <div className="pt-3 border-t border-slate-200/60 space-y-4">
+          <div className="pt-3 border-t border-border/60 space-y-4">
             {(preset === 'COUPLE' || (preset === 'CUSTOM' && customRuleType === 'DAYS_COUNT')) && (
               <>
                 <label className="flex items-center justify-between cursor-pointer group">
-                  <span className="text-sm font-medium text-slate-600">100일 단위 기념일 달력에 표시</span>
+                  <span className="text-sm font-medium text-foreground">100일 단위 기념일 달력에 표시</span>
                   <div className="relative flex items-center justify-center">
                     <input type="checkbox" className="sr-only peer" checked={show100Days} onChange={(e) => setShow100Days(e.target.checked)} />
-                    <div className="w-9 h-5 bg-slate-200 rounded-full peer peer-checked:after:translate-x-full after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-indigo-500"></div>
+                    <div className="w-9 h-5 bg-slate-200 rounded-full peer peer-checked:after:translate-x-full after:absolute after:top-[2px] after:left-[2px] after:bg-card after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-indigo-500"></div>
                   </div>
                 </label>
                 <label className="flex items-center justify-between cursor-pointer group">
-                  <span className="text-sm font-medium text-slate-600">주년 단위(1주년 등) 달력에 표시</span>
+                  <span className="text-sm font-medium text-foreground">주년 단위(1주년 등) 달력에 표시</span>
                   <div className="relative flex items-center justify-center">
                     <input type="checkbox" className="sr-only peer" checked={showYears} onChange={(e) => setShowYears(e.target.checked)} />
-                    <div className="w-9 h-5 bg-slate-200 rounded-full peer peer-checked:after:translate-x-full after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-indigo-500"></div>
+                    <div className="w-9 h-5 bg-slate-200 rounded-full peer peer-checked:after:translate-x-full after:absolute after:top-[2px] after:left-[2px] after:bg-card after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-indigo-500"></div>
                   </div>
                 </label>
               </>
@@ -255,39 +255,39 @@ export const DynamicAnniversaryForm = React.memo(function DynamicAnniversaryForm
             {(preset === 'EXAM' || (preset === 'CUSTOM' && customRuleType === 'D_DAY')) && (
               <label className="flex items-center justify-between cursor-pointer group">
                 <div className="flex flex-col">
-                  <span className="text-sm font-medium text-slate-600">디데이 당일만 표시 (D-Day)</span>
-                  <span className="text-xs text-slate-400 mt-0.5">D-10, D-30 등 중간 알람 숨기기</span>
+                  <span className="text-sm font-medium text-foreground">디데이 당일만 표시 (D-Day)</span>
+                  <span className="text-xs text-muted-foreground mt-0.5">D-10, D-30 등 중간 알람 숨기기</span>
                 </div>
                 <div className="relative flex items-center justify-center shrink-0">
                   <input type="checkbox" className="sr-only peer" checked={showDDayOnly} onChange={(e) => setShowDDayOnly(e.target.checked)} />
-                  <div className="w-9 h-5 bg-slate-200 rounded-full peer peer-checked:after:translate-x-full after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-rose-500"></div>
+                  <div className="w-9 h-5 bg-slate-200 rounded-full peer peer-checked:after:translate-x-full after:absolute after:top-[2px] after:left-[2px] after:bg-card after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-rose-500"></div>
                 </div>
               </label>
             )}
             {(preset === 'PAYDAY' || (preset === 'CUSTOM' && customRuleType === 'MONTH')) && (
               <label className="flex items-center justify-between cursor-pointer group">
-                <span className="text-sm font-medium text-slate-600">주말일 경우 직전 평일로 앞당기기</span>
+                <span className="text-sm font-medium text-foreground">주말일 경우 직전 평일로 앞당기기</span>
                 <div className="relative flex items-center justify-center shrink-0">
                   <input type="checkbox" className="sr-only peer" checked={avoidWeekends} onChange={(e) => setAvoidWeekends(e.target.checked)} />
-                  <div className="w-9 h-5 bg-slate-200 rounded-full peer peer-checked:after:translate-x-full after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500"></div>
+                  <div className="w-9 h-5 bg-slate-200 rounded-full peer peer-checked:after:translate-x-full after:absolute after:top-[2px] after:left-[2px] after:bg-card after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500"></div>
                 </div>
               </label>
             )}
             {preset === 'CUSTOM' && customRuleType === 'MONTHS_COUNT' && (
               <label className="flex items-center justify-between cursor-pointer group">
-                <span className="text-sm font-medium text-slate-600">매월 달력에 표시하기</span>
+                <span className="text-sm font-medium text-foreground">매월 달력에 표시하기</span>
                 <div className="relative flex items-center justify-center shrink-0">
                   <input type="checkbox" className="sr-only peer" checked={showEveryMonth} onChange={(e) => setShowEveryMonth(e.target.checked)} />
-                  <div className="w-9 h-5 bg-slate-200 rounded-full peer peer-checked:after:translate-x-full after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-indigo-500"></div>
+                  <div className="w-9 h-5 bg-slate-200 rounded-full peer peer-checked:after:translate-x-full after:absolute after:top-[2px] after:left-[2px] after:bg-card after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-indigo-500"></div>
                 </div>
               </label>
             )}
             {preset === 'CUSTOM' && customRuleType === 'WEEKS_COUNT' && (
               <label className="flex items-center justify-between cursor-pointer group">
-                <span className="text-sm font-medium text-slate-600">매주 달력에 표시하기</span>
+                <span className="text-sm font-medium text-foreground">매주 달력에 표시하기</span>
                 <div className="relative flex items-center justify-center shrink-0">
                   <input type="checkbox" className="sr-only peer" checked={showEveryWeek} onChange={(e) => setShowEveryWeek(e.target.checked)} />
-                  <div className="w-9 h-5 bg-slate-200 rounded-full peer peer-checked:after:translate-x-full after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-indigo-500"></div>
+                  <div className="w-9 h-5 bg-slate-200 rounded-full peer peer-checked:after:translate-x-full after:absolute after:top-[2px] after:left-[2px] after:bg-card after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-indigo-500"></div>
                 </div>
               </label>
             )}
@@ -308,7 +308,7 @@ export const DynamicAnniversaryForm = React.memo(function DynamicAnniversaryForm
       animate={{ opacity: 1, scale: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.95, y: 20 }}
       transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-      className="bg-white/95 backdrop-blur-3xl p-8 rounded-[2.5rem] shadow-[0_24px_60px_-15px_rgba(0,0,0,0.1)] border border-white/60 w-full max-w-md relative overflow-hidden group h-full max-h-[85vh] flex flex-col"
+      className="bg-card/95 backdrop-blur-3xl p-8 rounded-[2.5rem] shadow-[0_24px_60px_-15px_rgba(0,0,0,0.1)] border border-transparent/60 w-full max-w-md relative overflow-hidden group h-full max-h-[85vh] flex flex-col"
     >
       <div className="absolute -top-24 -right-24 w-48 h-48 bg-blue-400/20 rounded-full blur-3xl opacity-50 group-hover:opacity-100 transition-opacity duration-1000 pointer-events-none" />
       <div className="absolute -bottom-24 -left-24 w-48 h-48 bg-pink-400/20 rounded-full blur-3xl opacity-50 group-hover:opacity-100 transition-opacity duration-1000 pointer-events-none" />
@@ -316,21 +316,21 @@ export const DynamicAnniversaryForm = React.memo(function DynamicAnniversaryForm
       <div className="relative z-10 flex flex-col h-full">
         {!(preset === 'CUSTOM' && customStep === 2) && (
           <div className="flex items-center gap-3 mb-8 shrink-0">
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-blue-50 to-indigo-50 flex items-center justify-center shadow-inner border border-white">
+            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-blue-50 to-indigo-50 flex items-center justify-center shadow-inner border border-transparent">
               <Sparkles className="w-5 h-5 text-blue-500" />
             </div>
-            <h2 className="text-2xl font-extrabold text-slate-800 tracking-tight">
+            <h2 className="text-2xl font-extrabold text-foreground tracking-tight">
               {initialData ? '기념일 수정' : '새로운 기념일 추가'}
             </h2>
           </div>
         )}
 
         {preset === 'CUSTOM' && customStep === 2 && (
-          <div className="flex items-center mb-6 shrink-0 border-b border-slate-100 pb-4">
+          <div className="flex items-center mb-6 shrink-0 border-b border-border pb-4">
             <button 
               type="button"
               onClick={() => setCustomStep(1)}
-              className="mr-3 p-2 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-500 transition-colors"
+              className="mr-3 p-2 rounded-xl bg-muted hover:bg-muted text-muted-foreground transition-colors"
             >
               <ChevronLeft className="w-5 h-5" />
             </button>
@@ -344,7 +344,7 @@ export const DynamicAnniversaryForm = React.memo(function DynamicAnniversaryForm
           
           {!(preset === 'CUSTOM' && customStep === 2) && (
             <div className="space-y-3">
-              <label className="text-xs font-bold text-slate-400 tracking-wider uppercase ml-1">유형 선택</label>
+              <label className="text-xs font-bold text-muted-foreground tracking-wider uppercase ml-1">유형 선택</label>
               <div className="flex flex-wrap gap-2">
                 {(['COUPLE', 'BIRTHDAY', 'EXAM', 'PAYDAY', 'CUSTOM'] as AnniversaryPresetType[]).map((p) => {
                   const isSelected = preset === p || (p === 'BIRTHDAY' && preset === 'LUNAR_BIRTHDAY');
@@ -362,7 +362,7 @@ export const DynamicAnniversaryForm = React.memo(function DynamicAnniversaryForm
                       className={`px-4 py-2.5 rounded-2xl text-sm font-semibold transition-all duration-300 ${
                         isSelected 
                           ? 'bg-blue-600 text-white shadow-[0_8px_16px_-6px_rgba(37,99,235,0.4)] ring-2 ring-blue-600/20 ring-offset-2 ring-offset-white' 
-                          : 'bg-slate-100/80 text-slate-600 hover:bg-slate-200/80 hover:text-slate-900 border border-transparent'
+                          : 'bg-muted/80 text-foreground hover:bg-slate-200/80 hover:text-foreground border border-transparent'
                       }`}
                     >
                       {PRESET_LABELS[p]}
@@ -375,21 +375,21 @@ export const DynamicAnniversaryForm = React.memo(function DynamicAnniversaryForm
 
           {preset === 'CUSTOM' && customStep === 1 ? (
             <div className="space-y-4 pt-2">
-              <div className="text-sm text-slate-500 mb-4 px-1">
+              <div className="text-sm text-muted-foreground mb-4 px-1">
                 찾으시는 계산 방법이 없으신가요?<br/>
-                <strong className="text-slate-700 text-base">직접 선택해 보세요 👇</strong>
+                <strong className="text-foreground text-base">직접 선택해 보세요 👇</strong>
               </div>
               
               <div className="space-y-3">
-                <div className="border border-slate-200/80 rounded-2xl overflow-hidden bg-white shadow-sm">
-                  <button type="button" onClick={() => setOpenAccordion(openAccordion === 'D_DAY_CALC' ? null : 'D_DAY_CALC')} className="w-full flex justify-between p-4 bg-slate-50 hover:bg-slate-100/80 transition-colors items-center">
-                    <span className="font-bold text-slate-700">디데이/날짜수 계산</span>
-                    <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform ${openAccordion === 'D_DAY_CALC' ? 'rotate-180' : ''}`} />
+                <div className="border border-border/80 rounded-2xl overflow-hidden bg-card shadow-sm">
+                  <button type="button" onClick={() => setOpenAccordion(openAccordion === 'D_DAY_CALC' ? null : 'D_DAY_CALC')} className="w-full flex justify-between p-4 bg-muted hover:bg-muted/80 transition-colors items-center">
+                    <span className="font-bold text-foreground">디데이/날짜수 계산</span>
+                    <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${openAccordion === 'D_DAY_CALC' ? 'rotate-180' : ''}`} />
                   </button>
                   <AnimatePresence>
                     {openAccordion === 'D_DAY_CALC' && (
-                      <motion.div initial={{ height: 0 }} animate={{ height: 'auto' }} exit={{ height: 0 }} className="overflow-hidden border-t border-slate-100 bg-white">
-                        <div className="grid grid-cols-2 divide-x divide-y divide-slate-100 border-l border-r border-slate-100">
+                      <motion.div initial={{ height: 0 }} animate={{ height: 'auto' }} exit={{ height: 0 }} className="overflow-hidden border-t border-border bg-card">
+                        <div className="grid grid-cols-2 divide-x divide-y divide-slate-100 border-l border-r border-border">
                           {CUSTOM_TYPES.D_DAY_CALC.map(t => (
                             <button 
                               key={t.id} 
@@ -398,7 +398,7 @@ export const DynamicAnniversaryForm = React.memo(function DynamicAnniversaryForm
                               className="p-4 text-left hover:bg-rose-50/30 transition-colors"
                             >
                               <div className={`font-bold ${t.color}`}>{t.name}</div>
-                              <div className="text-xs text-slate-400 mt-1">{t.desc}</div>
+                              <div className="text-xs text-muted-foreground mt-1">{t.desc}</div>
                             </button>
                           ))}
                         </div>
@@ -407,15 +407,15 @@ export const DynamicAnniversaryForm = React.memo(function DynamicAnniversaryForm
                   </AnimatePresence>
                 </div>
 
-                <div className="border border-slate-200/80 rounded-2xl overflow-hidden bg-white shadow-sm">
-                  <button type="button" onClick={() => setOpenAccordion(openAccordion === 'RECURRENCE' ? null : 'RECURRENCE')} className="w-full flex justify-between p-4 bg-slate-50 hover:bg-slate-100/80 transition-colors items-center">
-                    <span className="font-bold text-slate-700">반복 계산</span>
-                    <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform ${openAccordion === 'RECURRENCE' ? 'rotate-180' : ''}`} />
+                <div className="border border-border/80 rounded-2xl overflow-hidden bg-card shadow-sm">
+                  <button type="button" onClick={() => setOpenAccordion(openAccordion === 'RECURRENCE' ? null : 'RECURRENCE')} className="w-full flex justify-between p-4 bg-muted hover:bg-muted/80 transition-colors items-center">
+                    <span className="font-bold text-foreground">반복 계산</span>
+                    <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${openAccordion === 'RECURRENCE' ? 'rotate-180' : ''}`} />
                   </button>
                   <AnimatePresence>
                     {openAccordion === 'RECURRENCE' && (
-                      <motion.div initial={{ height: 0 }} animate={{ height: 'auto' }} exit={{ height: 0 }} className="overflow-hidden border-t border-slate-100 bg-white">
-                        <div className="grid grid-cols-2 divide-x divide-y divide-slate-100 border-l border-r border-slate-100">
+                      <motion.div initial={{ height: 0 }} animate={{ height: 'auto' }} exit={{ height: 0 }} className="overflow-hidden border-t border-border bg-card">
+                        <div className="grid grid-cols-2 divide-x divide-y divide-slate-100 border-l border-r border-border">
                           {CUSTOM_TYPES.RECURRENCE.map(t => (
                             <button 
                               key={t.id} 
@@ -424,7 +424,7 @@ export const DynamicAnniversaryForm = React.memo(function DynamicAnniversaryForm
                               className="p-4 text-left hover:bg-rose-50/30 transition-colors"
                             >
                               <div className={`font-bold ${t.color}`}>{t.name}</div>
-                              <div className="text-xs text-slate-400 mt-1">{t.desc}</div>
+                              <div className="text-xs text-muted-foreground mt-1">{t.desc}</div>
                             </button>
                           ))}
                         </div>
@@ -442,21 +442,21 @@ export const DynamicAnniversaryForm = React.memo(function DynamicAnniversaryForm
                   id="anni-title"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  className="w-full bg-transparent border-b-2 border-slate-200 py-2 text-xl font-bold text-slate-800 focus:outline-none focus:border-blue-600 transition-colors peer placeholder-transparent"
+                  className="w-full bg-transparent border-b-2 border-border py-2 text-xl font-bold text-foreground focus:outline-none focus:border-blue-600 transition-colors peer placeholder-transparent"
                   placeholder={getPlaceholder()}
                   required
                 />
                 <label 
                   htmlFor="anni-title"
                   className={`absolute left-0 transition-all duration-300 font-semibold pointer-events-none 
-                    ${title ? 'text-xs -top-2 text-blue-600' : 'text-lg top-2 text-slate-400 peer-focus:text-xs peer-focus:-top-2 peer-focus:text-blue-600'}`}
+                    ${title ? 'text-xs -top-2 text-blue-600' : 'text-lg top-2 text-muted-foreground peer-focus:text-xs peer-focus:-top-2 peer-focus:text-blue-600'}`}
                 >
                   {getPlaceholder()}
                 </label>
               </div>
 
               <div className="space-y-3">
-                <label className="text-xs font-bold text-slate-400 tracking-wider ml-1">시작일</label>
+                <label className="text-xs font-bold text-muted-foreground tracking-wider ml-1">시작일</label>
                 <div className="relative group cursor-pointer" onClick={handleDateClick}>
                   <input 
                     type="date"
@@ -467,12 +467,12 @@ export const DynamicAnniversaryForm = React.memo(function DynamicAnniversaryForm
                     required
                   />
                   <div className={`w-full p-4 rounded-2xl border-2 transition-all duration-300 flex items-center justify-between ${
-                    baseDate ? 'bg-blue-50/50 border-blue-200' : 'bg-slate-50/80 border-slate-100 group-hover:border-slate-300 group-hover:bg-slate-100/50'
+                    baseDate ? 'bg-blue-50/50 border-blue-200' : 'bg-muted/80 border-border group-hover:border-slate-300 group-hover:bg-muted/50'
                   }`}>
-                    <span className={`text-lg transition-colors ${baseDate ? 'text-blue-900 font-extrabold' : 'text-slate-400 font-semibold'}`}>
+                    <span className={`text-lg transition-colors ${baseDate ? 'text-blue-900 font-extrabold' : 'text-muted-foreground font-semibold'}`}>
                       {formattedDate}
                     </span>
-                    <div className={`p-2 rounded-xl transition-colors ${baseDate ? 'bg-blue-100 text-blue-600' : 'bg-white text-slate-400 shadow-sm'}`}>
+                    <div className={`p-2 rounded-xl transition-colors ${baseDate ? 'bg-blue-100 text-blue-600' : 'bg-card text-muted-foreground shadow-sm'}`}>
                       <CalendarDays className="w-5 h-5" />
                     </div>
                   </div>
@@ -481,16 +481,16 @@ export const DynamicAnniversaryForm = React.memo(function DynamicAnniversaryForm
 
               {preset === 'CUSTOM' && customStep === 2 && isRecurrence(customRuleType) && customRuleType !== 'LUNAR_YEAR' && (
                 <div className="space-y-3">
-                  <label className="text-xs font-bold text-slate-400 tracking-wider ml-1">반복 주기</label>
-                  <div className="flex items-center space-x-3 p-4 rounded-2xl border border-slate-200 bg-slate-50/50">
+                  <label className="text-xs font-bold text-muted-foreground tracking-wider ml-1">반복 주기</label>
+                  <div className="flex items-center space-x-3 p-4 rounded-2xl border border-border bg-muted/50">
                     <input 
                       type="number"
                       min="1"
                       value={interval}
                       onChange={(e) => setInterval(parseInt(e.target.value) || 1)}
-                      className="w-16 bg-white border border-slate-200 rounded-xl px-3 py-2 text-center font-bold text-slate-700 focus:outline-none focus:border-blue-500"
+                      className="w-16 bg-card border border-border rounded-xl px-3 py-2 text-center font-bold text-foreground focus:outline-none focus:border-blue-500"
                     />
-                    <span className="text-slate-600 font-medium">{getIntervalSuffix(customRuleType)}마다 반복</span>
+                    <span className="text-foreground font-medium">{getIntervalSuffix(customRuleType)}마다 반복</span>
                   </div>
                 </div>
               )}
@@ -529,18 +529,18 @@ export const DynamicAnniversaryForm = React.memo(function DynamicAnniversaryForm
               </AnimatePresence>
 
               {/* Advanced Settings Accordion */}
-              <div className="border border-slate-200/60 rounded-2xl overflow-hidden bg-slate-50/50">
+              <div className="border border-border/60 rounded-2xl overflow-hidden bg-muted/50">
                 <button
                   type="button"
                   onClick={() => setShowAdvanced(!showAdvanced)}
-                  className="w-full flex items-center justify-between p-4 bg-white/50 hover:bg-white/80 transition-colors"
+                  className="w-full flex items-center justify-between p-4 bg-card/50 hover:bg-card/80 transition-colors"
                 >
-                  <div className="flex items-center space-x-2 text-slate-700 font-semibold">
-                    <Settings2 className="w-4 h-4 text-slate-400" />
+                  <div className="flex items-center space-x-2 text-foreground font-semibold">
+                    <Settings2 className="w-4 h-4 text-muted-foreground" />
                     <span className="text-sm">고급 설정 (캘린더 표시)</span>
                   </div>
                   <motion.div animate={{ rotate: showAdvanced ? 180 : 0 }}>
-                    <ChevronDown className="w-4 h-4 text-slate-400" />
+                    <ChevronDown className="w-4 h-4 text-muted-foreground" />
                   </motion.div>
                 </button>
                 <AnimatePresence>
@@ -549,7 +549,7 @@ export const DynamicAnniversaryForm = React.memo(function DynamicAnniversaryForm
                       initial={{ height: 0, opacity: 0 }}
                       animate={{ height: 'auto', opacity: 1 }}
                       exit={{ height: 0, opacity: 0 }}
-                      className="overflow-hidden border-t border-slate-100"
+                      className="overflow-hidden border-t border-border"
                     >
                       {renderAdvancedSettingsContent()}
                     </motion.div>
@@ -561,12 +561,12 @@ export const DynamicAnniversaryForm = React.memo(function DynamicAnniversaryForm
         </form>
         
         {/* Actions fixed at bottom */}
-        <div className="flex justify-end space-x-3 pt-6 border-t border-slate-100/60 shrink-0 bg-white">
+        <div className="flex justify-end space-x-3 pt-6 border-t border-border/60 shrink-0 bg-card">
           <Button 
             variant="ghost" 
             type="button" 
             onClick={onCancel} 
-            className="text-slate-500 hover:text-slate-800 font-semibold px-6 py-6 rounded-2xl"
+            className="text-muted-foreground hover:text-foreground font-semibold px-6 py-6 rounded-2xl"
           >
             취소
           </Button>

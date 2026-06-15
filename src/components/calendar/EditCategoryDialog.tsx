@@ -84,27 +84,27 @@ export function EditCategoryDialog() {
 
   return (
     <Dialog open={!!editingCategory} onOpenChange={handleOpenChange} modal>
-      <DialogContent className="sm:max-w-[400px] bg-white border-none shadow-2xl rounded-2xl z-[300]" showCloseButton={false}>
+      <DialogContent className="sm:max-w-[400px] bg-card border-none shadow-2xl rounded-2xl z-[300]" showCloseButton={false}>
         <DialogHeader>
-          <DialogTitle className="text-xl font-bold text-gray-900">카테고리 수정</DialogTitle>
+          <DialogTitle className="text-xl font-bold text-foreground">카테고리 수정</DialogTitle>
           <DialogDescription className="sr-only">카테고리의 이름과 색상을 수정합니다.</DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-6 mt-4">
           <div className="space-y-2">
-            <Label htmlFor="category-name" className="text-sm font-semibold text-gray-700">카테고리 이름</Label>
+            <Label htmlFor="category-name" className="text-sm font-semibold text-foreground">카테고리 이름</Label>
             <Input
               id="category-name"
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="카테고리 이름을 입력하세요"
-              className="border-gray-200 focus-visible:ring-indigo-500 rounded-lg bg-[#f8f9ff] h-11"
+              className="border-border focus-visible:ring-indigo-500 rounded-lg bg-background h-11"
               required
             />
           </div>
 
           <div className="space-y-3">
-            <Label className="text-sm font-semibold text-gray-700">색상 지정</Label>
+            <Label className="text-sm font-semibold text-foreground">색상 지정</Label>
             <div className="grid grid-cols-10 gap-2">
               {COLOR_SWATCHES.map(color => (
                 <button
@@ -127,7 +127,7 @@ export function EditCategoryDialog() {
               type="button"
               variant="ghost"
               onClick={closeEditCategory}
-              className="text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-full px-5"
+              className="text-muted-foreground hover:text-foreground hover:bg-muted rounded-full px-5"
             >
               취소
             </Button>

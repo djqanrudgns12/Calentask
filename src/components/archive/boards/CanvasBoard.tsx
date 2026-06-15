@@ -52,15 +52,15 @@ const StickyNode = ({ data, selected }: any) => {
       <Handle type="target" position={Position.Left} className="w-2 h-16 !bg-indigo-500/50 rounded-full border-none -left-1 opacity-0 hover:opacity-100 transition-opacity cursor-crosshair" />
       
       {selected && (
-        <div className="absolute -top-14 left-1/2 -translate-x-1/2 bg-white rounded-xl shadow-xl flex items-center gap-1.5 p-1.5 z-30 pointer-events-auto cursor-default border border-slate-100">
+        <div className="absolute -top-14 left-1/2 -translate-x-1/2 bg-card rounded-xl shadow-xl flex items-center gap-1.5 p-1.5 z-30 pointer-events-auto cursor-default border border-border">
           {COLORS.map(c => (
             <button key={c} onClick={(e) => { e.stopPropagation(); updateItem(item.id, { data: { ...item.data, color: c }}); }}
-              className={cn("w-6 h-6 rounded-full border hover:scale-110 transition-transform", c === itemColor ? "border-slate-800 ring-2 ring-slate-800/20" : "border-slate-200")} 
+              className={cn("w-6 h-6 rounded-full border hover:scale-110 transition-transform", c === itemColor ? "border-slate-800 ring-2 ring-slate-800/20" : "border-border")} 
               style={{ backgroundColor: c }}
             />
           ))}
           <div className="w-px h-5 bg-slate-200 mx-1" />
-          <button onClick={(e) => { e.stopPropagation(); deleteItem(item.id); }} className="p-1.5 hover:bg-rose-50 hover:text-rose-600 rounded-lg text-slate-400 transition-colors">
+          <button onClick={(e) => { e.stopPropagation(); deleteItem(item.id); }} className="p-1.5 hover:bg-rose-50 hover:text-rose-600 rounded-lg text-muted-foreground transition-colors">
             <Trash2 className="w-4 h-4" />
           </button>
         </div>
@@ -71,7 +71,7 @@ const StickyNode = ({ data, selected }: any) => {
         value={localTitle}
         onChange={(e) => setLocalTitle(e.target.value)}
         onBlur={() => updateItem(item.id, { title: localTitle })}
-        className="w-full bg-transparent border-none focus:outline-none focus:ring-0 font-bold text-slate-800 text-lg mb-2 nodrag"
+        className="w-full bg-transparent border-none focus:outline-none focus:ring-0 font-bold text-foreground text-lg mb-2 nodrag"
         placeholder="제목..."
         style={{ textAlign }}
       />
@@ -79,7 +79,7 @@ const StickyNode = ({ data, selected }: any) => {
         value={localContent}
         onChange={(e) => setLocalContent(e.target.value)}
         onBlur={() => updateItem(item.id, { content: localContent })}
-        className="w-full h-[calc(100%-2.5rem)] bg-transparent border-none focus:outline-none focus:ring-0 text-slate-700 font-medium resize-none leading-relaxed nodrag"
+        className="w-full h-[calc(100%-2.5rem)] bg-transparent border-none focus:outline-none focus:ring-0 text-foreground font-medium resize-none leading-relaxed nodrag"
         placeholder="내용을 자유롭게 입력하세요..."
         style={{ textAlign }}
       />
@@ -107,15 +107,15 @@ const ShapeNode = ({ data, selected }: any) => {
       className={`relative flex items-center justify-center shadow-md p-4 transition-all ${selected ? 'ring-2 ring-indigo-500 shadow-xl scale-105' : 'hover:shadow-lg hover:scale-105'} ${shapeType === 'circle' ? 'rounded-full aspect-square' : 'rounded-2xl'}`}
       style={{ width: item.data?.width || 180, height: item.data?.height || (shapeType === 'circle' ? 180 : 120), backgroundColor: itemColor, border: '2px solid #e2e8f0' }}
     >
-      <Handle type="target" position={Position.Top} className="w-4 h-4 !bg-indigo-500 rounded-full border-2 border-white -top-2 opacity-0 hover:opacity-100 transition-opacity" />
-      <Handle type="target" position={Position.Left} className="w-4 h-4 !bg-indigo-500 rounded-full border-2 border-white -left-2 opacity-0 hover:opacity-100 transition-opacity" />
+      <Handle type="target" position={Position.Top} className="w-4 h-4 !bg-indigo-500 rounded-full border-2 border-transparent -top-2 opacity-0 hover:opacity-100 transition-opacity" />
+      <Handle type="target" position={Position.Left} className="w-4 h-4 !bg-indigo-500 rounded-full border-2 border-transparent -left-2 opacity-0 hover:opacity-100 transition-opacity" />
       
       {selected && (
-        <div className="absolute -top-14 left-1/2 -translate-x-1/2 bg-white rounded-xl shadow-xl flex items-center gap-1.5 p-1.5 z-30 pointer-events-auto cursor-default border border-slate-100">
-          <button onClick={(e) => { e.stopPropagation(); updateItem(item.id, { data: { ...item.data, shape: 'square' }}); }} className={cn("p-1.5 rounded-lg transition-colors", shapeType === 'square' ? "bg-slate-100 text-slate-800" : "text-slate-400 hover:bg-slate-50")}><RectangleHorizontal className="w-4 h-4" /></button>
-          <button onClick={(e) => { e.stopPropagation(); updateItem(item.id, { data: { ...item.data, shape: 'circle' }}); }} className={cn("p-1.5 rounded-lg transition-colors", shapeType === 'circle' ? "bg-slate-100 text-slate-800" : "text-slate-400 hover:bg-slate-50")}><Circle className="w-4 h-4" /></button>
+        <div className="absolute -top-14 left-1/2 -translate-x-1/2 bg-card rounded-xl shadow-xl flex items-center gap-1.5 p-1.5 z-30 pointer-events-auto cursor-default border border-border">
+          <button onClick={(e) => { e.stopPropagation(); updateItem(item.id, { data: { ...item.data, shape: 'square' }}); }} className={cn("p-1.5 rounded-lg transition-colors", shapeType === 'square' ? "bg-muted text-foreground" : "text-muted-foreground hover:bg-muted")}><RectangleHorizontal className="w-4 h-4" /></button>
+          <button onClick={(e) => { e.stopPropagation(); updateItem(item.id, { data: { ...item.data, shape: 'circle' }}); }} className={cn("p-1.5 rounded-lg transition-colors", shapeType === 'circle' ? "bg-muted text-foreground" : "text-muted-foreground hover:bg-muted")}><Circle className="w-4 h-4" /></button>
           <div className="w-px h-5 bg-slate-200 mx-1" />
-          <button onClick={(e) => { e.stopPropagation(); deleteItem(item.id); }} className="p-1.5 hover:bg-rose-50 hover:text-rose-600 rounded-lg text-slate-400 transition-colors">
+          <button onClick={(e) => { e.stopPropagation(); deleteItem(item.id); }} className="p-1.5 hover:bg-rose-50 hover:text-rose-600 rounded-lg text-muted-foreground transition-colors">
             <Trash2 className="w-4 h-4" />
           </button>
         </div>
@@ -125,13 +125,13 @@ const ShapeNode = ({ data, selected }: any) => {
         value={localTitle}
         onChange={(e) => setLocalTitle(e.target.value)}
         onBlur={() => updateItem(item.id, { title: localTitle })}
-        className="w-full bg-transparent border-none focus:outline-none focus:ring-0 font-bold text-slate-700 text-center resize-none nodrag"
+        className="w-full bg-transparent border-none focus:outline-none focus:ring-0 font-bold text-foreground text-center resize-none nodrag"
         placeholder="텍스트 입력"
         rows={2}
       />
       
-      <Handle type="source" position={Position.Bottom} className="w-4 h-4 !bg-indigo-500 rounded-full border-2 border-white -bottom-2 opacity-0 hover:opacity-100 transition-opacity" />
-      <Handle type="source" position={Position.Right} className="w-4 h-4 !bg-indigo-500 rounded-full border-2 border-white -right-2 opacity-0 hover:opacity-100 transition-opacity" />
+      <Handle type="source" position={Position.Bottom} className="w-4 h-4 !bg-indigo-500 rounded-full border-2 border-transparent -bottom-2 opacity-0 hover:opacity-100 transition-opacity" />
+      <Handle type="source" position={Position.Right} className="w-4 h-4 !bg-indigo-500 rounded-full border-2 border-transparent -right-2 opacity-0 hover:opacity-100 transition-opacity" />
     </div>
   );
 };
@@ -151,8 +151,8 @@ const TextNode = ({ data, selected }: any) => {
       <Handle type="target" position={Position.Left} className="opacity-0" />
       
       {selected && (
-        <div className="absolute -top-12 left-1/2 -translate-x-1/2 bg-white rounded-xl shadow-xl flex items-center gap-1.5 p-1.5 z-30 pointer-events-auto cursor-default border border-slate-100">
-           <button onClick={(e) => { e.stopPropagation(); deleteItem(item.id); }} className="p-1.5 hover:bg-rose-50 hover:text-rose-600 rounded-lg text-slate-400 transition-colors">
+        <div className="absolute -top-12 left-1/2 -translate-x-1/2 bg-card rounded-xl shadow-xl flex items-center gap-1.5 p-1.5 z-30 pointer-events-auto cursor-default border border-border">
+           <button onClick={(e) => { e.stopPropagation(); deleteItem(item.id); }} className="p-1.5 hover:bg-rose-50 hover:text-rose-600 rounded-lg text-muted-foreground transition-colors">
             <Trash2 className="w-4 h-4" />
           </button>
         </div>
@@ -162,7 +162,7 @@ const TextNode = ({ data, selected }: any) => {
         value={localContent}
         onChange={(e) => setLocalContent(e.target.value)}
         onBlur={() => updateItem(item.id, { content: localContent })}
-        className="w-full bg-transparent border-none focus:outline-none focus:ring-0 font-extrabold text-slate-800 text-2xl resize-none nodrag text-center placeholder:text-slate-300"
+        className="w-full bg-transparent border-none focus:outline-none focus:ring-0 font-extrabold text-foreground text-2xl resize-none nodrag text-center placeholder:text-muted-foreground/50"
         placeholder="큰 제목 텍스트"
         rows={1}
       />
@@ -416,7 +416,7 @@ export function CanvasBoard() {
   };
 
   return (
-    <div className="w-full h-full relative overflow-hidden bg-[#fafafa] rounded-3xl">
+    <div className="w-full h-full relative overflow-hidden bg-background rounded-3xl">
       <ReactFlow
         nodes={nodes}
         edges={edges}
@@ -431,11 +431,11 @@ export function CanvasBoard() {
         nodeTypes={nodeTypes}
         defaultViewport={config?.viewport || { x: 0, y: 0, zoom: 1 }}
         fitView={!config?.viewport}
-        className="bg-slate-50"
+        className="bg-muted"
         deleteKeyCode={['Backspace', 'Delete']}
       >
         <Background variant={BackgroundVariant.Dots} gap={32} size={2.5} color="#cbd5e1" />
-        <Controls className="bg-white shadow-xl border-none rounded-xl overflow-hidden mb-28 md:mb-6 ml-4 md:ml-6 fill-slate-700" showInteractive={false} />
+        <Controls className="bg-card shadow-xl border-none rounded-xl overflow-hidden mb-28 md:mb-6 ml-4 md:ml-6 fill-slate-700" showInteractive={false} />
         <MiniMap 
           nodeColor={(node) => {
              const type = node.type;
@@ -443,7 +443,7 @@ export function CanvasBoard() {
              const c = node.data?.item?.data?.color;
              return c === '#ffffff' ? '#e2e8f0' : (c || '#cbd5e1');
           }}
-          className="bg-white/90 backdrop-blur shadow-2xl rounded-2xl border border-slate-100 overflow-hidden mb-28 md:mb-6 mr-4 md:mr-6" 
+          className="bg-card/90 backdrop-blur shadow-2xl rounded-2xl border border-border overflow-hidden mb-28 md:mb-6 mr-4 md:mr-6" 
           maskColor="rgba(248, 250, 252, 0.7)"
           zoomable
           pannable
@@ -451,13 +451,13 @@ export function CanvasBoard() {
       </ReactFlow>
 
       {/* Floating Action Toolbar */}
-      <div className="absolute md:left-8 bottom-24 left-1/2 -translate-x-1/2 md:translate-x-0 md:bottom-auto md:top-1/2 md:-translate-y-1/2 bg-white/95 backdrop-blur-xl shadow-2xl rounded-2xl md:p-2.5 p-2 flex flex-row md:flex-col gap-2 md:gap-2.5 border border-slate-100/60 z-50">
-        <div className="hidden md:block text-[10px] font-extrabold text-slate-400 text-center uppercase tracking-widest mb-1 mt-1">Tools</div>
+      <div className="absolute md:left-8 bottom-24 left-1/2 -translate-x-1/2 md:translate-x-0 md:bottom-auto md:top-1/2 md:-translate-y-1/2 bg-card/95 backdrop-blur-xl shadow-2xl rounded-2xl md:p-2.5 p-2 flex flex-row md:flex-col gap-2 md:gap-2.5 border border-border/60 z-50">
+        <div className="hidden md:block text-[10px] font-extrabold text-muted-foreground text-center uppercase tracking-widest mb-1 mt-1">Tools</div>
         <button className="p-2.5 md:p-3.5 bg-indigo-50 text-indigo-600 rounded-xl hover:bg-indigo-100 transition-colors shadow-sm" title="선택 도구"><MousePointer2 className="w-5 h-5" /></button>
-        <div className="w-px md:w-full h-8 md:h-px bg-slate-100 my-auto md:my-0.5 mx-1 md:mx-0" />
-        <button onClick={handleAddSticky} className="p-2.5 md:p-3.5 hover:bg-slate-50 text-slate-600 rounded-xl transition-colors hover:shadow-sm" title="스티키 노트 추가"><Square className="w-5 h-5 fill-yellow-200" /></button>
-        <button onClick={handleAddShape} className="p-2.5 md:p-3.5 hover:bg-slate-50 text-slate-600 rounded-xl transition-colors hover:shadow-sm" title="다이어그램 도형 추가"><Circle className="w-5 h-5" /></button>
-        <button onClick={handleAddText} className="p-2.5 md:p-3.5 hover:bg-slate-50 text-slate-600 rounded-xl transition-colors hover:shadow-sm" title="텍스트 블록 추가"><Type className="w-5 h-5" /></button>
+        <div className="w-px md:w-full h-8 md:h-px bg-muted my-auto md:my-0.5 mx-1 md:mx-0" />
+        <button onClick={handleAddSticky} className="p-2.5 md:p-3.5 hover:bg-muted text-foreground rounded-xl transition-colors hover:shadow-sm" title="스티키 노트 추가"><Square className="w-5 h-5 fill-yellow-200" /></button>
+        <button onClick={handleAddShape} className="p-2.5 md:p-3.5 hover:bg-muted text-foreground rounded-xl transition-colors hover:shadow-sm" title="다이어그램 도형 추가"><Circle className="w-5 h-5" /></button>
+        <button onClick={handleAddText} className="p-2.5 md:p-3.5 hover:bg-muted text-foreground rounded-xl transition-colors hover:shadow-sm" title="텍스트 블록 추가"><Type className="w-5 h-5" /></button>
       </div>
     </div>
   );

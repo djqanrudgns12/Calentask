@@ -80,7 +80,7 @@ export const SmartAgenda = React.memo(function SmartAgenda() {
   const getDeadlineBadge = (deadline: string | null) => {
     if (!deadline) {
       return (
-        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold text-slate-400 bg-slate-50">
+        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold text-muted-foreground bg-muted">
           <Calendar className="w-2.5 h-2.5" />
           기한 없음
         </span>
@@ -111,7 +111,7 @@ export const SmartAgenda = React.memo(function SmartAgenda() {
       )
     }
     return (
-      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold text-slate-500 bg-slate-50">
+      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold text-muted-foreground bg-muted">
         <Clock className="w-2.5 h-2.5" />
         {format(d, 'M/d')}
       </span>
@@ -119,16 +119,16 @@ export const SmartAgenda = React.memo(function SmartAgenda() {
   }
 
   return (
-    <div className="relative bg-white/85 backdrop-blur-xl rounded-3xl border border-white/60 shadow-[0_8px_32px_-8px_rgba(0,0,0,0.08)] overflow-hidden h-full flex flex-col">
+    <div className="relative bg-card/85 backdrop-blur-xl rounded-3xl border border-border shadow-[0_8px_32px_-8px_rgba(0,0,0,0.08)] overflow-hidden h-full flex flex-col">
       {/* 헤더 */}
       <div className="px-6 pt-6 pb-4 flex items-center justify-between shrink-0">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-emerald-100 to-teal-100 flex items-center justify-center shadow-inner border border-white/50">
+          <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-emerald-100 to-teal-100 flex items-center justify-center shadow-inner border border-transparent/50">
             <ListTodo className="w-5 h-5 text-emerald-600" />
           </div>
           <div>
-            <h2 className="text-base font-extrabold text-slate-800 tracking-tight">할 일</h2>
-            <p className="text-xs text-slate-400 font-medium">
+            <h2 className="text-base font-extrabold text-foreground tracking-tight">할 일</h2>
+            <p className="text-xs text-muted-foreground font-medium">
               {activeTasks.length > 0 ? `${activeTasks.length}개 남음` : '모두 완료!'}
             </p>
           </div>
@@ -137,7 +137,7 @@ export const SmartAgenda = React.memo(function SmartAgenda() {
         <div className="flex items-center gap-2 shrink-0">
           <button
             onClick={() => setViewMode('archive_agenda')}
-            className="flex items-center gap-1 text-xs font-bold text-slate-400 hover:text-slate-600 transition-colors"
+            className="flex items-center gap-1 text-xs font-bold text-muted-foreground hover:text-foreground transition-colors"
           >
             전체 보기
             <ArrowRight className="w-3 h-3" />
@@ -158,8 +158,8 @@ export const SmartAgenda = React.memo(function SmartAgenda() {
             <div className="w-14 h-14 bg-gradient-to-br from-emerald-50 to-teal-50 rounded-3xl flex items-center justify-center mb-3 shadow-inner border border-emerald-100/50">
               <CheckCircle2 className="w-6 h-6 text-emerald-400" />
             </div>
-            <p className="text-sm font-bold text-slate-400">할 일을 모두 완료했어요!</p>
-            <p className="text-xs text-slate-300 mt-1">대단해요! 🎉</p>
+            <p className="text-sm font-bold text-muted-foreground">할 일을 모두 완료했어요!</p>
+            <p className="text-xs text-muted-foreground/60 mt-1">대단해요! 🎉</p>
           </div>
         ) : (
           <AnimatePresence mode="popLayout">
@@ -177,10 +177,10 @@ export const SmartAgenda = React.memo(function SmartAgenda() {
                   className="mt-0.5 shrink-0 transition-all hover:scale-110"
                   title="완료 처리"
                 >
-                  <Circle className="w-[18px] h-[18px] text-slate-300 group-hover:text-emerald-400 transition-colors" />
+                  <Circle className="w-[18px] h-[18px] text-muted-foreground/60 group-hover:text-emerald-400 transition-colors" />
                 </button>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-bold text-slate-700 leading-tight line-clamp-2 group-hover:text-slate-900 transition-colors">
+                  <p className="text-sm font-bold text-foreground leading-tight line-clamp-2 group-hover:text-foreground transition-colors">
                     {task.title}
                   </p>
                   <div className="mt-1.5">
@@ -191,14 +191,14 @@ export const SmartAgenda = React.memo(function SmartAgenda() {
                 <div className="hidden group-hover:flex items-center gap-1 animate-in fade-in slide-in-from-right-2 duration-200 mt-0.5 pr-1">
                   <button
                     onClick={(e) => { e.stopPropagation(); setSelectedTaskId(task.id); }}
-                    className="p-1.5 rounded-lg text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 transition-colors"
+                    className="p-1.5 rounded-lg text-muted-foreground hover:text-emerald-600 hover:bg-emerald-50 transition-colors"
                     title="수정"
                   >
                     <Pencil className="w-4 h-4" />
                   </button>
                   <button
                     onClick={(e) => { e.stopPropagation(); if(confirm('이 항목을 삭제하시겠습니까?')) deleteTask(task.id); }}
-                    className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors"
+                    className="p-1.5 rounded-lg text-muted-foreground hover:text-red-600 hover:bg-red-50 transition-colors"
                     title="삭제"
                   >
                     <Trash2 className="w-4 h-4" />
@@ -213,7 +213,7 @@ export const SmartAgenda = React.memo(function SmartAgenda() {
         {remainingCount > 0 && (
           <motion.button
             onClick={() => setIsExpanded(!isExpanded)}
-            className="w-full flex items-center justify-center gap-1.5 py-3 text-xs font-bold text-slate-400 hover:text-slate-600 transition-colors"
+            className="w-full flex items-center justify-center gap-1.5 py-3 text-xs font-bold text-muted-foreground hover:text-foreground transition-colors"
           >
             <span>{isExpanded ? '접기' : `더보기 (+${remainingCount})`}</span>
             <motion.div
@@ -227,9 +227,9 @@ export const SmartAgenda = React.memo(function SmartAgenda() {
       </div>
 
       {/* 빠른 추가 입력 */}
-      <div className="px-5 pb-5 pt-2 shrink-0 border-t border-slate-50">
-        <div className="flex items-center gap-2 bg-slate-50/80 rounded-xl px-3 py-2.5 ring-1 ring-slate-100 focus-within:ring-2 focus-within:ring-emerald-200 transition-all">
-          <Plus className="w-4 h-4 text-slate-300 shrink-0" />
+      <div className="px-5 pb-5 pt-2 shrink-0 border-t border-border">
+        <div className="flex items-center gap-2 bg-muted/80 rounded-xl px-3 py-2.5 ring-1 ring-border focus-within:ring-2 focus-within:ring-emerald-200 transition-all">
+          <Plus className="w-4 h-4 text-muted-foreground/60 shrink-0" />
           <input
             type="text"
             ref={inputRef}
@@ -237,7 +237,7 @@ export const SmartAgenda = React.memo(function SmartAgenda() {
             onChange={(e) => setNewTaskTitle(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="할 일을 빠르게 추가..."
-            className="flex-1 text-sm bg-transparent outline-none placeholder:text-slate-300 text-slate-700 font-medium"
+            className="flex-1 text-sm bg-transparent outline-none placeholder:text-muted-foreground/60 text-foreground font-medium"
             disabled={isAdding}
           />
           {newTaskTitle.trim() && (

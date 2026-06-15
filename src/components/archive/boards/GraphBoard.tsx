@@ -17,17 +17,17 @@ const CatalogGroup = ({ boardName, satellites, isDarkMode, selectedNode, handleC
   }, [hasSelectedChild]);
 
   return (
-    <div className={`mb-3 rounded-2xl overflow-hidden border ${isDarkMode ? 'border-white/10' : 'border-slate-200'} transition-all`}>
+    <div className={`mb-3 rounded-2xl overflow-hidden border ${isDarkMode ? 'border-transparent/10' : 'border-border'} transition-all`}>
       <button 
         onClick={() => setIsOpen(!isOpen)}
         className={`w-full flex items-center justify-between p-3 md:p-4 text-left transition-colors ${
-          isDarkMode ? 'bg-slate-800 hover:bg-slate-700/80' : 'bg-slate-50 hover:bg-slate-100'
+          isDarkMode ? 'bg-slate-800 hover:bg-slate-700/80' : 'bg-muted hover:bg-muted'
         }`}
       >
-        <span className={`font-bold text-sm md:text-base ${isDarkMode ? 'text-slate-200' : 'text-slate-800'}`}>
+        <span className={`font-bold text-sm md:text-base ${isDarkMode ? 'text-slate-200' : 'text-foreground'}`}>
           {boardName} <span className="ml-1 text-[10px] md:text-xs px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-600 dark:text-indigo-400">{satellites.length}</span>
         </span>
-        {isOpen ? <ChevronUp className="w-4 h-4 text-slate-400" /> : <ChevronDown className="w-4 h-4 text-slate-400" />}
+        {isOpen ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
       </button>
       
       <AnimatePresence>
@@ -36,7 +36,7 @@ const CatalogGroup = ({ boardName, satellites, isDarkMode, selectedNode, handleC
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            className={`px-2 pb-2 ${isDarkMode ? 'bg-slate-800/30' : 'bg-white'}`}
+            className={`px-2 pb-2 ${isDarkMode ? 'bg-slate-800/30' : 'bg-card'}`}
           >
             <div className="space-y-2 mt-2">
               {satellites.map((sat: any) => {
@@ -52,26 +52,26 @@ const CatalogGroup = ({ boardName, satellites, isDarkMode, selectedNode, handleC
                           ? 'bg-indigo-500/20 border-indigo-400/50 shadow-[0_0_20px_rgba(129,140,248,0.2)]'
                           : 'bg-indigo-50 border-indigo-500 shadow-sm ring-1 ring-indigo-500/20'
                         : isDarkMode
-                          ? 'bg-white/5 border-white/5 hover:bg-white/10 hover:border-white/20'
-                          : 'bg-white border-slate-200 hover:border-indigo-300 hover:bg-slate-50 shadow-sm'
+                          ? 'bg-card/5 border-transparent/5 hover:bg-card/10 hover:border-transparent/20'
+                          : 'bg-card border-border hover:border-indigo-300 hover:bg-muted shadow-sm'
                     }`}
                   >
                     <div className="flex items-start justify-between mb-1 md:mb-2">
-                      <h4 className={`font-bold text-sm md:text-base leading-tight pr-2 truncate ${isDarkMode ? 'text-slate-100' : 'text-slate-800'}`}>
+                      <h4 className={`font-bold text-sm md:text-base leading-tight pr-2 truncate ${isDarkMode ? 'text-slate-100' : 'text-foreground'}`}>
                         {sat.name}
                       </h4>
-                      <span className={`shrink-0 px-2 py-0.5 rounded text-[9px] md:text-[10px] font-bold flex items-center gap-1 ${isDarkMode ? 'bg-white/10 text-slate-300' : 'bg-slate-100 text-slate-500'}`}>
+                      <span className={`shrink-0 px-2 py-0.5 rounded text-[9px] md:text-[10px] font-bold flex items-center gap-1 ${isDarkMode ? 'bg-card/10 text-muted-foreground/50' : 'bg-muted text-muted-foreground'}`}>
                         <FileText className="w-3 h-3" />
                         Item
                       </span>
                     </div>
                     {sat.snippet && (
-                      <p className={`text-[11px] md:text-xs line-clamp-1 md:line-clamp-2 leading-relaxed mb-2 md:mb-3 ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>
+                      <p className={`text-[11px] md:text-xs line-clamp-1 md:line-clamp-2 leading-relaxed mb-2 md:mb-3 ${isDarkMode ? 'text-muted-foreground' : 'text-muted-foreground'}`}>
                         {sat.snippet}
                       </p>
                     )}
-                    <div className={`flex items-center justify-between mt-auto pt-2 border-t ${isDarkMode ? 'border-white/5' : 'border-slate-100'}`}>
-                      <div className={`flex items-center gap-1 md:gap-1.5 text-[9px] md:text-[10px] font-medium ${isDarkMode ? 'text-slate-500' : 'text-slate-400'}`}>
+                    <div className={`flex items-center justify-between mt-auto pt-2 border-t ${isDarkMode ? 'border-transparent/5' : 'border-border'}`}>
+                      <div className={`flex items-center gap-1 md:gap-1.5 text-[9px] md:text-[10px] font-medium ${isDarkMode ? 'text-muted-foreground' : 'text-muted-foreground'}`}>
                         <CalendarDays className="w-3 h-3" />
                         {new Date(sat.createdAt).toLocaleDateString()}
                       </div>
@@ -329,15 +329,15 @@ export function GraphBoard({ onClose }: { onClose?: () => void }) {
   // Shared Catalog Content to avoid duplication between Desktop and Mobile views
   const CatalogContent = (
     <>
-      <div className={`p-4 md:p-6 border-b shrink-0 ${isDarkMode ? 'border-white/10' : 'border-slate-200'}`}>
+      <div className={`p-4 md:p-6 border-b shrink-0 ${isDarkMode ? 'border-transparent/10' : 'border-border'}`}>
         <div className="flex items-center justify-between mb-4">
-          <h3 className={`text-lg md:text-xl font-bold tracking-tight flex items-center gap-2 ${isDarkMode ? 'text-white' : 'text-slate-800'}`}>
+          <h3 className={`text-lg md:text-xl font-bold tracking-tight flex items-center gap-2 ${isDarkMode ? 'text-white' : 'text-foreground'}`}>
             <Search className={`w-4 h-4 md:w-5 md:h-5 ${isDarkMode ? 'text-indigo-400' : 'text-indigo-600'}`} />
             아카이브 카탈로그
           </h3>
           <div className="hidden md:block">
             {onClose && (
-              <button onClick={onClose} className={`p-1.5 rounded-lg transition-colors ${isDarkMode ? 'text-slate-400 hover:text-white hover:bg-white/10' : 'text-slate-500 hover:text-slate-800 hover:bg-slate-200'}`}>
+              <button onClick={onClose} className={`p-1.5 rounded-lg transition-colors ${isDarkMode ? 'text-muted-foreground hover:text-white hover:bg-card/10' : 'text-muted-foreground hover:text-foreground hover:bg-slate-200'}`}>
                 <X className="w-5 h-5" />
               </button>
             )}
@@ -345,12 +345,12 @@ export function GraphBoard({ onClose }: { onClose?: () => void }) {
         </div>
         
         <div className="flex gap-2 md:gap-3">
-          <div className={`flex-1 rounded-xl p-3 border ${isDarkMode ? 'bg-white/5 border-white/5' : 'bg-white border-slate-200 shadow-sm'}`}>
-            <p className={`text-[10px] md:text-xs font-bold mb-1 ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>총 항목 수</p>
-            <p className={`text-xl md:text-2xl font-black ${isDarkMode ? 'text-white' : 'text-slate-800'}`}>{graphData.satellites.length}<span className={`text-[10px] md:text-sm font-medium ml-1 ${isDarkMode ? 'text-slate-500' : 'text-slate-400'}`}>Items</span></p>
+          <div className={`flex-1 rounded-xl p-3 border ${isDarkMode ? 'bg-card/5 border-transparent/5' : 'bg-card border-border shadow-sm'}`}>
+            <p className={`text-[10px] md:text-xs font-bold mb-1 ${isDarkMode ? 'text-muted-foreground' : 'text-muted-foreground'}`}>총 항목 수</p>
+            <p className={`text-xl md:text-2xl font-black ${isDarkMode ? 'text-white' : 'text-foreground'}`}>{graphData.satellites.length}<span className={`text-[10px] md:text-sm font-medium ml-1 ${isDarkMode ? 'text-muted-foreground' : 'text-muted-foreground'}`}>Items</span></p>
           </div>
-          <div className={`flex-1 rounded-xl p-3 border ${isDarkMode ? 'bg-white/5 border-white/5' : 'bg-white border-slate-200 shadow-sm'}`}>
-            <p className={`text-[10px] md:text-xs font-bold mb-1 ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>연결선</p>
+          <div className={`flex-1 rounded-xl p-3 border ${isDarkMode ? 'bg-card/5 border-transparent/5' : 'bg-card border-border shadow-sm'}`}>
+            <p className={`text-[10px] md:text-xs font-bold mb-1 ${isDarkMode ? 'text-muted-foreground' : 'text-muted-foreground'}`}>연결선</p>
             <p className={`text-xl md:text-2xl font-black ${isDarkMode ? 'text-indigo-300' : 'text-indigo-600'}`}>{graphData.links.length}<span className={`text-[10px] md:text-sm font-medium ml-1 ${isDarkMode ? 'text-indigo-500/50' : 'text-indigo-400'}`}>Edges</span></p>
           </div>
         </div>
@@ -358,7 +358,7 @@ export function GraphBoard({ onClose }: { onClose?: () => void }) {
 
       <div ref={panelRef} className="flex-1 overflow-y-auto p-3 md:p-4 space-y-2 md:space-y-3 custom-scrollbar">
         {graphData.satellites.length === 0 ? (
-          <p className={`text-sm text-center mt-10 ${isDarkMode ? 'text-slate-500' : 'text-slate-400'}`}>기록된 항목이 없습니다.</p>
+          <p className={`text-sm text-center mt-10 ${isDarkMode ? 'text-muted-foreground' : 'text-muted-foreground'}`}>기록된 항목이 없습니다.</p>
         ) : (
           (() => {
             const grouped: Record<string, any[]> = {};
@@ -390,7 +390,7 @@ export function GraphBoard({ onClose }: { onClose?: () => void }) {
   );
 
   return (
-    <div className={`w-full h-full rounded-3xl overflow-hidden relative shadow-2xl flex border transition-colors duration-500 ${isDarkMode ? 'bg-slate-900 border-slate-700/50' : 'bg-slate-50 border-slate-300/50'}`}>
+    <div className={`w-full h-full rounded-3xl overflow-hidden relative shadow-2xl flex border transition-colors duration-500 ${isDarkMode ? 'bg-slate-900 border-slate-700/50' : 'bg-muted border-slate-300/50'}`}>
       
       {/* Background ambient gradient */}
       <div className={`absolute inset-0 pointer-events-none transition-colors duration-500 ${isDarkMode ? 'bg-gradient-to-br from-slate-900 via-[#0a0f1c] to-indigo-950/20' : 'bg-gradient-to-br from-slate-50 via-white to-indigo-50'}`} />
@@ -401,14 +401,14 @@ export function GraphBoard({ onClose }: { onClose?: () => void }) {
         <div className="absolute top-4 left-4 md:top-6 md:left-6 z-10 flex flex-col md:flex-row md:items-center gap-2 md:gap-4 pointer-events-none">
           <div className="flex items-center gap-3 pointer-events-auto">
             <h2 className={`text-2xl md:text-3xl font-black flex items-center gap-2 tracking-tight bg-clip-text text-transparent ${isDarkMode ? 'bg-gradient-to-r from-white to-slate-400' : 'bg-gradient-to-r from-slate-800 to-indigo-800'}`}>
-              <Network className={`w-6 h-6 md:w-7 md:h-7 ${isDarkMode ? 'text-white' : 'text-slate-800'}`} />
+              <Network className={`w-6 h-6 md:w-7 md:h-7 ${isDarkMode ? 'text-white' : 'text-foreground'}`} />
               시냅스
             </h2>
             
             {/* Theme Toggle Button */}
             <button
               onClick={(e) => { e.stopPropagation(); setIsDarkMode(!isDarkMode); }}
-              className={`p-2 rounded-full backdrop-blur-md transition-all shadow-sm ${isDarkMode ? 'bg-white/10 hover:bg-white/20 text-yellow-400' : 'bg-white/80 hover:bg-white text-indigo-600 border border-slate-200'}`}
+              className={`p-2 rounded-full backdrop-blur-md transition-all shadow-sm ${isDarkMode ? 'bg-card/10 hover:bg-card/20 text-yellow-400' : 'bg-card/80 hover:bg-card text-indigo-600 border border-border'}`}
               title={isDarkMode ? "라이트 모드로 전환" : "다크 모드로 전환"}
             >
               {isDarkMode ? <Sun className="w-4 h-4 md:w-5 md:h-5" /> : <Moon className="w-4 h-4 md:w-5 md:h-5" />}
@@ -419,14 +419,14 @@ export function GraphBoard({ onClose }: { onClose?: () => void }) {
                {onClose && (
                 <button 
                   onClick={onClose}
-                  className={`p-2 rounded-full backdrop-blur-md transition-all shadow-sm ${isDarkMode ? 'bg-white/10 text-white' : 'bg-white/80 text-slate-800 border border-slate-200'}`}
+                  className={`p-2 rounded-full backdrop-blur-md transition-all shadow-sm ${isDarkMode ? 'bg-card/10 text-white' : 'bg-card/80 text-foreground border border-border'}`}
                 >
                   <X className="w-4 h-4" />
                 </button>
               )}
             </div>
           </div>
-          <p className={`hidden md:block text-sm font-medium max-w-sm leading-relaxed ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>
+          <p className={`hidden md:block text-sm font-medium max-w-sm leading-relaxed ${isDarkMode ? 'text-muted-foreground' : 'text-muted-foreground'}`}>
             모든 지식이 유기적으로 연결된 우주망입니다.
           </p>
         </div>
@@ -463,7 +463,7 @@ export function GraphBoard({ onClose }: { onClose?: () => void }) {
             d3VelocityDecay={0.2}
           />
         ) : (
-          <div className={`flex items-center justify-center h-full font-medium z-10 relative ${isDarkMode ? 'text-slate-500' : 'text-slate-400'}`}>
+          <div className={`flex items-center justify-center h-full font-medium z-10 relative ${isDarkMode ? 'text-muted-foreground' : 'text-muted-foreground'}`}>
             연결할 지식 데이터가 없습니다. 아카이브에서 노트를 작성해보세요.
           </div>
         )}
@@ -473,7 +473,7 @@ export function GraphBoard({ onClose }: { onClose?: () => void }) {
       <motion.div 
         initial={{ x: 400, opacity: 0 }}
         animate={{ x: 0, opacity: 1 }}
-        className={`hidden md:flex w-80 md:w-96 h-full flex-col z-20 shrink-0 border-l ${isDarkMode ? 'bg-slate-800/60 backdrop-blur-3xl border-white/10' : 'bg-white/80 backdrop-blur-3xl border-slate-200'}`}
+        className={`hidden md:flex w-80 md:w-96 h-full flex-col z-20 shrink-0 border-l ${isDarkMode ? 'bg-slate-800/60 backdrop-blur-3xl border-transparent/10' : 'bg-card/80 backdrop-blur-3xl border-border'}`}
       >
         {CatalogContent}
       </motion.div>
@@ -491,7 +491,7 @@ export function GraphBoard({ onClose }: { onClose?: () => void }) {
           initial={{ y: 'calc(100% - 60px)' }}
           animate={{ y: isMobileDrawerOpen ? 0 : 'calc(100% - 60px)' }}
           transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
-          className={`md:hidden absolute bottom-0 left-0 right-0 h-[70vh] flex flex-col z-30 rounded-t-3xl shadow-[0_-10px_40px_rgba(0,0,0,0.1)] border-t ${isDarkMode ? 'bg-slate-800/95 border-white/10' : 'bg-white/95 border-slate-200'}`}
+          className={`md:hidden absolute bottom-0 left-0 right-0 h-[70vh] flex flex-col z-30 rounded-t-3xl shadow-[0_-10px_40px_rgba(0,0,0,0.1)] border-t ${isDarkMode ? 'bg-slate-800/95 border-transparent/10' : 'bg-card/95 border-border'}`}
         >
           {/* Drawer Handle */}
           <div 
@@ -499,7 +499,7 @@ export function GraphBoard({ onClose }: { onClose?: () => void }) {
             onClick={() => setIsMobileDrawerOpen(!isMobileDrawerOpen)}
           >
             <div className={`w-12 h-1.5 rounded-full mb-2 ${isDarkMode ? 'bg-slate-600' : 'bg-slate-300'}`} />
-            <div className={`text-[10px] font-bold flex items-center gap-1 ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>
+            <div className={`text-[10px] font-bold flex items-center gap-1 ${isDarkMode ? 'text-muted-foreground' : 'text-muted-foreground'}`}>
               {isMobileDrawerOpen ? <ChevronDown className="w-3 h-3" /> : <ChevronUp className="w-3 h-3" />}
               {isMobileDrawerOpen ? '스와이프하여 닫기' : '스와이프하여 카탈로그 열기'}
             </div>

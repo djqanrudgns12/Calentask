@@ -254,9 +254,9 @@ export function TemplateFormDialog({ isOpen, onClose, editingTemplate, mode = 'm
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()} modal>
-      <DialogContent ref={dialogRef} className="sm:max-w-[440px] p-0 overflow-hidden bg-[#f8f9ff] border-none shadow-2xl rounded-2xl flex flex-col z-[200]" showCloseButton={false}>
-        <DialogHeader className="px-6 py-4 border-b border-gray-100 bg-white">
-          <DialogTitle className="text-xl font-bold text-gray-900">{editingTemplate ? '템플릿 수정' : '새 템플릿 만들기'}</DialogTitle>
+      <DialogContent ref={dialogRef} className="sm:max-w-[440px] p-0 overflow-hidden bg-background border-none shadow-2xl rounded-2xl flex flex-col z-[200]" showCloseButton={false}>
+        <DialogHeader className="px-6 py-4 border-b border-border bg-card">
+          <DialogTitle className="text-xl font-bold text-foreground">{editingTemplate ? '템플릿 수정' : '새 템플릿 만들기'}</DialogTitle>
           <DialogDescription className="sr-only">일정 등록 템플릿 폼</DialogDescription>
         </DialogHeader>
 
@@ -266,7 +266,7 @@ export function TemplateFormDialog({ isOpen, onClose, editingTemplate, mode = 'm
 
               {/* FEAT: 빠른 일정 추가용 날짜 및 시각 (quick-add 모드일 때 최상단 노출) */}
               {mode === 'quick-add' && (
-                <div className="flex gap-3 pb-2 mb-2 border-b border-gray-100">
+                <div className="flex gap-3 pb-2 mb-2 border-b border-border">
                   <div className="flex-1 space-y-1.5">
                     <Label className="text-indigo-600 font-bold text-[13px] pl-1 flex items-center gap-1"><CalendarDays className="w-3.5 h-3.5" />진행 일자</Label>
                     <Input
@@ -296,14 +296,14 @@ export function TemplateFormDialog({ isOpen, onClose, editingTemplate, mode = 'm
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   placeholder="템플릿 이름 (예: 기초학력 강사)"
-                  className="border-gray-200 focus-visible:ring-indigo-500 rounded-lg bg-white h-12 text-base font-semibold"
+                  className="border-border focus-visible:ring-indigo-500 rounded-lg bg-card h-12 text-base font-semibold"
                   required
                 />
               </div>
 
               {/* Categories */}
               <div className="space-y-2">
-                <Label className="text-gray-600 font-medium text-sm pl-1">카테고리 선택</Label>
+                <Label className="text-foreground font-medium text-sm pl-1">카테고리 선택</Label>
                 <div className="flex flex-wrap items-center gap-2">
                   {categories.map(cat => {
                     const isSelected = categoryIds.includes(cat.id)
@@ -317,7 +317,7 @@ export function TemplateFormDialog({ isOpen, onClose, editingTemplate, mode = 'm
                             : [...prev, cat.id]
                         )}
                         className={`group/cat px-3.5 py-1.5 text-sm font-medium rounded-full transition-all flex items-center gap-1.5 shadow-sm text-white border-2
-                          ${isSelected ? 'border-white ring-2 ring-indigo-300' : 'border-transparent opacity-85 hover:opacity-100'}`}
+                          ${isSelected ? 'border-transparent ring-2 ring-indigo-300' : 'border-transparent opacity-85 hover:opacity-100'}`}
                         style={{ backgroundColor: cat.hex_color || '#4f46e5', textShadow: '0 1px 2px rgba(0,0,0,0.5)' }}
                       >
                         {cat.name}
@@ -325,7 +325,7 @@ export function TemplateFormDialog({ isOpen, onClose, editingTemplate, mode = 'm
                         {!isSelected && !cat.is_default && (
                           <span
                             role="button"
-                            className="inline-flex opacity-0 pointer-events-none group-hover/cat:opacity-100 group-hover/cat:pointer-events-auto items-center justify-center w-4 h-4 rounded-full bg-white/30 hover:bg-red-500/80 transition-opacity ml-0.5"
+                            className="inline-flex opacity-0 pointer-events-none group-hover/cat:opacity-100 group-hover/cat:pointer-events-auto items-center justify-center w-4 h-4 rounded-full bg-card/30 hover:bg-red-500/80 transition-opacity ml-0.5"
                             onClick={(e) => {
                               e.stopPropagation()
                               if (window.confirm(`'${cat.name}' 카테고리를 삭제하시겠습니까?\n\n⚠️ 이 카테고리에 연결된 일정의 카테고리 정보가 해제됩니다.`)) {
@@ -353,17 +353,17 @@ export function TemplateFormDialog({ isOpen, onClose, editingTemplate, mode = 'm
                             handleAddCategorySubmit(e as any)
                           }
                         }}
-                        className="w-28 h-8 text-sm rounded-full px-3 bg-white border-indigo-200 focus-visible:ring-indigo-500"
+                        className="w-28 h-8 text-sm rounded-full px-3 bg-card border-indigo-200 focus-visible:ring-indigo-500"
                         placeholder="이름..."
                       />
                       <Button type="button" size="sm" className="h-8 rounded-full px-3 bg-indigo-600 hover:bg-indigo-700" onClick={handleAddCategorySubmit}>추가</Button>
-                      <Button type="button" variant="ghost" size="sm" className="h-8 rounded-full px-2 text-gray-500 hover:text-gray-700" onClick={() => setIsAddingCategory(false)}><X className="w-4 h-4" /></Button>
+                      <Button type="button" variant="ghost" size="sm" className="h-8 rounded-full px-2 text-muted-foreground hover:text-foreground" onClick={() => setIsAddingCategory(false)}><X className="w-4 h-4" /></Button>
                     </div>
                   ) : (
                     <button
                       type="button"
                       onClick={() => setIsAddingCategory(true)}
-                      className="px-3.5 py-1.5 text-sm font-medium rounded-full border border-dashed border-gray-300 text-gray-500 hover:text-gray-700 hover:border-gray-400 hover:bg-gray-50 transition-colors flex items-center gap-1 bg-white"
+                      className="px-3.5 py-1.5 text-sm font-medium rounded-full border border-dashed border-gray-300 text-muted-foreground hover:text-foreground hover:border-gray-400 hover:bg-muted transition-colors flex items-center gap-1 bg-card"
                     >
                       <Plus className="w-3.5 h-3.5" />
                       Add
@@ -373,10 +373,10 @@ export function TemplateFormDialog({ isOpen, onClose, editingTemplate, mode = 'm
               </div>
 
               {/* Colors */}
-              <div className="bg-white/60 rounded-xl p-4 border border-gray-100 shadow-sm space-y-4">
+              <div className="bg-card/60 rounded-xl p-4 border border-border shadow-sm space-y-4">
                 <div className="h-2.5 w-full rounded-full" style={{ background: getGradient() }} />
                 <div className="flex items-center gap-3">
-                  <span className="text-xs text-gray-500 font-medium text-center shrink-0 leading-tight">색상<br />지정:</span>
+                  <span className="text-xs text-muted-foreground font-medium text-center shrink-0 leading-tight">색상<br />지정:</span>
                   <div className="flex flex-wrap items-center gap-2 mt-1">
                     {COLOR_SWATCHES.map(color => (
                       <button
@@ -392,10 +392,10 @@ export function TemplateFormDialog({ isOpen, onClose, editingTemplate, mode = 'm
               </div>
 
               {/* Duration Setting */}
-              <div className="bg-white/60 rounded-xl p-4 border border-gray-100 shadow-sm space-y-3">
-                <Label className="text-gray-600 font-medium text-sm">기본 소요시간</Label>
-                <div className="flex items-center justify-center gap-4 bg-white p-3 rounded-lg border border-gray-100">
-                  <Button type="button" variant="outline" size="icon" className="h-10 w-10 rounded-full border-gray-200 text-gray-500" onClick={() => adjustDuration(-15)}>
+              <div className="bg-card/60 rounded-xl p-4 border border-border shadow-sm space-y-3">
+                <Label className="text-foreground font-medium text-sm">기본 소요시간</Label>
+                <div className="flex items-center justify-center gap-4 bg-card p-3 rounded-lg border border-border">
+                  <Button type="button" variant="outline" size="icon" className="h-10 w-10 rounded-full border-border text-muted-foreground" onClick={() => adjustDuration(-15)}>
                     -15
                   </Button>
                   <div className="flex items-center gap-2">
@@ -403,48 +403,48 @@ export function TemplateFormDialog({ isOpen, onClose, editingTemplate, mode = 'm
                       type="number"
                       value={durationMinutes || ''}
                       onChange={(e) => setDurationMinutes(parseInt(e.target.value) || 0)}
-                      className="w-20 text-center font-bold text-lg h-10 border-gray-200 focus-visible:ring-indigo-500"
+                      className="w-20 text-center font-bold text-lg h-10 border-border focus-visible:ring-indigo-500"
                     />
-                    <span className="text-gray-500 font-medium">분</span>
+                    <span className="text-muted-foreground font-medium">분</span>
                   </div>
-                  <Button type="button" variant="outline" size="icon" className="h-10 w-10 rounded-full border-gray-200 text-gray-500" onClick={() => adjustDuration(15)}>
+                  <Button type="button" variant="outline" size="icon" className="h-10 w-10 rounded-full border-border text-muted-foreground" onClick={() => adjustDuration(15)}>
                     +15
                   </Button>
                 </div>
               </div>
 
               {/* FEAT-02: Custom Unit Setting */}
-              <div className="bg-white/60 rounded-xl p-4 border border-gray-100 shadow-sm space-y-3">
+              <div className="bg-card/60 rounded-xl p-4 border border-border shadow-sm space-y-3">
                 <div className="flex items-center justify-between">
-                  <Label className="text-gray-600 font-medium text-sm">고정 시간(차시) 단위로 계산하기</Label>
+                  <Label className="text-foreground font-medium text-sm">고정 시간(차시) 단위로 계산하기</Label>
                   <button
                     type="button"
                     onClick={() => setCustomUnitEnabled(!customUnitEnabled)}
                     className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 ${customUnitEnabled ? 'bg-indigo-500' : 'bg-gray-300'}`}
                   >
-                    <span className={`inline-block h-4 w-4 rounded-full bg-white shadow-sm transition-transform duration-200 ${customUnitEnabled ? 'translate-x-6' : 'translate-x-1'}`} />
+                    <span className={`inline-block h-4 w-4 rounded-full bg-card shadow-sm transition-transform duration-200 ${customUnitEnabled ? 'translate-x-6' : 'translate-x-1'}`} />
                   </button>
                 </div>
                 {customUnitEnabled && (
                   <div className="space-y-2">
-                    <div className="flex items-center gap-3 bg-white p-3 rounded-lg border border-gray-100">
-                      <span className="text-sm text-gray-500 font-medium shrink-0">1차시 =</span>
+                    <div className="flex items-center gap-3 bg-card p-3 rounded-lg border border-border">
+                      <span className="text-sm text-muted-foreground font-medium shrink-0">1차시 =</span>
                       <Input
                         type="number"
                         value={customUnitMinutes || ''}
                         onChange={(e) => setCustomUnitMinutes(parseInt(e.target.value) || 0)}
-                        className="w-20 text-center font-bold text-lg h-10 border-gray-200 focus-visible:ring-indigo-500"
+                        className="w-20 text-center font-bold text-lg h-10 border-border focus-visible:ring-indigo-500"
                         min={1}
                       />
-                      <span className="text-sm text-gray-500 font-medium">분</span>
+                      <span className="text-sm text-muted-foreground font-medium">분</span>
                     </div>
-                    <p className="text-[11px] text-gray-400 pl-1">
+                    <p className="text-[11px] text-muted-foreground pl-1">
                       예: {customUnitMinutes}분 = 1차시 → {customUnitMinutes * 2}분 활동 = 2차시로 통계에 횟수가 카운트됩니다 (잔여 분 버림)
                     </p>
                   </div>
                 )}
                 {!customUnitEnabled && (
-                  <p className="text-[11px] text-gray-400 pl-1">
+                  <p className="text-[11px] text-muted-foreground pl-1">
                     ON 시 설정한 분 수를 1차시로 환산하여 통계에 표시합니다
                   </p>
                 )}
@@ -453,45 +453,45 @@ export function TemplateFormDialog({ isOpen, onClose, editingTemplate, mode = 'm
               {/* Default Start Time */}
               {mode !== 'quick-add' && (
                 <div className="space-y-2">
-                  <Label className="text-gray-600 font-medium text-sm pl-1">기본 시작 시각 (선택)</Label>
+                  <Label className="text-foreground font-medium text-sm pl-1">기본 시작 시각 (선택)</Label>
                   <div className="flex items-center gap-3">
                     <TimeSelect
                       value={defaultStartTime}
                       onChange={setDefaultStartTime}
-                      className="flex-1 bg-white border-gray-200 focus-visible:ring-indigo-500 rounded-lg h-11"
+                      className="flex-1 bg-card border-border focus-visible:ring-indigo-500 rounded-lg h-11"
                     />
                     {defaultStartTime && (
                       <Button
                         type="button"
                         variant="ghost"
                         size="sm"
-                        className="text-gray-400 hover:text-rose-500 rounded-full px-3 text-xs"
+                        className="text-muted-foreground hover:text-rose-500 rounded-full px-3 text-xs"
                         onClick={() => setDefaultStartTime('')}
                       >
                         초기화
                       </Button>
                     )}
                   </div>
-                  <p className="text-xs text-gray-400 pl-1">설정 시 빠른 일정 등록에서 이 시각이 자동으로 채워집니다.</p>
+                  <p className="text-xs text-muted-foreground pl-1">설정 시 빠른 일정 등록에서 이 시각이 자동으로 채워집니다.</p>
                 </div>
               )}
 
               {/* Memo */}
               <div className="space-y-2">
-                <Label className="text-gray-600 font-medium text-sm pl-1">메모 (선택)</Label>
+                <Label className="text-foreground font-medium text-sm pl-1">메모 (선택)</Label>
                 <textarea
                   value={memo}
                   onChange={e => setMemo(e.target.value)}
                   placeholder="일정에 대한 상세 내용을 입력하세요..."
-                  className="w-full min-h-[80px] p-3 text-sm rounded-lg border border-gray-200 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none"
+                  className="w-full min-h-[80px] p-3 text-sm rounded-lg border border-border bg-card focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none"
                 />
               </div>
 
             </div>
           </div>
 
-          <div className="flex-shrink-0 flex justify-end gap-3 bg-white px-6 py-4 border-t border-gray-100">
-            <Button type="button" variant="ghost" onClick={onClose} className="text-gray-500 hover:bg-gray-100 rounded-full px-5">취소</Button>
+          <div className="flex-shrink-0 flex justify-end gap-3 bg-card px-6 py-4 border-t border-border">
+            <Button type="button" variant="ghost" onClick={onClose} className="text-muted-foreground hover:bg-muted rounded-full px-5">취소</Button>
             <Button type="submit" disabled={isCreating || isUpdating || isCreatingActivity} className="bg-indigo-500 hover:bg-indigo-600 text-white rounded-full px-6 shadow-sm shadow-indigo-200 transition-all active:scale-95">
               {isCreating || isUpdating || isCreatingActivity
                 ? '저장 중...'

@@ -19,15 +19,15 @@ export default function AnnualGoalWidget() {
   }, [progressData]);
 
   return (
-    <div className="bg-white rounded-[24px] p-6 border border-gray-100 shadow-sm flex items-center justify-between w-full h-[120px] relative overflow-hidden group">
+    <div className="bg-card rounded-[24px] p-6 border border-border shadow-sm flex items-center justify-between w-full h-[120px] relative overflow-hidden group">
       <div className="absolute right-0 top-0 w-32 h-32 bg-indigo-50 rounded-full blur-3xl opacity-50 -translate-y-1/2 translate-x-1/2"></div>
       
       <div className="flex flex-col z-10">
         <div className="flex items-center gap-1.5 text-indigo-600 font-extrabold text-[12px] uppercase tracking-widest mb-1 whitespace-nowrap">
           <Trophy size={14} /> 2026 마스터 목표
         </div>
-        <div className="text-[28px] font-black text-gray-900 tracking-tighter leading-none mt-1">
-          {progress.hours.toLocaleString()} <span className="text-[16px] text-gray-400 font-bold ml-0.5">/ {GOAL_HOURS.toLocaleString()} h</span>
+        <div className="text-[28px] font-black text-foreground tracking-tighter leading-none mt-1">
+          {progress.hours.toLocaleString()} <span className="text-[16px] text-muted-foreground font-bold ml-0.5">/ {GOAL_HOURS.toLocaleString()} h</span>
         </div>
       </div>
 

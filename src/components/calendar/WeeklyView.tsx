@@ -84,14 +84,14 @@ export const WeeklyView = React.memo(function WeeklyView({ currentDate, events }
   }, [])
 
   return (
-    <div className="flex-1 flex flex-col h-full bg-[#FAFAFA] rounded-2xl border border-[#EEEEEE] overflow-hidden shadow-sm">
+    <div className="flex-1 flex flex-col h-full bg-background rounded-2xl border border-border overflow-hidden shadow-sm">
       {/* Body: Scrollable Area */}
-      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto overflow-x-auto snap-x snap-mandatory hide-scrollbar bg-white relative">
+      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto overflow-x-auto snap-x snap-mandatory hide-scrollbar bg-card relative">
         <div className="min-w-[700px] md:min-w-0 flex flex-col h-full">
           
           {/* Header: Days */}
-          <div className="flex border-b border-[#EEEEEE] bg-white sticky top-0 z-30">
-            <div className="w-12 md:w-16 shrink-0 border-r border-[#EEEEEE] bg-white sticky left-0 z-40" /> {/* Time axis spacer */}
+          <div className="flex border-b border-border bg-card sticky top-0 z-30">
+            <div className="w-12 md:w-16 shrink-0 border-r border-border bg-card sticky left-0 z-40" /> {/* Time axis spacer */}
             <div className="flex-1 grid grid-cols-7">
           {days.map((day, idx) => {
             const isToday = isSameDay(day, now)
@@ -117,11 +117,11 @@ export const WeeklyView = React.memo(function WeeklyView({ currentDate, events }
             const allDayEvents = events.filter(e => isEventOnDay(e, day) && (e.is_all_day || isMultiDayEvent(e)))
 
             return (
-              <div key={idx} className="flex flex-col items-center py-3 border-r border-[#EEEEEE] last:border-r-0 relative">
-                <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">
+              <div key={idx} className="flex flex-col items-center py-3 border-r border-border last:border-r-0 relative">
+                <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">
                   {['일', '월', '화', '수', '목', '금', '토'][day.getDay()]}
                 </span>
-                <div className={`w-8 h-8 flex items-center justify-center rounded-full text-sm font-bold ${isToday ? 'bg-[#312E81] text-white shadow-md shadow-[#4338CA]/40' : isHolidayDay || day.getDay() === 0 ? 'text-red-500' : 'text-slate-700'
+                <div className={`w-8 h-8 flex items-center justify-center rounded-full text-sm font-bold ${isToday ? 'bg-[#312E81] text-white shadow-md shadow-[#4338CA]/40' : isHolidayDay || day.getDay() === 0 ? 'text-red-500' : 'text-foreground'
                   }`}>
                   {format(day, 'd')}
                 </div>
@@ -131,7 +131,7 @@ export const WeeklyView = React.memo(function WeeklyView({ currentDate, events }
                   </span>
                 )}
                 {otherTerms && (
-                  <span className="mt-0.5 text-[9px] font-medium text-slate-400 truncate px-1 text-center w-full leading-tight">
+                  <span className="mt-0.5 text-[9px] font-medium text-muted-foreground truncate px-1 text-center w-full leading-tight">
                     {otherTerms}
                   </span>
                 )}
@@ -169,10 +169,10 @@ export const WeeklyView = React.memo(function WeeklyView({ currentDate, events }
           {/* Body: Time Grid */}
           <div className="flex-1 flex relative">
             {/* Time Axis */}
-            <div className="w-12 md:w-16 shrink-0 flex flex-col border-r border-[#EEEEEE] bg-[#FAFAFA] sticky left-0 z-20">
+            <div className="w-12 md:w-16 shrink-0 flex flex-col border-r border-border bg-background sticky left-0 z-20">
             {HOURS.map(hour => (
-              <div key={hour} className="relative text-[10px] font-medium text-slate-400 text-right pr-2" style={{ height: PIXELS_PER_HOUR }}>
-                <span className={`absolute right-2 bg-[#FAFAFA] px-1 ${hour === 0 ? 'top-1' : '-top-2'}`}>
+              <div key={hour} className="relative text-[10px] font-medium text-muted-foreground text-right pr-2" style={{ height: PIXELS_PER_HOUR }}>
+                <span className={`absolute right-2 bg-background px-1 ${hour === 0 ? 'top-1' : '-top-2'}`}>
                   {hour === 0 ? '12 AM' : hour < 12 ? `${hour} AM` : hour === 12 ? '12 PM' : `${hour - 12} PM`}
                 </span>
               </div>
@@ -184,7 +184,7 @@ export const WeeklyView = React.memo(function WeeklyView({ currentDate, events }
             {/* Horizontal Grid Lines */}
             <div className="absolute inset-0 pointer-events-none flex flex-col">
               {HOURS.map(hour => (
-                <div key={hour} className="w-full border-b border-[#F1F5F9]" style={{ height: PIXELS_PER_HOUR }} />
+                <div key={hour} className="w-full border-b border-border" style={{ height: PIXELS_PER_HOUR }} />
               ))}
             </div>
 
@@ -256,7 +256,7 @@ export const WeeklyView = React.memo(function WeeklyView({ currentDate, events }
                 <DroppableColumn
                   key={dayIdx}
                   day={day}
-                  className="relative border-r border-[#F1F5F9] last:border-r-0 snap-start"
+                  className="relative border-r border-border last:border-r-0 snap-start"
                   style={{ minHeight: PIXELS_PER_HOUR * 24 }}
                   onClick={() => openDaySummary(day)}
                 >
@@ -310,16 +310,16 @@ export const WeeklyView = React.memo(function WeeklyView({ currentDate, events }
                         </div>
 
                         {/* Hover Actions */}
-                        <div className="absolute right-1 top-1 hidden group-hover:flex items-center gap-1 bg-white/90 px-1 py-0.5 rounded shadow-sm">
+                        <div className="absolute right-1 top-1 hidden group-hover:flex items-center gap-1 bg-card/90 px-1 py-0.5 rounded shadow-sm">
                           <button
                             onClick={(e) => { e.stopPropagation(); openEditEvent(event); }}
-                            className="p-1 hover:bg-gray-100 rounded text-gray-500 hover:text-indigo-600 transition-colors"
+                            className="p-1 hover:bg-muted rounded text-muted-foreground hover:text-indigo-600 transition-colors"
                           >
                             <Pencil className="w-3 h-3" />
                           </button>
                           <button
                             onClick={(e) => { e.stopPropagation(); openDeleteConfirm(event.id); }}
-                            className="p-1 hover:bg-gray-100 rounded text-gray-500 hover:text-red-600 transition-colors"
+                            className="p-1 hover:bg-muted rounded text-muted-foreground hover:text-red-600 transition-colors"
                           >
                             <Trash2 className="w-3 h-3" />
                           </button>

@@ -14,8 +14,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 const ChartTooltip = ({ active, payload, label }: any) => {
   if (!active || !payload?.length) return null;
   return (
-    <div className="bg-white/95 backdrop-blur-md px-3 py-2 rounded-xl border border-gray-100 shadow-lg text-[12px] font-bold">
-      <p className="text-gray-500 mb-0.5">{label}</p>
+    <div className="bg-card/95 backdrop-blur-md px-3 py-2 rounded-xl border border-border shadow-lg text-[12px] font-bold">
+      <p className="text-muted-foreground mb-0.5">{label}</p>
       {payload.map((p: any, i: number) => (
         <p key={i} style={{ color: p.fill || p.color }}>{p.name}: {p.value}{p.dataKey === 'hours' ? 'h' : '건'}</p>
       ))}
@@ -182,28 +182,28 @@ export default function SubjectDetailSheet({
             animate={{ y: 0, x: 0 }}
             exit={{ y: '100%', x: 0 }}
             transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-            className="fixed inset-0 md:inset-y-0 md:left-auto md:right-0 md:w-[520px] bg-white shadow-2xl z-[201] flex flex-col"
+            className="fixed inset-0 md:inset-y-0 md:left-auto md:right-0 md:w-[520px] bg-card shadow-2xl z-[201] flex flex-col"
           >
             {/* Header — safe-area 대응 포함 */}
-            <div className="flex items-center justify-between px-5 md:px-6 py-4 md:py-5 border-b border-gray-100 bg-white z-10 sticky top-0 pt-[max(1rem,env(safe-area-inset-top))]">
+            <div className="flex items-center justify-between px-5 md:px-6 py-4 md:py-5 border-b border-border bg-card z-10 sticky top-0 pt-[max(1rem,env(safe-area-inset-top))]">
               <div className="flex items-center gap-3">
                 <div className="w-4 h-4 rounded-full shadow-sm" style={{ backgroundColor: catColor }} />
-                <h2 className="text-xl font-bold text-gray-900 tracking-tight">
+                <h2 className="text-xl font-bold text-foreground tracking-tight">
                   <span style={{ color: catColor }}>{breakdownInfo?.name}</span> 집중 분석
                 </h2>
               </div>
               <button 
                 onClick={onClose}
-                className="p-2 -mr-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600 rounded-full transition-colors"
+                className="p-2 -mr-2 text-muted-foreground hover:bg-muted hover:text-foreground rounded-full transition-colors"
               >
                 <X size={20} />
               </button>
             </div>
 
             {/* Content */}
-            <div className="flex-1 overflow-y-auto bg-[#F9FAFB] p-6 custom-scrollbar">
+            <div className="flex-1 overflow-y-auto bg-background p-6 custom-scrollbar">
               {isLoading ? (
-                <div className="flex flex-col items-center justify-center h-full text-gray-400">
+                <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
                   <Loader2 className="w-8 h-8 animate-spin mb-3 text-indigo-400" />
                   <p className="font-medium text-sm">상세 데이터를 불러오는 중...</p>
                 </div>
@@ -211,32 +211,32 @@ export default function SubjectDetailSheet({
                 <div className="space-y-5">
                   {/* ── 핵심 통계 카드 ── */}
                   <div className="grid grid-cols-3 gap-3">
-                    <div className="bg-white rounded-[18px] p-4 border border-gray-100 shadow-sm">
-                      <div className="flex items-center gap-1 text-gray-400 font-bold text-[10px] mb-1.5">
+                    <div className="bg-card rounded-[18px] p-4 border border-border shadow-sm">
+                      <div className="flex items-center gap-1 text-muted-foreground font-bold text-[10px] mb-1.5">
                         <Zap size={11} /> 평균 세션
                       </div>
-                      <div className="text-[20px] font-black text-gray-900 tracking-tighter leading-tight">
+                      <div className="text-[20px] font-black text-foreground tracking-tighter leading-tight">
                         {stats ? formatMins(stats.avgSessionMins) : '0분'}
                       </div>
                     </div>
-                    <div className="bg-white rounded-[18px] p-4 border border-gray-100 shadow-sm">
-                      <div className="flex items-center gap-1 text-gray-400 font-bold text-[10px] mb-1.5">
+                    <div className="bg-card rounded-[18px] p-4 border border-border shadow-sm">
+                      <div className="flex items-center gap-1 text-muted-foreground font-bold text-[10px] mb-1.5">
                         <Flame size={11} /> 최장 세션
                       </div>
-                      <div className="text-[20px] font-black text-gray-900 tracking-tighter leading-tight">
+                      <div className="text-[20px] font-black text-foreground tracking-tighter leading-tight">
                         {stats ? formatMins(stats.maxSessionMins) : '0분'}
                       </div>
                       {stats?.maxSessionDate && (
-                        <p className="text-[9px] text-gray-400 font-medium mt-0.5">
+                        <p className="text-[9px] text-muted-foreground font-medium mt-0.5">
                           {format(new Date(stats.maxSessionDate), 'M.d(EEE)', { locale: ko })}
                         </p>
                       )}
                     </div>
-                    <div className="bg-white rounded-[18px] p-4 border border-gray-100 shadow-sm">
-                      <div className="flex items-center gap-1 text-gray-400 font-bold text-[10px] mb-1.5">
+                    <div className="bg-card rounded-[18px] p-4 border border-border shadow-sm">
+                      <div className="flex items-center gap-1 text-muted-foreground font-bold text-[10px] mb-1.5">
                         <Timer size={11} /> 주간 평균
                       </div>
-                      <div className="text-[20px] font-black text-gray-900 tracking-tighter leading-tight">
+                      <div className="text-[20px] font-black text-foreground tracking-tighter leading-tight">
                         {stats ? formatMins(stats.weeklyAvgMins) : '0분'}
                       </div>
                     </div>
@@ -244,20 +244,20 @@ export default function SubjectDetailSheet({
 
                   {/* ── 총 소요 시간 / 진행 횟수 ── */}
                   <div className="grid grid-cols-2 gap-3">
-                    <div className="bg-white rounded-[18px] p-4 border border-gray-100 shadow-sm">
-                      <div className="flex items-center gap-1 text-gray-400 font-bold text-[11px] mb-1.5">
+                    <div className="bg-card rounded-[18px] p-4 border border-border shadow-sm">
+                      <div className="flex items-center gap-1 text-muted-foreground font-bold text-[11px] mb-1.5">
                         <Clock size={12} /> 총 소요 시간
                       </div>
-                      <div className="text-[26px] font-black text-gray-900 tracking-tighter">
-                        {Math.round((breakdownInfo?.minutes || 0) / 60)}<span className="text-[14px] text-gray-400 font-bold ml-1">시간</span>
+                      <div className="text-[26px] font-black text-foreground tracking-tighter">
+                        {Math.round((breakdownInfo?.minutes || 0) / 60)}<span className="text-[14px] text-muted-foreground font-bold ml-1">시간</span>
                       </div>
                     </div>
-                    <div className="bg-white rounded-[18px] p-4 border border-gray-100 shadow-sm">
-                      <div className="flex items-center gap-1 text-gray-400 font-bold text-[11px] mb-1.5">
+                    <div className="bg-card rounded-[18px] p-4 border border-border shadow-sm">
+                      <div className="flex items-center gap-1 text-muted-foreground font-bold text-[11px] mb-1.5">
                         <CalendarDays size={12} /> 진행 횟수
                       </div>
-                      <div className="text-[26px] font-black text-gray-900 tracking-tighter">
-                        {breakdownInfo?.count || 0}<span className="text-[14px] text-gray-400 font-bold ml-1">회</span>
+                      <div className="text-[26px] font-black text-foreground tracking-tighter">
+                        {breakdownInfo?.count || 0}<span className="text-[14px] text-muted-foreground font-bold ml-1">회</span>
                       </div>
                     </div>
                   </div>
@@ -266,14 +266,14 @@ export default function SubjectDetailSheet({
                   {analytics && (
                     <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-[18px] p-5 shadow-lg flex items-center justify-around text-white">
                       <div className="text-center">
-                        <div className="text-[11px] font-bold text-gray-400 mb-1 flex items-center justify-center gap-1">
+                        <div className="text-[11px] font-bold text-muted-foreground mb-1 flex items-center justify-center gap-1">
                           <Flame size={12} className="text-orange-400" /> 가장 활발한 요일
                         </div>
                         <div className="text-xl font-black">{analytics.mostFrequentDay}요일</div>
                       </div>
                       <div className="w-px h-8 bg-gray-700/50" />
                       <div className="text-center">
-                        <div className="text-[11px] font-bold text-gray-400 mb-1 flex items-center justify-center gap-1">
+                        <div className="text-[11px] font-bold text-muted-foreground mb-1 flex items-center justify-center gap-1">
                           <TrendingUp size={12} className="text-emerald-400" /> 주 활동 시간대
                         </div>
                         <div className="text-xl font-black">{analytics.timeOfDay}</div>
@@ -283,8 +283,8 @@ export default function SubjectDetailSheet({
 
                   {/* ── 월별 추이 바 차트 ── */}
                   {monthlyChartData.length > 0 && (
-                    <div className="bg-white rounded-[20px] p-5 border border-gray-100 shadow-sm">
-                      <h3 className="text-[14px] font-bold text-gray-900 mb-4">월별 추이</h3>
+                    <div className="bg-card rounded-[20px] p-5 border border-border shadow-sm">
+                      <h3 className="text-[14px] font-bold text-foreground mb-4">월별 추이</h3>
                       <div className="h-[160px]">
                         <ResponsiveContainer width="100%" height="100%">
                           <BarChart data={monthlyChartData} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
@@ -301,8 +301,8 @@ export default function SubjectDetailSheet({
 
                   {/* ── 요일별 히트맵 ── */}
                   {weekdayHeatmap.length > 0 && (
-                    <div className="bg-white rounded-[20px] p-5 border border-gray-100 shadow-sm">
-                      <h3 className="text-[14px] font-bold text-gray-900 mb-4">요일별 분포</h3>
+                    <div className="bg-card rounded-[20px] p-5 border border-border shadow-sm">
+                      <h3 className="text-[14px] font-bold text-foreground mb-4">요일별 분포</h3>
                       <div className="flex gap-2">
                         {weekdayHeatmap.map(d => (
                           <div key={d.day} className="flex-1 flex flex-col items-center gap-1.5">
@@ -316,7 +316,7 @@ export default function SubjectDetailSheet({
                             >
                               {d.totalMins > 0 ? `${Math.round(d.totalMins / 60)}h` : '-'}
                             </div>
-                            <span className="text-[10px] font-bold text-gray-400">{d.day}</span>
+                            <span className="text-[10px] font-bold text-muted-foreground">{d.day}</span>
                           </div>
                         ))}
                       </div>
@@ -325,8 +325,8 @@ export default function SubjectDetailSheet({
 
                   {/* ── 세션 길이 분포 히스토그램 ── */}
                   {sessionHistogram.some(b => b.count > 0) && (
-                    <div className="bg-white rounded-[20px] p-5 border border-gray-100 shadow-sm">
-                      <h3 className="text-[14px] font-bold text-gray-900 mb-4">세션 길이 분포</h3>
+                    <div className="bg-card rounded-[20px] p-5 border border-border shadow-sm">
+                      <h3 className="text-[14px] font-bold text-foreground mb-4">세션 길이 분포</h3>
                       <div className="h-[120px]">
                         <ResponsiveContainer width="100%" height="100%">
                           <BarChart data={sessionHistogram} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
@@ -341,10 +341,10 @@ export default function SubjectDetailSheet({
                   )}
 
                   {/* ── 타임라인 ── */}
-                  <div className="bg-white rounded-[20px] p-5 border border-gray-100 shadow-sm">
-                    <h3 className="text-[14px] font-bold text-gray-900 mb-4">진행 타임라인</h3>
+                  <div className="bg-card rounded-[20px] p-5 border border-border shadow-sm">
+                    <h3 className="text-[14px] font-bold text-foreground mb-4">진행 타임라인</h3>
                     {data?.activities && data.activities.length > 0 ? (
-                      <div className="space-y-2 relative before:absolute before:inset-0 before:ml-[11px] before:h-full before:w-0.5 before:bg-gray-100">
+                      <div className="space-y-2 relative before:absolute before:inset-0 before:ml-[11px] before:h-full before:w-0.5 before:bg-muted">
                         {data.activities.slice(0, 20).map((act: any) => {
                           const date = new Date(act.start_time);
                           const end = new Date(act.end_time);
@@ -353,21 +353,21 @@ export default function SubjectDetailSheet({
                           return (
                             <div 
                               key={act.id} 
-                              className="relative flex items-start group cursor-pointer hover:bg-gray-50 p-3 -ml-3 rounded-2xl transition-all active:scale-[0.98]"
+                              className="relative flex items-start group cursor-pointer hover:bg-muted p-3 -ml-3 rounded-2xl transition-all active:scale-[0.98]"
                               onClick={() => openEditEvent(act)}
                             >
-                              <div className="flex items-center justify-center w-6 h-6 rounded-full border-[3px] border-white shrink-0 z-10 shadow-sm mt-0.5" style={{ backgroundColor: catColor }} />
+                              <div className="flex items-center justify-center w-6 h-6 rounded-full border-[3px] border-transparent shrink-0 z-10 shadow-sm mt-0.5" style={{ backgroundColor: catColor }} />
                               <div className="ml-4 w-full flex items-start justify-between">
                                 <div>
-                                  <div className="text-[14px] font-bold text-gray-900 leading-none mb-1.5 group-hover:text-indigo-600 transition-colors">{act.title}</div>
-                                  <div className="text-[12px] font-semibold text-gray-400 flex items-center gap-2">
+                                  <div className="text-[14px] font-bold text-foreground leading-none mb-1.5 group-hover:text-indigo-600 transition-colors">{act.title}</div>
+                                  <div className="text-[12px] font-semibold text-muted-foreground flex items-center gap-2">
                                     <span>{format(date, 'yyyy.MM.dd', { locale: ko })}</span>
                                     <span className="w-1 h-1 rounded-full bg-gray-300" />
                                     <span>{isSameDay ? '하루 종일' : format(date, 'a h:mm', { locale: ko })}</span>
                                   </div>
                                 </div>
                                 {durationMins > 0 && !isSameDay && (
-                                  <span className="text-[11px] font-bold text-gray-400 bg-gray-50 px-2 py-0.5 rounded-full shrink-0 mt-0.5">
+                                  <span className="text-[11px] font-bold text-muted-foreground bg-muted px-2 py-0.5 rounded-full shrink-0 mt-0.5">
                                     {durationMins >= 60 ? `${Math.floor(durationMins / 60)}h ${durationMins % 60}m` : `${durationMins}m`}
                                   </span>
                                 )}
@@ -376,13 +376,13 @@ export default function SubjectDetailSheet({
                           );
                         })}
                         {data.activities.length > 20 && (
-                          <div className="text-center py-2 text-[12px] font-bold text-gray-400">
+                          <div className="text-center py-2 text-[12px] font-bold text-muted-foreground">
                             +{data.activities.length - 20}건 더
                           </div>
                         )}
                       </div>
                     ) : (
-                      <div className="text-center py-10 text-gray-400 text-sm font-medium">
+                      <div className="text-center py-10 text-muted-foreground text-sm font-medium">
                         해당 기간에 진행된 일정이 없습니다.
                       </div>
                     )}

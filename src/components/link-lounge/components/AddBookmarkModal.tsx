@@ -123,14 +123,14 @@ export function AddBookmarkModal({ isOpen, onClose, onSave, initialData, existin
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            className="relative w-full max-w-lg bg-white/95 backdrop-blur-xl border border-white/40 rounded-3xl shadow-[0_20px_60px_-15px_rgba(0,0,0,0.3)] overflow-hidden flex flex-col max-h-[90vh]"
+            className="relative w-full max-w-lg bg-card/95 backdrop-blur-xl border border-transparent/40 rounded-3xl shadow-[0_20px_60px_-15px_rgba(0,0,0,0.3)] overflow-hidden flex flex-col max-h-[90vh]"
           >
             {/* Header */}
-            <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between shrink-0">
-              <h2 className="text-xl font-extrabold text-slate-800 tracking-tight">
+            <div className="px-6 py-5 border-b border-border flex items-center justify-between shrink-0">
+              <h2 className="text-xl font-extrabold text-foreground tracking-tight">
                 {initialData ? '링크 수정' : '새 링크 추가'}
               </h2>
-              <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-full transition-colors text-slate-400 hover:text-slate-600">
+              <button onClick={onClose} className="p-2 hover:bg-muted rounded-full transition-colors text-muted-foreground hover:text-foreground">
                 <X className="w-5 h-5" />
               </button>
             </div>
@@ -140,7 +140,7 @@ export function AddBookmarkModal({ isOpen, onClose, onSave, initialData, existin
               
               {/* URL Input */}
               <div className="space-y-1.5">
-                <label className="text-sm font-bold text-slate-700 flex items-center gap-1.5">
+                <label className="text-sm font-bold text-foreground flex items-center gap-1.5">
                   <LinkIcon className="w-4 h-4 text-indigo-500" /> URL 링크
                 </label>
                 <div className="relative">
@@ -150,7 +150,7 @@ export function AddBookmarkModal({ isOpen, onClose, onSave, initialData, existin
                     onChange={(e) => setUrl(e.target.value)}
                     onBlur={handleUrlBlur}
                     placeholder="https://example.com"
-                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all font-medium text-slate-800 placeholder:text-slate-400"
+                    className="w-full px-4 py-3 bg-muted border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all font-medium text-foreground placeholder:text-muted-foreground"
                   />
                   {isFetching && (
                     <div className="absolute right-3 top-1/2 -translate-y-1/2 text-indigo-500 flex items-center gap-2 text-xs font-bold">
@@ -165,20 +165,20 @@ export function AddBookmarkModal({ isOpen, onClose, onSave, initialData, existin
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
                 {/* Thumbnail Preview Area */}
                 <div className="sm:col-span-1 flex flex-col space-y-1.5">
-                  <label className="text-sm font-bold text-slate-700 flex items-center gap-1.5">
+                  <label className="text-sm font-bold text-foreground flex items-center gap-1.5">
                     <ImageIcon className="w-4 h-4 text-purple-500" /> 썸네일
                   </label>
-                  <div className="relative w-full aspect-square bg-slate-50 border border-slate-200 rounded-xl overflow-hidden flex items-center justify-center group">
+                  <div className="relative w-full aspect-square bg-muted border border-border rounded-xl overflow-hidden flex items-center justify-center group">
                     {image ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img src={image} alt="Thumbnail preview" className="w-full h-full object-cover" onError={() => setImage('')} />
                     ) : (
-                      <ImageIcon className="w-8 h-8 text-slate-300" />
+                      <ImageIcon className="w-8 h-8 text-muted-foreground/50" />
                     )}
                     {/* Hover to clear/edit */}
                     {image && (
                       <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-sm">
-                        <button onClick={() => setImage('')} className="p-2 bg-white/20 hover:bg-white/40 rounded-full text-white backdrop-blur-md">
+                        <button onClick={() => setImage('')} className="p-2 bg-card/20 hover:bg-card/40 rounded-full text-white backdrop-blur-md">
                           <X className="w-4 h-4" />
                         </button>
                       </div>
@@ -189,14 +189,14 @@ export function AddBookmarkModal({ isOpen, onClose, onSave, initialData, existin
                     value={image}
                     onChange={(e) => setImage(e.target.value)}
                     placeholder="이미지 URL"
-                    className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:border-purple-400"
+                    className="w-full px-3 py-2 text-xs bg-muted border border-border rounded-lg focus:outline-none focus:border-purple-400"
                   />
                 </div>
 
                 {/* Title and Tags */}
                 <div className="sm:col-span-2 space-y-5">
                   <div className="space-y-1.5">
-                    <label className="text-sm font-bold text-slate-700 flex items-center gap-1.5">
+                    <label className="text-sm font-bold text-foreground flex items-center gap-1.5">
                       <Type className="w-4 h-4 text-blue-500" /> 웹사이트 이름
                     </label>
                     <input 
@@ -204,19 +204,19 @@ export function AddBookmarkModal({ isOpen, onClose, onSave, initialData, existin
                       value={title}
                       onChange={(e) => setTitle(e.target.value)}
                       placeholder="사이트 제목을 입력하세요"
-                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-bold text-slate-800 placeholder:font-medium"
+                      className="w-full px-4 py-3 bg-muted border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-bold text-foreground placeholder:font-medium"
                     />
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="text-sm font-bold text-slate-700 flex items-center gap-1.5">
+                    <label className="text-sm font-bold text-foreground flex items-center gap-1.5">
                       <Tag className="w-4 h-4 text-rose-500" /> 카테고리 태그
                     </label>
-                    <div className="p-2 bg-slate-50 border border-slate-200 rounded-xl focus-within:ring-2 focus-within:ring-rose-500/20 focus-within:border-rose-500 transition-all flex flex-wrap gap-2 items-center min-h-[50px]">
+                    <div className="p-2 bg-muted border border-border rounded-xl focus-within:ring-2 focus-within:ring-rose-500/20 focus-within:border-rose-500 transition-all flex flex-wrap gap-2 items-center min-h-[50px]">
                       {tags.map(tag => (
-                        <span key={tag} className="flex items-center gap-1 px-2.5 py-1 bg-white border border-slate-200 text-slate-700 rounded-lg text-xs font-bold shadow-sm">
+                        <span key={tag} className="flex items-center gap-1 px-2.5 py-1 bg-card border border-border text-foreground rounded-lg text-xs font-bold shadow-sm">
                           {tag}
-                          <button onClick={() => removeTag(tag)} className="text-slate-400 hover:text-rose-500">
+                          <button onClick={() => removeTag(tag)} className="text-muted-foreground hover:text-rose-500">
                             <X className="w-3 h-3" />
                           </button>
                         </span>
@@ -227,7 +227,7 @@ export function AddBookmarkModal({ isOpen, onClose, onSave, initialData, existin
                         onChange={(e) => setTagInput(e.target.value)}
                         onKeyDown={handleAddTag}
                         placeholder={tags.length === 0 ? "태그 입력 후 Enter" : ""}
-                        className="flex-1 min-w-[100px] bg-transparent border-none focus:outline-none text-sm font-medium px-1 placeholder:text-slate-400"
+                        className="flex-1 min-w-[100px] bg-transparent border-none focus:outline-none text-sm font-medium px-1 placeholder:text-muted-foreground"
                       />
                     </div>
                   </div>
@@ -236,7 +236,7 @@ export function AddBookmarkModal({ isOpen, onClose, onSave, initialData, existin
 
               {/* Description/Memo */}
               <div className="space-y-1.5">
-                <label className="text-sm font-bold text-slate-700 flex items-center gap-1.5">
+                <label className="text-sm font-bold text-foreground flex items-center gap-1.5">
                   <AlignLeft className="w-4 h-4 text-emerald-500" /> 한 줄 평 / 메모
                 </label>
                 <textarea 
@@ -244,17 +244,17 @@ export function AddBookmarkModal({ isOpen, onClose, onSave, initialData, existin
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder="이 웹사이트의 특징이나 저장한 이유를 간단히 남겨주세요."
                   rows={3}
-                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all text-sm font-medium text-slate-700 placeholder:text-slate-400 resize-none custom-scrollbar"
+                  className="w-full px-4 py-3 bg-muted border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all text-sm font-medium text-foreground placeholder:text-muted-foreground resize-none custom-scrollbar"
                 />
               </div>
 
             </div>
 
             {/* Footer */}
-            <div className="px-6 py-5 border-t border-slate-100 bg-slate-50/50 flex justify-end gap-3 shrink-0">
+            <div className="px-6 py-5 border-t border-border bg-muted/50 flex justify-end gap-3 shrink-0">
               <button 
                 onClick={onClose}
-                className="px-5 py-2.5 rounded-xl font-bold text-sm text-slate-600 hover:bg-slate-200/50 transition-colors"
+                className="px-5 py-2.5 rounded-xl font-bold text-sm text-foreground hover:bg-slate-200/50 transition-colors"
               >
                 취소
               </button>

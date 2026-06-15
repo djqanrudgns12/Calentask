@@ -110,14 +110,14 @@ export function AnniversarySettingsView() {
                 <div className="flex justify-end mb-6 space-x-2">
                   <button 
                     onClick={() => setViewMode('grid')}
-                    className={`p-2 rounded-xl transition-colors ${viewMode === 'grid' ? 'bg-slate-200 text-slate-800' : 'text-slate-400 hover:bg-slate-100'}`}
+                    className={`p-2 rounded-xl transition-colors ${viewMode === 'grid' ? 'bg-slate-200 text-foreground' : 'text-muted-foreground hover:bg-muted'}`}
                     title="그리드 뷰"
                   >
                     <LayoutGrid className="w-5 h-5" />
                   </button>
                   <button 
                     onClick={() => setViewMode('timeline')}
-                    className={`p-2 rounded-xl transition-colors ${viewMode === 'timeline' ? 'bg-slate-200 text-slate-800' : 'text-slate-400 hover:bg-slate-100'}`}
+                    className={`p-2 rounded-xl transition-colors ${viewMode === 'timeline' ? 'bg-slate-200 text-foreground' : 'text-muted-foreground hover:bg-muted'}`}
                     title="타임라인 뷰"
                   >
                     <List className="w-5 h-5" />
@@ -132,9 +132,9 @@ export function AnniversarySettingsView() {
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                     onClick={() => setIsAdding(true)}
-                    className="h-[220px] border-2 border-dashed border-slate-300 bg-slate-50/50 hover:bg-slate-100/50 hover:border-slate-400 rounded-3xl flex flex-col items-center justify-center text-slate-600 transition-colors shadow-sm"
+                    className="h-[220px] border-2 border-dashed border-slate-300 bg-muted/50 hover:bg-muted/50 hover:border-slate-400 rounded-3xl flex flex-col items-center justify-center text-foreground transition-colors shadow-sm"
                   >
-                    <div className="w-14 h-14 bg-white rounded-2xl shadow-sm flex items-center justify-center mb-4 text-slate-400">
+                    <div className="w-14 h-14 bg-card rounded-2xl shadow-sm flex items-center justify-center mb-4 text-muted-foreground">
                       <Plus className="w-8 h-8" />
                     </div>
                     <span className="font-bold text-lg">새로운 기념일</span>
@@ -190,18 +190,18 @@ export function AnniversarySettingsView() {
                         className={`h-[220px] bg-gradient-to-br ${gradientClass} rounded-[2rem] p-6 shadow-xl relative group flex flex-col justify-between overflow-hidden ring-1 ring-inset`}
                       >
                         {/* Background Overlay Glow */}
-                        <div className="absolute top-0 left-0 w-full h-full bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
+                        <div className="absolute top-0 left-0 w-full h-full bg-card/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
 
                         <div className="relative z-10 flex justify-between items-start">
-                          <div className="px-3 py-1 bg-black/20 backdrop-blur-md text-white/90 text-xs font-bold rounded-full tracking-wider border border-white/10 shadow-inner">
+                          <div className="px-3 py-1 bg-black/20 backdrop-blur-md text-white/90 text-xs font-bold rounded-full tracking-wider border border-transparent/10 shadow-inner">
                             {presetLabel}
                           </div>
                           
                           {/* Hover Action Buttons */}
-                          <div className="opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300 flex items-center space-x-2 bg-black/40 backdrop-blur-md p-1.5 rounded-2xl border border-white/10">
+                          <div className="opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300 flex items-center space-x-2 bg-black/40 backdrop-blur-md p-1.5 rounded-2xl border border-transparent/10">
                             <button 
                               onClick={() => setEditingAnn(ann)}
-                              className="w-8 h-8 rounded-xl flex items-center justify-center text-white/70 hover:text-white hover:bg-white/20 transition-colors"
+                              className="w-8 h-8 rounded-xl flex items-center justify-center text-white/70 hover:text-white hover:bg-card/20 transition-colors"
                               title="수정"
                             >
                               <Pencil className="w-4 h-4" />
@@ -223,7 +223,7 @@ export function AnniversarySettingsView() {
                           <div className="space-y-1">
                             <p className="text-lg font-bold text-white/90 leading-tight line-clamp-1">{ann.title}</p>
                             <p className="text-sm font-medium text-white/50 flex items-center">
-                              <span className="w-2 h-2 rounded-full bg-white/30 mr-2" />
+                              <span className="w-2 h-2 rounded-full bg-card/30 mr-2" />
                               {ann.is_lunar ? '음력 ' : ''}{ann.base_date}
                             </p>
                           </div>
@@ -233,7 +233,7 @@ export function AnniversarySettingsView() {
                   })}
                 </div>
                 ) : (
-                  <div className="bg-slate-50/50 rounded-3xl p-6 border border-slate-100">
+                  <div className="bg-muted/50 rounded-3xl p-6 border border-border">
                     <AnniversaryTimeline 
                       anniversaries={anniversaries || []}
                       onEdit={setEditingAnn}

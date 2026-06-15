@@ -184,7 +184,7 @@ export function HomeDashboard() {
       {/* Briefing Header */}
       <motion.div variants={itemVariants} className="mb-6 md:mb-8">
         <div className="flex flex-col gap-1">
-          <p className="text-sm font-bold text-slate-400 tracking-wide">
+          <p className="text-sm font-bold text-muted-foreground tracking-wide">
             {dateString}
           </p>
           <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight">
@@ -192,10 +192,10 @@ export function HomeDashboard() {
               {greeting}
             </span>
             {userName && (
-              <span className="text-slate-800">, {userName}님</span>
+              <span className="text-foreground">, {userName}님</span>
             )}
           </h1>
-          <p className="text-sm text-slate-500 font-medium mt-1">
+          <p className="text-sm text-muted-foreground font-medium mt-1">
             {summaryText}
           </p>
         </div>

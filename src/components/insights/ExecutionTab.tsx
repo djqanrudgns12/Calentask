@@ -15,8 +15,8 @@ import { ko } from 'date-fns/locale'
 const ChartTooltip = ({ active, payload, label }: any) => {
   if (!active || !payload?.length) return null
   return (
-    <div className="bg-white/95 backdrop-blur-md px-3 py-2 rounded-xl border border-gray-100 shadow-lg text-[12px] font-bold">
-      <p className="text-gray-500 mb-1">{label}</p>
+    <div className="bg-card/95 backdrop-blur-md px-3 py-2 rounded-xl border border-border shadow-lg text-[12px] font-bold">
+      <p className="text-muted-foreground mb-1">{label}</p>
       {payload.map((p: any, i: number) => (
         <div key={i} className="flex items-center gap-1.5">
           <div className="w-2 h-2 rounded-full" style={{ backgroundColor: p.color || p.fill }} />
@@ -54,7 +54,7 @@ export default function ExecutionTab() {
 
   if (isLoading) {
     return (
-      <div className="flex flex-col items-center justify-center py-20 text-gray-400">
+      <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
         <Loader2 className="w-8 h-8 animate-spin mb-3 text-indigo-400" />
         <p className="font-medium text-sm">실행력 데이터를 분석하는 중...</p>
       </div>
@@ -63,7 +63,7 @@ export default function ExecutionTab() {
 
   if (!analytics) {
     return (
-      <div className="text-center py-20 text-gray-400">
+      <div className="text-center py-20 text-muted-foreground">
         <CheckSquare size={48} className="mx-auto mb-4 opacity-30" />
         <p className="text-sm font-medium">데이터를 불러올 수 없습니다.</p>
       </div>
@@ -80,15 +80,15 @@ export default function ExecutionTab() {
         className="grid grid-cols-2 lg:grid-cols-4 gap-3"
       >
         {/* 완료율 */}
-        <div className="bg-white rounded-[20px] p-5 shadow-sm border border-gray-100 relative overflow-hidden">
-          <div className="flex items-center gap-1.5 text-gray-400 font-bold text-[11px] mb-2">
+        <div className="bg-card rounded-[20px] p-5 shadow-sm border border-border relative overflow-hidden">
+          <div className="flex items-center gap-1.5 text-muted-foreground font-bold text-[11px] mb-2">
             <Target size={13} className="text-emerald-400" /> 완료율
           </div>
           <div className="flex items-baseline gap-1">
-            <span className="text-[32px] font-black text-gray-900 tracking-tighter">{analytics.completionRate}</span>
-            <span className="text-[16px] font-bold text-gray-400">%</span>
+            <span className="text-[32px] font-black text-foreground tracking-tighter">{analytics.completionRate}</span>
+            <span className="text-[16px] font-bold text-muted-foreground">%</span>
           </div>
-          <div className="text-[11px] font-bold text-gray-400 mt-1">
+          <div className="text-[11px] font-bold text-muted-foreground mt-1">
             {analytics.doneTasks}/{analytics.totalTasks}건
           </div>
           {/* 배경 원형 프로그레스 */}
@@ -104,8 +104,8 @@ export default function ExecutionTab() {
         </div>
 
         {/* 미루기 지수 */}
-        <div className="bg-white rounded-[20px] p-5 shadow-sm border border-gray-100">
-          <div className="flex items-center gap-1.5 text-gray-400 font-bold text-[11px] mb-2">
+        <div className="bg-card rounded-[20px] p-5 shadow-sm border border-border">
+          <div className="flex items-center gap-1.5 text-muted-foreground font-bold text-[11px] mb-2">
             <AlertTriangle size={13} style={{ color: procrastination.color }} /> 미루기 지수
           </div>
           <div className="flex items-baseline gap-2">
@@ -116,35 +116,35 @@ export default function ExecutionTab() {
               {procrastination.emoji} {procrastination.label}
             </span>
           </div>
-          <div className="text-[11px] font-bold text-gray-400 mt-1">
+          <div className="text-[11px] font-bold text-muted-foreground mt-1">
             평균 {analytics.avgDaysToComplete}일 소요
           </div>
         </div>
 
         {/* 서브태스크 */}
-        <div className="bg-white rounded-[20px] p-5 shadow-sm border border-gray-100">
-          <div className="flex items-center gap-1.5 text-gray-400 font-bold text-[11px] mb-2">
+        <div className="bg-card rounded-[20px] p-5 shadow-sm border border-border">
+          <div className="flex items-center gap-1.5 text-muted-foreground font-bold text-[11px] mb-2">
             <ListChecks size={13} className="text-blue-400" /> 서브태스크
           </div>
           <div className="flex items-baseline gap-1">
-            <span className="text-[32px] font-black text-gray-900 tracking-tighter">{analytics.subtaskCompletionRate}</span>
-            <span className="text-[16px] font-bold text-gray-400">%</span>
+            <span className="text-[32px] font-black text-foreground tracking-tighter">{analytics.subtaskCompletionRate}</span>
+            <span className="text-[16px] font-bold text-muted-foreground">%</span>
           </div>
-          <div className="text-[11px] font-bold text-gray-400 mt-1">
+          <div className="text-[11px] font-bold text-muted-foreground mt-1">
             {analytics.completedSubtasks}/{analytics.totalSubtasks}건 완료
           </div>
         </div>
 
         {/* 기한 준수 */}
-        <div className="bg-white rounded-[20px] p-5 shadow-sm border border-gray-100">
-          <div className="flex items-center gap-1.5 text-gray-400 font-bold text-[11px] mb-2">
+        <div className="bg-card rounded-[20px] p-5 shadow-sm border border-border">
+          <div className="flex items-center gap-1.5 text-muted-foreground font-bold text-[11px] mb-2">
             <Timer size={13} className="text-purple-400" /> 기한 준수
           </div>
           <div className="flex items-baseline gap-1">
             <span className="text-[32px] font-black text-emerald-500 tracking-tighter">{analytics.onTimeTasks}</span>
-            <span className="text-[16px] font-bold text-gray-400">건</span>
+            <span className="text-[16px] font-bold text-muted-foreground">건</span>
           </div>
-          <div className="text-[11px] font-bold text-gray-400 mt-1">
+          <div className="text-[11px] font-bold text-muted-foreground mt-1">
             지연 {analytics.lateTasks}건 · 미설정 {analytics.noDeadlineTasks}건
           </div>
         </div>
@@ -155,10 +155,10 @@ export default function ExecutionTab() {
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.05 }}
-        className="bg-white rounded-[24px] p-6 shadow-sm border border-gray-100"
+        className="bg-card rounded-[24px] p-6 shadow-sm border border-border"
       >
-        <h3 className="text-[17px] font-extrabold text-gray-900 tracking-tight mb-1">주별 생성 vs 완료</h3>
-        <p className="text-[12px] font-bold text-gray-400 mb-5">최근 8주간 할 일 흐름</p>
+        <h3 className="text-[17px] font-extrabold text-foreground tracking-tight mb-1">주별 생성 vs 완료</h3>
+        <p className="text-[12px] font-bold text-muted-foreground mb-5">최근 8주간 할 일 흐름</p>
         <div className="h-[220px]">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={analytics.weeklyCompletion} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
@@ -172,10 +172,10 @@ export default function ExecutionTab() {
           </ResponsiveContainer>
         </div>
         <div className="flex items-center justify-center gap-6 mt-3">
-          <div className="flex items-center gap-1.5 text-[12px] font-bold text-gray-500">
+          <div className="flex items-center gap-1.5 text-[12px] font-bold text-muted-foreground">
             <div className="w-3 h-3 rounded bg-[#93C5FD]" /> 생성
           </div>
-          <div className="flex items-center gap-1.5 text-[12px] font-bold text-gray-500">
+          <div className="flex items-center gap-1.5 text-[12px] font-bold text-muted-foreground">
             <div className="w-3 h-3 rounded bg-[#34D399]" /> 완료
           </div>
         </div>
@@ -187,10 +187,10 @@ export default function ExecutionTab() {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="bg-white rounded-[24px] p-6 shadow-sm border border-gray-100"
+          className="bg-card rounded-[24px] p-6 shadow-sm border border-border"
         >
-          <h3 className="text-[15px] font-extrabold text-gray-900 tracking-tight mb-1">할 일 수명 분포</h3>
-          <p className="text-[11px] font-bold text-gray-400 mb-4">생성에서 완료까지 걸리는 일수</p>
+          <h3 className="text-[15px] font-extrabold text-foreground tracking-tight mb-1">할 일 수명 분포</h3>
+          <p className="text-[11px] font-bold text-muted-foreground mb-4">생성에서 완료까지 걸리는 일수</p>
           <div className="h-[180px]">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={analytics.lifespanDistribution} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
@@ -213,9 +213,9 @@ export default function ExecutionTab() {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.15 }}
-          className="bg-white rounded-[24px] p-6 shadow-sm border border-gray-100"
+          className="bg-card rounded-[24px] p-6 shadow-sm border border-border"
         >
-          <h3 className="text-[15px] font-extrabold text-gray-900 tracking-tight mb-4">상태별 분포</h3>
+          <h3 className="text-[15px] font-extrabold text-foreground tracking-tight mb-4">상태별 분포</h3>
           <div className="flex items-center gap-6">
             <div className="w-[140px] h-[140px] relative shrink-0">
               <ResponsiveContainer width="100%" height="100%">
@@ -237,7 +237,7 @@ export default function ExecutionTab() {
                       if (!active || !payload?.length) return null
                       const d = payload[0].payload
                       return (
-                        <div className="bg-white/95 backdrop-blur-md px-3 py-2 rounded-xl border border-gray-100 shadow-lg text-[12px] font-bold">
+                        <div className="bg-card/95 backdrop-blur-md px-3 py-2 rounded-xl border border-border shadow-lg text-[12px] font-bold">
                           {d.label}: {d.count}건
                         </div>
                       )
@@ -246,8 +246,8 @@ export default function ExecutionTab() {
                 </PieChart>
               </ResponsiveContainer>
               <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                <span className="text-[10px] font-bold text-gray-400">Total</span>
-                <span className="text-[16px] font-black text-gray-900">{analytics.totalTasks}</span>
+                <span className="text-[10px] font-bold text-muted-foreground">Total</span>
+                <span className="text-[16px] font-black text-foreground">{analytics.totalTasks}</span>
               </div>
             </div>
             <div className="flex-1 space-y-3">
@@ -255,9 +255,9 @@ export default function ExecutionTab() {
                 <div key={idx} className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <div className="w-3 h-3 rounded-full" style={{ backgroundColor: STATUS_COLORS[s.status] || '#9CA3AF' }} />
-                    <span className="text-[13px] font-bold text-gray-700">{s.label}</span>
+                    <span className="text-[13px] font-bold text-foreground">{s.label}</span>
                   </div>
-                  <span className="text-[15px] font-black text-gray-900">{s.count}</span>
+                  <span className="text-[15px] font-black text-foreground">{s.count}</span>
                 </div>
               ))}
             </div>
@@ -271,13 +271,13 @@ export default function ExecutionTab() {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className="bg-white rounded-[24px] p-6 shadow-sm border border-gray-100"
+          className="bg-card rounded-[24px] p-6 shadow-sm border border-border"
         >
-          <h3 className="text-[15px] font-extrabold text-gray-900 tracking-tight mb-1">서브태스크 완료 진행</h3>
-          <p className="text-[11px] font-bold text-gray-400 mb-4">전체 서브태스크 완료 현황</p>
+          <h3 className="text-[15px] font-extrabold text-foreground tracking-tight mb-1">서브태스크 완료 진행</h3>
+          <p className="text-[11px] font-bold text-muted-foreground mb-4">전체 서브태스크 완료 현황</p>
 
           <div className="flex items-center gap-4 mb-4">
-            <div className="flex-1 h-4 bg-gray-100 rounded-full overflow-hidden">
+            <div className="flex-1 h-4 bg-muted rounded-full overflow-hidden">
               <motion.div
                 initial={{ width: 0 }}
                 animate={{ width: `${analytics.subtaskCompletionRate}%` }}
@@ -285,12 +285,12 @@ export default function ExecutionTab() {
                 className="h-full bg-gradient-to-r from-blue-400 to-emerald-400 rounded-full"
               />
             </div>
-            <span className="text-[15px] font-black text-gray-900 tabular-nums min-w-[50px] text-right">
+            <span className="text-[15px] font-black text-foreground tabular-nums min-w-[50px] text-right">
               {analytics.subtaskCompletionRate}%
             </span>
           </div>
 
-          <div className="flex items-center gap-6 text-[12px] font-bold text-gray-500">
+          <div className="flex items-center gap-6 text-[12px] font-bold text-muted-foreground">
             <div className="flex items-center gap-1.5">
               <div className="w-2 h-2 rounded-full bg-emerald-400" />
               완료 {analytics.completedSubtasks}건
@@ -320,10 +320,10 @@ export default function ExecutionTab() {
           </div>
           <div className="space-y-2.5">
             {analytics.overdueTasks.map((task, idx) => (
-              <div key={task.id} className="flex items-center justify-between bg-white/80 rounded-xl px-4 py-3 border border-red-100/50">
+              <div key={task.id} className="flex items-center justify-between bg-card/80 rounded-xl px-4 py-3 border border-red-100/50">
                 <div>
-                  <div className="text-[13px] font-bold text-gray-900">{task.title}</div>
-                  <div className="text-[11px] font-medium text-gray-400">
+                  <div className="text-[13px] font-bold text-foreground">{task.title}</div>
+                  <div className="text-[11px] font-medium text-muted-foreground">
                     기한: {format(new Date(task.deadline), 'M월 d일', { locale: ko })}
                   </div>
                 </div>
@@ -338,9 +338,9 @@ export default function ExecutionTab() {
 
       {/* 빈 상태 */}
       {analytics.totalTasks === 0 && (
-        <div className="text-center py-16 text-gray-400">
+        <div className="text-center py-16 text-muted-foreground">
           <CheckSquare size={48} className="mx-auto mb-4 opacity-30" />
-          <h3 className="text-base font-bold text-gray-500 mb-1">할 일 데이터가 없습니다</h3>
+          <h3 className="text-base font-bold text-muted-foreground mb-1">할 일 데이터가 없습니다</h3>
           <p className="text-sm">할 일을 생성하면 실행력 분석이 시작됩니다.</p>
         </div>
       )}

@@ -21,10 +21,10 @@ export function DeleteConfirmDialog() {
 
   return (
     <Dialog open={!!deletingEventId} onOpenChange={(open) => !open && closeDeleteConfirm()}>
-      <DialogContent className="sm:max-w-[400px] border-none shadow-2xl rounded-2xl bg-white">
+      <DialogContent className="sm:max-w-[400px] border-none shadow-2xl rounded-2xl bg-card">
         <DialogHeader>
-          <DialogTitle className="text-xl font-bold text-gray-900">일정 삭제</DialogTitle>
-          <DialogDescription className="text-gray-500 pt-2">
+          <DialogTitle className="text-xl font-bold text-foreground">일정 삭제</DialogTitle>
+          <DialogDescription className="text-muted-foreground pt-2">
             이 일정을 삭제하시겠습니까?<br />
             삭제된 일정은 데이터 허브의 휴지통에서 복원할 수 있습니다.
           </DialogDescription>
@@ -34,7 +34,7 @@ export function DeleteConfirmDialog() {
             type="button"
             variant="ghost"
             onClick={closeDeleteConfirm}
-            className="text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-full px-5"
+            className="text-muted-foreground hover:text-foreground hover:bg-muted rounded-full px-5"
           >
             취소
           </Button>

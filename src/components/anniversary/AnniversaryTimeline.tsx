@@ -35,12 +35,12 @@ export function AnniversaryTimeline({ anniversaries, onEdit, onDelete }: Props) 
             >
               {/* 타임라인 점 (Dot) */}
               <div 
-                className="absolute left-[29px] top-4 w-4 h-4 rounded-full border-4 border-white shadow-sm transition-transform group-hover:scale-125"
+                className="absolute left-[29px] top-4 w-4 h-4 rounded-full border-4 border-transparent shadow-sm transition-transform group-hover:scale-125"
                 style={{ backgroundColor: themeColor }}
               />
 
               {/* 콘텐츠 카드 */}
-              <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 hover:shadow-md transition-shadow">
+              <div className="bg-card rounded-2xl p-5 shadow-sm border border-border hover:shadow-md transition-shadow">
                 <div className="flex justify-between items-start mb-2">
                   <div className="flex items-center space-x-2">
                     <span 
@@ -49,26 +49,26 @@ export function AnniversaryTimeline({ anniversaries, onEdit, onDelete }: Props) 
                     >
                       {ann.preset_type}
                     </span>
-                    <span className="text-sm font-medium text-slate-500">
+                    <span className="text-sm font-medium text-muted-foreground">
                       {ann.is_lunar ? '음력 ' : ''}{ann.base_date}
                     </span>
                   </div>
                   
                   {/* Hover Actions */}
                   <div className="opacity-0 group-hover:opacity-100 transition-opacity flex space-x-1">
-                    <button onClick={() => onEdit(ann)} className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg">
+                    <button onClick={() => onEdit(ann)} className="p-1.5 text-muted-foreground hover:text-indigo-600 hover:bg-indigo-50 rounded-lg">
                       <Pencil className="w-4 h-4" />
                     </button>
-                    <button onClick={() => onDelete(ann.id)} className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg">
+                    <button onClick={() => onDelete(ann.id)} className="p-1.5 text-muted-foreground hover:text-rose-600 hover:bg-rose-50 rounded-lg">
                       <Trash2 className="w-4 h-4" />
                     </button>
                   </div>
                 </div>
 
-                <h4 className="text-lg font-bold text-slate-800">{ann.title}</h4>
+                <h4 className="text-lg font-bold text-foreground">{ann.title}</h4>
                 
                 {/* 룰 설명 (간단) */}
-                <p className="text-sm text-slate-500 mt-2 flex items-center">
+                <p className="text-sm text-muted-foreground mt-2 flex items-center">
                   <span className="w-1.5 h-1.5 rounded-full bg-slate-300 mr-2" />
                   {ann.calculation_rule.type === 'RECURRENCE' ? '매년 반복' : 'D-Day / 일수 계산'}
                 </p>

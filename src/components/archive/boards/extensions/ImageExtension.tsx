@@ -156,9 +156,9 @@ const ImageComponent = (props: any) => {
       style={{ alignItems: align === 'center' ? 'center' : align === 'right' ? 'flex-end' : 'flex-start' }}
     >
       {isEditing ? (
-        <div className="flex flex-col md:flex-row gap-2 p-3 bg-slate-50 border border-slate-200 rounded-lg max-w-xl w-full">
+        <div className="flex flex-col md:flex-row gap-2 p-3 bg-muted border border-border rounded-lg max-w-xl w-full">
           <div className="flex items-center gap-2 flex-1">
-            <ImageIcon className="w-5 h-5 text-slate-400" />
+            <ImageIcon className="w-5 h-5 text-muted-foreground" />
             <input 
               autoFocus
               type="url"
@@ -166,7 +166,7 @@ const ImageComponent = (props: any) => {
               onChange={(e) => setInputUrl(e.target.value)}
               onKeyDown={(e) => { if (e.key === 'Enter') handleSaveUrl() }}
               placeholder="이미지 URL 붙여넣기..."
-              className="flex-1 bg-transparent border-none outline-none text-sm text-slate-700 placeholder:text-slate-400"
+              className="flex-1 bg-transparent border-none outline-none text-sm text-foreground placeholder:text-muted-foreground"
             />
             <button onPointerDown={(e) => { e.preventDefault(); handleSaveUrl(); }} className="text-xs font-bold text-indigo-600 px-3 py-1.5 bg-indigo-50 rounded hover:bg-indigo-100 whitespace-nowrap">저장</button>
           </div>
@@ -184,7 +184,7 @@ const ImageComponent = (props: any) => {
             <button 
               onPointerDown={(e) => { e.preventDefault(); fileInputRef.current?.click(); }} 
               disabled={isUploading}
-              className="w-full md:w-auto flex items-center justify-center gap-1.5 text-xs font-bold text-slate-600 px-3 py-1.5 bg-white border border-slate-200 rounded hover:bg-slate-50 disabled:opacity-50 whitespace-nowrap"
+              className="w-full md:w-auto flex items-center justify-center gap-1.5 text-xs font-bold text-foreground px-3 py-1.5 bg-card border border-border rounded hover:bg-muted disabled:opacity-50 whitespace-nowrap"
             >
               {isUploading ? (
                 <div className="w-4 h-4 border-2 border-slate-400 border-t-transparent rounded-full animate-spin" />
@@ -193,7 +193,7 @@ const ImageComponent = (props: any) => {
               )}
               {isUploading ? '업로드 중...' : '파일 업로드'}
             </button>
-            <button onPointerDown={(e) => { e.preventDefault(); props.deleteNode(); }} className="p-1.5 text-slate-400 hover:text-red-500 rounded hover:bg-slate-100">
+            <button onPointerDown={(e) => { e.preventDefault(); props.deleteNode(); }} className="p-1.5 text-muted-foreground hover:text-red-500 rounded hover:bg-muted">
               <Trash2 className="w-4 h-4" />
             </button>
           </div>
@@ -205,17 +205,17 @@ const ImageComponent = (props: any) => {
         >
           {/* 드래그 핸들 (위쪽 중앙) */}
           <div 
-            className="absolute -top-4 left-1/2 -translate-x-1/2 p-1.5 bg-white border border-slate-200 rounded-md shadow-sm opacity-0 group-hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing z-20 pointer-events-auto"
+            className="absolute -top-4 left-1/2 -translate-x-1/2 p-1.5 bg-card border border-border rounded-md shadow-sm opacity-0 group-hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing z-20 pointer-events-auto"
             contentEditable={false}
             data-drag-handle
           >
-            <GripHorizontal className="w-4 h-4 text-slate-400" />
+            <GripHorizontal className="w-4 h-4 text-muted-foreground" />
           </div>
 
           <div 
             className={cn(
               "relative rounded-xl overflow-hidden border-2 transition-colors w-full h-full", 
-              props.selected ? "border-indigo-400 ring-4 ring-indigo-400/20" : "border-transparent hover:border-slate-200"
+              props.selected ? "border-indigo-400 ring-4 ring-indigo-400/20" : "border-transparent hover:border-border"
             )}
             contentEditable={false}
           >
@@ -231,14 +231,14 @@ const ImageComponent = (props: any) => {
             <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-20">
               <button 
                 onPointerDown={(e) => { e.preventDefault(); e.stopPropagation(); setIsEditing(true); }} 
-                className="p-1.5 bg-white shadow-sm border border-slate-200 rounded-md text-xs font-semibold text-slate-600 hover:bg-slate-50 pointer-events-auto"
+                className="p-1.5 bg-card shadow-sm border border-border rounded-md text-xs font-semibold text-foreground hover:bg-muted pointer-events-auto"
                 title="이미지 수정"
               >
                 수정
               </button>
               <button 
                 onPointerDown={(e) => { e.preventDefault(); e.stopPropagation(); handleDelete(); }} 
-                className="p-1.5 bg-white shadow-sm border border-rose-100 rounded-md text-xs font-semibold text-rose-600 hover:bg-rose-50 pointer-events-auto"
+                className="p-1.5 bg-card shadow-sm border border-rose-100 rounded-md text-xs font-semibold text-rose-600 hover:bg-rose-50 pointer-events-auto"
                 title="이미지 삭제"
               >
                 <Trash2 className="w-4 h-4" />
@@ -249,16 +249,16 @@ const ImageComponent = (props: any) => {
             {(props.selected || isResizing) && (
               <>
                 {/* 모서리 핸들 (대각선) */}
-                <div onPointerDown={(e) => handlePointerDown(e, 'nw')} className="absolute -top-1.5 -left-1.5 w-3 h-3 bg-indigo-500 border border-white rounded-full cursor-nwse-resize z-30 opacity-80 hover:opacity-100 shadow-sm pointer-events-auto" />
-                <div onPointerDown={(e) => handlePointerDown(e, 'ne')} className="absolute -top-1.5 -right-1.5 w-3 h-3 bg-indigo-500 border border-white rounded-full cursor-nesw-resize z-30 opacity-80 hover:opacity-100 shadow-sm pointer-events-auto" />
-                <div onPointerDown={(e) => handlePointerDown(e, 'sw')} className="absolute -bottom-1.5 -left-1.5 w-3 h-3 bg-indigo-500 border border-white rounded-full cursor-nesw-resize z-30 opacity-80 hover:opacity-100 shadow-sm pointer-events-auto" />
-                <div onPointerDown={(e) => handlePointerDown(e, 'se')} className="absolute -bottom-1.5 -right-1.5 w-3 h-3 bg-indigo-500 border border-white rounded-full cursor-nwse-resize z-30 opacity-80 hover:opacity-100 shadow-sm pointer-events-auto" />
+                <div onPointerDown={(e) => handlePointerDown(e, 'nw')} className="absolute -top-1.5 -left-1.5 w-3 h-3 bg-indigo-500 border border-transparent rounded-full cursor-nwse-resize z-30 opacity-80 hover:opacity-100 shadow-sm pointer-events-auto" />
+                <div onPointerDown={(e) => handlePointerDown(e, 'ne')} className="absolute -top-1.5 -right-1.5 w-3 h-3 bg-indigo-500 border border-transparent rounded-full cursor-nesw-resize z-30 opacity-80 hover:opacity-100 shadow-sm pointer-events-auto" />
+                <div onPointerDown={(e) => handlePointerDown(e, 'sw')} className="absolute -bottom-1.5 -left-1.5 w-3 h-3 bg-indigo-500 border border-transparent rounded-full cursor-nesw-resize z-30 opacity-80 hover:opacity-100 shadow-sm pointer-events-auto" />
+                <div onPointerDown={(e) => handlePointerDown(e, 'se')} className="absolute -bottom-1.5 -right-1.5 w-3 h-3 bg-indigo-500 border border-transparent rounded-full cursor-nwse-resize z-30 opacity-80 hover:opacity-100 shadow-sm pointer-events-auto" />
                 
                 {/* 상하좌우 핸들 */}
-                <div onPointerDown={(e) => handlePointerDown(e, 'n')} className="absolute -top-1.5 left-1/2 -translate-x-1/2 w-4 h-3 bg-indigo-500 border border-white rounded-sm cursor-ns-resize z-30 opacity-80 hover:opacity-100 shadow-sm pointer-events-auto" />
-                <div onPointerDown={(e) => handlePointerDown(e, 's')} className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-4 h-3 bg-indigo-500 border border-white rounded-sm cursor-ns-resize z-30 opacity-80 hover:opacity-100 shadow-sm pointer-events-auto" />
-                <div onPointerDown={(e) => handlePointerDown(e, 'w')} className="absolute top-1/2 -left-1.5 -translate-y-1/2 w-3 h-4 bg-indigo-500 border border-white rounded-sm cursor-ew-resize z-30 opacity-80 hover:opacity-100 shadow-sm pointer-events-auto" />
-                <div onPointerDown={(e) => handlePointerDown(e, 'e')} className="absolute top-1/2 -right-1.5 -translate-y-1/2 w-3 h-4 bg-indigo-500 border border-white rounded-sm cursor-ew-resize z-30 opacity-80 hover:opacity-100 shadow-sm pointer-events-auto" />
+                <div onPointerDown={(e) => handlePointerDown(e, 'n')} className="absolute -top-1.5 left-1/2 -translate-x-1/2 w-4 h-3 bg-indigo-500 border border-transparent rounded-sm cursor-ns-resize z-30 opacity-80 hover:opacity-100 shadow-sm pointer-events-auto" />
+                <div onPointerDown={(e) => handlePointerDown(e, 's')} className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-4 h-3 bg-indigo-500 border border-transparent rounded-sm cursor-ns-resize z-30 opacity-80 hover:opacity-100 shadow-sm pointer-events-auto" />
+                <div onPointerDown={(e) => handlePointerDown(e, 'w')} className="absolute top-1/2 -left-1.5 -translate-y-1/2 w-3 h-4 bg-indigo-500 border border-transparent rounded-sm cursor-ew-resize z-30 opacity-80 hover:opacity-100 shadow-sm pointer-events-auto" />
+                <div onPointerDown={(e) => handlePointerDown(e, 'e')} className="absolute top-1/2 -right-1.5 -translate-y-1/2 w-3 h-4 bg-indigo-500 border border-transparent rounded-sm cursor-ew-resize z-30 opacity-80 hover:opacity-100 shadow-sm pointer-events-auto" />
               </>
             )}
           </div>

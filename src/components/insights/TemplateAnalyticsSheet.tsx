@@ -24,8 +24,8 @@ interface TemplateAnalyticsSheetProps {
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (!active || !payload?.length) return null
   return (
-    <div className="bg-white/95 backdrop-blur-md px-3 py-2 rounded-xl border border-gray-100 shadow-lg text-[12px] font-bold">
-      <p className="text-gray-500 mb-0.5">{label}</p>
+    <div className="bg-card/95 backdrop-blur-md px-3 py-2 rounded-xl border border-border shadow-lg text-[12px] font-bold">
+      <p className="text-muted-foreground mb-0.5">{label}</p>
       {payload.map((p: any, i: number) => (
         <p key={i} style={{ color: p.color || p.stroke }}>{p.name}: {p.value}{p.dataKey?.includes('minutes') || p.dataKey === 'hours' ? 'h' : '회'}</p>
       ))}
@@ -192,15 +192,15 @@ export function TemplateAnalyticsSheet({
             animate={{ y: 0, x: 0 }}
             exit={{ y: '100%', x: 0 }}
             transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-            className="fixed inset-0 md:inset-auto md:top-1/2 md:left-1/2 md:-translate-x-1/2 md:-translate-y-1/2 md:w-[560px] md:max-h-[90vh] md:rounded-3xl bg-white shadow-2xl z-[201] flex flex-col"
+            className="fixed inset-0 md:inset-auto md:top-1/2 md:left-1/2 md:-translate-x-1/2 md:-translate-y-1/2 md:w-[560px] md:max-h-[90vh] md:rounded-3xl bg-card shadow-2xl z-[201] flex flex-col"
           >
             {/* Header — safe-area 대응 포함 */}
-            <div className="flex items-center justify-between px-5 md:px-6 py-4 md:py-5 border-b border-gray-100 bg-white z-10 sticky top-0 pt-[max(1rem,env(safe-area-inset-top))]">
+            <div className="flex items-center justify-between px-5 md:px-6 py-4 md:py-5 border-b border-border bg-card z-10 sticky top-0 pt-[max(1rem,env(safe-area-inset-top))]">
               <div className="flex items-center gap-3">
                 <div className="w-4 h-4 rounded-full shadow-sm" style={{ backgroundColor: templateColor }} />
                 <div className="flex flex-col">
                   <div className="flex items-center gap-2">
-                    <h2 className="text-xl font-bold text-gray-900 tracking-tight">
+                    <h2 className="text-xl font-bold text-foreground tracking-tight">
                       <span style={{ color: templateColor }}>{templateTitle}</span> 상세 분석
                     </h2>
                     {customUnitEnabled && (
@@ -211,15 +211,15 @@ export function TemplateAnalyticsSheet({
                   </div>
                 </div>
               </div>
-              <button onClick={onClose} className="p-2 -mr-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600 rounded-full transition-colors">
+              <button onClick={onClose} className="p-2 -mr-2 text-muted-foreground hover:bg-muted hover:text-foreground rounded-full transition-colors">
                 <X size={20} />
               </button>
             </div>
 
             {/* Content */}
-            <div className="flex-1 overflow-y-auto bg-[#F9FAFB] p-6 custom-scrollbar">
+            <div className="flex-1 overflow-y-auto bg-background p-6 custom-scrollbar">
               {isLoading ? (
-                <div className="flex flex-col items-center justify-center h-full text-gray-400">
+                <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
                   <Loader2 className="w-8 h-8 animate-spin mb-3 text-indigo-400" />
                   <p className="font-medium text-sm">데이터를 불러오는 중...</p>
                 </div>
@@ -227,55 +227,55 @@ export function TemplateAnalyticsSheet({
                 <div className="space-y-6">
                   {/* ── 핵심 통계 카드 ── */}
                   <div className="grid grid-cols-2 gap-3">
-                    <div className="bg-white rounded-[20px] p-5 border border-gray-100 shadow-sm">
-                      <div className="flex items-center gap-1.5 text-gray-400 font-bold text-[11px] mb-2">
+                    <div className="bg-card rounded-[20px] p-5 border border-border shadow-sm">
+                      <div className="flex items-center gap-1.5 text-muted-foreground font-bold text-[11px] mb-2">
                         <Clock size={13} /> 총 누적 시간
                       </div>
-                      <div className="flex items-baseline gap-1 text-[28px] font-black text-gray-900 tracking-tighter">
+                      <div className="flex items-baseline gap-1 text-[28px] font-black text-foreground tracking-tighter">
                         {stats ? (
                           stats.totalMinutes === 0 ? (
-                            <>0<span className="text-[14px] text-gray-400 font-bold ml-1">분</span></>
+                            <>0<span className="text-[14px] text-muted-foreground font-bold ml-1">분</span></>
                           ) : stats.totalMinutes >= 60 ? (
                             <>
-                              {Math.floor(stats.totalMinutes / 60)}<span className="text-[14px] text-gray-400 font-bold ml-1">시간</span>
+                              {Math.floor(stats.totalMinutes / 60)}<span className="text-[14px] text-muted-foreground font-bold ml-1">시간</span>
                               {stats.totalMinutes % 60 > 0 && (
-                                <span className="ml-1.5">{stats.totalMinutes % 60}<span className="text-[14px] text-gray-400 font-bold ml-1">분</span></span>
+                                <span className="ml-1.5">{stats.totalMinutes % 60}<span className="text-[14px] text-muted-foreground font-bold ml-1">분</span></span>
                               )}
                             </>
                           ) : (
-                            <>{stats.totalMinutes}<span className="text-[14px] text-gray-400 font-bold ml-1">분</span></>
+                            <>{stats.totalMinutes}<span className="text-[14px] text-muted-foreground font-bold ml-1">분</span></>
                           )
                         ) : (
-                          <>0<span className="text-[14px] text-gray-400 font-bold ml-1">분</span></>
+                          <>0<span className="text-[14px] text-muted-foreground font-bold ml-1">분</span></>
                         )}
                       </div>
                       {stats?.firstPerformedAt && (
-                        <p className="text-[10px] text-gray-400 font-medium mt-1">
+                        <p className="text-[10px] text-muted-foreground font-medium mt-1">
                           {format(new Date(stats.firstPerformedAt), 'yyyy.M.d', { locale: ko })} ~
                         </p>
                       )}
                     </div>
-                    <div className="bg-white rounded-[20px] p-5 border border-gray-100 shadow-sm">
-                      <div className="flex items-center gap-1.5 text-gray-400 font-bold text-[11px] mb-2">
+                    <div className="bg-card rounded-[20px] p-5 border border-border shadow-sm">
+                      <div className="flex items-center gap-1.5 text-muted-foreground font-bold text-[11px] mb-2">
                         <CalendarDays size={13} /> 총 수행 횟수
                       </div>
-                      <div className="text-[28px] font-black text-gray-900 tracking-tighter">
+                      <div className="text-[28px] font-black text-foreground tracking-tighter">
                         {stats?.totalCount || 0}
-                        <span className="text-[14px] text-gray-400 font-bold ml-1">회</span>
+                        <span className="text-[14px] text-muted-foreground font-bold ml-1">회</span>
                       </div>
                     </div>
                     
                     {customUnitEnabled && (
-                      <div className="col-span-2 bg-white rounded-[20px] p-5 border border-gray-100 shadow-sm">
-                        <div className="flex items-center gap-1.5 text-gray-400 font-bold text-[11px] mb-2">
+                      <div className="col-span-2 bg-card rounded-[20px] p-5 border border-border shadow-sm">
+                        <div className="flex items-center gap-1.5 text-muted-foreground font-bold text-[11px] mb-2">
                           <Target size={13} /> 총 누적 차시
                         </div>
                         <div className="flex items-baseline gap-2">
-                          <div className="text-[28px] font-black text-gray-900 tracking-tighter">
+                          <div className="text-[28px] font-black text-foreground tracking-tighter">
                             {stats?.totalUnits || 0}
-                            <span className="text-[14px] text-gray-400 font-bold ml-1">차시</span>
+                            <span className="text-[14px] text-muted-foreground font-bold ml-1">차시</span>
                           </div>
-                          <div className="text-[12px] font-medium text-gray-400 bg-gray-50 px-2 py-1 rounded-md">
+                          <div className="text-[12px] font-medium text-muted-foreground bg-muted px-2 py-1 rounded-md">
                             {customUnitMinutes}분 단위
                           </div>
                         </div>
@@ -284,8 +284,8 @@ export function TemplateAnalyticsSheet({
                   </div>
 
                   {/* ── 월별 누적 시간 바 차트 ── */}
-                  <div className="bg-white rounded-[20px] p-5 border border-gray-100 shadow-sm">
-                    <h3 className="text-[14px] font-bold text-gray-900 mb-4">월별 누적 시간</h3>
+                  <div className="bg-card rounded-[20px] p-5 border border-border shadow-sm">
+                    <h3 className="text-[14px] font-bold text-foreground mb-4">월별 누적 시간</h3>
                     <div className="h-[180px]">
                       <ResponsiveContainer width="100%" height="100%">
                         <BarChart data={monthlyChartData} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
@@ -301,9 +301,9 @@ export function TemplateAnalyticsSheet({
 
                   {/* ── 주간 추이 + 이동 평균 ── */}
                   {weeklyChartData.length > 0 && (
-                    <div className="bg-white rounded-[20px] p-5 border border-gray-100 shadow-sm">
-                      <h3 className="text-[14px] font-bold text-gray-900 mb-1">주간 추이</h3>
-                      <p className="text-[11px] text-gray-400 font-medium mb-4">점선 = 4주 이동 평균</p>
+                    <div className="bg-card rounded-[20px] p-5 border border-border shadow-sm">
+                      <h3 className="text-[14px] font-bold text-foreground mb-1">주간 추이</h3>
+                      <p className="text-[11px] text-muted-foreground font-medium mb-4">점선 = 4주 이동 평균</p>
                       <div className="h-[160px]">
                         <ResponsiveContainer width="100%" height="100%">
                           <LineChart data={weeklyChartData} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
@@ -321,9 +321,9 @@ export function TemplateAnalyticsSheet({
 
                   {/* ── 성장 곡선 (누적) ── */}
                   {cumulativeData.length > 0 && (
-                    <div className="bg-white rounded-[20px] p-5 border border-gray-100 shadow-sm">
-                      <h3 className="text-[14px] font-bold text-gray-900 mb-1">성장 곡선</h3>
-                      <p className="text-[11px] text-gray-400 font-medium mb-4">최근 90일 누적 {customUnitEnabled ? '차시' : '시간'}</p>
+                    <div className="bg-card rounded-[20px] p-5 border border-border shadow-sm">
+                      <h3 className="text-[14px] font-bold text-foreground mb-1">성장 곡선</h3>
+                      <p className="text-[11px] text-muted-foreground font-medium mb-4">최근 90일 누적 {customUnitEnabled ? '차시' : '시간'}</p>
                       <div className="h-[160px]">
                         <ResponsiveContainer width="100%" height="100%">
                           <AreaChart data={cumulativeData} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
@@ -345,8 +345,8 @@ export function TemplateAnalyticsSheet({
 
                   {/* ── 수행 요일 패턴 레이더 ── */}
                   {weekdayRadarData.some(d => d.value > 0) && (
-                    <div className="bg-white rounded-[20px] p-5 border border-gray-100 shadow-sm">
-                      <h3 className="text-[14px] font-bold text-gray-900 mb-4">수행 요일 패턴</h3>
+                    <div className="bg-card rounded-[20px] p-5 border border-border shadow-sm">
+                      <h3 className="text-[14px] font-bold text-foreground mb-4">수행 요일 패턴</h3>
                       <div className="h-[220px]">
                         <ResponsiveContainer width="100%" height="100%">
                           <RadarChart data={weekdayRadarData} cx="50%" cy="50%" outerRadius="75%">
@@ -361,18 +361,18 @@ export function TemplateAnalyticsSheet({
 
                   {/* ── 수행 히스토리 미니 캘린더 ── */}
                   {miniCalendarData.days.length > 0 && (
-                    <div className="bg-white rounded-[20px] p-5 border border-gray-100 shadow-sm">
+                    <div className="bg-card rounded-[20px] p-5 border border-border shadow-sm">
                       <div className="flex items-center justify-between mb-4">
-                        <h3 className="text-[14px] font-bold text-gray-900">
+                        <h3 className="text-[14px] font-bold text-foreground">
                           {format(new Date(), 'M월', { locale: ko })} 수행 캘린더
                         </h3>
-                        <span className="text-[12px] font-bold text-gray-500">
+                        <span className="text-[12px] font-bold text-muted-foreground">
                           {miniCalendarData.performedCount}/{miniCalendarData.totalDays}일 수행
                         </span>
                       </div>
                       <div className="grid grid-cols-7 gap-1.5">
                         {['일','월','화','수','목','금','토'].map(d => (
-                          <div key={d} className="text-center text-[10px] font-bold text-gray-400 pb-1">{d}</div>
+                          <div key={d} className="text-center text-[10px] font-bold text-muted-foreground pb-1">{d}</div>
                         ))}
                         {/* 첫째 날 이전 빈 칸 */}
                         {Array.from({ length: miniCalendarData.firstDayOfWeek || 0 }).map((_, i) => (
@@ -385,8 +385,8 @@ export function TemplateAnalyticsSheet({
                               d.performed
                                 ? 'text-white shadow-sm'
                                 : d.day <= new Date().getDate()
-                                  ? 'bg-gray-50 text-gray-400'
-                                  : 'text-gray-300'
+                                  ? 'bg-muted text-muted-foreground'
+                                  : 'text-muted-foreground/50'
                             }`}
                             style={d.performed ? {
                               backgroundColor: templateColor,
@@ -403,18 +403,18 @@ export function TemplateAnalyticsSheet({
 
 
                   {/* FEAT-01: 연결된 일정 목록 */}
-                  <div className="bg-white rounded-[20px] p-5 shadow-sm border border-gray-100">
+                  <div className="bg-card rounded-[20px] p-5 shadow-sm border border-border">
                     <div className="flex items-center justify-between mb-4">
-                      <h3 className="text-[14px] font-bold text-gray-900 flex items-center gap-2">
+                      <h3 className="text-[14px] font-bold text-foreground flex items-center gap-2">
                         <CalendarDays size={15} className="text-indigo-500" />
                         연결된 일정 목록
-                        {linkedActivities && <span className="text-xs font-bold text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">{linkedActivities.length}건</span>}
+                        {linkedActivities && <span className="text-xs font-bold text-muted-foreground bg-muted px-2 py-0.5 rounded-full">{linkedActivities.length}건</span>}
                       </h3>
                     </div>
 
                     {(!linkedActivities || linkedActivities.length === 0) ? (
-                      <div className="text-center py-8 text-gray-400">
-                        <CalendarDays className="mx-auto mb-2 text-gray-300" size={28} />
+                      <div className="text-center py-8 text-muted-foreground">
+                        <CalendarDays className="mx-auto mb-2 text-muted-foreground/50" size={28} />
                         <p className="text-sm font-medium">연결된 일정이 없습니다</p>
                         <p className="text-xs mt-1">아래 버튼을 눌러 일정을 연결해보세요</p>
                       </div>
@@ -423,12 +423,12 @@ export function TemplateAnalyticsSheet({
                         {(showAllLinked ? linkedActivities : linkedActivities.slice(0, 10)).map((act) => (
                           <div
                             key={act.id}
-                            className="flex items-center gap-3 p-3 rounded-xl bg-gray-50/80 border border-gray-100"
+                            className="flex items-center gap-3 p-3 rounded-xl bg-muted/80 border border-border"
                           >
                             <div className="w-1 h-10 rounded-full" style={{ backgroundColor: templateColor }} />
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2 mb-0.5">
-                                <span className="text-sm font-bold text-gray-900 truncate">{act.title}</span>
+                                <span className="text-sm font-bold text-foreground truncate">{act.title}</span>
                                 {act.linkType === 'direct' ? (
                                   <span className="shrink-0 px-1.5 py-0.5 text-[9px] font-bold rounded-full bg-indigo-100 text-indigo-600 flex items-center gap-0.5">
                                     <Link2 size={8} />직접 생성
@@ -439,9 +439,9 @@ export function TemplateAnalyticsSheet({
                                   </span>
                                 )}
                               </div>
-                              <div className="text-[11px] text-gray-500 font-medium">
+                              <div className="text-[11px] text-muted-foreground font-medium">
                                 {format(new Date(act.startTime), 'yyyy.MM.dd (EEE)', { locale: ko })} {format(new Date(act.startTime), 'HH:mm')}~{format(new Date(act.endTime), 'HH:mm')}
-                                <span className="text-gray-400 ml-2">
+                                <span className="text-muted-foreground ml-2">
                                   {act.durationMinutes >= 60
                                     ? `${Math.floor(act.durationMinutes / 60)}시간 ${act.durationMinutes % 60}분`
                                     : `${act.durationMinutes}분`}
@@ -466,7 +466,7 @@ export function TemplateAnalyticsSheet({
                     <Button
                       onClick={() => setShowLinker(true)}
                       variant="outline"
-                      className="w-full mt-4 h-11 rounded-2xl border-dashed border-gray-300 text-gray-600 hover:border-indigo-300 hover:text-indigo-600 hover:bg-indigo-50/50 font-bold text-sm flex items-center gap-2 transition-all"
+                      className="w-full mt-4 h-11 rounded-2xl border-dashed border-gray-300 text-foreground hover:border-indigo-300 hover:text-indigo-600 hover:bg-indigo-50/50 font-bold text-sm flex items-center gap-2 transition-all"
                     >
                       <Paperclip size={14} />
                       일정 연결 관리

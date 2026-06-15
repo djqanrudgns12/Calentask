@@ -77,11 +77,11 @@ export function GlobalCategoryFilter() {
   const visibleTags = isExpanded ? activeCategoryObjects : activeCategoryObjects.slice(0, MAX_VISIBLE_TAGS)
 
   return (
-    <div className="flex flex-wrap items-center gap-2 bg-slate-50 border border-slate-100/60 p-1.5 rounded-[1.25rem] shadow-inner transition-all max-w-[280px] sm:max-w-[360px] lg:max-w-[450px] xl:max-w-[500px]">
+    <div className="flex flex-wrap items-center gap-2 bg-muted border border-border/60 p-1.5 rounded-[1.25rem] shadow-inner transition-all max-w-[280px] sm:max-w-[360px] lg:max-w-[450px] xl:max-w-[500px]">
       <Popover open={open} onOpenChange={setOpen}>
-        <PopoverTrigger className="group flex items-center justify-center gap-2 px-3 py-1.5 sm:px-4 rounded-xl bg-white shadow-sm border border-slate-100 hover:border-indigo-200 hover:shadow-md transition-all cursor-pointer outline-none shrink-0 h-9">
+        <PopoverTrigger className="group flex items-center justify-center gap-2 px-3 py-1.5 sm:px-4 rounded-xl bg-card shadow-sm border border-border hover:border-indigo-200 hover:shadow-md transition-all cursor-pointer outline-none shrink-0 h-9">
           <Folder className="w-4 h-4 text-indigo-500/80 group-hover:text-indigo-600 transition-colors" />
-          <span className="text-sm font-bold text-slate-700 hidden sm:block">카테고리</span>
+          <span className="text-sm font-bold text-foreground hidden sm:block">카테고리</span>
         {activeCategoryObjects.length > 0 && (
           <div className="flex items-center justify-center min-w-[20px] h-5 px-1.5 ml-0.5 rounded-md bg-indigo-50 border border-indigo-100 text-indigo-600 text-xs font-extrabold tracking-tight">
             {activeCategoryObjects.length}
@@ -89,7 +89,7 @@ export function GlobalCategoryFilter() {
         )}
       </PopoverTrigger>
 
-      <PopoverContent className="w-72 p-0 shadow-xl border-slate-100 rounded-2xl overflow-hidden" align="start" sideOffset={8}>
+      <PopoverContent className="w-72 p-0 shadow-xl border-border rounded-2xl overflow-hidden" align="start" sideOffset={8}>
           <CategoryPopoverContent />
       </PopoverContent>
       </Popover>
@@ -103,13 +103,13 @@ export function GlobalCategoryFilter() {
       {visibleTags.map(cat => (
         <div 
           key={cat.id} 
-          className="group/tag flex items-center gap-1.5 pl-2.5 pr-1 py-1 bg-white rounded-lg shadow-sm border border-slate-100/80 hover:border-slate-200 hover:shadow transition-all shrink-0"
+          className="group/tag flex items-center gap-1.5 pl-2.5 pr-1 py-1 bg-card rounded-lg shadow-sm border border-border/80 hover:border-border hover:shadow transition-all shrink-0"
         >
           <div 
             className="w-2 h-2 rounded-full shadow-sm shrink-0" 
             style={{ backgroundColor: cat.hex_color || '#4f46e5' }} 
           />
-          <span className="text-xs font-bold text-slate-700 whitespace-nowrap">
+          <span className="text-xs font-bold text-foreground whitespace-nowrap">
             {cat.name}
           </span>
           <button
@@ -117,7 +117,7 @@ export function GlobalCategoryFilter() {
               e.stopPropagation()
               toggleCategory(cat.id)
             }}
-            className="p-0.5 rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors ml-0.5"
+            className="p-0.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors ml-0.5"
           >
             <X className="w-3 h-3" />
           </button>
@@ -128,7 +128,7 @@ export function GlobalCategoryFilter() {
       {showExpandButton && !isExpanded && (
         <button 
           onClick={() => setIsExpanded(true)}
-          className="flex items-center justify-center px-2 py-1 bg-slate-100 hover:bg-slate-200 border border-slate-200/60 rounded-lg text-xs font-extrabold text-slate-600 transition-colors shrink-0"
+          className="flex items-center justify-center px-2 py-1 bg-muted hover:bg-slate-200 border border-border/60 rounded-lg text-xs font-extrabold text-foreground transition-colors shrink-0"
         >
           +{activeCategoryObjects.length - MAX_VISIBLE_TAGS}
         </button>
@@ -137,7 +137,7 @@ export function GlobalCategoryFilter() {
       {showExpandButton && isExpanded && (
         <button 
           onClick={() => setIsExpanded(false)}
-          className="flex items-center justify-center px-2 py-1 bg-slate-100 hover:bg-slate-200 border border-slate-200/60 rounded-lg text-xs font-bold text-slate-600 transition-colors shrink-0"
+          className="flex items-center justify-center px-2 py-1 bg-muted hover:bg-slate-200 border border-border/60 rounded-lg text-xs font-bold text-foreground transition-colors shrink-0"
         >
           접기
         </button>
@@ -213,8 +213,8 @@ export function CategoryPopoverContent() {
 
   return (
     <>
-      <PopoverHeader className="px-4 py-3 border-b border-slate-100 bg-slate-50/50 flex flex-row items-center justify-between space-y-0">
-        <PopoverTitle className="flex items-center text-slate-800 font-bold">
+      <PopoverHeader className="px-4 py-3 border-b border-border bg-muted/50 flex flex-row items-center justify-between space-y-0">
+        <PopoverTitle className="flex items-center text-foreground font-bold">
           <Folder className="w-4 h-4 mr-1.5 text-indigo-500" />
           카테고리 관리
         </PopoverTitle>
@@ -222,7 +222,7 @@ export function CategoryPopoverContent() {
           activeCategories.length === categories.length ? (
             <button 
               onClick={() => setActiveCategories([])}
-              className="text-xs font-semibold text-slate-500 hover:text-slate-800 transition-colors"
+              className="text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors"
             >
               전체 해제
             </button>
@@ -240,7 +240,7 @@ export function CategoryPopoverContent() {
       {/* Scrollable Category List */}
       <div className="max-h-[300px] overflow-y-auto p-2 space-y-1 hide-scrollbar">
         {categories.length === 0 ? (
-          <div className="py-8 text-center text-sm text-slate-400">
+          <div className="py-8 text-center text-sm text-muted-foreground">
             생성된 카테고리가 없습니다.
           </div>
         ) : (
@@ -253,7 +253,7 @@ export function CategoryPopoverContent() {
                 key={cat.id}
                 onClick={() => toggleCategory(cat.id)}
                 className={`group relative flex items-center justify-between p-2 rounded-xl cursor-pointer transition-colors
-                  ${isSelected ? 'bg-indigo-50/50' : 'hover:bg-slate-50'}
+                  ${isSelected ? 'bg-indigo-50/50' : 'hover:bg-muted'}
                 `}
               >
                 <div className="flex items-center gap-3">
@@ -267,7 +267,7 @@ export function CategoryPopoverContent() {
                   {/* Color dot & Name */}
                   <div className="flex items-center gap-2">
                     <div className="w-3.5 h-3.5 rounded-full shadow-sm shrink-0" style={{ backgroundColor: cat.hex_color || '#4f46e5' }} />
-                    <span className={`text-sm font-medium ${isSelected ? 'text-indigo-900 font-bold' : 'text-slate-700'}`}>
+                    <span className={`text-sm font-medium ${isSelected ? 'text-indigo-900 font-bold' : 'text-foreground'}`}>
                       {cat.name}
                     </span>
                   </div>
@@ -278,7 +278,7 @@ export function CategoryPopoverContent() {
                   {cat.id !== 'sys-anniversary' && (
                     <button
                       onClick={(e) => { e.stopPropagation(); openEditCategory(cat); }}
-                      className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-white rounded-md shadow-sm transition-all"
+                      className="p-1.5 text-muted-foreground hover:text-indigo-600 hover:bg-card rounded-md shadow-sm transition-all"
                       title="수정"
                     >
                       <Pencil className="w-3.5 h-3.5" />
@@ -288,7 +288,7 @@ export function CategoryPopoverContent() {
                     <button
                       onClick={(e) => handleDeleteCategory(e, cat.id)}
                       disabled={isDeleting}
-                      className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-white rounded-md shadow-sm transition-all disabled:opacity-50"
+                      className="p-1.5 text-muted-foreground hover:text-rose-600 hover:bg-card rounded-md shadow-sm transition-all disabled:opacity-50"
                       title="삭제"
                     >
                       {isCatDeleting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
@@ -302,15 +302,15 @@ export function CategoryPopoverContent() {
       </div>
 
       {/* Bottom Quick Add */}
-      <div className="p-3 border-t border-slate-100 bg-slate-50/50">
+      <div className="p-3 border-t border-border bg-muted/50">
         <form onSubmit={handleAddCategorySubmit} className="flex items-center gap-2">
           <div className="relative flex-1">
-            <Plus className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+            <Plus className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
             <Input
               value={newCategoryName}
               onChange={e => setNewCategoryName(e.target.value)}
               placeholder="새 카테고리 추가..."
-              className="pl-9 h-9 text-sm bg-white border-slate-200 focus-visible:ring-indigo-500 rounded-xl"
+              className="pl-9 h-9 text-sm bg-card border-border focus-visible:ring-indigo-500 rounded-xl"
               disabled={isCreating}
             />
           </div>

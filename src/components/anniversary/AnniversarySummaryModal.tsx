@@ -37,7 +37,7 @@ export function AnniversarySummaryModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[400px] p-0 overflow-hidden bg-white/80 backdrop-blur-3xl border border-white/60 shadow-[0_30px_80px_-20px_rgba(0,0,0,0.2)] rounded-[2.5rem]">
+      <DialogContent className="sm:max-w-[400px] p-0 overflow-hidden bg-card/80 backdrop-blur-3xl border border-transparent/60 shadow-[0_30px_80px_-20px_rgba(0,0,0,0.2)] rounded-[2.5rem]">
         <DialogHeader className="sr-only">
           <DialogTitle>기념일 요약</DialogTitle>
           <DialogDescription>선택한 기념일의 상세 정보입니다.</DialogDescription>
@@ -89,10 +89,10 @@ export function AnniversarySummaryModal({
             transition={{ delay: 0.2 }}
             className="space-y-2 mb-8 w-full"
           >
-            <h2 className="text-2xl font-extrabold text-slate-800 leading-tight">
+            <h2 className="text-2xl font-extrabold text-foreground leading-tight">
               {event.title}
             </h2>
-            <p className="text-slate-500 font-medium">
+            <p className="text-muted-foreground font-medium">
               {formattedDate}
             </p>
           </motion.div>

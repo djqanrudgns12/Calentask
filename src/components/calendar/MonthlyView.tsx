@@ -39,7 +39,7 @@ function DayCell({ day, children, isCurrentMonth, onClick }: any) {
     <div
       ref={setNodeRef}
       onClick={onClick}
-      className={`min-h-[72px] md:min-h-0 rounded-none md:rounded-2xl px-[1px] py-[2px] md:p-4 transition-all cursor-pointer flex flex-col border-r border-b border-[#EEEEEE] md:border md:border-[#EEEEEE] shadow-none md:shadow-sm hover:shadow-md bg-white relative ${isCurrentMonth ? 'opacity-100' : 'opacity-40'} ${isOver ? 'ring-2 ring-indigo-400 bg-indigo-50/50' : ''}`}
+      className={`min-h-[72px] md:min-h-0 rounded-none md:rounded-2xl px-[1px] py-[2px] md:p-4 transition-all cursor-pointer flex flex-col border-r border-b border-border md:border md:border-border shadow-none md:shadow-sm hover:shadow-md bg-card relative ${isCurrentMonth ? 'opacity-100' : 'opacity-40'} ${isOver ? 'ring-2 ring-indigo-400 bg-indigo-50/50' : ''}`}
     >
       {children}
     </div>
@@ -71,16 +71,16 @@ export const MonthlyView = React.memo(function MonthlyView({ currentDate, events
   return (
     <div className="flex-1 flex flex-col min-h-0 h-full">
       {/* Day Headers */}
-      <div className="grid grid-cols-7 gap-[1px] md:gap-3 mb-1 md:mb-2 bg-[#EEEEEE] md:bg-transparent border-t border-l border-[#EEEEEE] md:border-none">
+      <div className="grid grid-cols-7 gap-[1px] md:gap-3 mb-1 md:mb-2 bg-muted md:bg-transparent border-t border-l border-border md:border-none">
         {['일', '월', '화', '수', '목', '금', '토'].map((day) => (
-          <div key={day} className="text-center text-[10px] md:text-xs font-bold text-gray-500 uppercase tracking-wider bg-[#f2f2f7] py-1 md:py-2 border-r border-b border-[#EEEEEE] md:border-none">
+          <div key={day} className="text-center text-[10px] md:text-xs font-bold text-muted-foreground uppercase tracking-wider bg-background py-1 md:py-2 border-r border-b border-border md:border-none">
             {day}
           </div>
         ))}
       </div>
 
       {/* Calendar Grid */}
-      <div className="grid grid-cols-7 gap-[1px] md:gap-3 flex-1 auto-rows-fr pb-4 bg-[#EEEEEE] md:bg-transparent border-l border-[#EEEEEE] md:border-none">
+      <div className="grid grid-cols-7 gap-[1px] md:gap-3 flex-1 auto-rows-fr pb-4 bg-muted md:bg-transparent border-l border-border md:border-none">
         {days.map((day, idx) => {
           const isCurrentMonth = isSameMonth(day, currentDate)
           const isToday = isSameDay(day, new Date())
@@ -117,12 +117,12 @@ export const MonthlyView = React.memo(function MonthlyView({ currentDate, events
                     {holidayName && !showHolidaysAsTags && holidayName}
                   </span>
                   {otherTerms && (
-                    <span className="text-[7px] md:text-[10px] font-medium text-slate-400 truncate leading-[1.1] md:leading-tight">
+                    <span className="text-[7px] md:text-[10px] font-medium text-muted-foreground truncate leading-[1.1] md:leading-tight">
                       {otherTerms}
                     </span>
                   )}
                 </div>
-                <span className={`text-[9px] md:text-sm font-bold w-3.5 h-3.5 md:w-8 md:h-8 flex items-center justify-center rounded-full shrink-0 ${isToday ? 'bg-[#312E81] text-white shadow-sm md:shadow-lg shadow-[#4338CA]/40' : isHolidayDay || day.getDay() === 0 ? 'text-red-500' : 'text-slate-700'
+                <span className={`text-[9px] md:text-sm font-bold w-3.5 h-3.5 md:w-8 md:h-8 flex items-center justify-center rounded-full shrink-0 ${isToday ? 'bg-[#312E81] text-white shadow-sm md:shadow-lg shadow-[#4338CA]/40' : isHolidayDay || day.getDay() === 0 ? 'text-red-500' : 'text-foreground'
                   }`}>
                   {format(day, 'd')}
                 </span>
@@ -152,22 +152,22 @@ export const MonthlyView = React.memo(function MonthlyView({ currentDate, events
                         style={{ background: getEventBarGradient(event) }}
                       />
                       <div className="flex-1 flex flex-col px-[3px] py-[2px] md:px-2.5 md:py-1.5 min-w-0 min-h-[18px]">
-                        <span className="font-semibold text-slate-800 truncate pr-0.5 group-hover:pr-10 leading-[1.1] tracking-tighter md:tracking-normal md:leading-normal">
+                        <span className="font-semibold text-foreground truncate pr-0.5 group-hover:pr-10 leading-[1.1] tracking-tighter md:tracking-normal md:leading-normal">
                           {event.title}
                         </span>
                       </div>
 
                       {/* Hover Actions */}
-                      <div className="absolute right-1 top-1/2 -translate-y-1/2 hidden group-hover:flex items-center gap-1 bg-white/90 px-1 py-0.5 rounded shadow-sm">
+                      <div className="absolute right-1 top-1/2 -translate-y-1/2 hidden group-hover:flex items-center gap-1 bg-card/90 px-1 py-0.5 rounded shadow-sm">
                         <button
                           onClick={(e) => { e.stopPropagation(); openEditEvent(event); }}
-                          className="p-1 hover:bg-gray-100 rounded text-gray-500 hover:text-indigo-600 transition-colors"
+                          className="p-1 hover:bg-muted rounded text-muted-foreground hover:text-indigo-600 transition-colors"
                         >
                           <Pencil className="w-3 h-3" />
                         </button>
                         <button
                           onClick={(e) => { e.stopPropagation(); openDeleteConfirm(event.id); }}
-                          className="p-1 hover:bg-gray-100 rounded text-gray-500 hover:text-red-600 transition-colors"
+                          className="p-1 hover:bg-muted rounded text-muted-foreground hover:text-red-600 transition-colors"
                         >
                           <Trash2 className="w-3 h-3" />
                         </button>
@@ -180,7 +180,7 @@ export const MonthlyView = React.memo(function MonthlyView({ currentDate, events
                 {dayEvents.length > ((holidayName && showHolidaysAsTags) ? 2 : 3) && (
                   <button
                     onClick={(e) => { e.stopPropagation(); openDaySummary(day); }}
-                    className="w-full mt-0 md:mt-1.5 text-center px-1 py-[2px] md:px-2 md:py-1 text-[9px] md:text-xs font-bold text-slate-500 bg-slate-50/80 hover:bg-slate-100 rounded-sm md:rounded-md transition-colors min-h-[18px]"
+                    className="w-full mt-0 md:mt-1.5 text-center px-1 py-[2px] md:px-2 md:py-1 text-[9px] md:text-xs font-bold text-muted-foreground bg-muted/80 hover:bg-muted rounded-sm md:rounded-md transition-colors min-h-[18px]"
                   >
                     + {dayEvents.length - ((holidayName && showHolidaysAsTags) ? 2 : 3)}
                   </button>

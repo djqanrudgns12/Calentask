@@ -63,7 +63,7 @@ export const UpcomingAgenda = React.memo(function UpcomingAgenda({ events }: Upc
           className={`relative px-3 py-1.5 text-sm font-extrabold rounded-full transition-all ${
             activeTab === 'today' 
             ? 'text-indigo-600 bg-indigo-50 shadow-sm' 
-            : 'text-slate-400 hover:text-slate-600 hover:bg-slate-50'
+            : 'text-muted-foreground hover:text-foreground hover:bg-muted'
           }`}
         >
           오늘
@@ -73,7 +73,7 @@ export const UpcomingAgenda = React.memo(function UpcomingAgenda({ events }: Upc
           className={`relative px-3 py-1.5 text-sm font-extrabold rounded-full transition-all ${
             activeTab === 'week' 
             ? 'text-indigo-600 bg-indigo-50 shadow-sm' 
-            : 'text-slate-400 hover:text-slate-600 hover:bg-slate-50'
+            : 'text-muted-foreground hover:text-foreground hover:bg-muted'
           }`}
         >
           이번 주
@@ -83,7 +83,7 @@ export const UpcomingAgenda = React.memo(function UpcomingAgenda({ events }: Upc
           className={`relative px-3 py-1.5 text-sm font-extrabold rounded-full transition-all ${
             activeTab === 'nextWeek' 
             ? 'text-indigo-600 bg-indigo-50 shadow-sm' 
-            : 'text-slate-400 hover:text-slate-600 hover:bg-slate-50'
+            : 'text-muted-foreground hover:text-foreground hover:bg-muted'
           }`}
         >
           다음 주
@@ -94,14 +94,14 @@ export const UpcomingAgenda = React.memo(function UpcomingAgenda({ events }: Upc
       <div className="flex-1 overflow-y-auto hide-scrollbar px-6 pb-6">
         {filteredEvents.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-center py-10 opacity-70">
-            <div className="w-12 h-12 bg-slate-50 rounded-full flex items-center justify-center mb-3 shadow-sm border border-slate-100">
-              <Inbox className="w-5 h-5 text-slate-400" />
+            <div className="w-12 h-12 bg-muted rounded-full flex items-center justify-center mb-3 shadow-sm border border-border">
+              <Inbox className="w-5 h-5 text-muted-foreground" />
             </div>
-            <p className="text-sm font-bold text-slate-500">예정된 일정이 없습니다</p>
-            <p className="text-xs text-slate-400 mt-1">휴식을 즐기세요!</p>
+            <p className="text-sm font-bold text-muted-foreground">예정된 일정이 없습니다</p>
+            <p className="text-xs text-muted-foreground mt-1">휴식을 즐기세요!</p>
           </div>
         ) : (
-          <div className="relative border-l-2 border-slate-100 ml-2.5 space-y-6 pb-4">
+          <div className="relative border-l-2 border-border ml-2.5 space-y-6 pb-4">
             {filteredEvents.map((event, index) => {
               // 색상 추출 (카테고리 색상 우선, 없으면 기본 색상)
               const color = event.categories?.[0]?.hex_color || event.hex_color || '#4f46e5'
@@ -120,7 +120,7 @@ export const UpcomingAgenda = React.memo(function UpcomingAgenda({ events }: Upc
                   const dayStr = ['일', '월', '화', '수', '목', '금', '토'][dateObj.getDay()]
                   dateHeader = (
                     <div className="relative -ml-2.5 mb-4 mt-6 first:mt-2">
-                      <span className="inline-flex items-center px-2.5 py-1 rounded-md bg-white border border-slate-200 shadow-sm text-xs font-bold text-slate-700">
+                      <span className="inline-flex items-center px-2.5 py-1 rounded-md bg-card border border-border shadow-sm text-xs font-bold text-foreground">
                         {format(dateObj, 'M월 d일')} ({dayStr})
                       </span>
                     </div>
@@ -134,20 +134,20 @@ export const UpcomingAgenda = React.memo(function UpcomingAgenda({ events }: Upc
                   <div className="relative pl-6 group">
                     {/* 타임라인 마커 (Dot) */}
                     <div 
-                      className="absolute -left-[5px] top-1.5 w-[10px] h-[10px] rounded-full border-2 border-white shadow-sm ring-1 ring-black/5 transition-transform group-hover:scale-125 z-10"
+                      className="absolute -left-[5px] top-1.5 w-[10px] h-[10px] rounded-full border-2 border-transparent shadow-sm ring-1 ring-black/5 transition-transform group-hover:scale-125 z-10"
                       style={{ backgroundColor: color }}
                     />
                     
                     {/* 이벤트 컨텐츠 */}
-                    <div className="flex flex-col p-3 -mt-2 bg-white rounded-xl border border-transparent hover:border-slate-50 hover:shadow-[0_2px_12px_-4px_rgba(0,0,0,0.05)] transition-all cursor-pointer">
+                    <div className="flex flex-col p-3 -mt-2 bg-card rounded-xl border border-transparent hover:border-border hover:shadow-[0_2px_12px_-4px_rgba(0,0,0,0.05)] transition-all cursor-pointer">
                       <div className="flex items-center gap-1.5 mb-1 opacity-80">
-                        <Clock className="w-3 h-3 text-slate-400" />
-                        <span className="text-[11px] font-bold text-slate-500 tracking-wide">
+                        <Clock className="w-3 h-3 text-muted-foreground" />
+                        <span className="text-[11px] font-bold text-muted-foreground tracking-wide">
                           {timeString}
                         </span>
                       </div>
                       
-                      <h4 className="text-sm font-bold text-slate-800 leading-tight mb-1.5 line-clamp-2">
+                      <h4 className="text-sm font-bold text-foreground leading-tight mb-1.5 line-clamp-2">
                         {event.title}
                       </h4>
                       

@@ -84,10 +84,10 @@ export function TimeSelect({ value, onChange, disabled, className = '', required
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger render={
         <div
-          className={`relative w-full flex items-center bg-white border border-gray-200 rounded-xl transition-colors focus-within:ring-2 focus-within:ring-indigo-500 focus-within:border-transparent overflow-hidden h-10 ${disabled ? 'opacity-50 cursor-not-allowed' : ''} ${className}`}
+          className={`relative w-full flex items-center bg-card border border-border rounded-xl transition-colors focus-within:ring-2 focus-within:ring-indigo-500 focus-within:border-transparent overflow-hidden h-10 ${disabled ? 'opacity-50 cursor-not-allowed' : ''} ${className}`}
           onClick={() => { if (!disabled) inputRef.current?.focus() }}
         >
-          <Clock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+          <Clock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
           <input
             ref={inputRef}
             type="time"
@@ -96,13 +96,13 @@ export function TimeSelect({ value, onChange, disabled, className = '', required
             onKeyDown={handleKeyDown}
             disabled={disabled}
             required={required}
-            className="w-full h-full pl-9 pr-3 bg-transparent text-gray-900 font-medium focus:outline-none placeholder:text-gray-300 [&::-webkit-calendar-picker-indicator]:hidden"
+            className="w-full h-full pl-9 pr-3 bg-transparent text-foreground font-medium focus:outline-none placeholder:text-muted-foreground/50 [&::-webkit-calendar-picker-indicator]:hidden"
           />
         </div>
       } />
       <PopoverContent 
         align="start" 
-        className="w-[160px] p-1.5 shadow-xl border-gray-100 rounded-xl bg-white/95 backdrop-blur-xl z-[200]"
+        className="w-[160px] p-1.5 shadow-xl border-border rounded-xl bg-card/95 backdrop-blur-xl z-[200]"
       >
         <div ref={scrollRef} className="max-h-[220px] overflow-y-auto overscroll-contain rounded-lg hide-scrollbar">
           <div className="flex flex-col gap-0.5">
@@ -122,7 +122,7 @@ export function TimeSelect({ value, onChange, disabled, className = '', required
                   className={`px-3 py-2 text-sm font-medium rounded-lg text-left transition-colors
                     ${isSelected 
                       ? 'bg-indigo-50 text-indigo-700 font-bold' 
-                      : 'text-gray-700 hover:bg-gray-50 active:bg-gray-100'}`}
+                      : 'text-foreground hover:bg-muted active:bg-muted'}`}
                 >
                   {time}
                 </button>

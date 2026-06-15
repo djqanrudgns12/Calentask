@@ -85,8 +85,8 @@ const ActivityPunchCard = React.memo(function ActivityPunchCard({ activities }: 
     if (active && payload && payload.length) {
       const data = payload[0].payload;
       return (
-        <div className="bg-white/95 backdrop-blur-md px-3 py-2 rounded-xl border border-gray-100 shadow-lg text-sm font-bold">
-          <p className="text-gray-900">{data.dayName}요일 {data.hour}시</p>
+        <div className="bg-card/95 backdrop-blur-md px-3 py-2 rounded-xl border border-border shadow-lg text-sm font-bold">
+          <p className="text-foreground">{data.dayName}요일 {data.hour}시</p>
           <p className="text-blue-600">집중도: {data.value}</p>
         </div>
       );
@@ -95,11 +95,11 @@ const ActivityPunchCard = React.memo(function ActivityPunchCard({ activities }: 
   };
 
   return (
-    <div className="bg-white rounded-[24px] p-6 shadow-sm border border-gray-100 mt-4 h-[320px] flex flex-col">
+    <div className="bg-card rounded-[24px] p-6 shadow-sm border border-border mt-4 h-[320px] flex flex-col">
       <div className="flex items-center justify-between mb-2">
         <div>
-          <h3 className="text-[17px] font-extrabold text-gray-900 tracking-tight">주 활동 시간대</h3>
-          <p className="text-[12px] font-bold text-gray-400 mt-0.5">언제 가장 몰입하시나요?</p>
+          <h3 className="text-[17px] font-extrabold text-foreground tracking-tight">주 활동 시간대</h3>
+          <p className="text-[12px] font-bold text-muted-foreground mt-0.5">언제 가장 몰입하시나요?</p>
         </div>
       </div>
       
@@ -142,7 +142,7 @@ const ActivityPunchCard = React.memo(function ActivityPunchCard({ activities }: 
             </ScatterChart>
           </ResponsiveContainer>
         ) : (
-          <div className="h-full w-full flex items-center justify-center text-gray-300 text-sm font-medium">
+          <div className="h-full w-full flex items-center justify-center text-muted-foreground/50 text-sm font-medium">
             표시할 시간대 데이터가 없습니다.
           </div>
         )}

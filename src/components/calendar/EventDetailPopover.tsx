@@ -34,12 +34,12 @@ export function EventDetailPopover() {
       {/* Popover Container (Centered) */}
       <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 pointer-events-none">
         {/* Popover Card */}
-        <div className="bg-white/95 backdrop-blur-xl rounded-2xl w-full max-w-sm shadow-[0_12px_40px_rgba(0,0,0,0.12)] border border-white/60 pointer-events-auto flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
+        <div className="bg-card/95 backdrop-blur-xl rounded-2xl w-full max-w-sm shadow-[0_12px_40px_rgba(0,0,0,0.12)] border border-transparent/60 pointer-events-auto flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
           
           {/* Header */}
           <div className="flex items-start justify-between px-5 pt-5 pb-3">
             <div className="flex-1 pr-4">
-              <h2 className="text-2xl font-bold text-slate-900 leading-tight">
+              <h2 className="text-2xl font-bold text-foreground leading-tight">
                 {event.title}
               </h2>
               {/* Category Badges */}
@@ -66,7 +66,7 @@ export function EventDetailPopover() {
             </div>
             <button 
               onClick={closeEventDetail}
-              className="p-1.5 rounded-full text-gray-400 hover:bg-gray-100 transition-colors shrink-0"
+              className="p-1.5 rounded-full text-muted-foreground hover:bg-muted transition-colors shrink-0"
             >
               <X className="w-5 h-5" />
             </button>
@@ -76,12 +76,12 @@ export function EventDetailPopover() {
           <div className="px-5 py-4 space-y-4">
             {/* Time */}
             <div className="flex items-start gap-3">
-              <Clock className="w-5 h-5 text-gray-400 shrink-0 mt-0.5" />
+              <Clock className="w-5 h-5 text-muted-foreground shrink-0 mt-0.5" />
               <div className="flex flex-col">
-                <span className="text-[15px] font-medium text-slate-700">
+                <span className="text-[15px] font-medium text-foreground">
                   {format(new Date(event.start_time), 'M월 d일 (E)')}
                 </span>
-                <span className="text-sm text-gray-500">
+                <span className="text-sm text-muted-foreground">
                   {event.is_all_day 
                     ? '종일' 
                     : `${format(new Date(event.start_time), 'a h:mm')} - ${format(new Date(event.end_time), 'a h:mm')}`
@@ -93,9 +93,9 @@ export function EventDetailPopover() {
             {/* Memo */}
             {event.memo && (
               <div className="flex items-start gap-3">
-                <AlignLeft className="w-5 h-5 text-gray-400 shrink-0 mt-0.5" />
-                <div className="flex-1 bg-[#F2F2F7] rounded-xl p-3">
-                  <p className="text-[14px] text-slate-700 whitespace-pre-wrap leading-relaxed">
+                <AlignLeft className="w-5 h-5 text-muted-foreground shrink-0 mt-0.5" />
+                <div className="flex-1 bg-background rounded-xl p-3">
+                  <p className="text-[14px] text-foreground whitespace-pre-wrap leading-relaxed">
                     {event.memo}
                   </p>
                 </div>
@@ -104,7 +104,7 @@ export function EventDetailPopover() {
           </div>
 
           {/* Action Footer */}
-          <div className="flex items-center justify-end gap-2 px-4 py-3 bg-gray-50/50 border-t border-gray-100">
+          <div className="flex items-center justify-end gap-2 px-4 py-3 bg-muted/50 border-t border-border">
             <button 
               onClick={handleDelete}
               className="px-4 py-2 text-sm font-semibold text-red-600 hover:bg-red-50 rounded-lg transition-colors flex items-center gap-1.5"

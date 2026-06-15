@@ -8,10 +8,10 @@ const CustomPieTooltip = ({ active, payload }: any) => {
   if (active && payload && payload.length) {
     const data = payload[0].payload;
     return (
-      <div className="bg-white/95 backdrop-blur-md px-3 py-2 rounded-xl border border-gray-100 shadow-lg text-sm font-bold flex items-center gap-2">
+      <div className="bg-card/95 backdrop-blur-md px-3 py-2 rounded-xl border border-border shadow-lg text-sm font-bold flex items-center gap-2">
         <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: data.hex_color || '#9CA3AF' }} />
-        <span className="text-gray-900">{data.name}</span>
-        <span className="text-gray-400 font-medium ml-1">{data.percentage}%</span>
+        <span className="text-foreground">{data.name}</span>
+        <span className="text-muted-foreground font-medium ml-1">{data.percentage}%</span>
       </div>
     );
   }
@@ -27,8 +27,8 @@ export default function ActivityBreakdownGrid({ breakdown, onSelectSubject }: { 
   if (categories.length === 0) {
     return (
       <div className="mt-8">
-        <h2 className="text-[17px] font-extrabold text-gray-900 mb-4 tracking-tight">카테고리별 활동 분석</h2>
-        <div className="bg-white rounded-[24px] p-8 text-center text-gray-400 font-medium text-sm border border-gray-100 shadow-sm">
+        <h2 className="text-[17px] font-extrabold text-foreground mb-4 tracking-tight">카테고리별 활동 분석</h2>
+        <div className="bg-card rounded-[24px] p-8 text-center text-muted-foreground font-medium text-sm border border-border shadow-sm">
           분석할 활동 내역이 없습니다.
         </div>
       </div>
@@ -48,21 +48,21 @@ export default function ActivityBreakdownGrid({ breakdown, onSelectSubject }: { 
 
   return (
     <div className="mt-8">
-      <h2 className="text-[17px] font-extrabold text-gray-900 mb-4 tracking-tight">카테고리별 활동 분석</h2>
+      <h2 className="text-[17px] font-extrabold text-foreground mb-4 tracking-tight">카테고리별 활동 분석</h2>
       
       <div className="flex flex-col gap-4">
         {/* Donut Chart Section */}
-        <div className="bg-white rounded-[24px] p-6 shadow-sm border border-gray-100 flex items-center justify-between">
+        <div className="bg-card rounded-[24px] p-6 shadow-sm border border-border flex items-center justify-between">
           <div className="flex-1 pr-6">
-            <h3 className="text-[13px] font-bold text-gray-400 mb-4 tracking-wider">점유율 요약</h3>
+            <h3 className="text-[13px] font-bold text-muted-foreground mb-4 tracking-wider">점유율 요약</h3>
             <div className="space-y-3">
               {topCategories.map((cat, idx) => (
                 <div key={idx} className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: cat.hex_color || '#9CA3AF' }} />
-                    <span className="text-[13px] font-bold text-gray-700">{cat.name}</span>
+                    <span className="text-[13px] font-bold text-foreground">{cat.name}</span>
                   </div>
-                  <span className="text-[13px] font-bold text-gray-900">{cat.percentage}%</span>
+                  <span className="text-[13px] font-bold text-foreground">{cat.percentage}%</span>
                 </div>
               ))}
             </div>
@@ -89,8 +89,8 @@ export default function ActivityBreakdownGrid({ breakdown, onSelectSubject }: { 
             </ResponsiveContainer>
             {/* Center Label */}
             <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-              <span className="text-xs font-bold text-gray-400">Total</span>
-              <span className="text-[15px] font-black text-gray-900 leading-tight">
+              <span className="text-xs font-bold text-muted-foreground">Total</span>
+              <span className="text-[15px] font-black text-foreground leading-tight">
                 {Math.round(totalMinutes / 60)}h
               </span>
             </div>
@@ -109,21 +109,21 @@ export default function ActivityBreakdownGrid({ breakdown, onSelectSubject }: { 
                 whileHover={{ y: -2 }}
                 whileTap={{ scale: 0.98 }}
                 onClick={() => onSelectSubject(cat.id)}
-                className="bg-white rounded-[24px] p-5 shadow-sm border border-gray-100 flex flex-col justify-between h-[150px] cursor-pointer hover:shadow-md transition-shadow"
+                className="bg-card rounded-[24px] p-5 shadow-sm border border-border flex flex-col justify-between h-[150px] cursor-pointer hover:shadow-md transition-shadow"
               >
-                <div className="flex items-center gap-2 text-gray-500 font-semibold text-sm">
+                <div className="flex items-center gap-2 text-muted-foreground font-semibold text-sm">
                   <div className="p-1.5 rounded-[10px]" style={{ backgroundColor: bgRgba, color: color }}>
                     <LayoutGrid size={15} />
                   </div>
                   <span className="uppercase tracking-wider text-[11px] truncate max-w-[80px]">{cat.name}</span>
                 </div>
-                <div className="text-[32px] font-black text-gray-900 mt-2 tracking-tighter leading-none">
-                  {cat.percentage}<span className="text-[16px] text-gray-400 font-bold ml-0.5">%</span>
+                <div className="text-[32px] font-black text-foreground mt-2 tracking-tighter leading-none">
+                  {cat.percentage}<span className="text-[16px] text-muted-foreground font-bold ml-0.5">%</span>
                 </div>
-                <div className="flex items-center gap-2 mt-3 text-[11px] font-bold text-gray-400">
-                  <span className="text-gray-700">{cat.hours}h</span>
-                  <span className="text-gray-300">·</span>
-                  <span className="text-gray-700">{cat.count}회</span>
+                <div className="flex items-center gap-2 mt-3 text-[11px] font-bold text-muted-foreground">
+                  <span className="text-foreground">{cat.hours}h</span>
+                  <span className="text-muted-foreground/50">·</span>
+                  <span className="text-foreground">{cat.count}회</span>
                 </div>
               </motion.div>
             );

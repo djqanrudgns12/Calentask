@@ -68,17 +68,17 @@ export function ArchiveNotesView() {
 
   return (
     <PinPadOverlay>
-      <div className="flex flex-col h-full bg-[#f7f9fb]">
+      <div className="flex flex-col h-full bg-background">
         {/* Header & Tabs — 집중 모드 시 전체 숨김 */}
         {!isFocusMode && (
-          <div className="border-b border-slate-200 bg-white/50 backdrop-blur-md sticky top-0 z-10 shrink-0">
+          <div className="border-b border-border bg-card/50 backdrop-blur-md sticky top-0 z-10 shrink-0">
             {/* 탭 네비게이션 영역 및 우측 액션 버튼 */}
             <div className="px-4 md:px-6 lg:px-8 py-2.5 flex items-center justify-between w-full gap-4">
               <div className="flex-1 min-w-0 flex items-center overflow-x-auto hide-scrollbar">
                 {!isPrefetched ? (
                   <div className="flex items-center space-x-2">
                     {Array.from({ length: 4 }).map((_, i) => (
-                      <div key={i} className="h-9 w-24 bg-slate-100 animate-pulse rounded-lg shrink-0" />
+                      <div key={i} className="h-9 w-24 bg-muted animate-pulse rounded-lg shrink-0" />
                     ))}
                   </div>
                 ) : tabs.length > 0 ? (
@@ -111,11 +111,11 @@ export function ArchiveNotesView() {
                             className={cn(
                               "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all whitespace-nowrap",
                               isActive 
-                                ? "bg-white text-indigo-600 shadow-sm border border-slate-200" 
-                                : "text-slate-500 hover:bg-white/60 hover:text-slate-700 border border-transparent"
+                                ? "bg-card text-indigo-600 shadow-sm border border-border" 
+                                : "text-muted-foreground hover:bg-card/60 hover:text-foreground border border-transparent"
                             )}
                           >
-                            <Icon className={cn("w-4 h-4 shrink-0", isActive ? "text-indigo-600" : "text-slate-400")} />
+                            <Icon className={cn("w-4 h-4 shrink-0", isActive ? "text-indigo-600" : "text-muted-foreground")} />
                             
                             {isEditing ? (
                               <input 
@@ -154,7 +154,7 @@ export function ArchiveNotesView() {
                                   deleteTab(tab.id);
                                 }
                               }}
-                              className="absolute right-1 opacity-0 group-hover:opacity-100 p-1 text-slate-400 hover:text-rose-500 transition-opacity bg-white/80 backdrop-blur rounded"
+                              className="absolute right-1 opacity-0 group-hover:opacity-100 p-1 text-muted-foreground hover:text-rose-500 transition-opacity bg-card/80 backdrop-blur rounded"
                             >
                               <Trash2 className="w-3.5 h-3.5" />
                             </button>
@@ -164,12 +164,12 @@ export function ArchiveNotesView() {
                     })}
                   </Reorder.Group>
                 ) : (
-                  <div className="text-slate-400 text-sm font-medium py-2 px-1">노트가 없습니다</div>
+                  <div className="text-muted-foreground text-sm font-medium py-2 px-1">노트가 없습니다</div>
                 )}
               </div>
 
               {/* 우측 액션 버튼들 (스크롤에 상관없이 고정 유지) */}
-              <div className="flex items-center gap-2 shrink-0 border-l border-slate-200/60 pl-4 ml-2">
+              <div className="flex items-center gap-2 shrink-0 border-l border-border/60 pl-4 ml-2">
                 <button 
                   onClick={() => setIsSynapseOpen(true)}
                   className="relative flex items-center gap-1.5 px-3 py-2 bg-gradient-to-br from-slate-900 to-indigo-950 text-white rounded-lg text-xs font-bold shadow-sm shadow-indigo-500/20 transition-all duration-300 hover:scale-105 active:scale-95 group border border-indigo-500/30 hover:border-indigo-400 overflow-hidden"
@@ -195,28 +195,28 @@ export function ArchiveNotesView() {
           <div ref={boardContainerRef} className={cn(
             "w-full h-full overflow-hidden relative",
             isFocusMode 
-              ? "bg-white rounded-none border-0 shadow-none" 
-              : "bg-white rounded-2xl shadow-sm border border-slate-200"
+              ? "bg-card rounded-none border-0 shadow-none" 
+              : "bg-card rounded-2xl shadow-sm border border-border"
           )}>
             {!isPrefetched ? (
               <div className="absolute inset-0 flex flex-col p-8">
                 {/* Skeleton UI for Board */}
-                <div className="h-10 w-1/3 bg-slate-100 animate-pulse rounded-xl mb-8" />
+                <div className="h-10 w-1/3 bg-muted animate-pulse rounded-xl mb-8" />
                 <div className="space-y-4">
-                  <div className="h-6 w-full bg-slate-50 animate-pulse rounded-lg" />
-                  <div className="h-6 w-11/12 bg-slate-50 animate-pulse rounded-lg" />
-                  <div className="h-6 w-4/5 bg-slate-50 animate-pulse rounded-lg" />
-                  <div className="h-6 w-full bg-slate-50 animate-pulse rounded-lg" />
-                  <div className="h-6 w-3/4 bg-slate-50 animate-pulse rounded-lg" />
+                  <div className="h-6 w-full bg-muted animate-pulse rounded-lg" />
+                  <div className="h-6 w-11/12 bg-muted animate-pulse rounded-lg" />
+                  <div className="h-6 w-4/5 bg-muted animate-pulse rounded-lg" />
+                  <div className="h-6 w-full bg-muted animate-pulse rounded-lg" />
+                  <div className="h-6 w-3/4 bg-muted animate-pulse rounded-lg" />
                 </div>
               </div>
             ) : tabs.length === 0 ? (
-              <div className="absolute inset-0 flex flex-col items-center justify-center bg-[#fafafa]">
-                <div className="w-20 h-20 bg-white shadow-sm border border-slate-100 rounded-3xl flex items-center justify-center mb-6">
+              <div className="absolute inset-0 flex flex-col items-center justify-center bg-background">
+                <div className="w-20 h-20 bg-card shadow-sm border border-border rounded-3xl flex items-center justify-center mb-6">
                   <FolderOpen className="w-10 h-10 text-indigo-300" />
                 </div>
-                <h2 className="text-xl font-extrabold text-slate-800 mb-2">아직 작성된 노트가 없습니다</h2>
-                <p className="text-slate-500 font-medium mb-6 text-center max-w-sm">
+                <h2 className="text-xl font-extrabold text-foreground mb-2">아직 작성된 노트가 없습니다</h2>
+                <p className="text-muted-foreground font-medium mb-6 text-center max-w-sm">
                   우측 상단의 <strong className="text-indigo-600">새 노트 추가</strong> 버튼을 눌러<br/>당신만의 첫 번째 캔버스를 만들어보세요!
                 </p>
                 <button 
@@ -247,11 +247,11 @@ export function ArchiveNotesView() {
                   {/* 렌더링 타입이 매칭되지 않을 경우 폴백 UI */}
                   {activeTabId && !['list', 'canvas', 'masonry', 'table', 'kanban', 'journal', 'graph', 'calendar'].includes(tabs.find((t: any) => t.id === activeTabId)?.board_type || '') && (
                     <div className="flex flex-col items-center justify-center h-full text-center">
-                      <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-slate-100">
-                        <Grip className="w-8 h-8 text-slate-300" />
+                      <div className="w-16 h-16 bg-muted rounded-2xl flex items-center justify-center mx-auto mb-4 border border-border">
+                        <Grip className="w-8 h-8 text-muted-foreground/50" />
                       </div>
-                      <h3 className="text-lg font-bold text-slate-700 mb-1">개발 중인 보드 타입</h3>
-                      <p className="text-slate-400 text-sm">해당 뷰는 현재 업데이트를 준비 중입니다.</p>
+                      <h3 className="text-lg font-bold text-foreground mb-1">개발 중인 보드 타입</h3>
+                      <p className="text-muted-foreground text-sm">해당 뷰는 현재 업데이트를 준비 중입니다.</p>
                     </div>
                   )}
                 </motion.div>

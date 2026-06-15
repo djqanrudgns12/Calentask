@@ -33,7 +33,7 @@ export function BottomNavigation({ viewMode, setViewMode, onOpenSettings, onOpen
   }
 
   return (
-    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/80 backdrop-blur-xl border-t border-slate-200/50 pb-[env(safe-area-inset-bottom)]">
+    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-card/80 backdrop-blur-xl border-t border-border/50 pb-[env(safe-area-inset-bottom)]">
       <div className="flex items-center justify-around px-2 h-16">
         {tabs.map((tab) => {
           const isActive = 
@@ -52,11 +52,11 @@ export function BottomNavigation({ viewMode, setViewMode, onOpenSettings, onOpen
               <div className="relative flex flex-col items-center justify-center gap-1 z-10">
                 <Icon 
                   className={`w-5 h-5 transition-transform duration-300 ${
-                    isActive ? 'text-blue-600 scale-110' : 'text-slate-400'
+                    isActive ? 'text-blue-600 scale-110' : 'text-muted-foreground'
                   }`} 
                 />
                 <span className={`text-[10px] font-medium transition-colors ${
-                  isActive ? 'text-blue-600' : 'text-slate-400'
+                  isActive ? 'text-blue-600' : 'text-muted-foreground'
                 }`}>
                   {tab.label}
                 </span>

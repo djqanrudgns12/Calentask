@@ -6,7 +6,7 @@ import { PinPadOverlay } from '@/components/archive/PinPadOverlay';
 export default function ArchiveLayout({ children }: { children: ReactNode }) {
   return (
     <PinPadOverlay>
-    <div className="flex h-screen overflow-hidden bg-[#f7f9fb] text-slate-900 font-sans">
+    <div className="flex h-screen overflow-hidden bg-background text-foreground font-sans">
       {/* Global Command Palette */}
       <ArchiveCommandPalette />
       

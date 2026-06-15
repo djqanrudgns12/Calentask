@@ -62,17 +62,17 @@ export function ListView({ currentDate, events }: ListViewProps) {
 
   if (monthEvents.length === 0) {
     return (
-      <div className="flex-1 flex flex-col items-center justify-center p-6 text-slate-400">
+      <div className="flex-1 flex flex-col items-center justify-center p-6 text-muted-foreground">
         <p className="text-lg font-medium">이번 달 일정이 없습니다.</p>
       </div>
     )
   }
 
   return (
-    <div className="flex-1 overflow-auto bg-[#FAFAFA] p-4 md:p-8 lg:p-12 pb-24 md:pb-12">
+    <div className="flex-1 overflow-auto bg-background p-4 md:p-8 lg:p-12 pb-24 md:pb-12">
       <div className="max-w-3xl mx-auto w-full relative">
         {/* Continuous Timeline Line */}
-        <div className="hidden md:block absolute left-[128px] top-6 bottom-0 w-px bg-[#EEEEEE] -translate-x-1/2 z-0" />
+        <div className="hidden md:block absolute left-[128px] top-6 bottom-0 w-px bg-muted -translate-x-1/2 z-0" />
 
         {sortedGroupedEntries.map(([dateStr, dayEvents]) => {
           const date = parseISO(dateStr)
@@ -82,10 +82,10 @@ export function ListView({ currentDate, events }: ListViewProps) {
             <div key={dateStr} className="flex flex-col md:flex-row mb-8 relative group">
               {/* Left: Typography Date */}
               <div className="md:w-32 flex-shrink-0 flex flex-col md:items-end md:pr-8 mb-3 md:mb-0 md:border-r border-transparent relative z-10">
-                <span className="text-2xl md:text-3xl font-light text-slate-800 tracking-tight">
+                <span className="text-2xl md:text-3xl font-light text-foreground tracking-tight">
                   {format(date, 'dd')}
                 </span>
-                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">
+                <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest mt-0.5">
                   {format(date, 'M월')} {['일', '월', '화', '수', '목', '금', '토'][date.getDay()]}요일
                 </span>
                 {/* Timeline node */}
@@ -101,10 +101,10 @@ export function ListView({ currentDate, events }: ListViewProps) {
                       key={event.id}
                       onClick={() => openEventDetail(event)}
                       onDoubleClick={(e) => { e.stopPropagation(); openEditEvent(event); }}
-                      className="group/card relative flex flex-col px-3 py-2.5 rounded-xl cursor-pointer transition-all hover:bg-white hover:shadow-sm border border-transparent hover:border-[#EEEEEE]"
+                      className="group/card relative flex flex-col px-3 py-2.5 rounded-xl cursor-pointer transition-all hover:bg-card hover:shadow-sm border border-transparent hover:border-border"
                     >
                       <div className="flex items-center justify-between mb-1">
-                        <span className="text-xs font-semibold text-slate-400 flex items-center">
+                        <span className="text-xs font-semibold text-muted-foreground flex items-center">
                           <span className="w-1.5 h-1.5 rounded-full mr-2" style={{ backgroundColor: primaryColor }} />
                           {event.is_all_day ? '하루 종일' : `${format(new Date(event.start_time), 'HH:mm')} - ${format(new Date(event.end_time), 'HH:mm')}`}
                         </span>
@@ -112,7 +112,7 @@ export function ListView({ currentDate, events }: ListViewProps) {
                           {event.categories?.map(tag => (
                             <span 
                               key={tag.id} 
-                              className="px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider text-slate-600 bg-slate-100"
+                              className="px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider text-foreground bg-muted"
                               style={{ color: tag.hex_color }}
                             >
                               {tag.name}
@@ -120,21 +120,21 @@ export function ListView({ currentDate, events }: ListViewProps) {
                           ))}
                         </div>
                       </div>
-                      <h4 className="text-base font-bold text-slate-800 group-hover/card:text-[#312E81] transition-colors pr-12">
+                      <h4 className="text-base font-bold text-foreground group-hover/card:text-[#312E81] transition-colors pr-12">
                         {event.title}
                       </h4>
 
                       {/* Hover Actions */}
-                      <div className="absolute right-3 top-1/2 -translate-y-1/2 hidden group-hover/card:flex items-center gap-1 bg-white/90 px-1 py-0.5 rounded shadow-sm">
+                      <div className="absolute right-3 top-1/2 -translate-y-1/2 hidden group-hover/card:flex items-center gap-1 bg-card/90 px-1 py-0.5 rounded shadow-sm">
                         <button 
                           onClick={(e) => { e.stopPropagation(); openEditEvent(event); }}
-                          className="p-1 hover:bg-gray-100 rounded text-gray-500 hover:text-indigo-600 transition-colors"
+                          className="p-1 hover:bg-muted rounded text-muted-foreground hover:text-indigo-600 transition-colors"
                         >
                           <Pencil className="w-3.5 h-3.5" />
                         </button>
                         <button 
                           onClick={(e) => { e.stopPropagation(); openDeleteConfirm(event.id); }}
-                          className="p-1 hover:bg-gray-100 rounded text-gray-500 hover:text-red-600 transition-colors"
+                          className="p-1 hover:bg-muted rounded text-muted-foreground hover:text-red-600 transition-colors"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
@@ -147,7 +147,7 @@ export function ListView({ currentDate, events }: ListViewProps) {
                 {dayEvents.length > 3 && (
                   <button
                     onClick={() => toggleExpand(dateStr)}
-                    className="w-full mt-2 py-2 flex items-center justify-center gap-1.5 text-xs font-bold text-slate-500 bg-slate-100/50 hover:bg-slate-200/60 rounded-xl transition-colors shadow-sm"
+                    className="w-full mt-2 py-2 flex items-center justify-center gap-1.5 text-xs font-bold text-muted-foreground bg-muted/50 hover:bg-slate-200/60 rounded-xl transition-colors shadow-sm"
                   >
                     {isExpanded ? (
                       <>

@@ -38,7 +38,7 @@ function DesktopInstallGuideModal({
     chrome: [
       {
         text: (
-          <>브라우저 <strong>주소창 오른쪽 끝</strong>에 있는 <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-slate-100 rounded text-xs font-mono"><Monitor className="w-3 h-3" />↓</span> 아이콘을 클릭하세요.</>
+          <>브라우저 <strong>주소창 오른쪽 끝</strong>에 있는 <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-muted rounded text-xs font-mono"><Monitor className="w-3 h-3" />↓</span> 아이콘을 클릭하세요.</>
         )
       },
       {
@@ -82,11 +82,11 @@ function DesktopInstallGuideModal({
             animate={{ scale: 1, opacity: 1, y: 0 }}
             exit={{ scale: 0.95, opacity: 0, y: 10 }}
             transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-            className="bg-white rounded-3xl w-full max-w-[420px] overflow-hidden shadow-2xl relative"
+            className="bg-card rounded-3xl w-full max-w-[420px] overflow-hidden shadow-2xl relative"
           >
             <button 
               onClick={onClose}
-              className="absolute top-4 right-4 p-2 bg-slate-100 hover:bg-slate-200 rounded-full text-slate-500 transition-colors z-10"
+              className="absolute top-4 right-4 p-2 bg-muted hover:bg-slate-200 rounded-full text-muted-foreground transition-colors z-10"
             >
               <X className="w-5 h-5" />
             </button>
@@ -96,23 +96,23 @@ function DesktopInstallGuideModal({
                 <Monitor className="w-8 h-8" />
               </div>
 
-              <h3 className="text-xl font-bold text-slate-800 mb-2">데스크톱 앱 설치</h3>
-              <p className="text-sm text-slate-500 mb-1 leading-relaxed">
+              <h3 className="text-xl font-bold text-foreground mb-2">데스크톱 앱 설치</h3>
+              <p className="text-sm text-muted-foreground mb-1 leading-relaxed">
                 {browserLabel[browserType]} 브라우저에서 아래 방법으로
               </p>
-              <p className="text-sm text-slate-500 mb-6 leading-relaxed">
+              <p className="text-sm text-muted-foreground mb-6 leading-relaxed">
                 Calentask를 데스크톱 앱으로 설치할 수 있습니다.
               </p>
 
               {browserType === 'chrome' && (
                 <div className="mb-5 mx-auto max-w-[340px]">
-                  <div className="bg-slate-50 rounded-xl border border-slate-200 p-3">
-                    <div className="flex items-center gap-2 bg-white rounded-lg border border-slate-200 px-3 py-2">
+                  <div className="bg-muted rounded-xl border border-border p-3">
+                    <div className="flex items-center gap-2 bg-card rounded-lg border border-border px-3 py-2">
                       <div className="flex items-center gap-1.5 flex-1 min-w-0">
                         <div className="w-4 h-4 rounded bg-green-100 flex items-center justify-center">
                           <span className="text-[8px] text-green-600">🔒</span>
                         </div>
-                        <span className="text-xs text-slate-400 truncate">calentask.vercel.app</span>
+                        <span className="text-xs text-muted-foreground truncate">calentask.vercel.app</span>
                       </div>
                       <div className="relative">
                         <div className="w-7 h-7 rounded-md bg-indigo-100 border-2 border-indigo-400 flex items-center justify-center animate-pulse">
@@ -134,13 +134,13 @@ function DesktopInstallGuideModal({
 
               {browserType === 'edge' && (
                 <div className="mb-5 mx-auto max-w-[340px]">
-                  <div className="bg-slate-50 rounded-xl border border-slate-200 p-3">
-                    <div className="flex items-center justify-between bg-white rounded-lg border border-slate-200 px-3 py-2">
+                  <div className="bg-muted rounded-xl border border-border p-3">
+                    <div className="flex items-center justify-between bg-card rounded-lg border border-border px-3 py-2">
                       <div className="flex items-center gap-1.5 flex-1 min-w-0">
                         <div className="w-4 h-4 rounded bg-green-100 flex items-center justify-center">
                           <span className="text-[8px] text-green-600">🔒</span>
                         </div>
-                        <span className="text-xs text-slate-400 truncate">calentask.vercel.app</span>
+                        <span className="text-xs text-muted-foreground truncate">calentask.vercel.app</span>
                       </div>
                       <div className="relative">
                         <div className="w-7 h-7 rounded-md bg-indigo-100 border-2 border-indigo-400 flex items-center justify-center animate-pulse">
@@ -160,13 +160,13 @@ function DesktopInstallGuideModal({
                 </div>
               )}
               
-              <div className="bg-slate-50 border border-slate-100 rounded-2xl p-4 text-left space-y-3">
+              <div className="bg-muted border border-border rounded-2xl p-4 text-left space-y-3">
                 {steps.map((step, i) => (
                   <div key={i} className="flex items-start gap-3">
                     <span className="w-6 h-6 rounded-full bg-indigo-100 text-indigo-700 font-bold text-xs flex items-center justify-center shrink-0 mt-0.5">
                       {i + 1}
                     </span>
-                    <p className="text-sm text-slate-700 leading-relaxed">
+                    <p className="text-sm text-foreground leading-relaxed">
                       {step.text}
                     </p>
                   </div>
@@ -174,7 +174,7 @@ function DesktopInstallGuideModal({
               </div>
 
               <div className="mt-4 px-2">
-                <p className="text-xs text-slate-400 leading-relaxed">
+                <p className="text-xs text-muted-foreground leading-relaxed">
                   💡 설치 아이콘이 보이지 않으면, 이전에 설치를 취소한 적이 있을 수 있습니다.
                   <br />
                   <span className="text-indigo-500 font-medium">
@@ -360,12 +360,12 @@ export function ProfileTab() {
       {!isStandalone && (
         <section className="bg-gradient-to-r from-indigo-50 to-blue-50 p-4 rounded-2xl border border-indigo-100 flex flex-col sm:flex-row items-center gap-4 justify-between shadow-sm">
           <div className="flex items-center gap-3 w-full sm:w-auto">
-            <div className="w-10 h-10 bg-white text-indigo-600 rounded-xl flex items-center justify-center shrink-0 shadow-sm">
+            <div className="w-10 h-10 bg-card text-indigo-600 rounded-xl flex items-center justify-center shrink-0 shadow-sm">
               <Smartphone className="w-5 h-5" />
             </div>
             <div className="flex flex-col">
-              <span className="font-bold text-slate-800 tracking-tight">앱으로 쾌적하게 사용하기</span>
-              <span className="text-xs text-slate-500 font-medium">홈 화면에 추가하여 전체화면으로 실행하세요</span>
+              <span className="font-bold text-foreground tracking-tight">앱으로 쾌적하게 사용하기</span>
+              <span className="text-xs text-muted-foreground font-medium">홈 화면에 추가하여 전체화면으로 실행하세요</span>
             </div>
           </div>
           <Button 
@@ -390,36 +390,36 @@ export function ProfileTab() {
 
       {/* 기본 정보 섹션 */}
       <section className="space-y-3 md:space-y-4">
-        <h3 className="text-base md:text-lg font-bold text-slate-800">기본 정보</h3>
+        <h3 className="text-base md:text-lg font-bold text-foreground">기본 정보</h3>
         <div className="grid sm:grid-cols-2 gap-4 md:gap-6">
           <div className="space-y-2">
-            <Label htmlFor="fullName" className="text-slate-600 font-medium">이름</Label>
+            <Label htmlFor="fullName" className="text-foreground font-medium">이름</Label>
             <Input 
               id="fullName" 
               value={fullName}
               onChange={e => setFullName(e.target.value)}
               placeholder="이름을 입력하세요"
-              className="bg-white border-slate-200 focus-visible:ring-indigo-500 rounded-xl"
+              className="bg-card border-border focus-visible:ring-indigo-500 rounded-xl"
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="username" className="text-slate-600 font-medium">아이디</Label>
+            <Label htmlFor="username" className="text-foreground font-medium">아이디</Label>
             <Input 
               id="username" 
               value={username}
               disabled
-              className="bg-slate-50 border-slate-200 text-slate-500 rounded-xl cursor-not-allowed opacity-100"
+              className="bg-muted border-border text-muted-foreground rounded-xl cursor-not-allowed opacity-100"
             />
           </div>
           <div className="space-y-2 sm:col-span-2">
-            <Label htmlFor="recoveryEmail" className="text-slate-600 font-medium">복구 이메일</Label>
+            <Label htmlFor="recoveryEmail" className="text-foreground font-medium">복구 이메일</Label>
             <Input 
               id="recoveryEmail" 
               type="email"
               value={recoveryEmail}
               onChange={e => setRecoveryEmail(e.target.value)}
               placeholder="비밀번호 복구용 이메일을 입력하세요"
-              className="bg-white border-slate-200 focus-visible:ring-indigo-500 rounded-xl"
+              className="bg-card border-border focus-visible:ring-indigo-500 rounded-xl"
             />
           </div>
         </div>
@@ -442,17 +442,17 @@ export function ProfileTab() {
       </section>
 
       {/* 보안 섹션 (비밀번호 변경) */}
-      <section className="space-y-3 md:space-y-4 pt-4 md:pt-6 border-t border-slate-100">
+      <section className="space-y-3 md:space-y-4 pt-4 md:pt-6 border-t border-border">
         <div className="flex items-center justify-between">
-          <h3 className="text-base md:text-lg font-bold text-slate-800">보안</h3>
+          <h3 className="text-base md:text-lg font-bold text-foreground">보안</h3>
           <div className="flex gap-2">
             {passwordStep === 'idle' && secPasswordStep === 'idle' && (
               <Button 
                 variant="outline" 
                 onClick={() => { setPasswordStep('verify'); resetSecPasswordState() }}
-                className="text-slate-600 border-slate-300 hover:bg-slate-50"
+                className="text-foreground border-slate-300 hover:bg-muted"
               >
-                <KeyRound className="w-4 h-4 mr-2 text-slate-400" />
+                <KeyRound className="w-4 h-4 mr-2 text-muted-foreground" />
                 비밀번호 변경
               </Button>
             )}
@@ -460,9 +460,9 @@ export function ProfileTab() {
               <Button 
                 variant="outline" 
                 onClick={() => { setSecPasswordStep('verify'); resetPasswordState() }}
-                className="text-slate-600 border-slate-300 hover:bg-slate-50"
+                className="text-foreground border-slate-300 hover:bg-muted"
               >
-                <KeyRound className="w-4 h-4 mr-2 text-slate-400" />
+                <KeyRound className="w-4 h-4 mr-2 text-muted-foreground" />
                 2차 비밀번호 변경
               </Button>
             )}
@@ -471,8 +471,8 @@ export function ProfileTab() {
 
         {/* Step 1: 현재 비밀번호 확인 */}
         {passwordStep === 'verify' && (
-          <div className="bg-slate-50 p-5 rounded-2xl border border-slate-100 space-y-4 mb-8">
-            <p className="text-sm text-slate-600 font-medium">비밀번호를 변경하려면 먼저 현재 비밀번호를 입력해주세요.</p>
+          <div className="bg-muted p-5 rounded-2xl border border-border space-y-4 mb-8">
+            <p className="text-sm text-foreground font-medium">비밀번호를 변경하려면 먼저 현재 비밀번호를 입력해주세요.</p>
             <div className="max-w-sm space-y-2">
               <Label htmlFor="currentPassword">현재 비밀번호</Label>
               <Input 
@@ -482,7 +482,7 @@ export function ProfileTab() {
                 onChange={e => { setCurrentPassword(e.target.value); setPasswordError('') }}
                 onKeyDown={e => e.key === 'Enter' && handleVerifyPassword()}
                 placeholder="현재 비밀번호를 입력하세요"
-                className="bg-white border-slate-200"
+                className="bg-card border-border"
                 autoFocus
               />
             </div>
@@ -490,7 +490,7 @@ export function ProfileTab() {
               <p className="text-sm text-rose-500 font-medium">{passwordError}</p>
             )}
             <div className="flex justify-end gap-2 pt-2">
-              <Button variant="ghost" onClick={resetPasswordState} className="text-slate-500 hover:text-slate-700 hover:bg-slate-200">
+              <Button variant="ghost" onClick={resetPasswordState} className="text-muted-foreground hover:text-foreground hover:bg-slate-200">
                 취소
               </Button>
               <Button 
@@ -507,7 +507,7 @@ export function ProfileTab() {
 
         {/* Step 2: 새 비밀번호 입력 */}
         {passwordStep === 'change' && (
-          <div className="bg-slate-50 p-5 rounded-2xl border border-slate-100 space-y-4 mb-8">
+          <div className="bg-muted p-5 rounded-2xl border border-border space-y-4 mb-8">
             <p className="text-sm text-emerald-600 font-medium">✓ 현재 비밀번호가 확인되었습니다. 새로운 비밀번호를 입력해주세요.</p>
             <div className="grid sm:grid-cols-2 gap-4">
               <div className="space-y-2">
@@ -518,7 +518,7 @@ export function ProfileTab() {
                   value={newPassword}
                   onChange={e => { setNewPassword(e.target.value); setPasswordError('') }}
                   placeholder="새로운 비밀번호"
-                  className="bg-white border-slate-200"
+                  className="bg-card border-border"
                   autoFocus
                 />
               </div>
@@ -530,7 +530,7 @@ export function ProfileTab() {
                   value={confirmPassword}
                   onChange={e => { setConfirmPassword(e.target.value); setPasswordError('') }}
                   placeholder="새로운 비밀번호 확인"
-                  className="bg-white border-slate-200"
+                  className="bg-card border-border"
                 />
               </div>
             </div>
@@ -538,7 +538,7 @@ export function ProfileTab() {
               <p className="text-sm text-rose-500 font-medium">{passwordError}</p>
             )}
             <div className="flex justify-end gap-2 pt-2">
-              <Button variant="ghost" onClick={resetPasswordState} className="text-slate-500 hover:text-slate-700 hover:bg-slate-200">
+              <Button variant="ghost" onClick={resetPasswordState} className="text-muted-foreground hover:text-foreground hover:bg-slate-200">
                 취소
               </Button>
               <Button 
@@ -555,8 +555,8 @@ export function ProfileTab() {
 
         {/* Step 1: 현재 2차 비밀번호 확인 */}
         {secPasswordStep === 'verify' && (
-          <div className="bg-slate-50 p-5 rounded-2xl border border-slate-100 space-y-4 mb-8">
-            <p className="text-sm text-slate-600 font-medium">2차 비밀번호를 변경하려면 먼저 현재 2차 비밀번호를 입력해주세요.</p>
+          <div className="bg-muted p-5 rounded-2xl border border-border space-y-4 mb-8">
+            <p className="text-sm text-foreground font-medium">2차 비밀번호를 변경하려면 먼저 현재 2차 비밀번호를 입력해주세요.</p>
             <div className="max-w-sm space-y-2">
               <Label htmlFor="currentSecPassword">현재 2차 비밀번호 (4자리)</Label>
               <Input 
@@ -567,7 +567,7 @@ export function ProfileTab() {
                 onChange={e => { setCurrentSecPassword(e.target.value.replace(/[^0-9]/g, '')); setSecPasswordError('') }}
                 onKeyDown={e => e.key === 'Enter' && handleVerifySecPassword()}
                 placeholder="숫자 4자리"
-                className="bg-white border-slate-200 tracking-widest"
+                className="bg-card border-border tracking-widest"
                 autoFocus
               />
             </div>
@@ -575,7 +575,7 @@ export function ProfileTab() {
               <p className="text-sm text-rose-500 font-medium">{secPasswordError}</p>
             )}
             <div className="flex justify-end gap-2 pt-2">
-              <Button variant="ghost" onClick={resetSecPasswordState} className="text-slate-500 hover:text-slate-700 hover:bg-slate-200">
+              <Button variant="ghost" onClick={resetSecPasswordState} className="text-muted-foreground hover:text-foreground hover:bg-slate-200">
                 취소
               </Button>
               <Button 
@@ -592,7 +592,7 @@ export function ProfileTab() {
 
         {/* Step 2: 새 2차 비밀번호 입력 */}
         {secPasswordStep === 'change' && (
-          <div className="bg-slate-50 p-5 rounded-2xl border border-slate-100 space-y-4 mb-8">
+          <div className="bg-muted p-5 rounded-2xl border border-border space-y-4 mb-8">
             <p className="text-sm text-emerald-600 font-medium">✓ 현재 2차 비밀번호가 확인되었습니다. 새로운 2차 비밀번호를 입력해주세요.</p>
             <div className="grid sm:grid-cols-2 gap-4">
               <div className="space-y-2">
@@ -604,7 +604,7 @@ export function ProfileTab() {
                   value={newSecPassword}
                   onChange={e => { setNewSecPassword(e.target.value.replace(/[^0-9]/g, '')); setSecPasswordError('') }}
                   placeholder="숫자 4자리"
-                  className="bg-white border-slate-200 tracking-widest"
+                  className="bg-card border-border tracking-widest"
                   autoFocus
                 />
               </div>
@@ -617,7 +617,7 @@ export function ProfileTab() {
                   value={confirmSecPassword}
                   onChange={e => { setConfirmSecPassword(e.target.value.replace(/[^0-9]/g, '')); setSecPasswordError('') }}
                   placeholder="숫자 4자리 확인"
-                  className="bg-white border-slate-200 tracking-widest"
+                  className="bg-card border-border tracking-widest"
                 />
               </div>
             </div>
@@ -625,7 +625,7 @@ export function ProfileTab() {
               <p className="text-sm text-rose-500 font-medium">{secPasswordError}</p>
             )}
             <div className="flex justify-end gap-2 pt-2">
-              <Button variant="ghost" onClick={resetSecPasswordState} className="text-slate-500 hover:text-slate-700 hover:bg-slate-200">
+              <Button variant="ghost" onClick={resetSecPasswordState} className="text-muted-foreground hover:text-foreground hover:bg-slate-200">
                 취소
               </Button>
               <Button 
@@ -642,7 +642,7 @@ export function ProfileTab() {
       </section>
 
       {/* 로그인된 기기 섹션 */}
-      <section className="space-y-3 md:space-y-4 pt-4 md:pt-6 border-t border-slate-100">
+      <section className="space-y-3 md:space-y-4 pt-4 md:pt-6 border-t border-border">
         <ActiveSessions />
       </section>
 
@@ -656,11 +656,11 @@ export function ProfileTab() {
             initial={{ y: 100, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: 100, opacity: 0 }}
-            className="bg-white rounded-3xl w-full max-w-sm overflow-hidden shadow-2xl relative"
+            className="bg-card rounded-3xl w-full max-w-sm overflow-hidden shadow-2xl relative"
           >
             <button 
               onClick={() => setShowIosGuide(false)}
-              className="absolute top-4 right-4 p-2 bg-slate-100 hover:bg-slate-200 rounded-full text-slate-500 transition-colors"
+              className="absolute top-4 right-4 p-2 bg-muted hover:bg-slate-200 rounded-full text-muted-foreground transition-colors"
             >
               <X className="w-5 h-5" />
             </button>
@@ -669,21 +669,21 @@ export function ProfileTab() {
               <div className="w-16 h-16 bg-indigo-50 rounded-2xl flex items-center justify-center mx-auto mb-4 text-indigo-600 shadow-inner">
                 <Download className="w-8 h-8" />
               </div>
-              <h3 className="text-xl font-bold text-slate-800 mb-2">앱으로 설치하기</h3>
-              <p className="text-sm text-slate-500 mb-6 leading-relaxed">
+              <h3 className="text-xl font-bold text-foreground mb-2">앱으로 설치하기</h3>
+              <p className="text-sm text-muted-foreground mb-6 leading-relaxed">
                 Calentask를 홈 화면에 추가하여<br/>전체화면 앱처럼 쾌적하게 사용해보세요.
               </p>
               
-              <div className="bg-slate-50 border border-slate-100 rounded-2xl p-4 text-left space-y-3">
+              <div className="bg-muted border border-border rounded-2xl p-4 text-left space-y-3">
                 <div className="flex items-center gap-3">
-                  <span className="w-6 h-6 rounded-full bg-slate-200 text-slate-600 font-bold text-xs flex items-center justify-center shrink-0">1</span>
-                  <p className="text-sm text-slate-700 flex items-center gap-1">
+                  <span className="w-6 h-6 rounded-full bg-slate-200 text-foreground font-bold text-xs flex items-center justify-center shrink-0">1</span>
+                  <p className="text-sm text-foreground flex items-center gap-1">
                     하단 메뉴에서 <Share className="w-4 h-4 text-blue-500 inline mx-1" /> 아이콘을 탭하세요.
                   </p>
                 </div>
                 <div className="flex items-center gap-3">
-                  <span className="w-6 h-6 rounded-full bg-slate-200 text-slate-600 font-bold text-xs flex items-center justify-center shrink-0">2</span>
-                  <p className="text-sm text-slate-700">
+                  <span className="w-6 h-6 rounded-full bg-slate-200 text-foreground font-bold text-xs flex items-center justify-center shrink-0">2</span>
+                  <p className="text-sm text-foreground">
                     <strong>홈 화면에 추가</strong> 메뉴를 선택하세요.
                   </p>
                 </div>
@@ -768,13 +768,13 @@ function ActiveSessions() {
   return (
     <div className="space-y-4">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <h3 className="text-base md:text-lg font-bold text-slate-800">로그인된 기기</h3>
+        <h3 className="text-base md:text-lg font-bold text-foreground">로그인된 기기</h3>
         <div className="flex gap-2">
           <Button 
             variant="outline" 
             onClick={handleSignOutOthers}
             disabled={isSigningOutOthers || !data?.sessions || data.sessions.length <= 1}
-            className="text-slate-600 text-xs sm:text-sm"
+            className="text-foreground text-xs sm:text-sm"
           >
             다른 기기 로그아웃
           </Button>
@@ -791,7 +791,7 @@ function ActiveSessions() {
       {isLoading ? (
         <div className="space-y-3">
           {[1, 2].map(i => (
-            <div key={i} className="h-24 bg-slate-50 animate-pulse rounded-xl" />
+            <div key={i} className="h-24 bg-muted animate-pulse rounded-xl" />
           ))}
         </div>
       ) : error ? (
@@ -799,7 +799,7 @@ function ActiveSessions() {
           세션 정보를 불러올 수 없습니다.
         </div>
       ) : data?.sessions?.length === 0 ? (
-        <div className="p-6 text-center text-slate-500 bg-slate-50 rounded-xl text-sm">
+        <div className="p-6 text-center text-muted-foreground bg-muted rounded-xl text-sm">
           로그인된 다른 기기가 없습니다.
         </div>
       ) : (
@@ -811,14 +811,14 @@ function ActiveSessions() {
             const Icon = ua.deviceType === 'mobile' ? Smartphone : ua.deviceType === 'tablet' ? Tablet : Monitor
 
             return (
-              <div key={session.session_id} className={`p-4 rounded-xl border ${isCurrent ? 'bg-indigo-50/30 border-indigo-100' : 'bg-white border-slate-100'} flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-all hover:shadow-sm`}>
+              <div key={session.session_id} className={`p-4 rounded-xl border ${isCurrent ? 'bg-indigo-50/30 border-indigo-100' : 'bg-card border-border'} flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-all hover:shadow-sm`}>
                 <div className="flex items-start gap-4">
-                  <div className={`p-2.5 rounded-lg shrink-0 ${isCurrent ? 'bg-indigo-100 text-indigo-600' : 'bg-slate-100 text-slate-500'}`}>
+                  <div className={`p-2.5 rounded-lg shrink-0 ${isCurrent ? 'bg-indigo-100 text-indigo-600' : 'bg-muted text-muted-foreground'}`}>
                     <Icon className="w-5 h-5" />
                   </div>
                   <div className="space-y-1">
                     <div className="flex items-center gap-2">
-                      <span className="font-semibold text-slate-800">{ua.summary}</span>
+                      <span className="font-semibold text-foreground">{ua.summary}</span>
                       {isCurrent && (
                         <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 text-xs font-bold">
                           <CheckCircle2 className="w-3 h-3" />
@@ -826,13 +826,13 @@ function ActiveSessions() {
                         </span>
                       )}
                     </div>
-                    <div className="text-sm text-slate-500 flex items-center gap-1.5">
+                    <div className="text-sm text-muted-foreground flex items-center gap-1.5">
                       <Globe2 className="w-3.5 h-3.5" />
                       <DeviceLocation ip={session.ip} />
-                      <span className="text-slate-300">|</span>
+                      <span className="text-muted-foreground/50">|</span>
                       <span>{session.ip}</span>
                     </div>
-                    <div className="text-xs text-slate-400">
+                    <div className="text-xs text-muted-foreground">
                       마지막 접속: {session.updated_at ? formatDistanceToNow(new Date(session.updated_at), { addSuffix: true, locale: ko }) : '알 수 없음'}
                     </div>
                   </div>

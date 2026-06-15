@@ -18,17 +18,17 @@ export function TrashView() {
   } = useDataHub()
 
   return (
-    <div className="flex flex-col h-full bg-[#FAFAFA] rounded-xl md:rounded-3xl overflow-hidden shadow-sm border border-slate-100">
+    <div className="flex flex-col h-full bg-background rounded-xl md:rounded-3xl overflow-hidden shadow-sm border border-border">
 
       {/* Main Content */}
       <div className="flex-1 overflow-y-auto p-4 md:p-8">
         <div className="flex flex-col gap-6 w-full max-w-4xl mx-auto h-full">
           {/* 휴지통 관리 */}
-          <section className="flex-1 flex flex-col min-h-0 bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-            <div className="p-4 md:p-6 border-b border-slate-100 bg-slate-50/50 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <section className="flex-1 flex flex-col min-h-0 bg-card rounded-2xl shadow-sm border border-border overflow-hidden">
+            <div className="p-4 md:p-6 border-b border-border bg-muted/50 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div className="flex items-center gap-3">
-                <Trash2 className="w-5 h-5 text-slate-500" />
-                <h3 className="text-lg font-bold text-slate-800">보관된 항목 ({deletedActivities.length})</h3>
+                <Trash2 className="w-5 h-5 text-muted-foreground" />
+                <h3 className="text-lg font-bold text-foreground">보관된 항목 ({deletedActivities.length})</h3>
               </div>
               
               {deletedActivities.length > 0 && (
@@ -48,23 +48,23 @@ export function TrashView() {
               {isLoading ? (
                 <div className="flex flex-col items-center justify-center h-full py-16">
                   <Loader2 className="w-8 h-8 animate-spin text-rose-500 mb-4" />
-                  <p className="text-slate-500 font-medium">데이터를 불러오는 중...</p>
+                  <p className="text-muted-foreground font-medium">데이터를 불러오는 중...</p>
                 </div>
               ) : deletedActivities.length === 0 ? (
-                <div className="flex flex-col items-center justify-center h-full py-20 text-slate-400">
-                  <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mb-4 border border-slate-100">
-                    <AlertCircle className="w-10 h-10 text-slate-300" />
+                <div className="flex flex-col items-center justify-center h-full py-20 text-muted-foreground">
+                  <div className="w-20 h-20 bg-muted rounded-full flex items-center justify-center mb-4 border border-border">
+                    <AlertCircle className="w-10 h-10 text-muted-foreground/50" />
                   </div>
-                  <p className="text-lg font-medium text-slate-500 mb-1">휴지통이 비어있습니다.</p>
-                  <p className="text-sm text-slate-400">삭제된 항목이 이곳에 안전하게 보관됩니다.</p>
+                  <p className="text-lg font-medium text-muted-foreground mb-1">휴지통이 비어있습니다.</p>
+                  <p className="text-sm text-muted-foreground">삭제된 항목이 이곳에 안전하게 보관됩니다.</p>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 gap-3">
                   {deletedActivities.map(activity => (
-                    <div key={activity.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-white rounded-xl border border-slate-100 shadow-sm hover:border-rose-200 hover:shadow-md transition-all group gap-4">
+                    <div key={activity.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-card rounded-xl border border-border shadow-sm hover:border-rose-200 hover:shadow-md transition-all group gap-4">
                       <div className="flex flex-col overflow-hidden">
-                        <span className="text-base font-bold text-slate-800 truncate mb-1">{activity.title}</span>
-                        <span className="text-sm font-medium text-slate-400 truncate flex items-center gap-1.5">
+                        <span className="text-base font-bold text-foreground truncate mb-1">{activity.title}</span>
+                        <span className="text-sm font-medium text-muted-foreground truncate flex items-center gap-1.5">
                           {format(new Date(activity.start_time), 'yyyy년 MM월 dd일 HH:mm')}
                         </span>
                       </div>

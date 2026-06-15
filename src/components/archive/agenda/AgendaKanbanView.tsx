@@ -61,17 +61,17 @@ const KanbanCard = ({ task, id, openDetail, onAddToCalendar }: { task: AgendaTas
       {...attributes} 
       {...listeners}
       onClick={() => openDetail(task)}
-      className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 hover:shadow-md transition-shadow cursor-grab active:cursor-grabbing mb-3"
+      className="bg-card p-4 rounded-2xl shadow-sm border border-border hover:shadow-md transition-shadow cursor-grab active:cursor-grabbing mb-3"
     >
       <div className="flex justify-between items-start mb-2 gap-2">
-        <h4 className={cn("font-bold text-sm leading-tight line-clamp-2", task.status === 'done' ? "text-slate-400 line-through" : "text-slate-800")}>
+        <h4 className={cn("font-bold text-sm leading-tight line-clamp-2", task.status === 'done' ? "text-muted-foreground line-through" : "text-foreground")}>
           {task.title}
         </h4>
         <div className="flex items-center shrink-0">
           <button 
             onPointerDown={(e) => e.stopPropagation()}
             onClick={(e) => { e.stopPropagation(); updateTask(task.id, { is_important: !task.is_important }); }}
-            className={cn("p-1 rounded-full transition-colors", task.is_important ? "text-amber-400 hover:bg-amber-50" : "text-slate-200 hover:text-amber-400 hover:bg-slate-50")}
+            className={cn("p-1 rounded-full transition-colors", task.is_important ? "text-amber-400 hover:bg-amber-50" : "text-slate-200 hover:text-amber-400 hover:bg-muted")}
           >
             <Star className={cn("w-4 h-4", task.is_important ? "fill-current" : "")} />
           </button>
@@ -89,9 +89,9 @@ const KanbanCard = ({ task, id, openDetail, onAddToCalendar }: { task: AgendaTas
 
       <div className="flex flex-wrap items-center gap-1.5 mt-3">
         {category && (
-          <div className="flex items-center gap-1 px-2 py-0.5 rounded-md bg-slate-50 border border-slate-100">
+          <div className="flex items-center gap-1 px-2 py-0.5 rounded-md bg-muted border border-border">
             <div className="w-2 h-2 rounded-full" style={{ backgroundColor: category.hex_color }} />
-            <span className="text-[10px] font-bold text-slate-600">{category.name}</span>
+            <span className="text-[10px] font-bold text-foreground">{category.name}</span>
           </div>
         )}
         {deadlineInfo && (
@@ -111,11 +111,11 @@ const KanbanColumn = ({ id, title, tasks, openDetail, onAddToCalendar }: { id: s
   return (
     <div 
       ref={setNodeRef}
-      className="flex flex-col w-full min-w-[280px] bg-slate-50/50 rounded-3xl p-4 border border-slate-200/50"
+      className="flex flex-col w-full min-w-[280px] bg-muted/50 rounded-3xl p-4 border border-border/50"
     >
       <div className="flex justify-between items-center mb-4 px-2">
-        <h3 className="font-extrabold text-slate-700 text-sm">{title}</h3>
-        <span className="text-xs font-bold text-slate-400 bg-white px-2 py-0.5 rounded-full shadow-sm">{tasks.length}</span>
+        <h3 className="font-extrabold text-foreground text-sm">{title}</h3>
+        <span className="text-xs font-bold text-muted-foreground bg-card px-2 py-0.5 rounded-full shadow-sm">{tasks.length}</span>
       </div>
       
       <SortableContext items={tasks.map(t => t.id)} strategy={verticalListSortingStrategy}>

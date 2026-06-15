@@ -26,7 +26,7 @@ function DesktopGuideModal({
       {
         icon: <ArrowUp className="w-4 h-4 text-blue-500" />,
         text: (
-          <>브라우저 <strong>주소창 오른쪽 끝</strong>에 있는 <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-slate-100 rounded text-xs font-mono"><Monitor className="w-3 h-3" />↓</span> 아이콘을 클릭하세요.</>
+          <>브라우저 <strong>주소창 오른쪽 끝</strong>에 있는 <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-muted rounded text-xs font-mono"><Monitor className="w-3 h-3" />↓</span> 아이콘을 클릭하세요.</>
         )
       },
       {
@@ -75,12 +75,12 @@ function DesktopGuideModal({
             animate={{ scale: 1, opacity: 1, y: 0 }}
             exit={{ scale: 0.95, opacity: 0, y: 10 }}
             transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-            className="bg-white rounded-3xl w-full max-w-[420px] overflow-hidden shadow-2xl relative"
+            className="bg-card rounded-3xl w-full max-w-[420px] overflow-hidden shadow-2xl relative"
           >
             {/* 닫기 버튼 */}
             <button 
               onClick={onClose}
-              className="absolute top-4 right-4 p-2 bg-slate-100 hover:bg-slate-200 rounded-full text-slate-500 transition-colors z-10"
+              className="absolute top-4 right-4 p-2 bg-muted hover:bg-slate-200 rounded-full text-muted-foreground transition-colors z-10"
             >
               <X className="w-5 h-5" />
             </button>
@@ -91,25 +91,25 @@ function DesktopGuideModal({
                 <Monitor className="w-8 h-8" />
               </div>
 
-              <h3 className="text-xl font-bold text-slate-800 mb-2">데스크톱 앱 설치</h3>
-              <p className="text-sm text-slate-500 mb-1 leading-relaxed">
+              <h3 className="text-xl font-bold text-foreground mb-2">데스크톱 앱 설치</h3>
+              <p className="text-sm text-muted-foreground mb-1 leading-relaxed">
                 {browserLabel[browserType]} 브라우저에서 아래 방법으로
               </p>
-              <p className="text-sm text-slate-500 mb-6 leading-relaxed">
+              <p className="text-sm text-muted-foreground mb-6 leading-relaxed">
                 Calentask를 데스크톱 앱으로 설치할 수 있습니다.
               </p>
 
               {/* 시각적 미리보기: Chrome 주소창 모의 이미지 */}
               {browserType === 'chrome' && (
                 <div className="mb-5 mx-auto max-w-[340px]">
-                  <div className="bg-slate-50 rounded-xl border border-slate-200 p-3">
+                  <div className="bg-muted rounded-xl border border-border p-3">
                     {/* 브라우저 주소창 모의 */}
-                    <div className="flex items-center gap-2 bg-white rounded-lg border border-slate-200 px-3 py-2">
+                    <div className="flex items-center gap-2 bg-card rounded-lg border border-border px-3 py-2">
                       <div className="flex items-center gap-1.5 flex-1 min-w-0">
                         <div className="w-4 h-4 rounded bg-green-100 flex items-center justify-center">
                           <span className="text-[8px] text-green-600">🔒</span>
                         </div>
-                        <span className="text-xs text-slate-400 truncate">calentask.vercel.app</span>
+                        <span className="text-xs text-muted-foreground truncate">calentask.vercel.app</span>
                       </div>
                       {/* 설치 아이콘 강조 */}
                       <div className="relative">
@@ -134,13 +134,13 @@ function DesktopGuideModal({
               {/* Edge 주소창 모의 */}
               {browserType === 'edge' && (
                 <div className="mb-5 mx-auto max-w-[340px]">
-                  <div className="bg-slate-50 rounded-xl border border-slate-200 p-3">
-                    <div className="flex items-center justify-between bg-white rounded-lg border border-slate-200 px-3 py-2">
+                  <div className="bg-muted rounded-xl border border-border p-3">
+                    <div className="flex items-center justify-between bg-card rounded-lg border border-border px-3 py-2">
                       <div className="flex items-center gap-1.5 flex-1 min-w-0">
                         <div className="w-4 h-4 rounded bg-green-100 flex items-center justify-center">
                           <span className="text-[8px] text-green-600">🔒</span>
                         </div>
-                        <span className="text-xs text-slate-400 truncate">calentask.vercel.app</span>
+                        <span className="text-xs text-muted-foreground truncate">calentask.vercel.app</span>
                       </div>
                       {/* 더보기 메뉴 강조 */}
                       <div className="relative">
@@ -162,13 +162,13 @@ function DesktopGuideModal({
               )}
               
               {/* 단계별 가이드 */}
-              <div className="bg-slate-50 border border-slate-100 rounded-2xl p-4 text-left space-y-3">
+              <div className="bg-muted border border-border rounded-2xl p-4 text-left space-y-3">
                 {steps.map((step, i) => (
                   <div key={i} className="flex items-start gap-3">
                     <span className="w-6 h-6 rounded-full bg-indigo-100 text-indigo-700 font-bold text-xs flex items-center justify-center shrink-0 mt-0.5">
                       {i + 1}
                     </span>
-                    <p className="text-sm text-slate-700 leading-relaxed">
+                    <p className="text-sm text-foreground leading-relaxed">
                       {step.text}
                     </p>
                   </div>
@@ -177,7 +177,7 @@ function DesktopGuideModal({
 
               {/* 추가 팁 */}
               <div className="mt-4 px-2">
-                <p className="text-xs text-slate-400 leading-relaxed">
+                <p className="text-xs text-muted-foreground leading-relaxed">
                   💡 설치 아이콘이 보이지 않으면, 이전에 설치를 취소한 적이 있을 수 있습니다.
                   <br />
                   <span className="text-indigo-500 font-medium">
@@ -213,11 +213,11 @@ function IosGuideModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => vo
             initial={{ y: 100, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: 100, opacity: 0 }}
-            className="bg-white rounded-3xl w-full max-w-sm overflow-hidden shadow-2xl relative"
+            className="bg-card rounded-3xl w-full max-w-sm overflow-hidden shadow-2xl relative"
           >
             <button 
               onClick={onClose}
-              className="absolute top-4 right-4 p-2 bg-slate-100 hover:bg-slate-200 rounded-full text-slate-500 transition-colors"
+              className="absolute top-4 right-4 p-2 bg-muted hover:bg-slate-200 rounded-full text-muted-foreground transition-colors"
             >
               <X className="w-5 h-5" />
             </button>
@@ -226,21 +226,21 @@ function IosGuideModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => vo
               <div className="w-16 h-16 bg-indigo-50 rounded-2xl flex items-center justify-center mx-auto mb-4 text-indigo-600 shadow-inner">
                 <Download className="w-8 h-8" />
               </div>
-              <h3 className="text-xl font-bold text-slate-800 mb-2">앱으로 설치하기</h3>
-              <p className="text-sm text-slate-500 mb-6 leading-relaxed">
+              <h3 className="text-xl font-bold text-foreground mb-2">앱으로 설치하기</h3>
+              <p className="text-sm text-muted-foreground mb-6 leading-relaxed">
                 Calentask를 홈 화면에 추가하여<br/>전체화면 앱처럼 쾌적하게 사용해보세요.
               </p>
               
-              <div className="bg-slate-50 border border-slate-100 rounded-2xl p-4 text-left space-y-3">
+              <div className="bg-muted border border-border rounded-2xl p-4 text-left space-y-3">
                 <div className="flex items-center gap-3">
-                  <span className="w-6 h-6 rounded-full bg-slate-200 text-slate-600 font-bold text-xs flex items-center justify-center shrink-0">1</span>
-                  <p className="text-sm text-slate-700 flex items-center gap-1">
+                  <span className="w-6 h-6 rounded-full bg-slate-200 text-foreground font-bold text-xs flex items-center justify-center shrink-0">1</span>
+                  <p className="text-sm text-foreground flex items-center gap-1">
                     하단 메뉴에서 <Share className="w-4 h-4 text-blue-500 inline mx-1" /> 아이콘을 탭하세요.
                   </p>
                 </div>
                 <div className="flex items-center gap-3">
-                  <span className="w-6 h-6 rounded-full bg-slate-200 text-slate-600 font-bold text-xs flex items-center justify-center shrink-0">2</span>
-                  <p className="text-sm text-slate-700">
+                  <span className="w-6 h-6 rounded-full bg-slate-200 text-foreground font-bold text-xs flex items-center justify-center shrink-0">2</span>
+                  <p className="text-sm text-foreground">
                     <strong>홈 화면에 추가</strong> 메뉴를 선택하세요.
                   </p>
                 </div>

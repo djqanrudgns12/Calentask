@@ -34,9 +34,9 @@ const MathComponent = (props: any) => {
   return (
     <NodeViewWrapper className="my-4" data-type="custom-math">
       {isEditing ? (
-        <div className="flex flex-col gap-2 p-4 bg-slate-50 border border-slate-200 rounded-lg shadow-sm">
+        <div className="flex flex-col gap-2 p-4 bg-muted border border-border rounded-lg shadow-sm">
           <div className="flex gap-2 items-center">
-            <Sigma className="w-5 h-5 text-slate-400" />
+            <Sigma className="w-5 h-5 text-muted-foreground" />
             <input 
               autoFocus
               type="text"
@@ -44,12 +44,12 @@ const MathComponent = (props: any) => {
               onChange={(e) => setInputEq(e.target.value)}
               onKeyDown={(e) => { if (e.key === 'Enter') handleSave() }}
               placeholder="KaTeX 수식을 입력하고 Enter를 누르세요 (예: E = mc^2)"
-              className="flex-1 bg-white border border-slate-200 rounded px-3 py-1.5 outline-none text-sm text-slate-700"
+              className="flex-1 bg-card border border-border rounded px-3 py-1.5 outline-none text-sm text-foreground"
             />
             <button onClick={handleSave} className="text-xs font-bold text-indigo-600 px-3 py-1.5 bg-indigo-50 rounded hover:bg-indigo-100">저장</button>
           </div>
           {inputEq && (
-            <div className="p-3 bg-white border border-slate-100 rounded text-center mt-2 overflow-x-auto min-h-[40px]" 
+            <div className="p-3 bg-card border border-border rounded text-center mt-2 overflow-x-auto min-h-[40px]" 
                  ref={(el) => {
                    if (el) {
                      try {
@@ -62,13 +62,13 @@ const MathComponent = (props: any) => {
         </div>
       ) : (
         <div 
-          className="relative group overflow-x-auto rounded-xl border border-transparent hover:border-slate-200 hover:bg-slate-50 p-4 min-h-[60px] flex items-center justify-center cursor-pointer transition-colors" 
+          className="relative group overflow-x-auto rounded-xl border border-transparent hover:border-border hover:bg-muted p-4 min-h-[60px] flex items-center justify-center cursor-pointer transition-colors" 
           onClick={() => setIsEditing(true)}
         >
           <div ref={katexRef} className="w-full text-center" />
           <button 
             onClick={(e) => { e.stopPropagation(); setIsEditing(true); }} 
-            className="absolute top-2 right-2 p-1.5 bg-white shadow-sm border border-slate-200 rounded-md opacity-0 group-hover:opacity-100 transition-opacity text-xs font-semibold text-slate-600 hover:bg-slate-50 z-10"
+            className="absolute top-2 right-2 p-1.5 bg-card shadow-sm border border-border rounded-md opacity-0 group-hover:opacity-100 transition-opacity text-xs font-semibold text-foreground hover:bg-muted z-10"
           >
             수정
           </button>

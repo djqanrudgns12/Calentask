@@ -117,25 +117,25 @@ export function CalendarHeader({ onOpenSettings }: CalendarHeaderProps) {
   let wrapperClassName = "flex-1 flex flex-row items-center justify-between rounded-xl md:rounded-[2rem] px-2 py-1.5 md:px-4 md:py-2.5 gap-2 md:gap-4 transition-all duration-500 overflow-hidden relative "
 
   if (isHome) {
-    wrapperClassName += "bg-white/90 backdrop-blur-xl shadow-[0_10px_40px_-10px_rgba(139,92,246,0.15)] border border-violet-100/80"
+    wrapperClassName += "bg-card/90 backdrop-blur-xl shadow-[0_10px_40px_-10px_rgba(139,92,246,0.15)] border border-violet-100/80"
   } else if (isCalendarView) {
-    wrapperClassName += "bg-white shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] border border-slate-100"
+    wrapperClassName += "bg-card shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] border border-border"
   } else if (isNiceImport) {
-    wrapperClassName += "bg-white/80 backdrop-blur-md shadow-[0_0_30px_-5px_rgba(99,102,241,0.15)] border border-indigo-100/50"
+    wrapperClassName += "bg-card/80 backdrop-blur-md shadow-[0_0_30px_-5px_rgba(99,102,241,0.15)] border border-indigo-100/50"
   } else if (isAnniversary) {
-    wrapperClassName += "bg-white/80 backdrop-blur-md shadow-[0_0_30px_-5px_rgba(244,63,94,0.15)] border border-rose-100/50"
+    wrapperClassName += "bg-card/80 backdrop-blur-md shadow-[0_0_30px_-5px_rgba(244,63,94,0.15)] border border-rose-100/50"
   } else if (isInsights) {
-    wrapperClassName += "bg-white/90 backdrop-blur-xl shadow-[0_10px_40px_-10px_rgba(99,102,241,0.2)] border border-indigo-100/80"
+    wrapperClassName += "bg-card/90 backdrop-blur-xl shadow-[0_10px_40px_-10px_rgba(99,102,241,0.2)] border border-indigo-100/80"
   } else if (isAgenda) {
-    wrapperClassName += "bg-white/90 backdrop-blur-xl shadow-[0_10px_40px_-10px_rgba(139,92,246,0.2)] border border-purple-100/80"
+    wrapperClassName += "bg-card/90 backdrop-blur-xl shadow-[0_10px_40px_-10px_rgba(139,92,246,0.2)] border border-purple-100/80"
   } else if (isLinkLounge) {
-    wrapperClassName += "bg-white/90 backdrop-blur-xl shadow-[0_10px_40px_-10px_rgba(16,185,129,0.2)] border border-emerald-100/80"
+    wrapperClassName += "bg-card/90 backdrop-blur-xl shadow-[0_10px_40px_-10px_rgba(16,185,129,0.2)] border border-emerald-100/80"
   } else if (isArchiveNotes) {
-    wrapperClassName += "bg-white/90 backdrop-blur-xl shadow-[0_10px_40px_-10px_rgba(99,102,241,0.2)] border border-indigo-100/80"
+    wrapperClassName += "bg-card/90 backdrop-blur-xl shadow-[0_10px_40px_-10px_rgba(99,102,241,0.2)] border border-indigo-100/80"
   } else if (isTags) {
-    wrapperClassName += "bg-white/80 backdrop-blur-md shadow-[0_0_30px_-5px_rgba(20,184,166,0.15)] border border-teal-100/50"
+    wrapperClassName += "bg-card/80 backdrop-blur-md shadow-[0_0_30px_-5px_rgba(20,184,166,0.15)] border border-teal-100/50"
   } else if (isTrash) {
-    wrapperClassName += "bg-white/80 backdrop-blur-md shadow-[0_0_30px_-5px_rgba(244,63,94,0.15)] border border-rose-100/50"
+    wrapperClassName += "bg-card/80 backdrop-blur-md shadow-[0_0_30px_-5px_rgba(244,63,94,0.15)] border border-rose-100/50"
   }
 
   // --- Slots ---
@@ -149,7 +149,7 @@ export function CalendarHeader({ onOpenSettings }: CalendarHeaderProps) {
           exit={{ opacity: 0, x: -20 }}
           className="flex items-center shrink-0 gap-4 py-1"
         >
-          <div className="relative w-10 h-10 md:w-12 md:h-12 rounded-xl bg-gradient-to-br from-violet-100 to-purple-100 flex items-center justify-center shrink-0 shadow-inner border border-white">
+          <div className="relative w-10 h-10 md:w-12 md:h-12 rounded-xl bg-gradient-to-br from-violet-100 to-purple-100 flex items-center justify-center shrink-0 shadow-inner border border-transparent">
             <Home className="w-5 h-5 md:w-6 md:h-6 text-violet-600 relative z-10" />
           </div>
           <div className="flex flex-col">
@@ -172,7 +172,7 @@ export function CalendarHeader({ onOpenSettings }: CalendarHeaderProps) {
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
           exit={{ opacity: 0, x: -20 }}
-          className="hidden md:flex items-center shrink-0 xl:border-r xl:border-slate-100 xl:pr-4 h-full"
+          className="hidden md:flex items-center shrink-0 xl:border-r xl:border-border xl:pr-4 h-full"
         >
           <GlobalCategoryFilter />
         </motion.div>
@@ -192,7 +192,7 @@ export function CalendarHeader({ onOpenSettings }: CalendarHeaderProps) {
           </div>
           <div className="flex flex-col">
             <h2 className="font-bold text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600 text-lg leading-tight tracking-tight">나이스 복무 불러오기</h2>
-            <p className="text-xs text-slate-500 font-medium">업로드된 결재 내역을 캘린더에 동기화합니다</p>
+            <p className="text-xs text-muted-foreground font-medium">업로드된 결재 내역을 캘린더에 동기화합니다</p>
           </div>
         </motion.div>
       )
@@ -211,7 +211,7 @@ export function CalendarHeader({ onOpenSettings }: CalendarHeaderProps) {
           </div>
           <div className="flex flex-col">
             <h2 className="font-bold text-transparent bg-clip-text bg-gradient-to-r from-rose-600 to-pink-600 text-lg leading-tight tracking-tight">기념일 설정</h2>
-            <p className="text-xs text-slate-500 font-medium">나만의 특별한 날들을 아름답게 기록하세요</p>
+            <p className="text-xs text-muted-foreground font-medium">나만의 특별한 날들을 아름답게 기록하세요</p>
           </div>
         </motion.div>
       )
@@ -225,9 +225,9 @@ export function CalendarHeader({ onOpenSettings }: CalendarHeaderProps) {
           exit={{ opacity: 0, x: -20 }}
           className="flex items-center shrink-0 gap-4 py-1"
         >
-          <div className="relative w-10 h-10 md:w-12 md:h-12 rounded-xl bg-gradient-to-br from-indigo-100 to-purple-100 flex items-center justify-center shrink-0 shadow-inner border border-white">
+          <div className="relative w-10 h-10 md:w-12 md:h-12 rounded-xl bg-gradient-to-br from-indigo-100 to-purple-100 flex items-center justify-center shrink-0 shadow-inner border border-transparent">
             <BrainCircuit className="w-5 h-5 md:w-6 md:h-6 text-indigo-600 relative z-10" />
-            <div className="absolute inset-0 bg-white/50 rounded-xl animate-pulse" />
+            <div className="absolute inset-0 bg-card/50 rounded-xl animate-pulse" />
           </div>
           <div className="flex flex-col">
             <h2 className="font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-indigo-700 to-purple-700 text-base md:text-xl tracking-tight">인사이트 대시보드</h2>
@@ -251,9 +251,9 @@ export function CalendarHeader({ onOpenSettings }: CalendarHeaderProps) {
           exit={{ opacity: 0, x: -20 }}
           className="flex items-center shrink-0 gap-4 py-1"
         >
-          <div className="relative w-10 h-10 md:w-12 md:h-12 rounded-xl bg-gradient-to-br from-purple-100 to-blue-100 flex items-center justify-center shrink-0 shadow-inner border border-white">
+          <div className="relative w-10 h-10 md:w-12 md:h-12 rounded-xl bg-gradient-to-br from-purple-100 to-blue-100 flex items-center justify-center shrink-0 shadow-inner border border-transparent">
             <CalendarHeart className="w-5 h-5 md:w-6 md:h-6 text-purple-600 relative z-10" />
-            <div className="absolute inset-0 bg-white/50 rounded-xl animate-pulse" />
+            <div className="absolute inset-0 bg-card/50 rounded-xl animate-pulse" />
           </div>
           <div className="flex flex-col">
             <h2 className="font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-purple-700 to-blue-700 text-base md:text-xl tracking-tight">Agenda Center</h2>
@@ -277,9 +277,9 @@ export function CalendarHeader({ onOpenSettings }: CalendarHeaderProps) {
           exit={{ opacity: 0, x: -20 }}
           className="flex items-center shrink-0 gap-4 py-1"
         >
-          <div className="relative w-10 h-10 md:w-12 md:h-12 rounded-xl bg-gradient-to-br from-emerald-100 to-teal-100 flex items-center justify-center shrink-0 shadow-inner border border-white">
+          <div className="relative w-10 h-10 md:w-12 md:h-12 rounded-xl bg-gradient-to-br from-emerald-100 to-teal-100 flex items-center justify-center shrink-0 shadow-inner border border-transparent">
             <Bookmark className="w-5 h-5 md:w-6 md:h-6 text-emerald-600 relative z-10" />
-            <div className="absolute inset-0 bg-white/50 rounded-xl animate-pulse" />
+            <div className="absolute inset-0 bg-card/50 rounded-xl animate-pulse" />
           </div>
           <div className="flex flex-col">
             <h2 className="font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-emerald-700 to-teal-700 text-base md:text-xl tracking-tight">Link Lounge</h2>
@@ -303,16 +303,16 @@ export function CalendarHeader({ onOpenSettings }: CalendarHeaderProps) {
           exit={{ opacity: 0, x: -20 }}
           className="flex items-center shrink-0 gap-4 py-1"
         >
-          <div className="relative w-10 h-10 md:w-12 md:h-12 rounded-xl bg-gradient-to-br from-indigo-100 to-slate-100 flex items-center justify-center shrink-0 shadow-inner border border-white">
+          <div className="relative w-10 h-10 md:w-12 md:h-12 rounded-xl bg-gradient-to-br from-indigo-100 to-slate-100 flex items-center justify-center shrink-0 shadow-inner border border-transparent">
             <NotebookPen className="w-5 h-5 md:w-6 md:h-6 text-indigo-600 relative z-10" />
-            <div className="absolute inset-0 bg-white/50 rounded-xl animate-pulse" />
+            <div className="absolute inset-0 bg-card/50 rounded-xl animate-pulse" />
           </div>
           <div className="flex flex-col">
             <h2 className="font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-indigo-700 to-slate-700 text-base md:text-xl tracking-tight">Archive Notes</h2>
             <div className="hidden md:flex items-center gap-2 mt-0.5">
               <span className="relative flex w-2 h-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-slate-500 opacity-75"></span>
-                <span className="relative inline-flex rounded-full w-2 h-2 bg-slate-500"></span>
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-muted0 opacity-75"></span>
+                <span className="relative inline-flex rounded-full w-2 h-2 bg-muted0"></span>
               </span>
               <p className="text-xs text-indigo-500 font-mono tracking-wider font-bold">YOUR KNOWLEDGE CANVAS</p>
             </div>
@@ -333,8 +333,8 @@ export function CalendarHeader({ onOpenSettings }: CalendarHeaderProps) {
             <Tag className="w-5 h-5 text-teal-600" />
           </div>
           <div className="flex flex-col">
-            <h2 className="font-bold text-transparent bg-clip-text bg-gradient-to-r from-teal-600 to-emerald-600 text-lg leading-tight tracking-tight">태그 관리소</h2>
-            <p className="text-xs text-slate-500 font-medium">일정과 노트를 분류하기 위한 태그를 생성하고 관리하세요</p>
+            <h2 className="font-bold text-transparent bg-clip-text bg-gradient-to-r from-teal-600 to-emerald-600 text-lg leading-tight tracking-tight">카테고리 허브</h2>
+            <p className="text-xs text-muted-foreground font-medium">일정과 노트를 분류하기 위한 카테고리를 생성하고 관리하세요</p>
           </div>
         </motion.div>
       )
@@ -353,7 +353,7 @@ export function CalendarHeader({ onOpenSettings }: CalendarHeaderProps) {
           </div>
           <div className="flex flex-col">
             <h2 className="font-bold text-transparent bg-clip-text bg-gradient-to-r from-rose-600 to-pink-600 text-lg leading-tight tracking-tight">휴지통</h2>
-            <p className="text-xs text-slate-500 font-medium">삭제된 항목을 복구하거나 영구적으로 삭제합니다</p>
+            <p className="text-xs text-muted-foreground font-medium">삭제된 항목을 복구하거나 영구적으로 삭제합니다</p>
           </div>
         </motion.div>
       )
@@ -372,29 +372,29 @@ export function CalendarHeader({ onOpenSettings }: CalendarHeaderProps) {
           className="flex-1 flex flex-row items-center justify-center gap-2 md:gap-4 overflow-x-auto hide-scrollbar w-full"
         >
           <div className="flex items-center space-x-1 sm:space-x-2 shrink-0">
-            <button onClick={handlePrev} className="p-2 rounded-full hover:bg-slate-100 text-slate-500 transition-colors">
+            <button onClick={handlePrev} className="p-2 rounded-full hover:bg-muted text-muted-foreground transition-colors">
               <ChevronLeft className="w-5 h-5" />
             </button>
             <DatePickerPopover>
               {renderHeaderTitle()}
             </DatePickerPopover>
-            <button onClick={handleNext} className="p-2 rounded-full hover:bg-slate-100 text-slate-500 transition-colors">
+            <button onClick={handleNext} className="p-2 rounded-full hover:bg-muted text-muted-foreground transition-colors">
               <ChevronRight className="w-5 h-5" />
             </button>
-            <button onClick={handleToday} className="px-3 py-1.5 rounded-full bg-slate-100 hover:bg-slate-200 text-[11px] md:text-xs font-bold text-slate-700 transition-colors ml-1 min-h-[32px]">
+            <button onClick={handleToday} className="px-3 py-1.5 rounded-full bg-muted hover:bg-slate-200 text-[11px] md:text-xs font-bold text-foreground transition-colors ml-1 min-h-[32px]">
               오늘
             </button>
           </div>
 
           <div className="h-6 w-px bg-slate-200 mx-0.5"></div>
 
-          <div className="flex items-center bg-slate-100/80 p-0.5 md:p-1 rounded-full shrink-0">
+          <div className="flex items-center bg-muted/80 p-0.5 md:p-1 rounded-full shrink-0">
             {(['monthly', 'weekly', 'list', 'semester'] as const).map((mode) => (
               <button
                 key={mode}
                 onClick={() => setViewMode(mode)}
                 className={`px-2.5 py-1.5 md:px-3 md:py-1.5 rounded-full text-[11px] md:text-xs font-bold transition-all whitespace-nowrap min-h-[32px] ${
-                  viewMode === mode ? 'bg-white text-blue-600 shadow-sm ring-1 ring-slate-200/50' : 'text-slate-500 hover:text-slate-700'
+                  viewMode === mode ? 'bg-card text-blue-600 shadow-sm ring-1 ring-border/50' : 'text-muted-foreground hover:text-foreground'
                 }`}
               >
                 {mode === 'monthly' ? '월' : mode === 'weekly' ? '주' : mode === 'list' ? '목록' : '학기'}
@@ -424,7 +424,7 @@ export function CalendarHeader({ onOpenSettings }: CalendarHeaderProps) {
           )}
         </AnimatePresence>
 
-        <div className={`flex items-center justify-end gap-2 shrink-0 ${isCalendarView ? 'xl:border-l xl:border-slate-100 xl:pl-4' : ''}`}>
+        <div className={`flex items-center justify-end gap-2 shrink-0 ${isCalendarView ? 'xl:border-l xl:border-border xl:pl-4' : ''}`}>
           <AnimatePresence mode="popLayout">
             {isCalendarView && (
               <motion.div
@@ -436,14 +436,14 @@ export function CalendarHeader({ onOpenSettings }: CalendarHeaderProps) {
               >
               <button 
                 onClick={() => setIsSearchOpen(true)}
-                className="p-2 rounded-full text-slate-500 hover:text-slate-800 hover:bg-slate-50 transition-colors group"
+                className="p-2 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted transition-colors group"
                 title="검색"
               >
                 <Search className="w-5 h-5 group-hover:scale-110 transition-transform" />
               </button>
               
               <button 
-                className="p-2 rounded-full text-slate-500 hover:text-slate-800 hover:bg-slate-50 transition-colors relative group"
+                className="p-2 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted transition-colors relative group"
                 title="알림"
               >
                 <Bell className="w-5 h-5 group-hover:scale-110 transition-transform" />

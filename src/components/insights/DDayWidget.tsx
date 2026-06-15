@@ -29,7 +29,7 @@ export default function DDayWidget() {
     <motion.div 
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
-      className="bg-white rounded-[24px] p-6 border border-gray-100 shadow-sm flex items-center justify-between w-full h-[120px] relative overflow-hidden group"
+      className="bg-card rounded-[24px] p-6 border border-border shadow-sm flex items-center justify-between w-full h-[120px] relative overflow-hidden group"
     >
       <div className={`absolute right-0 top-0 w-32 h-32 bg-gradient-to-br ${ddayInfo.color} rounded-full blur-3xl opacity-20 -translate-y-1/2 translate-x-1/2 transition-colors duration-500`}></div>
       
@@ -37,10 +37,10 @@ export default function DDayWidget() {
         <div className={`flex items-center gap-1.5 ${ddayInfo.textCol} font-extrabold text-[12px] uppercase tracking-widest mb-1`}>
           <CalendarHeart size={14} /> 목표일 카운트다운
         </div>
-        <div className="text-[28px] font-black text-gray-900 tracking-tighter leading-none mt-1 flex items-baseline gap-2">
+        <div className="text-[28px] font-black text-foreground tracking-tighter leading-none mt-1 flex items-baseline gap-2">
           {ddayInfo.text}
         </div>
-        <div className="text-[13px] font-bold text-gray-400 mt-1">
+        <div className="text-[13px] font-bold text-muted-foreground mt-1">
           {format(ddayInfo.targetDate, 'yyyy년 M월 d일')}
         </div>
       </div>

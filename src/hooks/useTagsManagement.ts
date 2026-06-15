@@ -26,7 +26,7 @@ export function useTagsManagement() {
   }
 
   const handleDelete = (id: string, name: string) => {
-    if (confirm(`'${name}' 태그를 삭제하시겠습니까? 이 태그가 지정된 일정에서 태그가 해제됩니다.`)) {
+    if (confirm(`'${name}' 카테고리를 삭제하시겠습니까? 이 카테고리가 지정된 일정에서 카테고리가 해제됩니다.`)) {
       deleteCategory.mutate(id)
     }
   }

@@ -16,8 +16,8 @@ const BookmarkComponent = (props: any) => {
   return (
     <NodeViewWrapper className="my-4" data-type="bookmark">
       {isEditing ? (
-        <div className="flex gap-2 p-3 bg-slate-50 border border-slate-200 rounded-lg">
-          <Link2 className="w-5 h-5 text-slate-400 mt-0.5" />
+        <div className="flex gap-2 p-3 bg-muted border border-border rounded-lg">
+          <Link2 className="w-5 h-5 text-muted-foreground mt-0.5" />
           <input 
             autoFocus
             type="url"
@@ -25,22 +25,22 @@ const BookmarkComponent = (props: any) => {
             onChange={(e) => setInputUrl(e.target.value)}
             onKeyDown={(e) => { if (e.key === 'Enter') handleSave() }}
             placeholder="웹 링크를 붙여넣고 Enter를 누르세요..."
-            className="flex-1 bg-transparent border-none outline-none text-sm text-slate-700"
+            className="flex-1 bg-transparent border-none outline-none text-sm text-foreground"
           />
           <button onClick={handleSave} className="text-xs font-bold text-indigo-600 px-3 py-1 bg-indigo-50 rounded hover:bg-indigo-100">저장</button>
         </div>
       ) : (
         <div className="relative group cursor-pointer" contentEditable={false}>
-          <a href={url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-4 p-4 border border-slate-200 rounded-xl hover:bg-slate-50 transition-colors no-underline">
+          <a href={url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-4 p-4 border border-border rounded-xl hover:bg-muted transition-colors no-underline">
             <div className="flex-1 min-w-0">
-              <h4 className="text-sm font-bold text-slate-900 truncate mb-1 flex items-center gap-2">
-                <ExternalLink className="w-4 h-4 text-slate-400 group-hover:text-indigo-500 transition-colors" />
+              <h4 className="text-sm font-bold text-foreground truncate mb-1 flex items-center gap-2">
+                <ExternalLink className="w-4 h-4 text-muted-foreground group-hover:text-indigo-500 transition-colors" />
                 웹 북마크 (클릭하여 이동)
               </h4>
-              <p className="text-xs text-slate-500 truncate">{url}</p>
+              <p className="text-xs text-muted-foreground truncate">{url}</p>
             </div>
-            <div className="w-16 h-16 bg-slate-100 rounded-lg flex items-center justify-center flex-shrink-0">
-              <Link2 className="w-6 h-6 text-slate-300" />
+            <div className="w-16 h-16 bg-muted rounded-lg flex items-center justify-center flex-shrink-0">
+              <Link2 className="w-6 h-6 text-muted-foreground/50" />
             </div>
           </a>
           <button 
@@ -49,7 +49,7 @@ const BookmarkComponent = (props: any) => {
               e.stopPropagation();
               setIsEditing(true);
             }} 
-            className="absolute top-2 right-2 p-1.5 bg-white shadow-sm border border-slate-200 rounded-md opacity-0 group-hover:opacity-100 transition-opacity text-xs font-semibold text-slate-600 hover:bg-slate-50"
+            className="absolute top-2 right-2 p-1.5 bg-card shadow-sm border border-border rounded-md opacity-0 group-hover:opacity-100 transition-opacity text-xs font-semibold text-foreground hover:bg-muted"
           >
             수정
           </button>

@@ -56,17 +56,17 @@ export function ClearAllDataDialog() {
         전체 내용 초기화
       </DialogTrigger>
 
-      <DialogContent className="sm:max-w-[425px] rounded-2xl p-0 overflow-hidden bg-white shadow-apple-float border-0">
+      <DialogContent className="sm:max-w-[425px] rounded-2xl p-0 overflow-hidden bg-card shadow-apple-float border-0">
         <div className="p-6 pb-8">
           <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center mb-6 mx-auto">
             <AlertTriangle className="w-6 h-6 text-red-600" />
           </div>
 
           <DialogHeader className="text-center sm:text-center">
-            <DialogTitle className="text-xl font-bold text-slate-900 mb-2">
+            <DialogTitle className="text-xl font-bold text-foreground mb-2">
               {step === 1 ? '캘린더 전체 초기화' : '최종 경고'}
             </DialogTitle>
-            <DialogDescription className="text-base text-slate-600 leading-relaxed">
+            <DialogDescription className="text-base text-foreground leading-relaxed">
               {step === 1 ? (
                 <>
                   등록된 <b>모든 일정과 업로드 이력</b>이 삭제됩니다.<br />
@@ -86,7 +86,7 @@ export function ClearAllDataDialog() {
             <Button
               variant="outline"
               onClick={() => handleOpenChange(false)}
-              className="w-full sm:w-auto h-12 rounded-xl border-slate-200 text-slate-700 font-medium hover:bg-slate-50"
+              className="w-full sm:w-auto h-12 rounded-xl border-border text-foreground font-medium hover:bg-muted"
               disabled={isDeleting}
             >
               취소

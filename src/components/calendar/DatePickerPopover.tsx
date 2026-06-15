@@ -58,20 +58,20 @@ export function DatePickerPopover({ children }: DatePickerPopoverProps) {
     <Popover open={open} onOpenChange={setOpen}>
       {/* @base-ui/react의 PopoverTrigger는 asChild가 없으므로 render prop 없이 직접 내용을 넣음 */}
       <PopoverTrigger
-        className="flex items-center space-x-1.5 px-2 sm:px-3 py-1.5 rounded-xl hover:bg-white/50 transition-colors group outline-none cursor-pointer"
+        className="flex items-center space-x-1.5 px-2 sm:px-3 py-1.5 rounded-xl hover:bg-card/50 transition-colors group outline-none cursor-pointer"
       >
-        <h2 className="text-lg sm:text-xl md:text-2xl font-extrabold tracking-tight text-slate-800">
+        <h2 className="text-lg sm:text-xl md:text-2xl font-extrabold tracking-tight text-foreground">
           {children}
         </h2>
-        <ChevronDown className="w-5 h-5 text-slate-400 group-hover:text-slate-600 transition-colors shrink-0" />
+        <ChevronDown className="w-5 h-5 text-muted-foreground group-hover:text-foreground transition-colors shrink-0" />
       </PopoverTrigger>
       
-      <PopoverContent className="w-80 p-0 rounded-2xl shadow-xl border border-slate-100 overflow-hidden" align="center" sideOffset={8}>
+      <PopoverContent className="w-80 p-0 rounded-2xl shadow-xl border border-border overflow-hidden" align="center" sideOffset={8}>
         <div className="flex h-[280px]">
           {/* Left: Year Scroll */}
           <div 
             ref={yearScrollRef}
-            className="w-1/3 border-r border-slate-100 overflow-y-auto hide-scrollbar bg-slate-50/50 py-2"
+            className="w-1/3 border-r border-border overflow-y-auto hide-scrollbar bg-muted/50 py-2"
           >
             {years.map(y => (
               <button
@@ -80,7 +80,7 @@ export function DatePickerPopover({ children }: DatePickerPopoverProps) {
                 className={`w-full py-2.5 text-center text-sm font-semibold transition-colors ${
                   selectedYear === y 
                     ? 'text-blue-600 bg-blue-50 active-year' 
-                    : 'text-slate-500 hover:bg-slate-100 hover:text-slate-800'
+                    : 'text-muted-foreground hover:bg-muted hover:text-foreground'
                 }`}
               >
                 {y}년
@@ -89,7 +89,7 @@ export function DatePickerPopover({ children }: DatePickerPopoverProps) {
           </div>
 
           {/* Right: Months or Semester Grid */}
-          <div className="w-2/3 p-4 bg-white flex flex-col justify-center">
+          <div className="w-2/3 p-4 bg-card flex flex-col justify-center">
             {viewMode === 'semester' ? (
               <div className="flex flex-col space-y-3">
                 <button 
@@ -97,7 +97,7 @@ export function DatePickerPopover({ children }: DatePickerPopoverProps) {
                   className={`py-5 rounded-xl font-bold text-lg transition-all ${
                     selectedYear === semesterYear && semesterTerm === 1
                       ? 'bg-blue-600 text-white shadow-md'
-                      : 'bg-slate-50 text-slate-600 hover:bg-slate-100'
+                      : 'bg-muted text-foreground hover:bg-muted'
                   }`}
                 >
                   1학기 (3월~8월)
@@ -107,7 +107,7 @@ export function DatePickerPopover({ children }: DatePickerPopoverProps) {
                   className={`py-5 rounded-xl font-bold text-lg transition-all ${
                     selectedYear === semesterYear && semesterTerm === 2
                       ? 'bg-blue-600 text-white shadow-md'
-                      : 'bg-slate-50 text-slate-600 hover:bg-slate-100'
+                      : 'bg-muted text-foreground hover:bg-muted'
                   }`}
                 >
                   2학기 (9월~2월)
@@ -122,7 +122,7 @@ export function DatePickerPopover({ children }: DatePickerPopoverProps) {
                     className={`rounded-xl text-sm font-semibold transition-all ${
                       selectedYear === currentY && currentM === i
                         ? 'bg-blue-600 text-white shadow-md'
-                        : 'bg-slate-50 text-slate-600 hover:bg-slate-100'
+                        : 'bg-muted text-foreground hover:bg-muted'
                     }`}
                   >
                     {i + 1}월

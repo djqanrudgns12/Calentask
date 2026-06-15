@@ -20,9 +20,9 @@ function CustomTooltip({ active, payload, label }: any) {
   const hasMore = sortedActivities.length > 3;
 
   return (
-    <div className="bg-white/95 backdrop-blur-md px-4 py-4 rounded-2xl border border-gray-100 shadow-xl min-w-[200px] z-50">
+    <div className="bg-card/95 backdrop-blur-md px-4 py-4 rounded-2xl border border-border shadow-xl min-w-[200px] z-50">
       <div className="flex items-center justify-between mb-3">
-        <p className="text-sm font-bold text-gray-900">{label}요일</p>
+        <p className="text-sm font-bold text-foreground">{label}요일</p>
         <p className="text-sm text-blue-600 font-bold">{data.value}시간</p>
       </div>
 
@@ -38,8 +38,8 @@ function CustomTooltip({ active, payload, label }: any) {
                   style={{ backgroundColor: act.hex_color || (act.categories?.[0]?.hex_color) || '#E5E7EB' }} 
                 />
                 <div className="flex-1 min-w-0">
-                  <p className="text-[13px] font-semibold text-gray-800 truncate">{act.title}</p>
-                  <p className="text-[11px] text-gray-400 font-medium">
+                  <p className="text-[13px] font-semibold text-foreground truncate">{act.title}</p>
+                  <p className="text-[11px] text-muted-foreground font-medium">
                     {isSameDay ? '하루 종일' : format(date, 'a h:mm', { locale: ko })}
                   </p>
                 </div>
@@ -47,11 +47,11 @@ function CustomTooltip({ active, payload, label }: any) {
             )
           })}
           {hasMore && (
-            <p className="text-[11px] text-gray-400 font-medium text-center pt-1">+ {sortedActivities.length - 3}개 더보기</p>
+            <p className="text-[11px] text-muted-foreground font-medium text-center pt-1">+ {sortedActivities.length - 3}개 더보기</p>
           )}
         </div>
       ) : (
-        <div className="py-3 flex flex-col items-center justify-center text-gray-400 mb-2">
+        <div className="py-3 flex flex-col items-center justify-center text-muted-foreground mb-2">
           <Clock size={16} className="mb-1 opacity-50" />
           <p className="text-[12px] font-medium">활동 기록이 없습니다.</p>
         </div>
@@ -63,7 +63,7 @@ function CustomTooltip({ active, payload, label }: any) {
           // 일자 계산을 정확히 하려면 날짜 정보를 넘겨야 하지만, 우선 요일 정보를 바탕으로 새 모달 띄우기
           openAddEvent();
         }}
-        className="w-full flex items-center justify-center gap-1.5 py-2 mt-1 rounded-xl bg-gray-50 hover:bg-gray-100 text-gray-600 text-[12px] font-bold transition-colors"
+        className="w-full flex items-center justify-center gap-1.5 py-2 mt-1 rounded-xl bg-muted hover:bg-muted text-foreground text-[12px] font-bold transition-colors"
       >
         <Plus size={14} />
         일정 추가하기
@@ -102,10 +102,10 @@ export default function WeeklySummaryCard({
   const isPositive = diffHours >= 0;
 
   return (
-    <div className="bg-white rounded-[24px] p-6 shadow-sm border border-gray-100 flex flex-col justify-between w-full h-[280px]">
+    <div className="bg-card rounded-[24px] p-6 shadow-sm border border-border flex flex-col justify-between w-full h-[280px]">
       <div>
         <div className="flex items-center justify-between mb-1.5">
-          <h3 className="text-gray-400 font-bold text-[13px] tracking-wider">
+          <h3 className="text-muted-foreground font-bold text-[13px] tracking-wider">
             {periodLabel}
           </h3>
           {prevTotalHours !== undefined && diffHours !== 0 && (
@@ -116,8 +116,8 @@ export default function WeeklySummaryCard({
           )}
         </div>
         <div className="flex items-end gap-3">
-          <div className="text-[44px] font-black text-gray-900 tracking-tighter leading-none">
-            {totalHours}<span className="text-[24px] text-gray-300 font-bold ml-1">시간</span>
+          <div className="text-[44px] font-black text-foreground tracking-tighter leading-none">
+            {totalHours}<span className="text-[24px] text-muted-foreground/50 font-bold ml-1">시간</span>
           </div>
           <div className="flex items-center text-[13px] font-bold bg-blue-50/80 text-blue-600 px-3 py-1.5 rounded-full mb-1 border border-blue-100 shadow-sm">
             <Activity size={14} className="mr-1.5" />
@@ -168,7 +168,7 @@ export default function WeeklySummaryCard({
             </BarChart>
           </ResponsiveContainer>
         ) : (
-          <div className="h-full w-full flex items-center justify-center text-gray-300 text-sm font-medium">
+          <div className="h-full w-full flex items-center justify-center text-muted-foreground/50 text-sm font-medium">
             해당 기간에 기록된 활동이 없습니다
           </div>
         )}

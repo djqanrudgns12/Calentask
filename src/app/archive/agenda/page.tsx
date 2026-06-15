@@ -22,12 +22,12 @@ interface Task {
 function DroppableContainer({ id, title, icon: Icon, children, className }: any) {
   const { setNodeRef, isOver } = useDroppable({ id });
   return (
-    <div ref={setNodeRef} className={cn("flex flex-col h-full bg-white rounded-3xl shadow-sm border p-6 transition-colors duration-300", isOver ? "border-blue-400 bg-blue-50/30" : "border-slate-100", className)}>
+    <div ref={setNodeRef} className={cn("flex flex-col h-full bg-card rounded-3xl shadow-sm border p-6 transition-colors duration-300", isOver ? "border-blue-400 bg-blue-50/30" : "border-border", className)}>
       <div className="flex items-center gap-2 mb-6">
-        <div className="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center text-slate-600">
+        <div className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center text-foreground">
           <Icon className="w-5 h-5" />
         </div>
-        <h2 className="text-xl font-bold text-slate-800">{title}</h2>
+        <h2 className="text-xl font-bold text-foreground">{title}</h2>
       </div>
       <div className="flex-1 overflow-y-auto space-y-2 pr-2 hide-scrollbar">
         {children}
@@ -53,20 +53,20 @@ function DraggableTask({ task, onToggle }: { task: Task, onToggle: (id: string) 
       ref={setNodeRef} 
       style={style}
       className={cn(
-        "group flex items-center gap-3 p-4 bg-white rounded-2xl border transition-all duration-200 cursor-grab active:cursor-grabbing hover:shadow-md",
-        isDragging ? "shadow-2xl border-blue-200 scale-105 opacity-90" : "border-slate-100",
+        "group flex items-center gap-3 p-4 bg-card rounded-2xl border transition-all duration-200 cursor-grab active:cursor-grabbing hover:shadow-md",
+        isDragging ? "shadow-2xl border-blue-200 scale-105 opacity-90" : "border-border",
         task.completed && "opacity-50"
       )}
     >
       <button 
         onClick={() => onToggle(task.id)}
-        className="flex-shrink-0 text-slate-300 hover:text-blue-500 transition-colors"
+        className="flex-shrink-0 text-muted-foreground/50 hover:text-blue-500 transition-colors"
       >
         {task.completed ? <CheckCircle2 className="w-6 h-6 text-blue-500" /> : <Circle className="w-6 h-6" />}
       </button>
       
       <div className="flex-1 min-w-0" {...listeners} {...attributes}>
-        <p className={cn("text-[15px] font-medium truncate transition-all", task.completed ? "line-through text-slate-400" : "text-slate-700")}>
+        <p className={cn("text-[15px] font-medium truncate transition-all", task.completed ? "line-through text-muted-foreground" : "text-foreground")}>
           {task.title}
         </p>
         {task.date && !task.completed && (
@@ -165,22 +165,22 @@ export default function AgendaPage() {
   };
 
   return (
-    <div className="flex flex-col h-full bg-[#f7f9fb]">
+    <div className="flex flex-col h-full bg-background">
       {/* Header & NLP Input */}
       <div className="px-8 pt-10 pb-6 shrink-0">
-        <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight mb-2">Agenda</h1>
-        <p className="text-slate-500 text-sm mb-8 font-medium">Drag tasks to the calendar to time-block your day.</p>
+        <h1 className="text-3xl font-extrabold text-foreground tracking-tight mb-2">Agenda</h1>
+        <p className="text-muted-foreground text-sm mb-8 font-medium">Drag tasks to the calendar to time-block your day.</p>
         
         <form onSubmit={handleAddTask} className="relative group max-w-3xl">
           <div className="absolute inset-y-0 left-5 flex items-center pointer-events-none">
-            <Plus className="w-5 h-5 text-slate-400 group-focus-within:text-blue-500 transition-colors" />
+            <Plus className="w-5 h-5 text-muted-foreground group-focus-within:text-blue-500 transition-colors" />
           </div>
           <input 
             type="text"
             value={inputValue}
             onChange={handleInputChange}
             placeholder="e.g., '내일 오후 2시 팀 미팅 준비'"
-            className="w-full h-14 pl-12 pr-6 bg-white rounded-2xl shadow-sm border border-slate-200 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all text-slate-800 font-medium text-lg placeholder:text-slate-400"
+            className="w-full h-14 pl-12 pr-6 bg-card rounded-2xl shadow-sm border border-border outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all text-foreground font-medium text-lg placeholder:text-muted-foreground"
           />
           {parsedData.date && (
             <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 rounded-lg">
@@ -203,7 +203,7 @@ export default function AgendaPage() {
                 <DraggableTask key={task.id} task={task} onToggle={handleToggle} />
               ))}
               {tasks.filter(t => t.status === 'inbox').length === 0 && (
-                <div className="h-full flex flex-col items-center justify-center text-slate-400">
+                <div className="h-full flex flex-col items-center justify-center text-muted-foreground">
                   <Inbox className="w-12 h-12 mb-3 opacity-20" />
                   <p className="font-medium">Inbox is empty</p>
                 </div>
@@ -216,7 +216,7 @@ export default function AgendaPage() {
                 <DraggableTask key={task.id} task={task} onToggle={handleToggle} />
               ))}
               {tasks.filter(t => t.status === 'today').length === 0 && (
-                <div className="h-full flex flex-col items-center justify-center text-slate-500">
+                <div className="h-full flex flex-col items-center justify-center text-muted-foreground">
                   <Calendar className="w-12 h-12 mb-3 opacity-20" />
                   <p className="font-medium">Drag tasks here to focus</p>
                 </div>

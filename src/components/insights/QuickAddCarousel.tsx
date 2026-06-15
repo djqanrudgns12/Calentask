@@ -24,7 +24,7 @@ export default function QuickAddCarousel({ templates }: { templates: ActivityTem
   return (
     <div className="mt-8 relative">
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-xs font-bold text-gray-400 uppercase tracking-widest">빠른 일정 등록</h2>
+        <h2 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">빠른 일정 등록</h2>
       </div>
       
       <div className="flex overflow-x-auto gap-3 pb-4 hide-scrollbar overscroll-x-contain touch-pan-x">
@@ -36,19 +36,19 @@ export default function QuickAddCarousel({ templates }: { templates: ActivityTem
               <button 
                 key={item.id}
                 onClick={() => handleChipClick(item)}
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-full text-[13px] font-bold whitespace-nowrap transition-transform hover:scale-105 active:scale-95 shadow-sm border border-gray-100 bg-white hover:bg-gray-50`}
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-full text-[13px] font-bold whitespace-nowrap transition-transform hover:scale-105 active:scale-95 shadow-sm border border-border bg-card hover:bg-muted`}
                 style={{ color: '#374151' }}
               >
                 <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: color }} />
                 {item.title}
-                <div className="bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded text-[10px] ml-1">
+                <div className="bg-muted text-muted-foreground px-1.5 py-0.5 rounded text-[10px] ml-1">
                   {item.duration_minutes}분
                 </div>
               </button>
             )
           })
         ) : (
-          <div className="text-[13px] text-gray-400 font-medium px-4 py-2.5 border border-dashed border-gray-300 rounded-full bg-gray-50">
+          <div className="text-[13px] text-muted-foreground font-medium px-4 py-2.5 border border-dashed border-gray-300 rounded-full bg-muted">
             템플릿을 등록해보세요
           </div>
         )}
@@ -65,7 +65,7 @@ export default function QuickAddCarousel({ templates }: { templates: ActivityTem
       {showToast && (
         <div className="fixed bottom-24 left-1/2 transform -translate-x-1/2 bg-gray-900/90 backdrop-blur-sm text-white px-5 py-3.5 rounded-2xl shadow-xl flex items-center gap-3 text-sm font-medium z-50 animate-in fade-in slide-in-from-bottom-6">
           <span>✅ 캘린더에 일정이 추가되었습니다.</span>
-          <button onClick={() => setShowToast(false)} className="text-gray-400 underline underline-offset-4 hover:text-white ml-2 text-xs">닫기</button>
+          <button onClick={() => setShowToast(false)} className="text-muted-foreground underline underline-offset-4 hover:text-white ml-2 text-xs">닫기</button>
         </div>
       )}
 

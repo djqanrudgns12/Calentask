@@ -26,7 +26,7 @@ export function UpcomingAnniversaryWidget() {
     <>
       <div 
         onClick={() => setIsModalOpen(true)}
-        className="mx-4 mt-6 mb-2 relative group cursor-pointer overflow-hidden rounded-3xl shadow-[0_2px_10px_-4px_rgba(0,0,0,0.1)] transition-all hover:shadow-[0_8px_20px_-6px_rgba(0,0,0,0.15)] hover:-translate-y-0.5 border border-white/40 ring-1 ring-black/5"
+        className="mx-4 mt-6 mb-2 relative group cursor-pointer overflow-hidden rounded-3xl shadow-[0_2px_10px_-4px_rgba(0,0,0,0.1)] transition-all hover:shadow-[0_8px_20px_-6px_rgba(0,0,0,0.15)] hover:-translate-y-0.5 border border-transparent/40 ring-1 ring-black/5"
         title={event.title}
       >
         {/* 배경 그라데이션 및 투명도 (Glassmorphism) */}
@@ -42,7 +42,7 @@ export function UpcomingAnniversaryWidget() {
         <div className="relative p-4 flex items-center justify-between gap-3 min-w-0">
           <div className="flex items-center space-x-3 min-w-0 flex-1">
             <div 
-              className="w-11 h-11 shrink-0 rounded-2xl flex items-center justify-center shadow-inner border border-white/50"
+              className="w-11 h-11 shrink-0 rounded-2xl flex items-center justify-center shadow-inner border border-transparent/50"
               style={{ backgroundColor: `${themeColor}15`, color: themeColor }}
             >
               <Icon className="w-5 h-5" />
@@ -51,7 +51,7 @@ export function UpcomingAnniversaryWidget() {
               <span className="text-[10px] font-extrabold uppercase tracking-widest opacity-60" style={{ color: themeColor }}>
                 Upcoming
               </span>
-              <span className="text-[13px] font-extrabold text-slate-800 line-clamp-2 leading-tight">
+              <span className="text-[13px] font-extrabold text-foreground line-clamp-2 leading-tight">
                 {event.title}
               </span>
             </div>

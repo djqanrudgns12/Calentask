@@ -219,7 +219,7 @@ export function ArchiveAgendaView() {
   };
 
   return (
-    <div className="relative flex flex-col h-full bg-slate-50 overflow-hidden">
+    <div className="relative flex flex-col h-full bg-muted overflow-hidden">
       {/* Subtle Background */}
       <div className="absolute top-0 left-0 w-full h-64 bg-gradient-to-b from-purple-50/50 to-transparent pointer-events-none" />
 
@@ -229,10 +229,10 @@ export function ArchiveAgendaView() {
 
         {/* View Mode Switcher */}
         <div className="flex justify-end mb-4">
-          <div className="flex items-center bg-white/80 backdrop-blur-md border border-slate-200 rounded-xl p-1 shadow-sm">
-            <button onClick={() => setViewMode('list')} className={cn("p-1.5 rounded-lg transition-colors", viewMode === 'list' ? "bg-slate-100 text-indigo-600" : "text-slate-400 hover:text-slate-600")} title="리스트 뷰"><List className="w-5 h-5"/></button>
-            <button onClick={() => setViewMode('kanban')} className={cn("p-1.5 rounded-lg transition-colors", viewMode === 'kanban' ? "bg-slate-100 text-indigo-600" : "text-slate-400 hover:text-slate-600")} title="칸반 보드 뷰"><Columns className="w-5 h-5"/></button>
-            <button onClick={() => setViewMode('matrix')} className={cn("p-1.5 rounded-lg transition-colors", viewMode === 'matrix' ? "bg-slate-100 text-indigo-600" : "text-slate-400 hover:text-slate-600")} title="우선순위 매트릭스 뷰"><LayoutGrid className="w-5 h-5"/></button>
+          <div className="flex items-center bg-card/80 backdrop-blur-md border border-border rounded-xl p-1 shadow-sm">
+            <button onClick={() => setViewMode('list')} className={cn("p-1.5 rounded-lg transition-colors", viewMode === 'list' ? "bg-muted text-indigo-600" : "text-muted-foreground hover:text-foreground")} title="리스트 뷰"><List className="w-5 h-5"/></button>
+            <button onClick={() => setViewMode('kanban')} className={cn("p-1.5 rounded-lg transition-colors", viewMode === 'kanban' ? "bg-muted text-indigo-600" : "text-muted-foreground hover:text-foreground")} title="칸반 보드 뷰"><Columns className="w-5 h-5"/></button>
+            <button onClick={() => setViewMode('matrix')} className={cn("p-1.5 rounded-lg transition-colors", viewMode === 'matrix' ? "bg-muted text-indigo-600" : "text-muted-foreground hover:text-foreground")} title="우선순위 매트릭스 뷰"><LayoutGrid className="w-5 h-5"/></button>
           </div>
         </div>
 
@@ -241,14 +241,14 @@ export function ArchiveAgendaView() {
           animate={showTitleError ? { x: [-10, 10, -10, 10, 0] } : {}}
           transition={{ duration: 0.4 }}
           className={cn(
-            "relative z-20 shrink-0 mb-6 bg-white/80 backdrop-blur-3xl shadow-sm border transition-all duration-300",
-            isQuickAddExpanded ? "rounded-3xl border-slate-200/60 shadow-lg" : "rounded-full border-white/80",
+            "relative z-20 shrink-0 mb-6 bg-card/80 backdrop-blur-3xl shadow-sm border transition-all duration-300",
+            isQuickAddExpanded ? "rounded-3xl border-border/60 shadow-lg" : "rounded-full border-transparent/80",
             showTitleError && "border-red-400 ring-4 ring-red-500/10"
           )}
         >
           {/* Main Input Line */}
           <div className="relative flex items-center h-16 px-5 group">
-            <Plus className="w-6 h-6 text-slate-400 group-focus-within:text-indigo-600 transition-colors shrink-0" />
+            <Plus className="w-6 h-6 text-muted-foreground group-focus-within:text-indigo-600 transition-colors shrink-0" />
             <input 
               ref={inputRef}
               type="text"
@@ -256,7 +256,7 @@ export function ArchiveAgendaView() {
               onChange={handleInputChange}
               onKeyDown={handleMainInputKeyDown}
               placeholder="예: '내일 오후 3시 팀 미팅 준비'"
-              className="flex-1 h-full bg-transparent px-4 outline-none text-slate-800 font-bold text-xl placeholder:text-slate-400 placeholder:font-medium"
+              className="flex-1 h-full bg-transparent px-4 outline-none text-foreground font-bold text-xl placeholder:text-muted-foreground placeholder:font-medium"
             />
             
             <div className="flex items-center gap-2 shrink-0">
@@ -274,8 +274,8 @@ export function ArchiveAgendaView() {
                 className={cn(
                   "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-bold transition-all border",
                   isQuickAddExpanded 
-                    ? "bg-slate-100 text-slate-600 border-slate-200"
-                    : "bg-white text-slate-500 border-slate-200 shadow-sm hover:border-indigo-300 hover:text-indigo-600"
+                    ? "bg-muted text-foreground border-border"
+                    : "bg-card text-muted-foreground border-border shadow-sm hover:border-indigo-300 hover:text-indigo-600"
                 )}
               >
                 {isQuickAddExpanded ? '닫기' : '+ 상세'}
@@ -293,10 +293,10 @@ export function ArchiveAgendaView() {
                 transition={{ duration: 0.3, ease: 'easeInOut' }}
                 className="overflow-hidden"
               >
-                <div className="p-5 pt-3 border-t border-slate-100/60 space-y-4">
+                <div className="p-5 pt-3 border-t border-border/60 space-y-4">
                   {/* Category Chips */}
                   <div className="flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-4">
-                    <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider shrink-0 w-20 pt-1">Category</label>
+                    <label className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider shrink-0 w-20 pt-1">Category</label>
                     <div className="flex flex-wrap gap-1.5">
                       {categories.map(cat => {
                         const isSelected = quickCategoryId === cat.id;
@@ -307,7 +307,7 @@ export function ArchiveAgendaView() {
                             onClick={() => setQuickCategoryId(isSelected ? null : cat.id)}
                             className={cn(
                               "flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold transition-all border shadow-sm",
-                              isSelected ? "bg-white border-transparent" : "bg-slate-50 border-slate-200 text-slate-500 hover:bg-slate-100"
+                              isSelected ? "bg-card border-transparent" : "bg-muted border-border text-muted-foreground hover:bg-muted"
                             )}
                             style={isSelected ? { color: cat.hex_color, borderColor: cat.hex_color, boxShadow: `0 0 0 1px ${cat.hex_color}20` } : {}}
                           >
@@ -321,17 +321,17 @@ export function ArchiveAgendaView() {
 
                   {/* Custom DateTime Picker (Expanded View) */}
                   <div className="flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-4">
-                    <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider shrink-0 w-20 pt-1.5">Deadline</label>
+                    <label className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider shrink-0 w-20 pt-1.5">Deadline</label>
                     <DateTimePickerPopover 
                       date={parsedData.date} 
                       setDate={(d: Date | null) => setParsedData(prev => ({ ...prev, date: d, hasTime: true }))}
                       align="start"
                     >
-                      <div className="flex items-center gap-1.5 px-2.5 py-1 bg-slate-50 hover:bg-white rounded-md border border-slate-200 hover:border-indigo-300 hover:shadow-sm transition-all w-max cursor-pointer">
-                        <Clock className="w-3 h-3 text-slate-400" />
+                      <div className="flex items-center gap-1.5 px-2.5 py-1 bg-muted hover:bg-card rounded-md border border-border hover:border-indigo-300 hover:shadow-sm transition-all w-max cursor-pointer">
+                        <Clock className="w-3 h-3 text-muted-foreground" />
                         <span className={cn(
                           "text-[11px] font-bold text-left whitespace-nowrap",
-                          parsedData.date ? "text-slate-700" : "text-slate-500"
+                          parsedData.date ? "text-foreground" : "text-muted-foreground"
                         )}>
                           {parsedData.date ? format(parsedData.date, 'yyyy년 M월 d일 a h:mm', { locale: ko }) : '마감일 설정'}
                         </span>
@@ -341,30 +341,30 @@ export function ArchiveAgendaView() {
 
                   {/* Subtasks */}
                   <div className="flex flex-col sm:flex-row gap-2 sm:gap-4">
-                    <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider shrink-0 w-20 pt-2">Subtasks</label>
+                    <label className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider shrink-0 w-20 pt-2">Subtasks</label>
                     <div className="flex-1 space-y-2 max-w-xl">
                       {quickSubtasks.map((st, idx) => (
-                        <div key={idx} className="flex items-center gap-2 p-2 bg-slate-50/80 rounded-lg border border-slate-100 group">
-                          <Circle className="w-3 h-3 text-slate-300" />
-                          <span className="flex-1 text-[12px] font-bold text-slate-700">{st}</span>
+                        <div key={idx} className="flex items-center gap-2 p-2 bg-muted/80 rounded-lg border border-border group">
+                          <Circle className="w-3 h-3 text-muted-foreground/50" />
+                          <span className="flex-1 text-[12px] font-bold text-foreground">{st}</span>
                           <button 
                             type="button"
                             onClick={() => setQuickSubtasks(prev => prev.filter((_, i) => i !== idx))}
-                            className="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-red-500 transition-opacity p-0.5"
+                            className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-red-500 transition-opacity p-0.5"
                           >
                             <Trash2 className="w-3 h-3" />
                           </button>
                         </div>
                       ))}
                       <div className="relative">
-                        <Plus className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-400" />
+                        <Plus className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3 h-3 text-muted-foreground" />
                         <input 
                           type="text"
                           value={quickSubtaskInput}
                           onChange={e => setQuickSubtaskInput(e.target.value)}
                           onKeyDown={handleQuickSubtaskKeyDown}
                           placeholder="하위 작업을 입력하고 엔터..."
-                          className="w-full bg-slate-50/50 border border-transparent shadow-sm rounded-lg py-1.5 pl-7 pr-3 text-[12px] font-bold text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:bg-white transition-all"
+                          className="w-full bg-muted/50 border border-transparent shadow-sm rounded-lg py-1.5 pl-7 pr-3 text-[12px] font-bold text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:bg-card transition-all"
                         />
                       </div>
                     </div>
@@ -372,14 +372,14 @@ export function ArchiveAgendaView() {
 
                   {/* Memo */}
                   <div className="flex flex-col sm:flex-row gap-2 sm:gap-4">
-                    <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider shrink-0 w-20 pt-2">Memo</label>
+                    <label className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider shrink-0 w-20 pt-2">Memo</label>
                     <div className="flex-1 max-w-xl">
                       <textarea 
                         rows={1}
                         value={quickMemo}
                         onChange={e => setQuickMemo(e.target.value)}
                         placeholder="추가적인 메모..."
-                        className="w-full bg-slate-50/50 border border-transparent shadow-sm rounded-lg p-2 text-[12px] font-medium text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:bg-white resize-y min-h-[40px] transition-all"
+                        className="w-full bg-muted/50 border border-transparent shadow-sm rounded-lg p-2 text-[12px] font-medium text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:bg-card resize-y min-h-[40px] transition-all"
                       />
                     </div>
                   </div>
@@ -388,7 +388,7 @@ export function ArchiveAgendaView() {
                     <button 
                       type="button"
                       onClick={() => setIsQuickAddExpanded(false)}
-                      className="px-4 py-1.5 text-slate-500 hover:text-slate-700 hover:bg-slate-100 text-[13px] font-bold rounded-lg transition-colors"
+                      className="px-4 py-1.5 text-muted-foreground hover:text-foreground hover:bg-muted text-[13px] font-bold rounded-lg transition-colors"
                     >
                       취소
                     </button>
@@ -411,13 +411,13 @@ export function ArchiveAgendaView() {
           <>
             {/* Tabs */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 shrink-0">
-          <div className="flex items-center p-1.5 bg-slate-100 rounded-[1.25rem] w-full sm:w-auto overflow-x-auto hide-scrollbar border border-slate-200/60 shadow-inner">
+          <div className="flex items-center p-1.5 bg-muted rounded-[1.25rem] w-full sm:w-auto overflow-x-auto hide-scrollbar border border-border/60 shadow-inner">
             {TABS.map(tab => {
               const Icon = tab.icon;
               const isActive = activeTab === tab.id;
               
-              let activeColor = "text-slate-800 bg-white shadow-sm border border-slate-200/60";
-              let iconColor = "text-slate-700";
+              let activeColor = "text-foreground bg-card shadow-sm border border-border/60";
+              let iconColor = "text-foreground";
               if (isActive) {
                 if (tab.id === 'done') { activeColor = "bg-emerald-50 text-emerald-700 shadow-sm border border-emerald-200/60"; iconColor = "text-emerald-600"; }
                 else if (tab.id === 'trash') { activeColor = "bg-red-50 text-red-700 shadow-sm border border-red-200/60"; iconColor = "text-red-600"; }
@@ -430,10 +430,10 @@ export function ArchiveAgendaView() {
                   onClick={() => handleTabChange(tab.id)}
                   className={cn(
                     "flex-1 sm:flex-none flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-all duration-300",
-                    isActive ? activeColor : "text-slate-500 hover:text-slate-700 hover:bg-slate-200/50"
+                    isActive ? activeColor : "text-muted-foreground hover:text-foreground hover:bg-slate-200/50"
                   )}
                 >
-                  <Icon className={cn("w-4 h-4", isActive ? iconColor : "text-slate-400")} />
+                  <Icon className={cn("w-4 h-4", isActive ? iconColor : "text-muted-foreground")} />
                   {tab.label}
                 </button>
               )
@@ -444,7 +444,7 @@ export function ArchiveAgendaView() {
             <div className="flex items-center gap-3">
               <button
                 onClick={handleSelectAll}
-                className="text-sm font-bold text-slate-500 hover:text-slate-800 transition-colors"
+                className="text-sm font-bold text-muted-foreground hover:text-foreground transition-colors"
               >
                 {selectedTaskIds.size === filteredTasks.length ? '선택 해제' : '전체 선택'}
               </button>
@@ -471,12 +471,12 @@ export function ArchiveAgendaView() {
         {/* Task List */}
         <div className="flex-1 space-y-3 pb-20">
           {filteredTasks.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-64 bg-white/40 backdrop-blur-md rounded-3xl border border-white/60 shadow-sm">
-              <div className="w-16 h-16 mb-4 rounded-2xl bg-white/80 flex items-center justify-center border border-slate-100 shadow-sm">
-                <CheckCircle2 className="w-8 h-8 text-slate-300" />
+            <div className="flex flex-col items-center justify-center h-64 bg-card/40 backdrop-blur-md rounded-3xl border border-transparent/60 shadow-sm">
+              <div className="w-16 h-16 mb-4 rounded-2xl bg-card/80 flex items-center justify-center border border-border shadow-sm">
+                <CheckCircle2 className="w-8 h-8 text-muted-foreground/50" />
               </div>
-              <p className="font-bold text-slate-600 text-lg">해당 항목이 없습니다</p>
-              <p className="text-sm text-slate-500 mt-1">이곳은 깨끗하네요!</p>
+              <p className="font-bold text-foreground text-lg">해당 항목이 없습니다</p>
+              <p className="text-sm text-muted-foreground mt-1">이곳은 깨끗하네요!</p>
             </div>
           ) : (
             filteredTasks.map(task => {
@@ -486,7 +486,7 @@ export function ArchiveAgendaView() {
               return (
                 <div key={task.id} className="flex flex-col gap-1.5 group">
                   <div 
-                    className="relative flex items-center gap-4 p-4 md:p-5 bg-white/70 backdrop-blur-xl hover:bg-white border border-white/60 rounded-3xl shadow-sm hover:shadow-lg transition-all duration-300 cursor-pointer"
+                    className="relative flex items-center gap-4 p-4 md:p-5 bg-card/70 backdrop-blur-xl hover:bg-card border border-transparent/60 rounded-3xl shadow-sm hover:shadow-lg transition-all duration-300 cursor-pointer"
                     onClick={() => openDetail(task)}
                   >
                   {/* Status Toggle Button */}
@@ -502,7 +502,7 @@ export function ArchiveAgendaView() {
                     </button>
                   ) : (
                     <button 
-                      className="flex-shrink-0 text-slate-300 hover:text-indigo-500 transition-colors"
+                      className="flex-shrink-0 text-muted-foreground/50 hover:text-indigo-500 transition-colors"
                       onClick={(e) => {
                         e.stopPropagation();
                         setTaskStatus(task.id, task.status === 'done' ? 'inbox' : 'done');
@@ -521,11 +521,11 @@ export function ArchiveAgendaView() {
                     <div className="flex items-center gap-2 mb-1">
                       <button 
                         onClick={(e) => { e.stopPropagation(); updateTask(task.id, { is_important: !task.is_important }); }}
-                        className={cn("p-1 -ml-1 rounded-full transition-colors flex-shrink-0", task.is_important ? "text-amber-400 hover:bg-amber-50" : "text-slate-300 hover:text-amber-400 hover:bg-slate-50")}
+                        className={cn("p-1 -ml-1 rounded-full transition-colors flex-shrink-0", task.is_important ? "text-amber-400 hover:bg-amber-50" : "text-muted-foreground/50 hover:text-amber-400 hover:bg-muted")}
                       >
                         <Star className={cn("w-5 h-5", task.is_important ? "fill-current" : "")} />
                       </button>
-                      <h3 className={cn("text-[17px] font-extrabold truncate transition-all", task.status === 'done' ? "text-slate-400 line-through" : "text-slate-800")}>
+                      <h3 className={cn("text-[17px] font-extrabold truncate transition-all", task.status === 'done' ? "text-muted-foreground line-through" : "text-foreground")}>
                         {task.title}
                       </h3>
                     </div>
@@ -533,21 +533,21 @@ export function ArchiveAgendaView() {
                     {/* Metadata Badges */}
                     <div className="flex flex-wrap items-center gap-2 mt-2.5">
                       {category && (
-                        <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-white border border-slate-200 shadow-sm hover:border-slate-300 transition-colors">
+                        <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-card border border-border shadow-sm hover:border-slate-300 transition-colors">
                           <div className="w-2.5 h-2.5 rounded-full shadow-sm" style={{ backgroundColor: category.hex_color }} />
-                          <span className="text-[12px] font-bold text-slate-700">{category.name}</span>
+                          <span className="text-[12px] font-bold text-foreground">{category.name}</span>
                         </div>
                       )}
                       
                       {deadlineInfo && (
-                        <div className={cn("flex items-center gap-1.5 px-3 py-1 rounded-full border shadow-sm bg-white", deadlineInfo.color.replace('bg-', 'text-').replace('text-', 'border-').replace('100', '200'))}>
+                        <div className={cn("flex items-center gap-1.5 px-3 py-1 rounded-full border shadow-sm bg-card", deadlineInfo.color.replace('bg-', 'text-').replace('text-', 'border-').replace('100', '200'))}>
                           <Calendar className={cn("w-3.5 h-3.5", deadlineInfo.color.replace('bg-', 'text-').split(' ')[1])} />
                           <span className={cn("text-[12px] font-bold", deadlineInfo.color.replace('bg-', 'text-').split(' ')[1])}>{deadlineInfo.label}</span>
                         </div>
                       )}
                       
                       {task.status === 'done' && task.completed_at && (
-                        <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-50 border border-slate-200 text-slate-500 shadow-sm transition-colors">
+                        <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-muted border border-border text-muted-foreground shadow-sm transition-colors">
                           <CheckCircle2 className="w-3.5 h-3.5" />
                           <span className="text-[12px] font-bold">
                             {format(new Date(task.completed_at), 'M월 d일 완료', { locale: ko })}
@@ -556,7 +556,7 @@ export function ArchiveAgendaView() {
                       )}
                       
                       {task.memo && (
-                        <div className="flex items-center gap-1 px-3 py-1 text-slate-500 bg-slate-50 rounded-full shadow-sm border border-slate-200 hover:bg-slate-100 transition-colors">
+                        <div className="flex items-center gap-1 px-3 py-1 text-muted-foreground bg-muted rounded-full shadow-sm border border-border hover:bg-muted transition-colors">
                           <AlignLeft className="w-3.5 h-3.5" />
                           <span className="text-[12px] font-bold">메모 있음</span>
                         </div>
@@ -585,7 +585,7 @@ export function ArchiveAgendaView() {
                   </div>
 
                   {/* Hover Quick Actions */}
-                  <div className="flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-2 absolute right-5 top-1/2 -translate-y-1/2 bg-white/90 backdrop-blur-xl px-2 py-1.5 rounded-xl border border-slate-100 shadow-sm z-10">
+                  <div className="flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-2 absolute right-5 top-1/2 -translate-y-1/2 bg-card/90 backdrop-blur-xl px-2 py-1.5 rounded-xl border border-border shadow-sm z-10">
                     <AgendaTaskContextMenu 
                       status={task.status} 
                       onEdit={() => openDetail(task)} 
@@ -607,7 +607,7 @@ export function ArchiveAgendaView() {
                     >
                       <div className="pl-14 pr-4 pb-2 space-y-2">
                         {task.subtasks?.map(sub => (
-                          <div key={sub.id} className="flex items-center gap-3 p-2.5 bg-white/50 border border-slate-100 shadow-sm rounded-xl group/sub hover:bg-white/80 transition-colors">
+                          <div key={sub.id} className="flex items-center gap-3 p-2.5 bg-card/50 border border-border shadow-sm rounded-xl group/sub hover:bg-card/80 transition-colors">
                             <button 
                               onClick={(e) => { e.stopPropagation(); updateSubtask(task.id, sub.id, { is_completed: !sub.is_completed }); }}
                               className="shrink-0"
@@ -615,7 +615,7 @@ export function ArchiveAgendaView() {
                               {sub.is_completed ? (
                                 <CheckCircle2 className="w-5 h-5 text-indigo-400" />
                               ) : (
-                                <Circle className="w-5 h-5 text-slate-300 group-hover/sub:text-indigo-400" />
+                                <Circle className="w-5 h-5 text-muted-foreground/50 group-hover/sub:text-indigo-400" />
                               )}
                             </button>
                             
@@ -636,7 +636,7 @@ export function ArchiveAgendaView() {
                                       setEditingSubtaskId(null);
                                     }
                                   }}
-                                  className="flex-1 bg-white border border-indigo-200 rounded-md px-2 py-1 text-sm font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+                                  className="flex-1 bg-card border border-indigo-200 rounded-md px-2 py-1 text-sm font-bold text-foreground focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
                                 />
                                 <button 
                                   onClick={() => {
@@ -651,7 +651,7 @@ export function ArchiveAgendaView() {
                                 </button>
                               </div>
                             ) : (
-                              <span className={cn("font-bold text-sm flex-1", sub.is_completed ? "text-slate-400 line-through" : "text-slate-600")}>
+                              <span className={cn("font-bold text-sm flex-1", sub.is_completed ? "text-muted-foreground line-through" : "text-foreground")}>
                                 {sub.title}
                               </span>
                             )}
@@ -664,13 +664,13 @@ export function ArchiveAgendaView() {
                                     setEditingSubtaskId(sub.id);
                                     setEditSubtaskTitle(sub.title);
                                   }}
-                                  className="p-1.5 text-slate-400 hover:text-indigo-500 rounded-md hover:bg-indigo-50 transition-colors"
+                                  className="p-1.5 text-muted-foreground hover:text-indigo-500 rounded-md hover:bg-indigo-50 transition-colors"
                                 >
                                   <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
                                 </button>
                                 <button 
                                   onClick={(e) => { e.stopPropagation(); deleteSubtask(task.id, sub.id); }}
-                                  className="p-1.5 text-slate-400 hover:text-red-500 rounded-md hover:bg-red-50 transition-colors"
+                                  className="p-1.5 text-muted-foreground hover:text-red-500 rounded-md hover:bg-red-50 transition-colors"
                                 >
                                   <Trash2 className="w-3.5 h-3.5" />
                                 </button>
@@ -684,9 +684,9 @@ export function ArchiveAgendaView() {
                             value={newSubtaskTitles[task.id] || ''}
                             onChange={e => setNewSubtaskTitles(prev => ({ ...prev, [task.id]: e.target.value }))}
                             placeholder="하위 작업 추가 후 엔터..."
-                            className="w-full bg-white/50 border border-transparent shadow-sm rounded-xl px-4 py-2.5 pl-9 font-bold text-[13px] focus-visible:ring-2 focus-visible:ring-indigo-500/30 text-slate-700 placeholder:text-slate-400 transition-all focus:bg-white"
+                            className="w-full bg-card/50 border border-transparent shadow-sm rounded-xl px-4 py-2.5 pl-9 font-bold text-[13px] focus-visible:ring-2 focus-visible:ring-indigo-500/30 text-foreground placeholder:text-muted-foreground transition-all focus:bg-card"
                           />
-                          <Plus className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                          <Plus className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                         </form>
                       </div>
                     </motion.div>

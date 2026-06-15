@@ -48,21 +48,21 @@ export function CommandPalette() {
         animate={{ opacity: 1, scale: 1, y: 0 }} 
         exit={{ opacity: 0, scale: 0.95, y: -10 }} 
         transition={{ duration: 0.15, ease: "easeOut" }}
-        className="relative w-full max-w-xl bg-white rounded-2xl shadow-2xl overflow-hidden border border-slate-100"
+        className="relative w-full max-w-xl bg-card rounded-2xl shadow-2xl overflow-hidden border border-border"
       >
         <Command className="w-full flex flex-col bg-transparent">
-          <div className="flex items-center px-4 border-b border-slate-100" cmdk-input-wrapper="">
-            <Search className="w-5 h-5 text-slate-400 shrink-0" />
+          <div className="flex items-center px-4 border-b border-border" cmdk-input-wrapper="">
+            <Search className="w-5 h-5 text-muted-foreground shrink-0" />
             <Command.Input 
               autoFocus
               placeholder="명령어 검색 또는 탭 이동... (예: 새 노트)"
-              className="w-full bg-transparent border-none focus:outline-none focus:ring-0 text-slate-800 font-medium placeholder:text-slate-400 px-3 py-4 text-sm" 
+              className="w-full bg-transparent border-none focus:outline-none focus:ring-0 text-foreground font-medium placeholder:text-muted-foreground px-3 py-4 text-sm" 
             />
           </div>
           <Command.List className="max-h-[300px] overflow-y-auto p-2 scroll-smooth">
-            <Command.Empty className="py-6 text-center text-sm text-slate-400">결과가 없습니다.</Command.Empty>
+            <Command.Empty className="py-6 text-center text-sm text-muted-foreground">결과가 없습니다.</Command.Empty>
 
-            <Command.Group heading="최근 탭 이동" className="px-2 py-1 text-xs font-bold text-slate-400 mb-1">
+            <Command.Group heading="최근 탭 이동" className="px-2 py-1 text-xs font-bold text-muted-foreground mb-1">
               {tabs.slice(0, 5).map(tab => (
                 <Command.Item
                   key={tab.id}
@@ -70,9 +70,9 @@ export function CommandPalette() {
                     setActiveTabId(tab.id);
                     setCommandPaletteOpen(false);
                   }}
-                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer aria-selected:bg-indigo-50 aria-selected:text-indigo-600 text-sm font-medium text-slate-600 hover:bg-slate-50 transition-colors"
+                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer aria-selected:bg-indigo-50 aria-selected:text-indigo-600 text-sm font-medium text-foreground hover:bg-muted transition-colors"
                 >
-                  <div className="w-6 h-6 rounded-md bg-slate-100 flex items-center justify-center shrink-0">
+                  <div className="w-6 h-6 rounded-md bg-muted flex items-center justify-center shrink-0">
                     {getIconForType(tab.board_type)}
                   </div>
                   {tab.name}
@@ -80,24 +80,24 @@ export function CommandPalette() {
               ))}
             </Command.Group>
 
-            <Command.Separator className="h-px bg-slate-100 my-2" />
+            <Command.Separator className="h-px bg-muted my-2" />
 
-            <Command.Group heading="빠른 액션" className="px-2 py-1 text-xs font-bold text-slate-400 mb-1">
-              <Command.Item className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer aria-selected:bg-indigo-50 aria-selected:text-indigo-600 text-sm font-medium text-slate-600 hover:bg-slate-50 transition-colors">
+            <Command.Group heading="빠른 액션" className="px-2 py-1 text-xs font-bold text-muted-foreground mb-1">
+              <Command.Item className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer aria-selected:bg-indigo-50 aria-selected:text-indigo-600 text-sm font-medium text-foreground hover:bg-muted transition-colors">
                 <div className="w-6 h-6 rounded-md bg-indigo-50 flex items-center justify-center shrink-0">
                   <Plus className="w-4 h-4 text-indigo-500" />
                 </div>
                 새로운 워크스페이스 탭 만들기
               </Command.Item>
-              <Command.Item className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer aria-selected:bg-indigo-50 aria-selected:text-indigo-600 text-sm font-medium text-slate-600 hover:bg-slate-50 transition-colors">
+              <Command.Item className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer aria-selected:bg-indigo-50 aria-selected:text-indigo-600 text-sm font-medium text-foreground hover:bg-muted transition-colors">
                 <div className="w-6 h-6 rounded-md bg-rose-50 flex items-center justify-center shrink-0">
                   <Calendar className="w-4 h-4 text-rose-500" />
                 </div>
                 아젠다(Agenda) 뷰로 이동
               </Command.Item>
-              <Command.Item className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer aria-selected:bg-indigo-50 aria-selected:text-indigo-600 text-sm font-medium text-slate-600 hover:bg-slate-50 transition-colors">
-                <div className="w-6 h-6 rounded-md bg-slate-100 flex items-center justify-center shrink-0">
-                  <Settings className="w-4 h-4 text-slate-500" />
+              <Command.Item className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer aria-selected:bg-indigo-50 aria-selected:text-indigo-600 text-sm font-medium text-foreground hover:bg-muted transition-colors">
+                <div className="w-6 h-6 rounded-md bg-muted flex items-center justify-center shrink-0">
+                  <Settings className="w-4 h-4 text-muted-foreground" />
                 </div>
                 환경설정
               </Command.Item>
@@ -105,12 +105,12 @@ export function CommandPalette() {
           </Command.List>
         </Command>
         
-        <div className="px-4 py-3 bg-slate-50/50 border-t border-slate-100 flex items-center justify-between text-xs text-slate-400 font-medium">
+        <div className="px-4 py-3 bg-muted/50 border-t border-border flex items-center justify-between text-xs text-muted-foreground font-medium">
            <div className="flex items-center gap-4">
-             <span className="flex items-center gap-1"><kbd className="px-1.5 py-0.5 rounded bg-white border border-slate-200 shadow-sm font-sans font-bold">↑</kbd> <kbd className="px-1.5 py-0.5 rounded bg-white border border-slate-200 shadow-sm font-sans font-bold">↓</kbd> 이동</span>
-             <span className="flex items-center gap-1"><kbd className="px-1.5 py-0.5 rounded bg-white border border-slate-200 shadow-sm font-sans font-bold">Enter</kbd> 선택</span>
+             <span className="flex items-center gap-1"><kbd className="px-1.5 py-0.5 rounded bg-card border border-border shadow-sm font-sans font-bold">↑</kbd> <kbd className="px-1.5 py-0.5 rounded bg-card border border-border shadow-sm font-sans font-bold">↓</kbd> 이동</span>
+             <span className="flex items-center gap-1"><kbd className="px-1.5 py-0.5 rounded bg-card border border-border shadow-sm font-sans font-bold">Enter</kbd> 선택</span>
            </div>
-           <span><kbd className="px-1.5 py-0.5 rounded bg-white border border-slate-200 shadow-sm font-sans font-bold">ESC</kbd> 닫기</span>
+           <span><kbd className="px-1.5 py-0.5 rounded bg-card border border-border shadow-sm font-sans font-bold">ESC</kbd> 닫기</span>
         </div>
       </motion.div>
     </div>

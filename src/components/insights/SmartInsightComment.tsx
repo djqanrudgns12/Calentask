@@ -15,11 +15,11 @@ const SmartInsightComment = React.memo(function SmartInsightComment({ activities
   const insight = useMemo(() => {
     if (!activities || activities.length === 0) {
       return {
-        icon: <Target className="text-gray-400" size={20} />,
+        icon: <Target className="text-muted-foreground" size={20} />,
         title: "첫 기록을 시작해 볼까요?",
         description: "현재 선택된 기간에 활동 내역이 없습니다. 새로운 목표를 세워보세요!",
         gradient: "from-gray-50 to-gray-100",
-        textColor: "text-gray-700",
+        textColor: "text-foreground",
         streak: 0
       };
     }
@@ -185,12 +185,12 @@ const SmartInsightComment = React.memo(function SmartInsightComment({ activities
         transition={{ duration: 0.5, delay: 0.1 }}
         className="shrink-0 w-full md:w-32 rounded-[24px] bg-gray-900 p-4 md:p-5 flex flex-row md:flex-col items-center justify-center md:justify-center gap-3 md:gap-0 shadow-lg relative overflow-hidden"
       >
-        <div className="absolute top-0 right-0 w-16 h-16 bg-white/10 blur-2xl rounded-full translate-x-1/2 -translate-y-1/2"></div>
-        <Flame className={insight.streak > 0 ? "text-orange-500 mb-2" : "text-gray-600 mb-2"} size={28} />
+        <div className="absolute top-0 right-0 w-16 h-16 bg-card/10 blur-2xl rounded-full translate-x-1/2 -translate-y-1/2"></div>
+        <Flame className={insight.streak > 0 ? "text-orange-500 mb-2" : "text-foreground mb-2"} size={28} />
         <div className="text-3xl font-black text-white tracking-tighter leading-none mb-1">
           {insight.streak}
         </div>
-        <div className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">
+        <div className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest">
           Days Streak
         </div>
       </motion.div>

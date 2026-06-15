@@ -32,7 +32,7 @@ export default function InsightsClient() {
     <div className="mt-2 pb-24 md:pb-10 relative min-h-screen">
       <div className="relative z-10">
         {/* ── 탭 네비게이션 ── */}
-        <div className="flex items-center gap-1 bg-white p-1 rounded-2xl border border-gray-200/80 shadow-sm mb-6 overflow-x-auto hide-scrollbar">
+        <div className="flex items-center gap-1 bg-card p-1 rounded-2xl border border-border/80 shadow-sm mb-6 overflow-x-auto hide-scrollbar">
           {TABS.map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
@@ -43,10 +43,10 @@ export default function InsightsClient() {
                 className={`flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl text-[13px] font-bold transition-all whitespace-nowrap ${
                   isActive
                     ? 'bg-gray-900 text-white shadow-md'
-                    : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-muted'
                 }`}
               >
-                <Icon size={15} className={isActive ? 'text-gray-300' : 'text-gray-400'} />
+                <Icon size={15} className={isActive ? 'text-muted-foreground/50' : 'text-muted-foreground'} />
                 {tab.label}
               </button>
             );

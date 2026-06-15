@@ -37,11 +37,11 @@ export function DisplayTab() {
               mounted && theme !== 'dark' ? 'border-primary shadow-sm' : 'border-border hover:border-primary/50'
             }`}
           >
-            <div className="w-full aspect-video rounded-xl bg-[#f8f9ff] border border-slate-100 flex items-center justify-center relative overflow-hidden">
+            <div className="w-full aspect-video rounded-xl bg-background border border-border flex items-center justify-center relative overflow-hidden">
               <Sun className="w-8 h-8 text-amber-500" />
               <div className="absolute top-2 right-2 w-16 h-2 bg-indigo-200 rounded-full" />
               <div className="absolute top-6 right-2 w-10 h-2 bg-slate-200 rounded-full" />
-              <div className="absolute bottom-2 left-2 right-2 h-10 bg-white rounded-t-lg border-t border-slate-100" />
+              <div className="absolute bottom-2 left-2 right-2 h-10 bg-card rounded-t-lg border-t border-border" />
             </div>
             <div className="w-full flex items-center justify-between">
               <span className={`font-semibold ${mounted && theme !== 'dark' ? 'text-foreground' : 'text-muted-foreground'}`}>라이트 모드</span>
@@ -80,7 +80,7 @@ export function DisplayTab() {
             </div>
             <div className={`relative inline-flex h-5 w-9 md:h-6 md:w-11 items-center rounded-full transition-colors shrink-0 ${showHolidays ? 'bg-primary' : 'bg-muted'}`}>
               <input type="checkbox" className="sr-only" checked={showHolidays} onChange={(e) => setShowHolidays(e.target.checked)} />
-              <span className={`inline-block h-3.5 w-3.5 md:h-4 md:w-4 transform rounded-full bg-white transition-transform ${showHolidays ? 'translate-x-5 md:translate-x-6' : 'translate-x-1'}`} />
+              <span className={`inline-block h-3.5 w-3.5 md:h-4 md:w-4 transform rounded-full bg-card transition-transform ${showHolidays ? 'translate-x-5 md:translate-x-6' : 'translate-x-1'}`} />
             </div>
           </label>
           <label className={`flex items-center justify-between p-4 md:p-5 cursor-pointer hover:bg-accent/50 transition-colors ${!showHolidays ? 'opacity-50 pointer-events-none' : ''}`}>
@@ -90,7 +90,7 @@ export function DisplayTab() {
             </div>
             <div className={`relative inline-flex h-5 w-9 md:h-6 md:w-11 items-center rounded-full transition-colors shrink-0 ${showHolidaysAsTags ? 'bg-primary' : 'bg-muted'}`}>
               <input type="checkbox" className="sr-only" checked={showHolidaysAsTags} onChange={(e) => setShowHolidaysAsTags(e.target.checked)} disabled={!showHolidays} />
-              <span className={`inline-block h-3.5 w-3.5 md:h-4 md:w-4 transform rounded-full bg-white transition-transform ${showHolidaysAsTags ? 'translate-x-5 md:translate-x-6' : 'translate-x-1'}`} />
+              <span className={`inline-block h-3.5 w-3.5 md:h-4 md:w-4 transform rounded-full bg-card transition-transform ${showHolidaysAsTags ? 'translate-x-5 md:translate-x-6' : 'translate-x-1'}`} />
             </div>
           </label>
           <label className="flex items-center justify-between p-4 md:p-5 cursor-pointer hover:bg-accent/50 transition-colors">
@@ -100,7 +100,7 @@ export function DisplayTab() {
             </div>
             <div className={`relative inline-flex h-5 w-9 md:h-6 md:w-11 items-center rounded-full transition-colors shrink-0 ${showNationalDays ? 'bg-primary' : 'bg-muted'}`}>
               <input type="checkbox" className="sr-only" checked={showNationalDays} onChange={(e) => setShowNationalDays(e.target.checked)} />
-              <span className={`inline-block h-3.5 w-3.5 md:h-4 md:w-4 transform rounded-full bg-white transition-transform ${showNationalDays ? 'translate-x-5 md:translate-x-6' : 'translate-x-1'}`} />
+              <span className={`inline-block h-3.5 w-3.5 md:h-4 md:w-4 transform rounded-full bg-card transition-transform ${showNationalDays ? 'translate-x-5 md:translate-x-6' : 'translate-x-1'}`} />
             </div>
           </label>
           <label className="flex items-center justify-between p-4 md:p-5 cursor-pointer hover:bg-accent/50 transition-colors">
@@ -110,7 +110,7 @@ export function DisplayTab() {
             </div>
             <div className={`relative inline-flex h-5 w-9 md:h-6 md:w-11 items-center rounded-full transition-colors shrink-0 ${showAnniversaries ? 'bg-primary' : 'bg-muted'}`}>
               <input type="checkbox" className="sr-only" checked={showAnniversaries} onChange={(e) => setShowAnniversaries(e.target.checked)} />
-              <span className={`inline-block h-3.5 w-3.5 md:h-4 md:w-4 transform rounded-full bg-white transition-transform ${showAnniversaries ? 'translate-x-5 md:translate-x-6' : 'translate-x-1'}`} />
+              <span className={`inline-block h-3.5 w-3.5 md:h-4 md:w-4 transform rounded-full bg-card transition-transform ${showAnniversaries ? 'translate-x-5 md:translate-x-6' : 'translate-x-1'}`} />
             </div>
           </label>
           <label className="flex items-center justify-between p-4 md:p-5 cursor-pointer hover:bg-accent/50 transition-colors rounded-b-xl md:rounded-b-2xl">
@@ -120,7 +120,7 @@ export function DisplayTab() {
             </div>
             <div className={`relative inline-flex h-5 w-9 md:h-6 md:w-11 items-center rounded-full transition-colors shrink-0 ${showTraditionalTerms ? 'bg-primary' : 'bg-muted'}`}>
               <input type="checkbox" className="sr-only" checked={showTraditionalTerms} onChange={(e) => setShowTraditionalTerms(e.target.checked)} />
-              <span className={`inline-block h-3.5 w-3.5 md:h-4 md:w-4 transform rounded-full bg-white transition-transform ${showTraditionalTerms ? 'translate-x-5 md:translate-x-6' : 'translate-x-1'}`} />
+              <span className={`inline-block h-3.5 w-3.5 md:h-4 md:w-4 transform rounded-full bg-card transition-transform ${showTraditionalTerms ? 'translate-x-5 md:translate-x-6' : 'translate-x-1'}`} />
             </div>
           </label>
         </div>

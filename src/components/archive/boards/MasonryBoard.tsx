@@ -109,22 +109,22 @@ export function MasonryBoard() {
 
   return (
     <div 
-      className="w-full h-full bg-[#f7f9fb] p-4 md:p-10 overflow-y-auto hide-scrollbar relative pb-28 md:pb-10"
+      className="w-full h-full bg-background p-4 md:p-10 overflow-y-auto hide-scrollbar relative pb-28 md:pb-10"
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
     >
       <div className="max-w-7xl mx-auto">
         {/* Header Actions */}
-        <div className="flex items-center justify-between gap-4 mb-6 md:mb-8 sticky top-0 z-10 bg-[#f7f9fb]/90 backdrop-blur-md py-2 md:py-4">
+        <div className="flex items-center justify-between gap-4 mb-6 md:mb-8 sticky top-0 z-10 bg-background/90 backdrop-blur-md py-2 md:py-4">
           <div className="relative flex-1 max-w-xl">
-            <Search className="w-4 h-4 md:w-5 md:h-5 absolute left-3 md:left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+            <Search className="w-4 h-4 md:w-5 md:h-5 absolute left-3 md:left-4 top-1/2 -translate-y-1/2 text-muted-foreground" />
             <input 
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="이미지 검색..."
-              className="w-full pl-9 md:pl-11 pr-4 py-2.5 md:py-3 bg-white border border-slate-200 rounded-xl md:rounded-2xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all text-sm md:text-base shadow-sm"
+              className="w-full pl-9 md:pl-11 pr-4 py-2.5 md:py-3 bg-card border border-border rounded-xl md:rounded-2xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all text-sm md:text-base shadow-sm"
             />
           </div>
 
@@ -161,9 +161,9 @@ export function MasonryBoard() {
               initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
               className="absolute inset-0 z-50 bg-indigo-500/10 backdrop-blur-sm flex items-center justify-center rounded-3xl border-4 border-dashed border-indigo-400 m-6"
             >
-              <div className="bg-white p-8 rounded-2xl shadow-xl flex flex-col items-center">
+              <div className="bg-card p-8 rounded-2xl shadow-xl flex flex-col items-center">
                 <Upload className="w-12 h-12 text-indigo-500 mb-4 animate-bounce" />
-                <h3 className="text-xl font-bold text-slate-800">이미지를 이곳에 드롭하세요</h3>
+                <h3 className="text-xl font-bold text-foreground">이미지를 이곳에 드롭하세요</h3>
               </div>
             </motion.div>
           )}
@@ -172,11 +172,11 @@ export function MasonryBoard() {
         {/* Masonry Grid */}
         {items.length === 0 ? (
           <div className="text-center py-20 md:py-32 flex flex-col items-center">
-            <div className="w-20 h-20 md:w-24 md:h-24 bg-white shadow-sm border border-slate-100 rounded-3xl flex items-center justify-center mb-6">
+            <div className="w-20 h-20 md:w-24 md:h-24 bg-card shadow-sm border border-border rounded-3xl flex items-center justify-center mb-6">
               <ImageIcon className="w-10 h-10 md:w-12 md:h-12 text-indigo-200" />
             </div>
-            <h3 className="text-lg md:text-xl font-extrabold text-slate-800 mb-2 truncate px-4 w-full">영감을 업로드하세요</h3>
-            <p className="text-slate-500 font-medium mb-6 text-center text-sm md:text-base px-4">
+            <h3 className="text-lg md:text-xl font-extrabold text-foreground mb-2 truncate px-4 w-full">영감을 업로드하세요</h3>
+            <p className="text-muted-foreground font-medium mb-6 text-center text-sm md:text-base px-4">
               파일을 드래그 앤 드롭하거나 업로드 버튼을 눌러<br/>나만의 핀터레스트 보드를 만들어보세요.
             </p>
           </div>
@@ -186,10 +186,10 @@ export function MasonryBoard() {
               <motion.div
                 layout
                 key={item.id}
-                className="relative break-inside-avoid group cursor-zoom-in bg-white p-2 rounded-2xl shadow-sm border border-slate-100 hover:shadow-xl transition-all"
+                className="relative break-inside-avoid group cursor-zoom-in bg-card p-2 rounded-2xl shadow-sm border border-border hover:shadow-xl transition-all"
                 onClick={() => setActiveImageId(item.id)}
               >
-                <div className="relative rounded-xl overflow-hidden bg-slate-100">
+                <div className="relative rounded-xl overflow-hidden bg-muted">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img 
                     src={item.data?.image || ''} 
@@ -203,7 +203,7 @@ export function MasonryBoard() {
                     <div className="flex justify-end">
                       <button 
                         onClick={(e) => handleLike(e, item.id, item.data?.likes)}
-                        className="w-8 h-8 bg-white/20 hover:bg-red-500 backdrop-blur-md rounded-full flex items-center justify-center text-white transition-colors"
+                        className="w-8 h-8 bg-card/20 hover:bg-red-500 backdrop-blur-md rounded-full flex items-center justify-center text-white transition-colors"
                       >
                         <Heart className={`w-4 h-4 ${item.data?.likes > 0 ? 'fill-current text-white' : ''}`} />
                       </button>
@@ -212,7 +212,7 @@ export function MasonryBoard() {
                       <h4 className="text-white font-bold truncate pr-4 text-sm">{item.title}</h4>
                       <button 
                         onClick={(e) => { e.stopPropagation(); deleteItem(activeTabId!, item.id); }}
-                        className="w-8 h-8 bg-white/20 hover:bg-black/50 backdrop-blur-md rounded-full flex items-center justify-center text-white transition-colors shrink-0"
+                        className="w-8 h-8 bg-card/20 hover:bg-black/50 backdrop-blur-md rounded-full flex items-center justify-center text-white transition-colors shrink-0"
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
@@ -236,9 +236,9 @@ export function MasonryBoard() {
             />
             <motion.div 
               initial={{ opacity: 0, scale: 0.9, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="relative z-10 max-w-5xl max-h-[90vh] flex flex-col md:flex-row bg-white rounded-3xl overflow-hidden shadow-2xl"
+              className="relative z-10 max-w-5xl max-h-[90vh] flex flex-col md:flex-row bg-card rounded-3xl overflow-hidden shadow-2xl"
             >
-              <div className="w-full md:w-2/3 bg-slate-100 flex items-center justify-center relative overflow-hidden group">
+              <div className="w-full md:w-2/3 bg-muted flex items-center justify-center relative overflow-hidden group">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img 
                   src={activeImage.data?.image} 
@@ -252,34 +252,34 @@ export function MasonryBoard() {
                   <Maximize2 className="w-4 h-4" />
                 </button>
               </div>
-              <div className="w-full md:w-1/3 bg-white p-6 md:p-8 flex flex-col">
+              <div className="w-full md:w-1/3 bg-card p-6 md:p-8 flex flex-col">
                 <div className="flex justify-between items-start mb-6">
                   <input 
                     type="text"
                     value={activeImage.title}
                     onChange={(e) => updateItem(activeTabId!, activeImage.id, { title: e.target.value })}
-                    className="font-extrabold text-2xl text-slate-800 bg-transparent border-none focus:outline-none focus:ring-0 p-0 w-full"
+                    className="font-extrabold text-2xl text-foreground bg-transparent border-none focus:outline-none focus:ring-0 p-0 w-full"
                   />
                   <button 
                     onClick={() => { setActiveImageId(null); setIsFullscreen(false); setScale(1); }} 
-                    className="p-2 hover:bg-slate-100 rounded-full text-slate-500 transition-colors shrink-0 md:hidden"
+                    className="p-2 hover:bg-muted rounded-full text-muted-foreground transition-colors shrink-0 md:hidden"
                   >
                     <X className="w-5 h-5" />
                   </button>
                 </div>
                 
                 <div className="flex-1">
-                  <label className="text-xs font-bold text-slate-400 block mb-2">상세 설명</label>
+                  <label className="text-xs font-bold text-muted-foreground block mb-2">상세 설명</label>
                   <textarea 
                     value={activeImage.content || ''}
                     onChange={(e) => updateItem(activeTabId!, activeImage.id, { content: e.target.value })}
                     placeholder="이 이미지에 대한 생각이나 영감을 적어보세요..."
-                    className="w-full h-32 bg-slate-50 border border-slate-100 rounded-xl p-4 text-slate-700 font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all resize-none"
+                    className="w-full h-32 bg-muted border border-border rounded-xl p-4 text-foreground font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all resize-none"
                   />
                 </div>
                 
-                <div className="mt-6 flex items-center justify-between border-t border-slate-100 pt-6">
-                  <div className="flex items-center gap-2 text-slate-500 font-bold text-sm">
+                <div className="mt-6 flex items-center justify-between border-t border-border pt-6">
+                  <div className="flex items-center gap-2 text-muted-foreground font-bold text-sm">
                     <Heart className="w-4 h-4 text-red-500 fill-current" /> {activeImage.data?.likes || 0}
                   </div>
                   <div className="flex items-center gap-1">
@@ -317,22 +317,22 @@ export function MasonryBoard() {
             <div className="absolute top-6 right-6 flex items-center gap-3 z-10 bg-black/40 backdrop-blur-md p-2 rounded-2xl">
               <button 
                 onClick={() => setScale(s => Math.max(0.1, s - 0.2))} 
-                className="p-3 bg-white/10 hover:bg-white/20 rounded-full text-white transition-colors"
+                className="p-3 bg-card/10 hover:bg-card/20 rounded-full text-white transition-colors"
                 title="축소"
               >
                 <ZoomOut className="w-5 h-5" />
               </button>
               <button 
                 onClick={() => setScale(s => s + 0.2)} 
-                className="p-3 bg-white/10 hover:bg-white/20 rounded-full text-white transition-colors"
+                className="p-3 bg-card/10 hover:bg-card/20 rounded-full text-white transition-colors"
                 title="확대"
               >
                 <ZoomIn className="w-5 h-5" />
               </button>
-              <div className="w-[1px] h-6 bg-white/20 mx-1"></div>
+              <div className="w-[1px] h-6 bg-card/20 mx-1"></div>
               <button 
                 onClick={() => handleDownload(activeImage.data?.image, activeImage.data?.originalName || activeImage.title)} 
-                className="p-3 bg-white/10 hover:bg-white/20 rounded-full text-white transition-colors"
+                className="p-3 bg-card/10 hover:bg-card/20 rounded-full text-white transition-colors"
                 title="원본 다운로드"
               >
                 <Download className="w-5 h-5" />

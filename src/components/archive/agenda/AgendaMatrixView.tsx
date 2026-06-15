@@ -73,8 +73,8 @@ const MatrixCard = ({
       className={cn(
         'relative flex items-start gap-3 p-3.5 rounded-2xl border transition-all duration-200 cursor-pointer group',
         isDone
-          ? 'bg-white/50 border-slate-100 opacity-60 hover:opacity-80'
-          : 'bg-white/80 backdrop-blur-sm border-white/80 shadow-sm hover:shadow-md hover:-translate-y-0.5'
+          ? 'bg-card/50 border-border opacity-60 hover:opacity-80'
+          : 'bg-card/80 backdrop-blur-sm border-transparent/80 shadow-sm hover:shadow-md hover:-translate-y-0.5'
       )}
     >
       {/* 완료 토글 (좌측) */}
@@ -88,7 +88,7 @@ const MatrixCard = ({
         {task.status === 'done' ? (
           <CheckCircle2 className="w-5 h-5 text-indigo-400" />
         ) : (
-          <Circle className="w-5 h-5 text-slate-300 group-hover:text-indigo-400 transition-colors" />
+          <Circle className="w-5 h-5 text-muted-foreground/50 group-hover:text-indigo-400 transition-colors" />
         )}
       </button>
 
@@ -96,7 +96,7 @@ const MatrixCard = ({
       <div className="flex-1 min-w-0">
         <h4 className={cn(
           'font-bold text-sm leading-tight line-clamp-2',
-          isDone ? 'text-slate-400 line-through' : 'text-slate-700'
+          isDone ? 'text-muted-foreground line-through' : 'text-foreground'
         )}>
           {task.title}
         </h4>
@@ -104,9 +104,9 @@ const MatrixCard = ({
         {/* 메타데이터 배지 */}
         <div className="flex flex-wrap items-center gap-1.5 mt-2">
           {category && (
-            <div className="flex items-center gap-1 px-2 py-0.5 rounded-md bg-slate-50 border border-slate-100">
+            <div className="flex items-center gap-1 px-2 py-0.5 rounded-md bg-muted border border-border">
               <div className="w-2 h-2 rounded-full" style={{ backgroundColor: (category as any).hex_color }} />
-              <span className="text-[10px] font-bold text-slate-600">{category.name}</span>
+              <span className="text-[10px] font-bold text-foreground">{category.name}</span>
             </div>
           )}
           {deadlineInfo && (
@@ -116,7 +116,7 @@ const MatrixCard = ({
             </div>
           )}
           {task.status === 'done' && task.completed_at && (
-            <div className="flex items-center gap-1 px-2 py-0.5 rounded-md bg-slate-50 text-slate-500">
+            <div className="flex items-center gap-1 px-2 py-0.5 rounded-md bg-muted text-muted-foreground">
               <CheckCircle2 className="w-3 h-3" />
               <span className="text-[10px] font-bold">
                 {format(new Date(task.completed_at), 'M/d 완료', { locale: ko })}
@@ -146,7 +146,7 @@ const MatrixCard = ({
               'p-1 rounded-full transition-colors',
               task.is_important
                 ? 'text-amber-400 hover:bg-amber-50'
-                : 'text-slate-300 hover:text-amber-400 hover:bg-slate-50'
+                : 'text-muted-foreground/50 hover:text-amber-400 hover:bg-muted'
             )}
           >
             <Star className={cn('w-4 h-4', task.is_important ? 'fill-current' : '')} />
@@ -202,19 +202,19 @@ const MatrixQuadrant = ({
       {/* 헤더 */}
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2.5">
-          <div className={cn('p-2 rounded-xl bg-white shadow-sm', config.colorClass)}>
+          <div className={cn('p-2 rounded-xl bg-card shadow-sm', config.colorClass)}>
             <Icon className="w-4 h-4" />
           </div>
           <div>
             <h3 className={cn('font-extrabold text-sm leading-none', config.colorClass)}>
               {config.title}
             </h3>
-            <span className="text-[10px] font-bold text-slate-500 mt-0.5 block">
+            <span className="text-[10px] font-bold text-muted-foreground mt-0.5 block">
               {config.subtitle}
             </span>
           </div>
         </div>
-        <span className="text-xs font-bold text-slate-400 bg-white/60 px-2.5 py-1 rounded-full shadow-sm">
+        <span className="text-xs font-bold text-muted-foreground bg-card/60 px-2.5 py-1 rounded-full shadow-sm">
           {tasks.length}
         </span>
       </div>
@@ -224,7 +224,7 @@ const MatrixQuadrant = ({
         {tasks.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full py-8 opacity-40">
             <Icon className={cn('w-8 h-8 mb-2', config.colorClass)} />
-            <p className="text-xs font-bold text-slate-500 text-center leading-relaxed">
+            <p className="text-xs font-bold text-muted-foreground text-center leading-relaxed">
               {config.emptyMessage}
             </p>
           </div>
@@ -288,9 +288,9 @@ export const AgendaMatrixView = ({ openDetail, onAddToCalendar }: { openDetail: 
       title: 'Done',
       subtitle: '완료된 항목',
       icon: CheckCircle2,
-      colorClass: 'text-slate-500',
-      bgClass: 'bg-slate-50/60',
-      borderClass: 'border-slate-200',
+      colorClass: 'text-muted-foreground',
+      bgClass: 'bg-muted/60',
+      borderClass: 'border-border',
       emptyMessage: '아직 완료된\n항목이 없습니다'
     }
   ];

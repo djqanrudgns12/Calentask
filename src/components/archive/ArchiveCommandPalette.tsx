@@ -34,7 +34,7 @@ export function ArchiveCommandPalette() {
 
   return (
     <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-start justify-center pt-[20vh]">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl overflow-hidden">
+      <div className="bg-card rounded-xl shadow-2xl w-full max-w-2xl overflow-hidden">
         <input 
           autoFocus
           className="w-full px-6 py-4 text-lg border-b outline-none"
@@ -45,7 +45,7 @@ export function ArchiveCommandPalette() {
         />
         <div className="p-4 space-y-2">
           <div 
-            className="px-4 py-2 hover:bg-slate-100 rounded-lg cursor-pointer"
+            className="px-4 py-2 hover:bg-muted rounded-lg cursor-pointer"
             onClick={() => {
               router.push('/archive/notes');
               setCommandPaletteOpen(false);
@@ -54,7 +54,7 @@ export function ArchiveCommandPalette() {
             Go to Notes
           </div>
           <div 
-            className="px-4 py-2 hover:bg-slate-100 rounded-lg cursor-pointer"
+            className="px-4 py-2 hover:bg-muted rounded-lg cursor-pointer"
             onClick={() => {
               router.push('/archive/agenda');
               setCommandPaletteOpen(false);
