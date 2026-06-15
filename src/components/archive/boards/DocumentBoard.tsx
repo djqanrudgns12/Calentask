@@ -34,6 +34,22 @@ import { Toggle } from './extensions/ToggleExtension';
 import { Bookmark } from './extensions/BookmarkExtension';
 import { SlashGuideModal } from '../SlashGuideModal';
 import { cn } from '@/lib/utils';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import BulletList from '@tiptap/extension-bullet-list';
+import OrderedList from '@tiptap/extension-ordered-list';
+
+const CustomBulletList = BulletList.extend({
+  addInputRules() {
+    return [];
+  },
+});
+
+const CustomOrderedList = OrderedList.extend({
+  addInputRules() {
+    return [];
+  },
+});
+
 // New Extensions
 import Underline from '@tiptap/extension-underline';
 import Strike from '@tiptap/extension-strike';
@@ -193,23 +209,23 @@ export function DocumentBoard() {
     }
   }, [activeTabId, docItem?.id, currentTab?.name]);
 
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+
   // Handle Ctrl+Wheel for Zoom
   useEffect(() => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+
     const handleWheel = (e: WheelEvent) => {
       if (e.ctrlKey) {
         e.preventDefault();
-        if (e.deltaY < 0) {
-          setZoom(z => Math.min(200, z + 10));
-        } else {
-          setZoom(z => Math.max(50, z - 10));
-        }
+        const zoomChange = -e.deltaY * 0.5;
+        setZoom(z => Math.min(200, Math.max(50, z + zoomChange)));
       }
     };
-    const editorContainer = document.getElementById('editor-scroll-container');
-    if (editorContainer) {
-      editorContainer.addEventListener('wheel', handleWheel, { passive: false });
-      return () => editorContainer.removeEventListener('wheel', handleWheel);
-    }
+    
+    container.addEventListener('wheel', handleWheel, { passive: false });
+    return () => container.removeEventListener('wheel', handleWheel);
   }, []);
 
   const getValidContent = () => {
@@ -234,7 +250,12 @@ export function DocumentBoard() {
 
   const editor = useEditor({
     extensions: [
-      StarterKit,
+      StarterKit.configure({
+        bulletList: false,
+        orderedList: false,
+      }),
+      CustomBulletList,
+      CustomOrderedList,
       Placeholder.configure({ placeholder: "'/'를 입력하여 명령어를 사용하거나 글을 작성하기 시작하세요..." }),
       TextStyle,
       Color,
@@ -341,6 +362,7 @@ export function DocumentBoard() {
   };
 
   return (
+    <TooltipProvider delayDuration={500}>
     <div className="w-full h-full bg-slate-50 relative flex flex-col">
       {/* Ribbon Toolbar — 집중 모드에서는 숨김 (호버 슬라이드인 툴바로 대체) */}
       {!isFocusMode && (
@@ -359,19 +381,21 @@ export function DocumentBoard() {
           <div className="ml-auto flex items-center gap-3 text-xs font-bold text-slate-400 pb-2">
             {/* 왜: 모바일에서 줌 컨트롤은 네이티브 핀치줌으로 대체, 넘침 방지를 위해 숨김 */}
             <div className="hidden md:flex items-center gap-1 bg-slate-100/80 rounded-lg px-1.5 py-0.5 border border-slate-200/60">
-              <button onClick={() => setZoom(z => Math.max(50, z - 10))} className="p-0.5 hover:bg-white hover:shadow-sm rounded text-slate-500 transition-colors" title="축소"><ZoomOut className="w-3.5 h-3.5" /></button>
+              <Tooltip><TooltipTrigger asChild><button onClick={() => setZoom(z => Math.max(50, z - 10))} className="p-0.5 hover:bg-white hover:shadow-sm rounded text-slate-500 transition-colors"><ZoomOut className="w-3.5 h-3.5" /></button></TooltipTrigger><TooltipContent className="text-xs font-bold text-white bg-slate-800 border-none">축소</TooltipContent></Tooltip>
               <span className="text-[11px] font-bold w-9 text-center text-slate-600 tabular-nums">{zoom}%</span>
-              <button onClick={() => setZoom(z => Math.min(200, z + 10))} className="p-0.5 hover:bg-white hover:shadow-sm rounded text-slate-500 transition-colors" title="확대"><ZoomIn className="w-3.5 h-3.5" /></button>
+              <Tooltip><TooltipTrigger asChild><button onClick={() => setZoom(z => Math.min(200, z + 10))} className="p-0.5 hover:bg-white hover:shadow-sm rounded text-slate-500 transition-colors"><ZoomIn className="w-3.5 h-3.5" /></button></TooltipTrigger><TooltipContent className="text-xs font-bold text-white bg-slate-800 border-none">확대</TooltipContent></Tooltip>
             </div>
-            <button onClick={() => setZoom(100)} className="hidden md:block text-[11px] font-semibold px-1.5 py-0.5 bg-slate-100 hover:bg-slate-200 text-slate-500 rounded border border-slate-200/60 transition-colors" title="100%로 초기화">100%</button>
+            <Tooltip><TooltipTrigger asChild><button onClick={() => setZoom(100)} className="hidden md:block text-[11px] font-semibold px-1.5 py-0.5 bg-slate-100 hover:bg-slate-200 text-slate-500 rounded border border-slate-200/60 transition-colors">100%</button></TooltipTrigger><TooltipContent className="text-xs font-bold text-white bg-slate-800 border-none">100%로 초기화</TooltipContent></Tooltip>
             <div className="hidden md:block w-px h-4 bg-slate-200" />
             {/* 왜: 글자 수/단어 수 통계도 모바일에서는 불필요하게 공간을 차지 */}
             <span className="hidden md:flex items-center gap-1.5"><Type className="w-3.5 h-3.5" /> {textCount}</span>
             <span className="hidden md:flex items-center gap-1.5"><FileText className="w-3.5 h-3.5" /> {wordCount}</span>
-            <button 
+            <Tooltip><TooltipTrigger asChild><button 
               onClick={() => { if (confirm('이 문서를 완전히 삭제하시겠습니까?')) deleteTab(activeTabId!); }}
-              className="p-1.5 hover:bg-rose-50 hover:text-rose-600 rounded transition-colors" title="문서 삭제"
-            ><Trash2 className="w-4 h-4" /></button>
+              className="p-1.5 hover:bg-rose-50 hover:text-rose-600 rounded transition-colors"
+            >
+              <Trash2 className="w-4 h-4" />
+            </button></TooltipTrigger><TooltipContent className="text-xs font-bold text-white bg-slate-800 border-none">문서 삭제</TooltipContent></Tooltip>
           </div>
         </div>
 
@@ -383,8 +407,8 @@ export function DocumentBoard() {
             <>
               {/* History */}
               <div className="flex items-center gap-1 pr-3 md:pr-4 border-r border-slate-200 shrink-0">
-                <button onClick={() => editor.chain().focus().undo().run()} disabled={!editor.can().undo()} className="p-1.5 rounded hover:bg-slate-100 disabled:opacity-30" title="실행 취소 (Ctrl+Z)"><Undo className="w-4 h-4 text-slate-700" /></button>
-                <button onClick={() => editor.chain().focus().redo().run()} disabled={!editor.can().redo()} className="p-1.5 rounded hover:bg-slate-100 disabled:opacity-30" title="다시 실행 (Ctrl+Y)"><Redo className="w-4 h-4 text-slate-700" /></button>
+                <Tooltip><TooltipTrigger asChild><button onClick={() => editor.chain().focus().undo().run()} disabled={!editor.can().undo()} className="p-1.5 rounded hover:bg-slate-100 disabled:opacity-30"><Undo className="w-4 h-4 text-slate-700" /></button></TooltipTrigger><TooltipContent className="text-xs font-bold text-white bg-slate-800 border-none">실행 취소 (Ctrl+Z)</TooltipContent></Tooltip>
+                <Tooltip><TooltipTrigger asChild><button onClick={() => editor.chain().focus().redo().run()} disabled={!editor.can().redo()} className="p-1.5 rounded hover:bg-slate-100 disabled:opacity-30"><Redo className="w-4 h-4 text-slate-700" /></button></TooltipTrigger><TooltipContent className="text-xs font-bold text-white bg-slate-800 border-none">다시 실행 (Ctrl+Y)</TooltipContent></Tooltip>
               </div>
 
               {/* Font */}
@@ -434,14 +458,14 @@ export function DocumentBoard() {
 
               {/* Formatting */}
               <div className="flex items-center gap-0.5 pr-3 md:pr-4 border-r border-slate-200 shrink-0">
-                <button onClick={() => editor.chain().focus().toggleBold().run()} className={cn("p-1.5 rounded transition-colors", editor.isActive('bold') ? "bg-slate-200 text-slate-900" : "text-slate-600 hover:bg-slate-100")} title="굵게"><Bold className="w-4 h-4" /></button>
-                <button onClick={() => editor.chain().focus().toggleItalic().run()} className={cn("p-1.5 rounded transition-colors", editor.isActive('italic') ? "bg-slate-200 text-slate-900" : "text-slate-600 hover:bg-slate-100")} title="기울임"><Italic className="w-4 h-4" /></button>
-                <button onClick={() => editor.chain().focus().toggleUnderline().run()} className={cn("p-1.5 rounded transition-colors", editor.isActive('underline') ? "bg-slate-200 text-slate-900" : "text-slate-600 hover:bg-slate-100")} title="밑줄"><UnderlineIcon className="w-4 h-4" /></button>
-                <button onClick={() => editor.chain().focus().toggleStrike().run()} className={cn("p-1.5 rounded transition-colors", editor.isActive('strike') ? "bg-slate-200 text-slate-900" : "text-slate-600 hover:bg-slate-100")} title="취소선"><Strikethrough className="w-4 h-4" /></button>
+                <Tooltip><TooltipTrigger asChild><button onClick={() => editor.chain().focus().toggleBold().run()} className={cn("p-1.5 rounded transition-colors", editor.isActive('bold') ? "bg-slate-200 text-slate-900" : "text-slate-600 hover:bg-slate-100")}><Bold className="w-4 h-4" /></button></TooltipTrigger><TooltipContent className="text-xs font-bold text-white bg-slate-800 border-none">굵게</TooltipContent></Tooltip>
+                <Tooltip><TooltipTrigger asChild><button onClick={() => editor.chain().focus().toggleItalic().run()} className={cn("p-1.5 rounded transition-colors", editor.isActive('italic') ? "bg-slate-200 text-slate-900" : "text-slate-600 hover:bg-slate-100")}><Italic className="w-4 h-4" /></button></TooltipTrigger><TooltipContent className="text-xs font-bold text-white bg-slate-800 border-none">기울임</TooltipContent></Tooltip>
+                <Tooltip><TooltipTrigger asChild><button onClick={() => editor.chain().focus().toggleUnderline().run()} className={cn("p-1.5 rounded transition-colors", editor.isActive('underline') ? "bg-slate-200 text-slate-900" : "text-slate-600 hover:bg-slate-100")}><UnderlineIcon className="w-4 h-4" /></button></TooltipTrigger><TooltipContent className="text-xs font-bold text-white bg-slate-800 border-none">밑줄</TooltipContent></Tooltip>
+                <Tooltip><TooltipTrigger asChild><button onClick={() => editor.chain().focus().toggleStrike().run()} className={cn("p-1.5 rounded transition-colors", editor.isActive('strike') ? "bg-slate-200 text-slate-900" : "text-slate-600 hover:bg-slate-100")}><Strikethrough className="w-4 h-4" /></button></TooltipTrigger><TooltipContent className="text-xs font-bold text-white bg-slate-800 border-none">취소선</TooltipContent></Tooltip>
                 
                 {/* Text Color */}
                 <div className="relative ml-1">
-                  <button onClick={() => setShowTextColor(!showTextColor)} className="p-1.5 rounded hover:bg-slate-100 text-slate-600 flex items-center gap-0.5" title="글자 색상"><Palette className="w-4 h-4" /><ChevronDown className="w-2 h-2" /></button>
+                  <Tooltip><TooltipTrigger asChild><button onClick={() => setShowTextColor(!showTextColor)} className="p-1.5 rounded hover:bg-slate-100 text-slate-600 flex items-center gap-0.5"><Palette className="w-4 h-4" /><ChevronDown className="w-2 h-2" /></button></TooltipTrigger><TooltipContent className="text-xs font-bold text-white bg-slate-800 border-none">글자 색상</TooltipContent></Tooltip>
                   {showTextColor && (
                     <>
                       <div className="fixed inset-0 z-40" onClick={() => setShowTextColor(false)} />
@@ -456,7 +480,7 @@ export function DocumentBoard() {
 
                 {/* Highlight Color */}
                 <div className="relative">
-                  <button onClick={() => setShowHighlightColor(!showHighlightColor)} className="p-1.5 rounded hover:bg-slate-100 text-slate-600 flex items-center gap-0.5" title="배경 색상"><Highlighter className="w-4 h-4" /><ChevronDown className="w-2 h-2" /></button>
+                  <Tooltip><TooltipTrigger asChild><button onClick={() => setShowHighlightColor(!showHighlightColor)} className="p-1.5 rounded hover:bg-slate-100 text-slate-600 flex items-center gap-0.5"><Highlighter className="w-4 h-4" /><ChevronDown className="w-2 h-2" /></button></TooltipTrigger><TooltipContent className="text-xs font-bold text-white bg-slate-800 border-none">배경 색상</TooltipContent></Tooltip>
                   {showHighlightColor && (
                     <>
                       <div className="fixed inset-0 z-40" onClick={() => setShowHighlightColor(false)} />
@@ -626,8 +650,8 @@ export function DocumentBoard() {
                 <div className="px-4 py-2 flex items-center gap-x-3">
                   {/* ── 히스토리 ── */}
                   <div className="flex items-center gap-1 pr-3 border-r border-slate-200">
-                    <button onClick={() => editor.chain().focus().undo().run()} disabled={!editor.can().undo()} className="p-1.5 rounded hover:bg-slate-100 disabled:opacity-30" title="실행 취소"><Undo className="w-4 h-4 text-slate-700" /></button>
-                    <button onClick={() => editor.chain().focus().redo().run()} disabled={!editor.can().redo()} className="p-1.5 rounded hover:bg-slate-100 disabled:opacity-30" title="다시 실행"><Redo className="w-4 h-4 text-slate-700" /></button>
+                    <Tooltip><TooltipTrigger asChild><button onClick={() => editor.chain().focus().undo().run()} disabled={!editor.can().undo()} className="p-1.5 rounded hover:bg-slate-100 disabled:opacity-30"><Undo className="w-4 h-4 text-slate-700" /></button></TooltipTrigger><TooltipContent className="text-xs font-bold text-white bg-slate-800 border-none">실행 취소</TooltipContent></Tooltip>
+                    <Tooltip><TooltipTrigger asChild><button onClick={() => editor.chain().focus().redo().run()} disabled={!editor.can().redo()} className="p-1.5 rounded hover:bg-slate-100 disabled:opacity-30"><Redo className="w-4 h-4 text-slate-700" /></button></TooltipTrigger><TooltipContent className="text-xs font-bold text-white bg-slate-800 border-none">다시 실행</TooltipContent></Tooltip>
                   </div>
 
                   {/* ── 글꼴 셀렉터 (직접 노출) ── */}
@@ -676,9 +700,9 @@ export function DocumentBoard() {
 
                   {/* ── B, I, U 토글 (직접 노출) ── */}
                   <div className="flex items-center gap-0.5 pr-3 border-r border-slate-200">
-                    <button onClick={() => editor.chain().focus().toggleBold().run()} className={cn("p-1.5 rounded transition-colors", editor.isActive('bold') ? "bg-slate-200 text-slate-900" : "text-slate-600 hover:bg-slate-100")} title="굵게"><Bold className="w-4 h-4" /></button>
-                    <button onClick={() => editor.chain().focus().toggleItalic().run()} className={cn("p-1.5 rounded transition-colors", editor.isActive('italic') ? "bg-slate-200 text-slate-900" : "text-slate-600 hover:bg-slate-100")} title="기울임"><Italic className="w-4 h-4" /></button>
-                    <button onClick={() => editor.chain().focus().toggleUnderline().run()} className={cn("p-1.5 rounded transition-colors", editor.isActive('underline') ? "bg-slate-200 text-slate-900" : "text-slate-600 hover:bg-slate-100")} title="밑줄"><UnderlineIcon className="w-4 h-4" /></button>
+                    <Tooltip><TooltipTrigger asChild><button onClick={() => editor.chain().focus().toggleBold().run()} className={cn("p-1.5 rounded transition-colors", editor.isActive('bold') ? "bg-slate-200 text-slate-900" : "text-slate-600 hover:bg-slate-100")}><Bold className="w-4 h-4" /></button></TooltipTrigger><TooltipContent className="text-xs font-bold text-white bg-slate-800 border-none">굵게</TooltipContent></Tooltip>
+                    <Tooltip><TooltipTrigger asChild><button onClick={() => editor.chain().focus().toggleItalic().run()} className={cn("p-1.5 rounded transition-colors", editor.isActive('italic') ? "bg-slate-200 text-slate-900" : "text-slate-600 hover:bg-slate-100")}><Italic className="w-4 h-4" /></button></TooltipTrigger><TooltipContent className="text-xs font-bold text-white bg-slate-800 border-none">기울임</TooltipContent></Tooltip>
+                    <Tooltip><TooltipTrigger asChild><button onClick={() => editor.chain().focus().toggleUnderline().run()} className={cn("p-1.5 rounded transition-colors", editor.isActive('underline') ? "bg-slate-200 text-slate-900" : "text-slate-600 hover:bg-slate-100")}><UnderlineIcon className="w-4 h-4" /></button></TooltipTrigger><TooltipContent className="text-xs font-bold text-white bg-slate-800 border-none">밑줄</TooltipContent></Tooltip>
                   </div>
 
                   {/* ── 드롭다운 1: 텍스트 서식 ── */}
@@ -760,10 +784,10 @@ export function DocumentBoard() {
                           <div>
                             <div className="text-xs font-semibold text-slate-500 mb-1.5 px-1">목록</div>
                             <div className="flex items-center gap-1 px-1">
-                              <button onClick={() => editor.chain().focus().toggleBulletList().run()} className={cn("p-1.5 rounded transition-colors", editor.isActive('bulletList') ? "bg-slate-200" : "hover:bg-slate-100")} title="글머리 기호"><List className="w-4 h-4" /></button>
-                              <button onClick={() => editor.chain().focus().toggleOrderedList().run()} className={cn("p-1.5 rounded transition-colors", editor.isActive('orderedList') ? "bg-slate-200" : "hover:bg-slate-100")} title="번호 매기기"><ListOrdered className="w-4 h-4" /></button>
-                              <button onClick={() => editor.chain().focus().toggleTaskList().run()} className={cn("p-1.5 rounded transition-colors", editor.isActive('taskList') ? "bg-slate-200" : "hover:bg-slate-100")} title="체크리스트"><SquareCheckBig className="w-4 h-4" /></button>
-                              <button onClick={() => editor.chain().focus().toggleBlockquote().run()} className={cn("p-1.5 rounded transition-colors", editor.isActive('blockquote') ? "bg-slate-200" : "hover:bg-slate-100")} title="인용구"><Quote className="w-4 h-4" /></button>
+                              <Tooltip><TooltipTrigger asChild><button onClick={() => editor.chain().focus().toggleBulletList().run()} className={cn("p-1.5 rounded transition-colors", editor.isActive('bulletList') ? "bg-slate-200" : "hover:bg-slate-100")}><List className="w-4 h-4" /></button></TooltipTrigger><TooltipContent className="text-xs font-bold text-white bg-slate-800 border-none">글머리 기호</TooltipContent></Tooltip>
+                              <Tooltip><TooltipTrigger asChild><button onClick={() => editor.chain().focus().toggleOrderedList().run()} className={cn("p-1.5 rounded transition-colors", editor.isActive('orderedList') ? "bg-slate-200" : "hover:bg-slate-100")}><ListOrdered className="w-4 h-4" /></button></TooltipTrigger><TooltipContent className="text-xs font-bold text-white bg-slate-800 border-none">번호 매기기</TooltipContent></Tooltip>
+                              <Tooltip><TooltipTrigger asChild><button onClick={() => editor.chain().focus().toggleTaskList().run()} className={cn("p-1.5 rounded transition-colors", editor.isActive('taskList') ? "bg-slate-200" : "hover:bg-slate-100")}><SquareCheckBig className="w-4 h-4" /></button></TooltipTrigger><TooltipContent className="text-xs font-bold text-white bg-slate-800 border-none">체크리스트</TooltipContent></Tooltip>
+                              <Tooltip><TooltipTrigger asChild><button onClick={() => editor.chain().focus().toggleBlockquote().run()} className={cn("p-1.5 rounded transition-colors", editor.isActive('blockquote') ? "bg-slate-200" : "hover:bg-slate-100")}><Quote className="w-4 h-4" /></button></TooltipTrigger><TooltipContent className="text-xs font-bold text-white bg-slate-800 border-none">인용구</TooltipContent></Tooltip>
                             </div>
                           </div>
                         </div>
@@ -821,19 +845,19 @@ export function DocumentBoard() {
           </AnimatePresence>
 
           {/* 플로팅 나가기 버튼 (우측 상단, 반투명) */}
-          <button 
+          <Tooltip><TooltipTrigger asChild><button 
             onClick={() => setFocusMode(null)}
             className="fixed top-4 right-4 z-40 p-2 bg-black/10 hover:bg-black/20 backdrop-blur-sm rounded-full text-slate-500 hover:text-slate-800 transition-all opacity-40 hover:opacity-100"
-            title="집중 모드 나가기 (ESC)"
           >
             <X className="w-5 h-5" />
-          </button>
+          </button></TooltipTrigger><TooltipContent className="text-xs font-bold text-white bg-slate-800 border-none">집중 모드 나가기 (ESC)</TooltipContent></Tooltip>
         </>
       )}
 
       {/* Editor Area - Word/HWP Style Paginated View */}
       <div 
         id="editor-scroll-container"
+        ref={scrollContainerRef}
         data-scroll-detect
         className={cn(
           "flex-1 overflow-y-auto cursor-text transition-all duration-300 origin-top",
@@ -913,6 +937,7 @@ export function DocumentBoard() {
       
       <SlashGuideModal isOpen={isGuideModalOpen} onClose={() => setIsGuideModalOpen(false)} />
     </div>
+    </TooltipProvider>
   );
 }
 
