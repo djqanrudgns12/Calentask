@@ -16,13 +16,13 @@ export function SmartInsightWidget({ categories, getUsageCount }: SmartInsightWi
   // 가장 일정이 많은 카테고리 찾기 (Hot)
   let hotCategory: Category | null = null
   let maxCount = -1
-  categories.forEach(cat => {
+  for (const cat of categories) {
     const count = getUsageCount(cat.id)
     if (count > maxCount) {
       maxCount = count
       hotCategory = cat
     }
-  })
+  }
 
   // 이번 주 마감 임박은 일단 더미 데이터로 표시하거나 로직 추가 (추후 Phase 3에서 고도화)
   // 현재는 단순 UI 용
