@@ -3,7 +3,7 @@
 import React, { useMemo, useState, useRef, useEffect } from 'react'
 import { format, parseISO, isValid, isSameDay } from 'date-fns'
 import { ko } from 'date-fns/locale'
-import { Clock, CalendarDays, Inbox, Sparkles, ChevronDown } from 'lucide-react'
+import { Clock, CalendarDays, Inbox, Sparkles, ChevronDown, ArrowRight, Pencil, Trash2 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useCalendarStore } from '@/store/useCalendarStore'
 import type { Activity } from '@/app/actions/calendar'
@@ -25,7 +25,7 @@ const RANGE_LABELS: Record<TimelineRange, string> = {
 }
 
 export const ScheduleTimeline = React.memo(function ScheduleTimeline({ events, currentRange, onRangeChange }: ScheduleTimelineProps) {
-  const { openEventDetail, openAddEvent } = useCalendarStore()
+  const { openEventDetail, openAddEvent, setViewMode, openEditEvent, openDeleteConfirm } = useCalendarStore()
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
 
@@ -125,7 +125,7 @@ export const ScheduleTimeline = React.memo(function ScheduleTimeline({ events, c
           key={event.id}
           whileHover={{ y: -1, scale: 1.01 }}
           onClick={() => openEventDetail(event)}
-          className={`flex items-center justify-between p-2.5 rounded-xl transition-all border cursor-pointer ${
+          className={`group flex items-center justify-between p-2.5 rounded-xl transition-all border cursor-pointer ${
             active
               ? 'bg-gradient-to-r from-blue-50/80 to-white border-blue-100/60 shadow-[0_2px_10px_-3px_rgba(59,130,246,0.15)]'
               : 'bg-white/60 border-slate-100 hover:bg-white hover:border-slate-200 hover:shadow-sm'
@@ -143,14 +143,32 @@ export const ScheduleTimeline = React.memo(function ScheduleTimeline({ events, c
               </span>
             </div>
           </div>
-          {categoryName && (
-            <span
-              className="shrink-0 ml-2 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold"
-              style={{ backgroundColor: `${color}12`, color: color, border: `1px solid ${color}20` }}
-            >
-              {categoryName}
-            </span>
-          )}
+          <div className="flex items-center shrink-0 ml-2">
+            {categoryName && (
+              <span
+                className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold group-hover:hidden transition-all"
+                style={{ backgroundColor: `${color}12`, color: color, border: `1px solid ${color}20` }}
+              >
+                {categoryName}
+              </span>
+            )}
+            <div className="hidden group-hover:flex items-center gap-1 animate-in fade-in slide-in-from-right-2 duration-200">
+              <button
+                onClick={(e) => { e.stopPropagation(); openEditEvent(event); }}
+                className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"
+                title="수정"
+              >
+                <Pencil className="w-4 h-4" />
+              </button>
+              <button
+                onClick={(e) => { e.stopPropagation(); openDeleteConfirm(event.id); }}
+                className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors"
+                title="삭제"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
         </motion.div>
       )
     }
@@ -202,16 +220,33 @@ export const ScheduleTimeline = React.memo(function ScheduleTimeline({ events, c
           <h4 className="text-sm font-bold text-slate-800 leading-tight line-clamp-2">
             {event.title}
           </h4>
-          {categoryName && (
-            <div className="flex items-center mt-2">
+          <div className="flex items-center justify-between mt-2">
+            {categoryName ? (
               <span
-                className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold"
+                className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold group-hover:hidden"
                 style={{ backgroundColor: `${color}12`, color: color, border: `1px solid ${color}20` }}
               >
                 {categoryName}
               </span>
+            ) : <div />}
+            
+            <div className="hidden group-hover:flex items-center gap-1 animate-in fade-in slide-in-from-right-2 duration-200 -mr-1">
+              <button
+                onClick={(e) => { e.stopPropagation(); openEditEvent(event); }}
+                className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"
+                title="수정"
+              >
+                <Pencil className="w-4 h-4" />
+              </button>
+              <button
+                onClick={(e) => { e.stopPropagation(); openDeleteConfirm(event.id); }}
+                className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors"
+                title="삭제"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
             </div>
-          )}
+          </div>
         </motion.div>
       </div>
     )
@@ -269,12 +304,21 @@ export const ScheduleTimeline = React.memo(function ScheduleTimeline({ events, c
             </p>
           </div>
         </div>
-        <button
-          onClick={handleAddEvent}
-          className="px-3 py-1.5 rounded-full bg-blue-50 hover:bg-blue-100 text-blue-600 text-xs font-bold transition-colors shrink-0"
-        >
-          + 일정 추가
-        </button>
+        <div className="flex items-center gap-2 shrink-0">
+          <button
+            onClick={() => setViewMode('monthly')}
+            className="flex items-center gap-1 text-xs font-bold text-slate-400 hover:text-slate-600 transition-colors"
+          >
+            전체 보기
+            <ArrowRight className="w-3 h-3" />
+          </button>
+          <button
+            onClick={handleAddEvent}
+            className="px-3 py-1.5 rounded-full bg-blue-50 hover:bg-blue-100 text-blue-600 text-xs font-bold transition-colors"
+          >
+            + 일정 추가
+          </button>
+        </div>
       </div>
 
       {/* 일간 뷰: 종일 일정 배너 */}

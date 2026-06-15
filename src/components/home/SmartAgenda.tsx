@@ -2,14 +2,23 @@
 
 import React, { useState, useMemo, useCallback } from 'react'
 import { format, isPast, isToday as isTodayFn, parseISO, isValid } from 'date-fns'
-import { CheckCircle2, Circle, ListTodo, ChevronDown, Plus, AlertTriangle, Clock, Calendar } from 'lucide-react'
+import { CheckCircle2, Circle, ListTodo, ChevronDown, Plus, AlertTriangle, Clock, Calendar, ArrowRight, Pencil, Trash2 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAgendaStore } from '@/store/useAgendaStore'
+import type { AgendaTask } from '@/store/useAgendaStore'
+import { useCalendarStore } from '@/store/useCalendarStore'
+import { useCategories } from '@/hooks/useCalendarQueries'
+import { EditAgendaTaskDialog } from '../archive/EditAgendaTaskDialog'
 
 const INITIAL_DISPLAY_COUNT = 5
 
 export const SmartAgenda = React.memo(function SmartAgenda() {
-  const { tasks, addTask, setTaskStatus } = useAgendaStore()
+  const { tasks, addTask, setTaskStatus, updateTask, deleteTask, addSubtask, updateSubtask, deleteSubtask } = useAgendaStore()
+  const { setViewMode } = useCalendarStore()
+  const { data: categories = [] } = useCategories()
+  const [selectedTaskId, setSelectedTaskId] = React.useState<string | null>(null)
+  const [editForm, setEditForm] = React.useState<Partial<AgendaTask> | null>(null)
+  const inputRef = React.useRef<HTMLInputElement>(null)
   const [isExpanded, setIsExpanded] = useState(false)
   const [newTaskTitle, setNewTaskTitle] = useState('')
   const [isAdding, setIsAdding] = useState(false)
@@ -124,6 +133,22 @@ export const SmartAgenda = React.memo(function SmartAgenda() {
             </p>
           </div>
         </div>
+        
+        <div className="flex items-center gap-2 shrink-0">
+          <button
+            onClick={() => setViewMode('archive_agenda')}
+            className="flex items-center gap-1 text-xs font-bold text-slate-400 hover:text-slate-600 transition-colors"
+          >
+            전체 보기
+            <ArrowRight className="w-3 h-3" />
+          </button>
+          <button
+            onClick={() => inputRef.current?.focus()}
+            className="px-3 py-1.5 rounded-full bg-emerald-50 hover:bg-emerald-100 text-emerald-600 text-xs font-bold transition-colors"
+          >
+            + 할 일 추가
+          </button>
+        </div>
       </div>
 
       {/* 할 일 리스트 */}
@@ -162,6 +187,23 @@ export const SmartAgenda = React.memo(function SmartAgenda() {
                     {getDeadlineBadge(task.deadline)}
                   </div>
                 </div>
+                
+                <div className="hidden group-hover:flex items-center gap-1 animate-in fade-in slide-in-from-right-2 duration-200 mt-0.5 pr-1">
+                  <button
+                    onClick={(e) => { e.stopPropagation(); setSelectedTaskId(task.id); }}
+                    className="p-1.5 rounded-lg text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 transition-colors"
+                    title="수정"
+                  >
+                    <Pencil className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); if(confirm('이 항목을 삭제하시겠습니까?')) deleteTask(task.id); }}
+                    className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors"
+                    title="삭제"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
               </motion.div>
             ))}
           </AnimatePresence>
@@ -190,6 +232,7 @@ export const SmartAgenda = React.memo(function SmartAgenda() {
           <Plus className="w-4 h-4 text-slate-300 shrink-0" />
           <input
             type="text"
+            ref={inputRef}
             value={newTaskTitle}
             onChange={(e) => setNewTaskTitle(e.target.value)}
             onKeyDown={handleKeyDown}
@@ -208,6 +251,20 @@ export const SmartAgenda = React.memo(function SmartAgenda() {
           )}
         </div>
       </div>
+      
+      <EditAgendaTaskDialog 
+        task={tasks.find(t => t.id === selectedTaskId) || null}
+        isOpen={!!selectedTaskId}
+        onClose={() => {
+          setSelectedTaskId(null);
+          setEditForm(null);
+        }}
+        categories={categories}
+        onSave={updateTask}
+        onAddSubtask={addSubtask}
+        onUpdateSubtask={updateSubtask}
+        onDeleteSubtask={deleteSubtask}
+      />
     </div>
   )
 })

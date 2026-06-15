@@ -8,7 +8,7 @@ import { useCalendarStore } from '@/store/useCalendarStore'
 import { useArchiveStore } from '@/store/useArchiveStore'
 import { useAgendaStore } from '@/store/useAgendaStore'
 import { Button } from '@/components/ui/button'
-import { Plus, Tags, Database, LogOut, Calendar as CalendarIcon, DownloadCloud, Gift, Sparkles, ChevronDown, Archive, NotebookPen, Bookmark, Trash2 } from 'lucide-react'
+import { Plus, Tags, Database, LogOut, Calendar as CalendarIcon, DownloadCloud, Gift, Sparkles, ChevronDown, Archive, NotebookPen, Bookmark, Trash2, Settings, Home } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 
 import { startOfWeek, endOfWeek } from 'date-fns'
@@ -48,7 +48,6 @@ import { HomeDashboard } from '@/components/home/HomeDashboard'
 import { BottomNavigation } from '@/components/ui/BottomNavigation'
 import { CommandPalette } from '@/components/ui/CommandPalette'
 import { MobileCategoryBar } from '@/components/calendar/MobileCategoryBar'
-import { PwaInstallPrompt } from '@/components/ui/PwaInstallPrompt'
 
 export default function CalendarPage() {
   const [mounted, setMounted] = useState(false)
@@ -66,7 +65,7 @@ export default function CalendarPage() {
   const isCalendarMenuOpen = ['monthly', 'weekly', 'list', 'semester', 'archive_agenda', 'anniversary'].includes(viewMode)
   const isMyCalendarActive = ['monthly', 'weekly', 'list', 'semester'].includes(viewMode)
   const isArchiveMenuOpen = ['archive_notes', 'link_lounge'].includes(viewMode)
-  const isDataCenterMenuOpen = ['nice_import', 'tags', 'trash'].includes(viewMode)
+  const isDataCenterMenuOpen = ['insights', 'nice_import', 'tags', 'trash'].includes(viewMode)
 
   const handleLogout = async () => {
     resetStore()
@@ -185,245 +184,256 @@ export default function CalendarPage() {
           {/* 다가오는 기념일 D-Day 위젯 (최상단) */}
           <UpcomingAnniversaryWidget />
 
-          <div className="pb-3 mb-2 relative">
-            <div className="flex flex-col space-y-1.5">
-            {/* 홈(대시보드) 버튼 */}
-            <button 
-              onClick={() => setViewMode('home')}
-              className={`group relative w-full text-left px-4 py-3.5 rounded-2xl text-[15px] transition-all duration-300 ease-out flex items-center gap-3 ${
-                isHome 
-                ? 'bg-gradient-to-r from-violet-50/80 to-white text-violet-700 font-bold shadow-[0_2px_10px_-3px_rgba(139,92,246,0.2)] border border-violet-100 translate-y-[-1px]' 
-                : 'bg-transparent text-slate-500 hover:bg-white hover:shadow-sm hover:text-slate-900 border border-transparent'
-              }`}
-            >
-              {isHome && (
-                <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-violet-500 rounded-r-full shadow-[0_0_8px_rgba(139,92,246,0.6)]" />
-              )}
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={`w-5 h-5 transition-colors ${isHome ? 'text-violet-600' : 'text-slate-400 group-hover:text-violet-500'}`}><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-              <span>홈</span>
-            </button>
-
-            <button 
-              onClick={() => {
-                if (!isCalendarMenuOpen) setViewMode('monthly')
-              }}
-              className={`group relative w-full text-left px-4 py-3.5 rounded-2xl text-[15px] transition-all duration-300 ease-out flex items-center justify-between ${
-                isCalendarMenuOpen 
-                ? 'bg-gradient-to-r from-blue-50/80 to-white text-blue-700 font-bold shadow-[0_2px_10px_-3px_rgba(59,130,246,0.2)] border border-blue-100 translate-y-[-1px]' 
-                : 'bg-transparent text-slate-500 hover:bg-white hover:shadow-sm hover:text-slate-900 border border-transparent'
-              }`}
-            >
-              {isCalendarMenuOpen && (
-                <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-blue-500 rounded-r-full shadow-[0_0_8px_rgba(59,130,246,0.6)]" />
-              )}
-              <div className="flex items-center gap-3">
-                <CalendarIcon className={`w-5 h-5 transition-colors ${isCalendarMenuOpen ? 'text-blue-600' : 'text-slate-400 group-hover:text-blue-500'}`} />
-                <span>캘린더 관리</span>
-              </div>
-              <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${isCalendarMenuOpen ? 'rotate-180 text-blue-600' : 'text-slate-400'}`} />
-            </button>
-
-            <AnimatePresence initial={false}>
-              {isCalendarMenuOpen && (
-                <motion.div
-                  initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: 'auto', opacity: 1 }}
-                  exit={{ height: 0, opacity: 0 }}
-                  transition={{ duration: 0.3, ease: 'easeInOut' }}
-                  className="overflow-hidden"
-                >
-                  <div className="flex flex-col space-y-1 mt-1.5 pb-1">
-                    <button 
-                      onClick={() => setViewMode('monthly')}
-                      className={`w-[calc(100%-1.25rem)] ml-5 text-left px-4 py-2.5 rounded-xl text-sm transition-all duration-300 flex items-center gap-2.5 ${
-                        isMyCalendarActive
-                        ? 'bg-blue-50/80 text-blue-700 font-semibold shadow-sm border border-blue-100/50' 
-                        : 'bg-transparent text-slate-400 hover:bg-white hover:shadow-sm hover:text-slate-700 border border-transparent'
-                      }`}
-                    >
-                      <CalendarIcon className={`w-4 h-4 ${isMyCalendarActive ? 'text-blue-500' : 'text-slate-300'}`} />
-                      나의 캘린더
-                    </button>
-
-                    <button 
-                      onClick={() => setViewMode('archive_agenda')}
-                      className={`w-[calc(100%-1.25rem)] ml-5 text-left px-4 py-2.5 rounded-xl text-sm transition-all duration-300 flex items-center gap-2.5 ${
-                        viewMode === 'archive_agenda' 
-                        ? 'bg-purple-50/80 text-purple-700 font-semibold shadow-sm border border-purple-100/50' 
-                        : 'bg-transparent text-slate-400 hover:bg-white hover:shadow-sm hover:text-slate-700 border border-transparent'
-                      }`}
-                    >
-                      <Sparkles className={`w-4 h-4 ${viewMode === 'archive_agenda' ? 'text-purple-500' : 'text-slate-300'}`} />
-                      아젠다
-                    </button>
-
-                    <button 
-                      onClick={() => setViewMode('anniversary')}
-                      className={`w-[calc(100%-1.25rem)] ml-5 text-left px-4 py-2.5 rounded-xl text-sm transition-all duration-300 flex items-center gap-2.5 ${
-                        viewMode === 'anniversary' 
-                        ? 'bg-pink-50/80 text-pink-700 font-semibold shadow-sm border border-pink-100/50' 
-                        : 'bg-transparent text-slate-400 hover:bg-white hover:shadow-sm hover:text-slate-700 border border-transparent'
-                      }`}
-                    >
-                      <Gift className={`w-4 h-4 ${viewMode === 'anniversary' ? 'text-pink-500' : 'text-slate-300'}`} />
-                      기념일 설정
-                    </button>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
+          {/* DASHBOARD 섹션 */}
+          <div className="mb-6">
+            <div className="px-4 mb-2 text-[11px] font-bold tracking-widest text-slate-400">DASHBOARD</div>
+            <div className="flex flex-col space-y-1">
+              {/* 홈 버튼 */}
+              <button 
+                onClick={() => setViewMode('home')}
+                className={`group relative w-full text-left px-3.5 py-2.5 h-[42px] rounded-xl text-[14px] transition-all duration-300 ease-out flex items-center gap-3 ${
+                  isHome 
+                  ? 'bg-violet-50/70 text-violet-700 font-bold' 
+                  : 'bg-transparent text-slate-500 hover:bg-slate-50/80 hover:text-slate-900'
+                }`}
+              >
+                {isHome && (
+                  <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-5 bg-violet-500 rounded-r-full" />
+                )}
+                <Home className={`w-4 h-4 transition-transform ${isHome ? 'text-violet-600' : 'text-slate-400 group-hover:scale-105 group-hover:text-violet-500'}`} />
+                <span>홈</span>
+              </button>
             </div>
-
-            <button 
-              onClick={() => {
-                if (!isArchiveMenuOpen) setViewMode('archive_notes')
-              }}
-              className={`group relative w-full text-left px-4 py-3.5 rounded-2xl text-[15px] transition-all duration-300 overflow-hidden flex items-center justify-between ${
-                isArchiveMenuOpen 
-                ? 'bg-gradient-to-r from-slate-100 to-white text-slate-800 font-bold shadow-sm border border-slate-200' 
-                : 'font-medium text-slate-500 hover:bg-white hover:shadow-sm hover:text-slate-800 border border-transparent'
-              } mt-2`}
-            >
-              {isArchiveMenuOpen && (
-                <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-slate-500 rounded-r-full" />
-              )}
-              <div className="relative z-10 flex items-center gap-3">
-                <Archive className={`w-5 h-5 transition-colors ${isArchiveMenuOpen ? 'text-slate-600' : 'text-slate-300 group-hover:text-slate-600'}`} />
-                <span>아카이브</span>
-              </div>
-              <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${isArchiveMenuOpen ? 'rotate-180 text-slate-600' : 'text-slate-400'}`} />
-            </button>
-
-            <AnimatePresence initial={false}>
-              {isArchiveMenuOpen && (
-                <motion.div
-                  initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: 'auto', opacity: 1 }}
-                  exit={{ height: 0, opacity: 0 }}
-                  transition={{ duration: 0.3, ease: 'easeInOut' }}
-                  className="overflow-hidden"
-                >
-                  <div className="flex flex-col space-y-1 mt-1 pb-3 mb-2 border-b border-slate-100/50">
-                    <button 
-                      onClick={() => setViewMode('archive_notes')}
-                      className={`w-[calc(100%-1.25rem)] ml-5 text-left px-4 py-2.5 rounded-xl text-sm transition-all duration-300 flex items-center gap-2.5 group ${
-                        viewMode === 'archive_notes' ? 'bg-slate-100 text-slate-800 font-bold shadow-sm' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-700'
-                      }`}
-                    >
-                      <NotebookPen className={`w-4 h-4 ${viewMode === 'archive_notes' ? 'text-slate-600' : 'text-slate-300'}`} />
-                      노트
-                    </button>
-
-                    <button 
-                      onClick={() => setViewMode('link_lounge')}
-                      className={`w-[calc(100%-1.25rem)] ml-5 text-left px-4 py-2.5 rounded-xl text-sm transition-all duration-300 flex items-center gap-2.5 group ${
-                        viewMode === 'link_lounge' ? 'bg-indigo-50 text-indigo-700 font-bold shadow-sm ring-1 ring-indigo-500/20' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-700'
-                      }`}
-                    >
-                      <Bookmark className={`w-4 h-4 ${viewMode === 'link_lounge' ? 'text-indigo-600' : 'text-slate-300'}`} />
-                      링크 라운지
-                    </button>
-
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            <button 
-              onClick={() => setViewMode('insights')}
-              className={`group relative w-full text-left px-4 py-3.5 rounded-2xl text-[15px] transition-all duration-300 overflow-hidden flex items-center justify-between ${
-                viewMode === 'insights' 
-                ? 'font-bold text-indigo-800 shadow-[0_4px_20px_-5px_rgba(99,102,241,0.3)] border border-indigo-200/50 scale-[1.02] bg-white' 
-                : 'font-medium text-slate-500 hover:bg-white hover:shadow-sm hover:text-slate-800 border border-transparent'
-              }`}
-            >
-              <div className={`absolute inset-0 opacity-20 transition-opacity duration-300 ${
-                viewMode === 'insights' 
-                ? 'bg-gradient-to-br from-indigo-400 via-purple-300 to-pink-300' 
-                : 'bg-gradient-to-br from-slate-100 to-slate-50 group-hover:opacity-40'
-              }`} />
-              
-              <div className="relative z-10 flex items-center gap-3">
-                <Sparkles className={`w-5 h-5 transition-transform duration-500 ${viewMode === 'insights' ? 'text-purple-500 rotate-12 scale-110' : 'text-slate-300 group-hover:text-purple-400'}`} />
-                <span>인사이트 대시보드</span>
-              </div>
-            </button>
-            <div className="absolute inset-x-4 bottom-0 h-px bg-gradient-to-r from-transparent via-slate-200 to-transparent opacity-50" />
           </div>
 
-          <div className="pb-3 mb-2 relative">
-            <button 
-              onClick={() => {
-                if (!isDataCenterMenuOpen) setViewMode('tags')
-              }}
-              className={`group relative w-full text-left px-4 py-3.5 rounded-2xl text-[15px] transition-all duration-300 overflow-hidden flex items-center justify-between ${
-                isDataCenterMenuOpen 
-                ? 'bg-gradient-to-r from-teal-50 to-white text-teal-800 font-bold shadow-sm border border-teal-200/50' 
-                : 'font-medium text-slate-500 hover:bg-white hover:shadow-sm hover:text-slate-800 border border-transparent'
-              } mt-2`}
-            >
-              {isDataCenterMenuOpen && (
-                <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-teal-500 rounded-r-full" />
-              )}
-              <div className="relative z-10 flex items-center gap-3">
-                <Database className={`w-5 h-5 transition-colors ${isDataCenterMenuOpen ? 'text-teal-600' : 'text-slate-300 group-hover:text-teal-500'}`} />
-                <span>데이터 센터</span>
-              </div>
-              <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${isDataCenterMenuOpen ? 'rotate-180 text-teal-600' : 'text-slate-400'}`} />
-            </button>
+          {/* WORKSPACE 섹션 */}
+          <div className="mb-6">
+            <div className="px-4 mb-2 text-[11px] font-bold tracking-widest text-slate-400">WORKSPACE</div>
+            <div className="flex flex-col space-y-1">
+              {/* 캘린더 관리 */}
+              <button 
+                onClick={() => {
+                  if (!isCalendarMenuOpen) setViewMode('monthly')
+                }}
+                className={`group relative w-full text-left px-3.5 py-2.5 h-[42px] rounded-xl text-[14px] transition-all duration-300 ease-out flex items-center justify-between ${
+                  isCalendarMenuOpen 
+                  ? 'bg-blue-50/70 text-blue-700 font-bold' 
+                  : 'bg-transparent text-slate-500 hover:bg-slate-50/80 hover:text-slate-900'
+                }`}
+              >
+                {isCalendarMenuOpen && (
+                  <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-5 bg-blue-500 rounded-r-full" />
+                )}
+                <div className="flex items-center gap-3">
+                  <CalendarIcon className={`w-4 h-4 transition-transform ${isCalendarMenuOpen ? 'text-blue-600' : 'text-slate-400 group-hover:scale-105 group-hover:text-blue-500'}`} />
+                  <span>캘린더 관리</span>
+                </div>
+                <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${isCalendarMenuOpen ? 'rotate-180 text-blue-600' : 'text-slate-400'}`} />
+              </button>
 
-            <AnimatePresence initial={false}>
-              {isDataCenterMenuOpen && (
-                <motion.div
-                  initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: 'auto', opacity: 1 }}
-                  exit={{ height: 0, opacity: 0 }}
-                  transition={{ duration: 0.3, ease: 'easeInOut' }}
-                  className="overflow-hidden"
-                >
-                  <div className="flex flex-col space-y-1 mt-1 pb-3 mb-2 border-b border-slate-100/50">
-                    <button 
-                      onClick={() => setViewMode('nice_import')}
-                      className={`w-[calc(100%-1.25rem)] ml-5 text-left px-4 py-2.5 rounded-xl text-sm transition-all duration-300 flex items-center gap-2.5 group ${
-                        viewMode === 'nice_import' ? 'bg-indigo-50 text-indigo-700 font-bold shadow-sm ring-1 ring-indigo-500/20' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-700'
-                      }`}
-                    >
-                      <DownloadCloud className={`w-4 h-4 ${viewMode === 'nice_import' ? 'text-indigo-600' : 'text-slate-300'}`} />
-                      나이스 복무 불러오기
-                    </button>
+              <AnimatePresence initial={false}>
+                {isCalendarMenuOpen && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.3, ease: 'easeInOut' }}
+                    className="overflow-hidden"
+                  >
+                    <div className="flex flex-col space-y-1 mt-1 pb-1 ml-5 pl-2 border-l-2 border-slate-100">
+                      <button 
+                        onClick={() => setViewMode('monthly')}
+                        className={`w-full text-left px-3 py-2 rounded-lg text-[13px] font-medium transition-all duration-300 flex items-center gap-2.5 ${
+                          isMyCalendarActive
+                          ? 'bg-blue-50/70 text-blue-700 shadow-sm' 
+                          : 'bg-transparent text-slate-500 hover:bg-slate-50/80 hover:text-slate-700'
+                        }`}
+                      >
+                        <CalendarIcon className={`w-3.5 h-3.5 ${isMyCalendarActive ? 'text-blue-600' : 'text-slate-300'}`} />
+                        나의 캘린더
+                      </button>
 
-                    <button 
-                      onClick={() => setViewMode('tags')}
-                      className={`w-[calc(100%-1.25rem)] ml-5 text-left px-4 py-2.5 rounded-xl text-sm transition-all duration-300 flex items-center gap-2.5 group ${
-                        viewMode === 'tags' ? 'bg-teal-50 text-teal-700 font-bold shadow-sm ring-1 ring-teal-500/20' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-700'
-                      }`}
-                    >
-                      <Tags className={`w-4 h-4 ${viewMode === 'tags' ? 'text-teal-600' : 'text-slate-300'}`} />
-                      태그 관리소
-                    </button>
+                      <button 
+                        onClick={() => setViewMode('archive_agenda')}
+                        className={`w-full text-left px-3 py-2 rounded-lg text-[13px] font-medium transition-all duration-300 flex items-center gap-2.5 ${
+                          viewMode === 'archive_agenda' 
+                          ? 'bg-purple-50/70 text-purple-700 shadow-sm' 
+                          : 'bg-transparent text-slate-500 hover:bg-slate-50/80 hover:text-slate-700'
+                        }`}
+                      >
+                        <Sparkles className={`w-3.5 h-3.5 ${viewMode === 'archive_agenda' ? 'text-purple-600' : 'text-slate-300'}`} />
+                        아젠다
+                      </button>
 
-                    <button 
-                      onClick={() => setViewMode('trash')}
-                      className={`w-[calc(100%-1.25rem)] ml-5 text-left px-4 py-2.5 rounded-xl text-sm transition-all duration-300 flex items-center gap-2.5 group ${
-                        viewMode === 'trash' ? 'bg-rose-50 text-rose-700 font-bold shadow-sm ring-1 ring-rose-500/20' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-700'
-                      }`}
-                    >
-                      <Trash2 className={`w-4 h-4 ${viewMode === 'trash' ? 'text-rose-600' : 'text-slate-300'}`} />
-                      휴지통
-                    </button>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-            <div className="absolute inset-x-4 bottom-0 h-px bg-gradient-to-r from-transparent via-slate-200 to-transparent opacity-50" />
+                      <button 
+                        onClick={() => setViewMode('anniversary')}
+                        className={`w-full text-left px-3 py-2 rounded-lg text-[13px] font-medium transition-all duration-300 flex items-center gap-2.5 ${
+                          viewMode === 'anniversary' 
+                          ? 'bg-rose-50/70 text-rose-700 shadow-sm' 
+                          : 'bg-transparent text-slate-500 hover:bg-slate-50/80 hover:text-slate-700'
+                        }`}
+                      >
+                        <Gift className={`w-3.5 h-3.5 ${viewMode === 'anniversary' ? 'text-rose-600' : 'text-slate-300'}`} />
+                        기념일 설정
+                      </button>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              {/* 아카이브 */}
+              <button 
+                onClick={() => {
+                  if (!isArchiveMenuOpen) setViewMode('archive_notes')
+                }}
+                className={`group relative w-full text-left px-3.5 py-2.5 h-[42px] rounded-xl text-[14px] transition-all duration-300 ease-out flex items-center justify-between ${
+                  isArchiveMenuOpen 
+                  ? 'bg-slate-100/70 text-slate-800 font-bold' 
+                  : 'bg-transparent text-slate-500 hover:bg-slate-50/80 hover:text-slate-900'
+                }`}
+              >
+                {isArchiveMenuOpen && (
+                  <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-5 bg-slate-500 rounded-r-full" />
+                )}
+                <div className="flex items-center gap-3">
+                  <Archive className={`w-4 h-4 transition-transform ${isArchiveMenuOpen ? 'text-slate-600' : 'text-slate-400 group-hover:scale-105 group-hover:text-slate-600'}`} />
+                  <span>아카이브</span>
+                </div>
+                <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${isArchiveMenuOpen ? 'rotate-180 text-slate-600' : 'text-slate-400'}`} />
+              </button>
+
+              <AnimatePresence initial={false}>
+                {isArchiveMenuOpen && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.3, ease: 'easeInOut' }}
+                    className="overflow-hidden"
+                  >
+                    <div className="flex flex-col space-y-1 mt-1 pb-1 ml-5 pl-2 border-l-2 border-slate-100">
+                      <button 
+                        onClick={() => setViewMode('archive_notes')}
+                        className={`w-full text-left px-3 py-2 rounded-lg text-[13px] font-medium transition-all duration-300 flex items-center gap-2.5 ${
+                          viewMode === 'archive_notes' ? 'bg-slate-100/80 text-slate-800 shadow-sm' : 'text-slate-500 hover:bg-slate-50/80 hover:text-slate-700'
+                        }`}
+                      >
+                        <NotebookPen className={`w-3.5 h-3.5 ${viewMode === 'archive_notes' ? 'text-slate-600' : 'text-slate-300'}`} />
+                        노트
+                      </button>
+
+                      <button 
+                        onClick={() => setViewMode('link_lounge')}
+                        className={`w-full text-left px-3 py-2 rounded-lg text-[13px] font-medium transition-all duration-300 flex items-center gap-2.5 ${
+                          viewMode === 'link_lounge' ? 'bg-indigo-50/70 text-indigo-700 shadow-sm' : 'text-slate-500 hover:bg-slate-50/80 hover:text-slate-700'
+                        }`}
+                      >
+                        <Bookmark className={`w-3.5 h-3.5 ${viewMode === 'link_lounge' ? 'text-indigo-600' : 'text-slate-300'}`} />
+                        링크 라운지
+                      </button>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          </div>
+
+          {/* DATA & SYSTEM 섹션 */}
+          <div className="mb-2">
+            <div className="px-4 mb-2 text-[11px] font-bold tracking-widest text-slate-400">DATA & SYSTEM</div>
+            <div className="flex flex-col space-y-1">
+              <button 
+                onClick={() => {
+                  if (!isDataCenterMenuOpen) setViewMode('insights')
+                }}
+                className={`group relative w-full text-left px-3.5 py-2.5 h-[42px] rounded-xl text-[14px] transition-all duration-300 ease-out flex items-center justify-between ${
+                  isDataCenterMenuOpen 
+                  ? 'bg-teal-50/70 text-teal-800 font-bold' 
+                  : 'bg-transparent text-slate-500 hover:bg-slate-50/80 hover:text-slate-900'
+                }`}
+              >
+                {isDataCenterMenuOpen && (
+                  <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-5 bg-teal-500 rounded-r-full" />
+                )}
+                <div className="flex items-center gap-3">
+                  <Database className={`w-4 h-4 transition-transform ${isDataCenterMenuOpen ? 'text-teal-600' : 'text-slate-400 group-hover:scale-105 group-hover:text-teal-500'}`} />
+                  <span>데이터 센터</span>
+                </div>
+                <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${isDataCenterMenuOpen ? 'rotate-180 text-teal-600' : 'text-slate-400'}`} />
+              </button>
+
+              <AnimatePresence initial={false}>
+                {isDataCenterMenuOpen && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.3, ease: 'easeInOut' }}
+                    className="overflow-hidden"
+                  >
+                    <div className="flex flex-col space-y-1 mt-1 pb-1 ml-5 pl-2 border-l-2 border-slate-100">
+                      <button 
+                        onClick={() => setViewMode('insights')}
+                        className={`w-full text-left px-3 py-2 rounded-lg text-[13px] font-medium transition-all duration-300 flex items-center gap-2.5 group ${
+                          viewMode === 'insights' ? 'bg-purple-50/70 text-purple-700 shadow-sm' : 'text-slate-500 hover:bg-slate-50/80 hover:text-slate-700'
+                        }`}
+                      >
+                        <Sparkles className={`w-3.5 h-3.5 ${viewMode === 'insights' ? 'text-purple-600' : 'text-slate-300'}`} />
+                        인사이트 대시보드
+                      </button>
+
+                      <button 
+                        onClick={() => setViewMode('nice_import')}
+                        className={`w-full text-left px-3 py-2 rounded-lg text-[13px] font-medium transition-all duration-300 flex items-center gap-2.5 group ${
+                          viewMode === 'nice_import' ? 'bg-indigo-50/70 text-indigo-700 shadow-sm' : 'text-slate-500 hover:bg-slate-50/80 hover:text-slate-700'
+                        }`}
+                      >
+                        <DownloadCloud className={`w-3.5 h-3.5 ${viewMode === 'nice_import' ? 'text-indigo-600' : 'text-slate-300'}`} />
+                        나이스 복무 불러오기
+                      </button>
+
+                      <button 
+                        onClick={() => setViewMode('tags')}
+                        className={`w-full text-left px-3 py-2 rounded-lg text-[13px] font-medium transition-all duration-300 flex items-center gap-2.5 group ${
+                          viewMode === 'tags' ? 'bg-teal-50/70 text-teal-700 shadow-sm' : 'text-slate-500 hover:bg-slate-50/80 hover:text-slate-700'
+                        }`}
+                      >
+                        <Tags className={`w-3.5 h-3.5 ${viewMode === 'tags' ? 'text-teal-600' : 'text-slate-300'}`} />
+                        태그 관리소
+                      </button>
+
+                      <button 
+                        onClick={() => setViewMode('trash')}
+                        className={`w-full text-left px-3 py-2 rounded-lg text-[13px] font-medium transition-all duration-300 flex items-center gap-2.5 group ${
+                          viewMode === 'trash' ? 'bg-rose-50/70 text-rose-700 shadow-sm' : 'text-slate-500 hover:bg-slate-50/80 hover:text-slate-700'
+                        }`}
+                      >
+                        <Trash2 className={`w-3.5 h-3.5 ${viewMode === 'trash' ? 'text-rose-600' : 'text-slate-300'}`} />
+                        휴지통
+                      </button>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
           </div>
 
         </div>
 
         <div className="px-4 py-6 flex flex-col space-y-1 shrink-0">
           <div className="mt-auto px-2 flex flex-col space-y-3">
-            <PwaInstallPrompt isDesktop />
             <ClearAllDataDialog />
+            <Button
+              variant="outline"
+              onClick={() => {
+                setSettingsTab('profile')
+                setIsSettingsOpen(true)
+              }}
+              className="w-full text-sm font-medium border-slate-200 flex items-center justify-center text-slate-600 hover:bg-slate-50 hover:text-slate-700 hover:border-slate-300"
+            >
+              <Settings className="w-4 h-4 mr-2" />
+              환경설정
+            </Button>
           </div>
         </div>
       </aside>

@@ -25,18 +25,6 @@ export function TagsView() {
 
   return (
     <div className="flex flex-col h-full bg-[#FAFAFA] rounded-xl md:rounded-3xl overflow-hidden shadow-sm border border-slate-100">
-      {/* Top Banner */}
-      <div className="bg-gradient-to-r from-teal-500 to-teal-700 px-6 py-8 md:px-10 md:py-12 shrink-0">
-        <div className="flex items-center gap-4 text-white max-w-4xl mx-auto">
-          <div className="p-3 bg-white/20 rounded-2xl backdrop-blur-sm">
-            <TagIcon className="w-8 h-8 md:w-10 md:h-10 text-white" />
-          </div>
-          <div>
-            <h1 className="text-2xl md:text-3xl font-bold tracking-tight mb-1">태그 관리소</h1>
-            <p className="text-teal-50 text-sm md:text-base opacity-90">일정과 노트를 분류하기 위한 태그를 생성하고 관리하세요.</p>
-          </div>
-        </div>
-      </div>
 
       {/* Main Content */}
       <div className="flex-1 overflow-y-auto p-4 md:p-8">

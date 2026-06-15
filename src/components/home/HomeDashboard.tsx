@@ -12,7 +12,7 @@ import type { Activity } from '@/app/actions/calendar'
 import { ScheduleTimeline } from './ScheduleTimeline'
 import { SmartAgenda } from './SmartAgenda'
 import { QuickActions } from './QuickActions'
-import { DDayCard } from './DDayCard'
+import { LinkLoungeCard } from './LinkLoungeCard'
 import { RecentNotes } from './RecentNotes'
 
 const containerVariants = {
@@ -226,7 +226,7 @@ export function HomeDashboard() {
       {/* Bottom Widgets Row */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-6 mt-5 md:mt-6">
         <motion.div variants={itemVariants}>
-          <DDayCard />
+          <LinkLoungeCard />
         </motion.div>
         <motion.div variants={itemVariants}>
           <RecentNotes />

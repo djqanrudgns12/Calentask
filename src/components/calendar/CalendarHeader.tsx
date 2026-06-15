@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { format, subMonths, addMonths, subWeeks, addWeeks, startOfWeek, endOfWeek, isSameMonth, isSameYear } from 'date-fns'
-import { Menu, ChevronLeft, ChevronRight, Search, Sparkles, Bell, CalendarHeart, Activity, BrainCircuit, Home, Bookmark, NotebookPen } from 'lucide-react'
+import { Menu, ChevronLeft, ChevronRight, Search, Sparkles, Bell, CalendarHeart, Activity, BrainCircuit, Home, Bookmark, NotebookPen, Tag, Trash2 } from 'lucide-react'
 import { useCalendarStore } from '@/store/useCalendarStore'
 import { GlobalCategoryFilter } from '@/components/calendar/GlobalCategoryFilter'
 import { CategoryPresetMenu } from '@/components/calendar/CategoryPresetMenu'
@@ -111,6 +111,8 @@ export function CalendarHeader({ onOpenSettings }: CalendarHeaderProps) {
   const isLinkLounge = viewMode === 'link_lounge'
   const isHome = viewMode === 'home'
   const isArchiveNotes = viewMode === 'archive_notes'
+  const isTags = viewMode === 'tags'
+  const isTrash = viewMode === 'trash'
 
   let wrapperClassName = "flex-1 flex flex-row items-center justify-between rounded-xl md:rounded-[2rem] px-2 py-1.5 md:px-4 md:py-2.5 gap-2 md:gap-4 transition-all duration-500 overflow-hidden relative "
 
@@ -130,6 +132,10 @@ export function CalendarHeader({ onOpenSettings }: CalendarHeaderProps) {
     wrapperClassName += "bg-white/90 backdrop-blur-xl shadow-[0_10px_40px_-10px_rgba(16,185,129,0.2)] border border-emerald-100/80"
   } else if (isArchiveNotes) {
     wrapperClassName += "bg-white/90 backdrop-blur-xl shadow-[0_10px_40px_-10px_rgba(99,102,241,0.2)] border border-indigo-100/80"
+  } else if (isTags) {
+    wrapperClassName += "bg-white/80 backdrop-blur-md shadow-[0_0_30px_-5px_rgba(20,184,166,0.15)] border border-teal-100/50"
+  } else if (isTrash) {
+    wrapperClassName += "bg-white/80 backdrop-blur-md shadow-[0_0_30px_-5px_rgba(244,63,94,0.15)] border border-rose-100/50"
   }
 
   // --- Slots ---
@@ -310,6 +316,44 @@ export function CalendarHeader({ onOpenSettings }: CalendarHeaderProps) {
               </span>
               <p className="text-xs text-indigo-500 font-mono tracking-wider font-bold">YOUR KNOWLEDGE CANVAS</p>
             </div>
+          </div>
+        </motion.div>
+      )
+    }
+    if (isTags) {
+      return (
+        <motion.div 
+          key="tags-left"
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={{ opacity: 0, x: -20 }}
+          className="flex items-center shrink-0 gap-3 py-1"
+        >
+          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-teal-100 to-emerald-100 flex items-center justify-center shrink-0">
+            <Tag className="w-5 h-5 text-teal-600" />
+          </div>
+          <div className="flex flex-col">
+            <h2 className="font-bold text-transparent bg-clip-text bg-gradient-to-r from-teal-600 to-emerald-600 text-lg leading-tight tracking-tight">태그 관리소</h2>
+            <p className="text-xs text-slate-500 font-medium">일정과 노트를 분류하기 위한 태그를 생성하고 관리하세요</p>
+          </div>
+        </motion.div>
+      )
+    }
+    if (isTrash) {
+      return (
+        <motion.div 
+          key="trash-left"
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={{ opacity: 0, x: -20 }}
+          className="flex items-center shrink-0 gap-3 py-1"
+        >
+          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-rose-100 to-pink-100 flex items-center justify-center shrink-0">
+            <Trash2 className="w-5 h-5 text-rose-600" />
+          </div>
+          <div className="flex flex-col">
+            <h2 className="font-bold text-transparent bg-clip-text bg-gradient-to-r from-rose-600 to-pink-600 text-lg leading-tight tracking-tight">휴지통</h2>
+            <p className="text-xs text-slate-500 font-medium">삭제된 항목을 복구하거나 영구적으로 삭제합니다</p>
           </div>
         </motion.div>
       )
