@@ -8,7 +8,7 @@ import { useCalendarStore } from '@/store/useCalendarStore'
 import { useArchiveStore } from '@/store/useArchiveStore'
 import { useAgendaStore } from '@/store/useAgendaStore'
 import { Button } from '@/components/ui/button'
-import { Plus, Tags, Database, LogOut, Calendar as CalendarIcon, DownloadCloud, Gift, Sparkles, ChevronDown, Archive, NotebookPen, Bookmark } from 'lucide-react'
+import { Plus, Tags, Database, LogOut, Calendar as CalendarIcon, DownloadCloud, Gift, Sparkles, ChevronDown, Archive, NotebookPen, Bookmark, Trash2 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 
 import { startOfWeek, endOfWeek } from 'date-fns'
@@ -33,8 +33,8 @@ import { NiceImportView } from '@/components/calendar/NiceImportView'
 import { DeleteConfirmDialog } from '@/components/calendar/DeleteConfirmDialog'
 import { EditCategoryDialog } from '@/components/calendar/EditCategoryDialog'
 import { SettingsModal } from '@/components/profile/SettingsModal'
-import { TagsModal } from '@/components/profile/TagsModal'
-import { DataHubModal } from '@/components/profile/DataHubModal'
+import { TagsView } from '@/components/data-center/TagsView'
+import { TrashView } from '@/components/data-center/TrashView'
 import { ClearAllDataDialog } from '@/components/profile/ClearAllDataDialog'
 import { CalendarHeader } from '@/components/calendar/CalendarHeader'
 import { AnniversaryConfetti } from '@/components/anniversary/AnniversaryConfetti'
@@ -54,8 +54,6 @@ export default function CalendarPage() {
   const [mounted, setMounted] = useState(false)
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   const [settingsTab, setSettingsTab] = useState<'profile' | 'display'>('profile')
-  const [isTagsModalOpen, setIsTagsModalOpen] = useState(false)
-  const [isDataHubModalOpen, setIsDataHubModalOpen] = useState(false)
   const queryClient = useQueryClient()
   const router = useRouter()
   
@@ -68,6 +66,7 @@ export default function CalendarPage() {
   const isCalendarMenuOpen = ['monthly', 'weekly', 'list', 'semester', 'nice_import', 'anniversary'].includes(viewMode)
   const isMyCalendarActive = ['monthly', 'weekly', 'list', 'semester'].includes(viewMode)
   const isArchiveMenuOpen = ['archive_notes', 'archive_agenda', 'link_lounge'].includes(viewMode)
+  const isDataCenterMenuOpen = ['tags', 'trash'].includes(viewMode)
 
   const handleLogout = async () => {
     resetStore()
@@ -361,28 +360,68 @@ export default function CalendarPage() {
             <div className="absolute inset-x-4 bottom-0 h-px bg-gradient-to-r from-transparent via-slate-200 to-transparent opacity-50" />
           </div>
 
+          <div className="pb-3 mb-2 relative">
+            <button 
+              onClick={() => {
+                if (!isDataCenterMenuOpen) setViewMode('tags')
+              }}
+              className={`group relative w-full text-left px-4 py-3.5 rounded-2xl text-[15px] transition-all duration-300 overflow-hidden flex items-center justify-between ${
+                isDataCenterMenuOpen 
+                ? 'bg-gradient-to-r from-teal-50 to-white text-teal-800 font-bold shadow-sm border border-teal-200/50' 
+                : 'font-medium text-slate-500 hover:bg-white hover:shadow-sm hover:text-slate-800 border border-transparent'
+              } mt-2`}
+            >
+              {isDataCenterMenuOpen && (
+                <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-teal-500 rounded-r-full" />
+              )}
+              <div className="relative z-10 flex items-center gap-3">
+                <Database className={`w-5 h-5 transition-colors ${isDataCenterMenuOpen ? 'text-teal-600' : 'text-slate-300 group-hover:text-teal-500'}`} />
+                <span>데이터 센터</span>
+              </div>
+              <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${isDataCenterMenuOpen ? 'rotate-180 text-teal-600' : 'text-slate-400'}`} />
+            </button>
+
+            <AnimatePresence initial={false}>
+              {isDataCenterMenuOpen && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: 'auto', opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.3, ease: 'easeInOut' }}
+                  className="overflow-hidden"
+                >
+                  <div className="flex flex-col space-y-1 mt-1 pb-3 mb-2 border-b border-slate-100/50">
+                    <button 
+                      onClick={() => setViewMode('tags')}
+                      className={`w-[calc(100%-1.25rem)] ml-5 text-left px-4 py-2.5 rounded-xl text-sm transition-all duration-300 flex items-center gap-2.5 group ${
+                        viewMode === 'tags' ? 'bg-teal-50 text-teal-700 font-bold shadow-sm ring-1 ring-teal-500/20' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-700'
+                      }`}
+                    >
+                      <Tags className={`w-4 h-4 ${viewMode === 'tags' ? 'text-teal-600' : 'text-slate-300'}`} />
+                      태그 관리소
+                    </button>
+
+                    <button 
+                      onClick={() => setViewMode('trash')}
+                      className={`w-[calc(100%-1.25rem)] ml-5 text-left px-4 py-2.5 rounded-xl text-sm transition-all duration-300 flex items-center gap-2.5 group ${
+                        viewMode === 'trash' ? 'bg-rose-50 text-rose-700 font-bold shadow-sm ring-1 ring-rose-500/20' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-700'
+                      }`}
+                    >
+                      <Trash2 className={`w-4 h-4 ${viewMode === 'trash' ? 'text-rose-600' : 'text-slate-300'}`} />
+                      휴지통
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+            <div className="absolute inset-x-4 bottom-0 h-px bg-gradient-to-r from-transparent via-slate-200 to-transparent opacity-50" />
+          </div>
+
         </div>
 
         <div className="px-4 py-6 flex flex-col space-y-1 shrink-0">
-          {/* Keep uploader and trash at the bottom or below */}
           <div className="mt-auto px-2 flex flex-col space-y-3">
             <PwaInstallPrompt isDesktop />
-            <Button
-              variant="outline"
-              className="w-full text-sm font-medium border-gray-300 flex items-center justify-center text-slate-700 hover:bg-slate-50"
-              onClick={() => setIsTagsModalOpen(true)}
-            >
-              <Tags className="w-4 h-4 mr-2" />
-              태그 관리소
-            </Button>
-            <Button
-              variant="outline"
-              className="w-full text-sm font-medium border-gray-300 flex items-center justify-center text-slate-700 hover:bg-slate-50"
-              onClick={() => setIsDataHubModalOpen(true)}
-            >
-              <Database className="w-4 h-4 mr-2" />
-              데이터 허브
-            </Button>
             <ClearAllDataDialog />
           </div>
         </div>
@@ -434,6 +473,16 @@ export default function CalendarPage() {
                 <ArchiveAgendaView />
               </div>
             )}
+            {viewMode === 'tags' && (
+              <div className="h-full rounded-xl md:rounded-3xl overflow-hidden shadow-sm border border-slate-100 bg-[#FAFAFA]">
+                <TagsView />
+              </div>
+            )}
+            {viewMode === 'trash' && (
+              <div className="h-full rounded-xl md:rounded-3xl overflow-hidden shadow-sm border border-slate-100 bg-[#FAFAFA]">
+                <TrashView />
+              </div>
+            )}
             {viewMode === 'home' && (
               <div className="min-h-full bg-gradient-to-b from-[#f7f9fb] to-[#f2f2f7] rounded-xl md:rounded-3xl overflow-hidden">
                 <HomeDashboard />
@@ -463,7 +512,7 @@ export default function CalendarPage() {
         viewMode={viewMode} 
         setViewMode={setViewMode} 
         onOpenSettings={() => { setSettingsTab('profile'); setIsSettingsOpen(true); }} 
-        onOpenTags={() => setIsTagsModalOpen(true)} 
+        onOpenTags={() => setViewMode('tags')} 
       />
 
       {/* Settings Modal */}
@@ -471,18 +520,6 @@ export default function CalendarPage() {
         open={isSettingsOpen} 
         onOpenChange={setIsSettingsOpen} 
         initialTab={settingsTab} 
-      />
-
-      {/* Tags Modal */}
-      <TagsModal
-        open={isTagsModalOpen}
-        onOpenChange={setIsTagsModalOpen}
-      />
-
-      {/* Data Hub Modal */}
-      <DataHubModal
-        open={isDataHubModalOpen}
-        onOpenChange={setIsDataHubModalOpen}
       />
 
       <DaySummarySheet events={events} />
