@@ -219,8 +219,8 @@ export async function getActivities(startDate: string, endDate: string) {
         categories(*)
       )
     `)
-    .gte('start_time', startDate)
-    .lte('end_time', endDate)
+    .lte('start_time', endDate)
+    .gte('end_time', startDate)
     .is('deleted_at', null)
 
   if (error) throw new Error(error.message)

@@ -103,7 +103,7 @@ export function HomeDashboard() {
   // 아젠다 이벤트 (캘린더 등록된 것만, 오늘 날짜 범위)
   const agendaEvents = useMemo(() => {
     return tasks
-      .filter(task => task.status !== 'trash' && task.status !== 'done' && task.deadline && task.is_calendar_registered === true)
+      .filter(task => task.status !== 'trash' && task.deadline && task.is_calendar_registered === true)
       .map(task => {
         const taskDate = new Date(task.deadline!)
         return {
