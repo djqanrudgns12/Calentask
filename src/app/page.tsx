@@ -324,7 +324,6 @@ export default function CalendarPage() {
                       링크 라운지
                     </button>
 
-                    </button>
                   </div>
                 </motion.div>
               )}
