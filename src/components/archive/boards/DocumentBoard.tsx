@@ -211,21 +211,22 @@ export function DocumentBoard() {
 
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
-  // Handle Ctrl+Wheel for Zoom
+  // Handle Ctrl+Wheel for Zoom (Trackpad Pinch)
   useEffect(() => {
-    const container = scrollContainerRef.current;
-    if (!container) return;
-
     const handleWheel = (e: WheelEvent) => {
       if (e.ctrlKey) {
         e.preventDefault();
+        // Trackpad pinch-to-zoom produces e.ctrlKey=true and fractional e.deltaY
         const zoomChange = -e.deltaY * 0.5;
-        setZoom(z => Math.min(200, Math.max(50, z + zoomChange)));
+        // round to nearest integer for clean display, or just keep it float. Let's round.
+        setZoom(z => Math.min(200, Math.max(50, Math.round(z + zoomChange))));
       }
     };
     
-    container.addEventListener('wheel', handleWheel, { passive: false });
-    return () => container.removeEventListener('wheel', handleWheel);
+    // Attach to document to ensure it works even if the container renders later,
+    // and catches all pinch gestures on the board.
+    document.addEventListener('wheel', handleWheel, { passive: false });
+    return () => document.removeEventListener('wheel', handleWheel);
   }, []);
 
   const getValidContent = () => {
