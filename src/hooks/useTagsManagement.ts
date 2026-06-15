@@ -1,7 +1,20 @@
 import { useState } from 'react'
 import { useCategories, useCreateCategory, useDeleteCategory, useActivities } from '@/hooks/useCalendarQueries'
 
-export const COLORS = ['#F43F5E', '#F97316', '#EAB308', '#22C55E', '#06B6D4', '#3B82F6', '#6366F1', '#A855F7', '#EC4899', '#64748B']
+export const COLORS = [
+  // Red & Pink & Rose
+  '#ef4444', '#f43f5e', '#ec4899', '#d946ef',
+  // Purple & Indigo
+  '#a855f7', '#8b5cf6', '#6366f1', '#4f46e5',
+  // Blue & Cyan
+  '#3b82f6', '#0ea5e9', '#06b6d4', '#14b8a6',
+  // Teal & Green & Emerald
+  '#10b981', '#22c55e', '#84cc16', '#a3e635',
+  // Yellow & Orange & Amber
+  '#eab308', '#f59e0b', '#f97316', '#ea580c',
+  // Gray & Neutral & Slate
+  '#64748b', '#78716c', '#52525b', '#334155'
+]
 
 export function useTagsManagement() {
   const { data: categories, isLoading: isCategoriesLoading } = useCategories()
@@ -35,9 +48,14 @@ export function useTagsManagement() {
     return allActivities?.filter(a => a.categories?.some(c => c.id === categoryId)).length || 0
   }
 
+  const getTotalUsageCount = () => {
+    return allActivities?.filter(a => a.categories && a.categories.length > 0).length || 0
+  }
+
   return {
     categories,
     isCategoriesLoading,
+    allActivities,
     newCatName,
     setNewCatName,
     newCatColor,
@@ -46,6 +64,7 @@ export function useTagsManagement() {
     isCreating: createCategory.isPending,
     handleDelete,
     isDeleting: deleteCategory.isPending,
-    getUsageCount
+    getUsageCount,
+    getTotalUsageCount
   }
 }
