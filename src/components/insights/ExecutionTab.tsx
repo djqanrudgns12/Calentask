@@ -4,6 +4,8 @@ import { useMemo } from 'react'
 import { motion } from 'framer-motion'
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, ResponsiveContainer, XAxis, YAxis, Tooltip, CartesianGrid, Legend } from 'recharts'
 import { useExecutionAnalytics } from '@/hooks/useInsightsQueries'
+import { useSharedPeriodStore, getDatesForPreset } from '@/store/useSharedPeriodStore'
+import SharedPeriodDropdown from './SharedPeriodDropdown'
 import { CheckSquare, Clock, AlertTriangle, TrendingUp, Target, Zap, Loader2, ListChecks, Timer, AlertCircle } from 'lucide-react'
 import { format, formatDistanceToNow } from 'date-fns'
 import { ko } from 'date-fns/locale'
@@ -32,7 +34,9 @@ const STATUS_COLORS: Record<string, string> = {
 }
 
 export default function ExecutionTab() {
-  const { data: analytics, isLoading } = useExecutionAnalytics()
+  const { preset, customRange } = useSharedPeriodStore()
+  const { startDate, endDate } = getDatesForPreset(preset, customRange)
+  const { data: analytics, isLoading } = useExecutionAnalytics(startDate, endDate)
 
   // 미루기 지수 색상 & 레이블
   const procrastination = useMemo(() => {
@@ -68,6 +72,7 @@ export default function ExecutionTab() {
 
   return (
     <div className="space-y-6">
+      <SharedPeriodDropdown className="mb-2" />
       {/* ── Hero KPI 4종 ── */}
       <motion.div
         initial={{ opacity: 0, y: 10 }}

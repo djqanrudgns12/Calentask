@@ -6,6 +6,8 @@ import { useInsightsData } from '@/hooks/useInsightsQueries'
 import { useCategories } from '@/hooks/useCalendarQueries'
 import { useInsightsFilterStore } from '@/store/useInsightsFilterStore'
 import DashboardFilterBar from './DashboardFilterBar'
+import SharedPeriodDropdown from './SharedPeriodDropdown'
+import { useSharedPeriodStore, getDatesForPreset } from '@/store/useSharedPeriodStore'
 import SubjectDetailSheet from './SubjectDetailSheet'
 import { Activity } from '@/app/actions/calendar'
 import { startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear, startOfDay, endOfDay, subDays, format, eachDayOfInterval } from 'date-fns'
@@ -15,16 +17,6 @@ import { LayoutGrid, TrendingUp, TrendingDown } from 'lucide-react'
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-function getPresetDateRange(period: string) {
-  const now = new Date()
-  switch (period) {
-    case 'week': return { from: startOfWeek(now, { weekStartsOn: 1 }), to: endOfWeek(now, { weekStartsOn: 1 }) }
-    case 'month': return { from: startOfMonth(now), to: endOfMonth(now) }
-    case 'year': return { from: startOfYear(now), to: endOfYear(now) }
-    case 'single': return { from: now, to: now }
-    default: return { from: subDays(now, 30), to: now }
-  }
-}
 
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (!active || !payload?.length) return null
@@ -58,26 +50,16 @@ const PieTooltip = ({ active, payload }: any) => {
 }
 
 export default function TimeAnalysisTab() {
-  const period = useInsightsFilterStore(state => state.period)
-  const customDateRange = useInsightsFilterStore(state => state.customDateRange)
-  const singleDate = useInsightsFilterStore(state => state.singleDate)
   const activityType = useInsightsFilterStore(state => state.activityType)
   const selectedCategoryIds = useInsightsFilterStore(state => state.selectedCategoryIds)
-  const setCustomDateRange = useInsightsFilterStore(state => state.setCustomDateRange)
+  
+  const { preset, customRange } = useSharedPeriodStore()
+  const { startDate: startDateIso, endDate: endDateIso } = getDatesForPreset(preset, customRange)
+
   const { data: categoriesData = [] } = useCategories()
   const categories = categoriesData
 
   const [selectedSubjectId, setSelectedSubjectId] = useState<string | null>(null)
-
-  const fromDate = period === 'single' && singleDate
-    ? startOfDay(singleDate)
-    : customDateRange?.from ? startOfDay(customDateRange.from) : getPresetDateRange(period).from
-  const toDate = period === 'single' && singleDate
-    ? endOfDay(singleDate)
-    : customDateRange?.to ? endOfDay(customDateRange.to) : getPresetDateRange(period).to
-
-  const startDateIso = fromDate.toISOString()
-  const endDateIso = toDate.toISOString()
 
   const { data: insightsData, isLoading } = useInsightsData(startDateIso, endDateIso)
 
@@ -145,6 +127,7 @@ export default function TimeAnalysisTab() {
 
   return (
     <div className="space-y-6">
+      <SharedPeriodDropdown className="mb-2" />
       <DashboardFilterBar categories={categories} />
 
 

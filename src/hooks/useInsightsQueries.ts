@@ -122,10 +122,10 @@ export function useOverviewKPI(startDate: string, endDate: string, periodType: s
 
 // ─── 실행력 탭 Hooks ───
 
-export function useExecutionAnalytics() {
+export function useExecutionAnalytics(startDate?: string, endDate?: string) {
   return useQuery({
-    queryKey: ['executionAnalytics'],
-    queryFn: () => getExecutionAnalytics(),
+    queryKey: ['executionAnalytics', startDate, endDate],
+    queryFn: () => getExecutionAnalytics(startDate, endDate),
     staleTime: 5 * 60 * 1000,
     gcTime: 15 * 60 * 1000,
   })

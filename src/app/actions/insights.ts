@@ -1220,13 +1220,12 @@ export type ExecutionAnalytics = {
   overdueTasks: { id: string; title: string; deadline: string; daysOverdue: number }[]
 }
 
-export async function getExecutionAnalytics(): Promise<ExecutionAnalytics> {
+export async function getExecutionAnalytics(startDate?: string, endDate?: string): Promise<ExecutionAnalytics> {
   const supabase = await createClient()
   const { data: userData } = await supabase.auth.getUser()
   if (!userData.user) throw new Error('Not authenticated')
 
-  // 전체 할 일 (삭제 제외)
-  const { data: tasks } = await supabase
+  let query = supabase
     .from('agenda_tasks')
     .select(`
       *,
@@ -1235,6 +1234,15 @@ export async function getExecutionAnalytics(): Promise<ExecutionAnalytics> {
     .eq('user_id', userData.user.id)
     .is('deleted_at', null)
     .order('created_at', { ascending: false })
+
+  if (startDate) {
+    query = query.gte('created_at', startDate)
+  }
+  if (endDate) {
+    query = query.lte('created_at', endDate)
+  }
+
+  const { data: tasks } = await query
 
   const allTasks = (tasks || []) as any[]
   const now = new Date()

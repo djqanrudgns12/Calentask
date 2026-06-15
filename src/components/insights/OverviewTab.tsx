@@ -10,6 +10,8 @@ import ActivityBreakdownGrid from './ActivityBreakdownGrid'
 import QuickAddCarousel from './QuickAddCarousel'
 import SubjectDetailSheet from './SubjectDetailSheet'
 import DashboardFilterBar from './DashboardFilterBar'
+import SharedPeriodDropdown from './SharedPeriodDropdown'
+import { useSharedPeriodStore, getDatesForPreset } from '@/store/useSharedPeriodStore'
 import SmartInsightComment from './SmartInsightComment'
 import ActivityHeatmap from './ActivityHeatmap'
 import ActivityPunchCard from './ActivityPunchCard'
@@ -22,55 +24,22 @@ import { Clock, CheckSquare, FileText, Flame, TrendingUp, TrendingDown } from 'l
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-function getPresetRange(period: string) {
-  const now = new Date()
-  switch (period) {
-    case 'week': return { from: startOfWeek(now, { weekStartsOn: 1 }), to: endOfWeek(now, { weekStartsOn: 1 }) }
-    case 'month': return { from: startOfMonth(now), to: endOfMonth(now) }
-    case 'year': return { from: startOfYear(now), to: endOfYear(now) }
-    case 'single': return { from: now, to: now }
-    default: return { from: subDays(now, 30), to: now }
-  }
-}
-
 // BUG-01 수정: processInsightsData 클라이언트 함수 제거됨
 // 서버 getInsightsData()의 결과를 직접 사용하여 이중 처리 제거
 
 export default function OverviewTab() {
-  const period = useInsightsFilterStore(state => state.period)
-  const customDateRange = useInsightsFilterStore(state => state.customDateRange)
-  const singleDate = useInsightsFilterStore(state => state.singleDate)
   const activityType = useInsightsFilterStore(state => state.activityType)
   const selectedCategoryIds = useInsightsFilterStore(state => state.selectedCategoryIds)
-  const setCustomDateRange = useInsightsFilterStore(state => state.setCustomDateRange)
+  
+  const { preset, customRange } = useSharedPeriodStore()
+  const { startDate: startDateIso, endDate: endDateIso, prevStartDate: prevStartIso, prevEndDate: prevEndIso, prevLabel } = getDatesForPreset(preset, customRange)
+
   const { data: categoriesData = [] } = useCategories()
   const { data: templates = [] } = useActivityTemplates()
-  // 기간 계산을 KPI 호출보다 먼저 수행해야 하므로 위치 조정
-  const fromDate = period === 'single' && singleDate
-    ? startOfDay(singleDate)
-    : customDateRange?.from ? startOfDay(customDateRange.from) : getPresetRange(period).from
-  const toDate = period === 'single' && singleDate
-    ? endOfDay(singleDate)
-    : customDateRange?.to ? endOfDay(customDateRange.to) : getPresetRange(period).to
 
-  const startDateIso = fromDate.toISOString()
-  const endDateIso = toDate.toISOString()
-
-  const { data: kpi, isLoading: isLoadingKPI } = useOverviewKPI(startDateIso, endDateIso, period)
-
-  // 비교 레이블: 기간에 따라 동적으로 변경
-  const prevLabel = period === 'month' ? '전월' : period === 'year' ? '작년' : period === 'week' ? '전주' : '전 기간'
+  const { data: kpi, isLoading: isLoadingKPI } = useOverviewKPI(startDateIso, endDateIso, preset)
 
   const [selectedSubjectId, setSelectedSubjectId] = useState<string | null>(null)
-
-  // (기간 계산은 위에서 이미 수행됨)
-
-  // 이전 기간
-  const diff = differenceInDays(toDate, fromDate) + 1
-  const prevFrom = subDays(fromDate, diff)
-  const prevTo = subDays(toDate, diff)
-  const prevStartIso = prevFrom.toISOString()
-  const prevEndIso = prevTo.toISOString()
 
   const { data: insightsData, isLoading: isLoadingInsights } = useInsightsData(startDateIso, endDateIso)
   const { data: prevInsightsData } = useInsightsData(prevStartIso, prevEndIso)
@@ -181,9 +150,9 @@ export default function OverviewTab() {
     return cats.sort((a, b) => b.minutes - a.minutes)[0]?.hex_color || null
   }, [processedData.breakdown])
 
-
   return (
-    <>
+    <div className="space-y-6">
+      <SharedPeriodDropdown className="mb-2" />
       <DashboardFilterBar categories={categoriesData} />
 
       {/* ── Hero KPI Strip ── */}
@@ -290,7 +259,7 @@ export default function OverviewTab() {
               />
             </div>
             <div className="col-span-1 lg:col-span-4">
-              {period === 'single' ? <DDayWidget /> : <AnnualGoalWidget />}
+              {preset === 'custom' && customRange.start && customRange.start === customRange.end ? <DDayWidget /> : <AnnualGoalWidget />}
             </div>
 
             <div className="col-span-1 lg:col-span-7">
@@ -300,7 +269,7 @@ export default function OverviewTab() {
                 prevTotalHours={prevProcessedData?.totalHours}
                 prevTotalCount={prevProcessedData?.totalCount}
                 chartData={processedData.weeklyData}
-                period={period}
+                preset={preset}
               />
             </div>
             <div className="col-span-1 lg:col-span-5">
@@ -356,6 +325,6 @@ export default function OverviewTab() {
         endDate={endDateIso}
         breakdownInfo={selectedSubjectId && processedData.breakdown[selectedSubjectId] ? processedData.breakdown[selectedSubjectId] : null}
       />
-    </>
+    </div>
   )
 }

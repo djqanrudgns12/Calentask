@@ -80,16 +80,16 @@ export default function WeeklySummaryCard({
   prevTotalHours,
   prevTotalCount,
   chartData, 
-  period 
+  preset 
 }: { 
   totalHours: number; 
   totalCount: number; 
   prevTotalHours?: number;
   prevTotalCount?: number;
   chartData: any[]; 
-  period: string; 
+  preset: string; 
 }) {
-  const periodLabel = period === 'week' ? '이번 주 활동 요약' : period === 'month' ? '이번 달 활동 요약' : period === 'year' ? '올해 활동 요약' : '최근 조회 기간 요약';
+  const periodLabel = preset === 'this_week' ? '이번 주 활동 요약' : preset === 'this_month' ? '이번 달 활동 요약' : preset === 'this_year' ? '올해 활동 요약' : preset === 'semester1' ? '1학기 활동 요약' : preset === 'semester2' ? '2학기 활동 요약' : '조회 기간 활동 요약';
   const openAddEvent = useCalendarStore((state) => state.openAddEvent);
 
   const todayIdx = (() => {

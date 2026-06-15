@@ -3,24 +3,25 @@
 import { useMemo } from 'react';
 import { CalendarHeart, Flame, Clock } from 'lucide-react';
 import { differenceInDays, format, startOfDay } from 'date-fns';
-import { useInsightsFilterStore } from '@/store/useInsightsFilterStore';
+import { useSharedPeriodStore, getDatesForPreset } from '@/store/useSharedPeriodStore';
 import { motion } from 'framer-motion';
 
 export default function DDayWidget() {
-  const period = useInsightsFilterStore(state => state.period);
-  const singleDate = useInsightsFilterStore(state => state.singleDate);
+  const { preset, customRange } = useSharedPeriodStore();
+  const { startDate } = getDatesForPreset(preset, customRange);
 
   const ddayInfo = useMemo(() => {
-    if (period !== 'single' || !singleDate) return null;
+    if (preset !== 'custom' || !customRange.start || customRange.start !== customRange.end) return null;
     
+    const targetDate = new Date(startDate);
     const today = startOfDay(new Date());
-    const target = startOfDay(singleDate);
+    const target = startOfDay(targetDate);
     const diff = differenceInDays(target, today);
     
-    if (diff === 0) return { text: "D-Day", label: "오늘", type: "today", color: "from-rose-400 to-pink-500", textCol: "text-rose-600" };
-    if (diff > 0) return { text: `D-${diff}`, label: `${diff}일 남음`, type: "future", color: "from-indigo-400 to-purple-500", textCol: "text-indigo-600" };
-    return { text: `D+${Math.abs(diff)}`, label: `${Math.abs(diff)}일 지남`, type: "past", color: "from-emerald-400 to-teal-500", textCol: "text-emerald-600" };
-  }, [period, singleDate]);
+    if (diff === 0) return { targetDate, text: "D-Day", label: "오늘", type: "today", color: "from-rose-400 to-pink-500", textCol: "text-rose-600" };
+    if (diff > 0) return { targetDate, text: `D-${diff}`, label: `${diff}일 남음`, type: "future", color: "from-indigo-400 to-purple-500", textCol: "text-indigo-600" };
+    return { targetDate, text: `D+${Math.abs(diff)}`, label: `${Math.abs(diff)}일 지남`, type: "past", color: "from-emerald-400 to-teal-500", textCol: "text-emerald-600" };
+  }, [preset, customRange, startDate]);
 
   if (!ddayInfo) return null;
 
@@ -40,7 +41,7 @@ export default function DDayWidget() {
           {ddayInfo.text}
         </div>
         <div className="text-[13px] font-bold text-gray-400 mt-1">
-          {format(singleDate!, 'yyyy년 M월 d일')}
+          {format(ddayInfo.targetDate, 'yyyy년 M월 d일')}
         </div>
       </div>
 
