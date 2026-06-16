@@ -45,8 +45,11 @@ export function useCreateTemplate() {
       if (result.error) throw new Error(result.error)
       return result.data
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['activityTemplates'] })
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['activityTemplates'] }),
+        queryClient.invalidateQueries({ queryKey: ['templatesSummary'] })
+      ])
     }
   })
 }
@@ -59,8 +62,12 @@ export function useUpdateTemplate() {
       if (result.error) throw new Error(result.error)
       return result.data
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['activityTemplates'] })
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['activityTemplates'] }),
+        queryClient.invalidateQueries({ queryKey: ['templatesSummary'] }),
+        queryClient.invalidateQueries({ queryKey: ['templateLinkedActivities'] })
+      ])
     }
   })
 }
@@ -69,8 +76,11 @@ export function useDeleteTemplate() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: (id: string) => deleteActivityTemplate(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['activityTemplates'] })
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['activityTemplates'] }),
+        queryClient.invalidateQueries({ queryKey: ['templatesSummary'] })
+      ])
     }
   })
 }
