@@ -34,25 +34,36 @@ export async function getActivityTemplates() {
       default_start_time,
       custom_unit_enabled,
       custom_unit_minutes,
-      categories ( hex_color )
+      template_category_map ( category_id, categories ( hex_color ) )
     `)
     .eq('user_id', userData.user.id)
     .order('created_at', { ascending: false })
 
   if (error) throw new Error(error.message)
 
-  return data.map((t: any) => ({
-    id: t.id,
-    title: t.title,
-    category_id: t.category_id,
-    category_ids: t.category_ids || (t.category_id ? [t.category_id] : []),
-    duration_minutes: t.duration_minutes,
-    hex_color: t.hex_color || t.categories?.hex_color,
-    memo: t.memo,
-    default_start_time: t.default_start_time ? t.default_start_time.substring(0, 5) : undefined,
-    custom_unit_enabled: t.custom_unit_enabled || false,
-    custom_unit_minutes: t.custom_unit_minutes || 60
-  })) as ActivityTemplate[]
+  return data.map((t: any) => {
+    // 맵핑 테이블 데이터 처리
+    const maps = t.template_category_map || []
+    const mappedCategoryIds = maps.map((m: any) => m.category_id)
+    // fallback 처리: 매핑이 없으면 기존 category_id 사용
+    const categoryIds = mappedCategoryIds.length > 0 ? mappedCategoryIds : (t.category_id ? [t.category_id] : [])
+    
+    // 첫 번째 카테고리의 색상을 기본 색상으로 사용 (매핑된 카테고리 우선)
+    const firstCatColor = maps.length > 0 ? maps[0].categories?.hex_color : undefined
+
+    return {
+      id: t.id,
+      title: t.title,
+      category_id: categoryIds[0] || t.category_id,
+      category_ids: categoryIds,
+      duration_minutes: t.duration_minutes,
+      hex_color: t.hex_color || firstCatColor,
+      memo: t.memo,
+      default_start_time: t.default_start_time ? t.default_start_time.substring(0, 5) : undefined,
+      custom_unit_enabled: t.custom_unit_enabled || false,
+      custom_unit_minutes: t.custom_unit_minutes || 60
+    }
+  }) as ActivityTemplate[]
 }
 
 export async function createActivityTemplate(payload: Omit<ActivityTemplate, 'id'>) {
@@ -79,6 +90,16 @@ export async function createActivityTemplate(payload: Omit<ActivityTemplate, 'id
     .single()
 
   if (error) return { data: null, error: error.message }
+
+  // 다중 카테고리 매핑 추가
+  if (payload.category_ids && payload.category_ids.length > 0) {
+    const mappings = payload.category_ids.map(catId => ({
+      template_id: data.id,
+      category_id: catId
+    }))
+    await supabase.from('template_category_map').insert(mappings)
+  }
+
   return { data, error: null }
 }
 
@@ -111,12 +132,25 @@ export async function updateActivityTemplate(id: string, payload: Partial<Omit<A
 
   if (error) return { data: null, error: error.message }
 
-  // --- 기존 일정에도 변경 사항 전파 (시간·메모 제외) ---
+  // 1. 템플릿 본체 카테고리 맵핑 업데이트
+  if (payload.category_ids !== undefined) {
+    // 기존 맵핑 삭제
+    await supabase.from('template_category_map').delete().eq('template_id', id)
+    // 새 맵핑 추가
+    if (payload.category_ids.length > 0) {
+      const mappings = payload.category_ids.map(catId => ({
+        template_id: id,
+        category_id: catId
+      }))
+      await supabase.from('template_category_map').insert(mappings)
+    }
+  }
+
+  // --- 기존 일정에도 변경 사항 전파 (사용자 요구사항: 카테고리, 색상만 영향 받도록 설계) ---
   const activityUpdate: Record<string, unknown> = {}
-  if (payload.title !== undefined) activityUpdate.title = payload.title
   if (payload.hex_color !== undefined) activityUpdate.hex_color = payload.hex_color || null
 
-  // 1. 일정의 title/memo/hex_color 동기화
+  // 2. 일정의 hex_color 동기화
   if (Object.keys(activityUpdate).length > 0) {
     await supabase
       .from('activities')
@@ -125,7 +159,7 @@ export async function updateActivityTemplate(id: string, payload: Partial<Omit<A
       .eq('user_id', userData.user.id)
   }
 
-  // 2. 카테고리 매핑 동기화
+  // 3. 카테고리 매핑 동기화
   if (payload.category_ids !== undefined) {
     // 해당 템플릿으로 생성된 모든 일정 ID 조회
     const { data: linkedActivities } = await supabase
@@ -212,8 +246,15 @@ export async function createActivityFromTemplate(templateId: string, customStart
 
   if (activityError) throw new Error(activityError.message)
 
-  // 2. Map categories (category_ids 컬럼은 DB에 없으므로 category_id를 사용)
-  const categoryIdsToMap = template.category_id ? [template.category_id] : []
+  // 2. Map categories (템플릿의 다중 카테고리 매핑 가져오기)
+  const { data: templateMaps } = await supabase
+    .from('template_category_map')
+    .select('category_id')
+    .eq('template_id', template.id)
+
+  const categoryIdsToMap = templateMaps && templateMaps.length > 0 
+    ? templateMaps.map(m => m.category_id) 
+    : (template.category_id ? [template.category_id] : [])
 
   if (categoryIdsToMap.length > 0) {
     const mappings = categoryIdsToMap.map((id: string) => ({
