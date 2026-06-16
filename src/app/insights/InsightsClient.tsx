@@ -14,7 +14,6 @@ const TABS: { id: InsightsTab; label: string; icon: typeof LayoutDashboard }[] =
   { id: 'overview', label: '종합 현황', icon: LayoutDashboard },
   { id: 'time', label: '시간 분석', icon: Clock },
   { id: 'execution', label: '실행력', icon: CheckSquare },
-  { id: 'templates', label: '템플릿 센터', icon: Puzzle },
 ];
 
 export default function InsightsClient() {
@@ -72,13 +71,6 @@ export default function InsightsClient() {
         {mountedTabs.has('execution') && (
           <div style={{ display: activeTab === 'execution' ? 'block' : 'none' }}>
             <ExecutionTab />
-          </div>
-        )}
-
-        {/* ── 템플릿 센터 탭 ── */}
-        {mountedTabs.has('templates') && (
-          <div style={{ display: activeTab === 'templates' ? 'block' : 'none' }}>
-            <TemplateCenterTab />
           </div>
         )}
       </div>

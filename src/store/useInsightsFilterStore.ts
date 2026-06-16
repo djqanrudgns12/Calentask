@@ -2,7 +2,8 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { ActivityTypeFilter } from '@/components/insights/DashboardFilterBar';
 
-export type InsightsTab = 'overview' | 'time' | 'execution' | 'templates';
+export type InsightsTab = 'overview' | 'time' | 'execution';
+
 
 interface InsightsFilterState {
   activeTab: InsightsTab;

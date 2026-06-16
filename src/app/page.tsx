@@ -8,7 +8,7 @@ import { useCalendarStore } from '@/store/useCalendarStore'
 import { useArchiveStore } from '@/store/useArchiveStore'
 import { useAgendaStore } from '@/store/useAgendaStore'
 import { Button } from '@/components/ui/button'
-import { Plus, Tags, Database, LogOut, Calendar as CalendarIcon, DownloadCloud, Gift, Sparkles, ChevronDown, Archive, NotebookPen, Bookmark, Trash2, Settings, Home } from 'lucide-react'
+import { Plus, Tags, Database, LogOut, Calendar as CalendarIcon, DownloadCloud, Gift, Sparkles, ChevronDown, Archive, NotebookPen, Bookmark, Trash2, Settings, Home, Puzzle } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 
 import { startOfWeek, endOfWeek } from 'date-fns'
@@ -48,6 +48,9 @@ import { HomeDashboard } from '@/components/home/HomeDashboard'
 import { BottomNavigation } from '@/components/ui/BottomNavigation'
 import { CommandPalette } from '@/components/ui/CommandPalette'
 import { MobileCategoryBar } from '@/components/calendar/MobileCategoryBar'
+import dynamic from 'next/dynamic'
+
+const TemplateCenterTab = dynamic(() => import('@/components/insights/TemplateCenterTab'), { ssr: false })
 
 export default function CalendarPage() {
   const [mounted, setMounted] = useState(false)
@@ -65,7 +68,7 @@ export default function CalendarPage() {
   const isCalendarMenuOpen = ['monthly', 'weekly', 'list', 'semester', 'archive_agenda', 'anniversary'].includes(viewMode)
   const isMyCalendarActive = ['monthly', 'weekly', 'list', 'semester'].includes(viewMode)
   const isArchiveMenuOpen = ['archive_notes', 'link_lounge'].includes(viewMode)
-  const isDataCenterMenuOpen = ['insights', 'nice_import', 'tags', 'trash'].includes(viewMode)
+  const isDataCenterMenuOpen = ['insights', 'nice_import', 'tags', 'trash', 'template_center'].includes(viewMode)
 
   const handleLogout = async () => {
     resetStore()
@@ -383,6 +386,16 @@ export default function CalendarPage() {
                       </button>
 
                       <button 
+                        onClick={() => setViewMode('template_center')}
+                        className={`w-full text-left px-3 py-2 rounded-lg text-[13px] font-medium transition-all duration-300 flex items-center gap-2.5 group ${
+                          viewMode === 'template_center' ? 'bg-pink-50/70 text-pink-700 shadow-sm' : 'text-muted-foreground hover:bg-accent hover:text-foreground'
+                        }`}
+                      >
+                        <Puzzle className={`w-3.5 h-3.5 ${viewMode === 'template_center' ? 'text-pink-600' : 'text-muted-foreground/50'}`} />
+                        템플릿 센터
+                      </button>
+
+                      <button 
                         onClick={() => setViewMode('nice_import')}
                         className={`w-full text-left px-3 py-2 rounded-lg text-[13px] font-medium transition-all duration-300 flex items-center gap-2.5 group ${
                           viewMode === 'nice_import' ? 'bg-indigo-50/70 text-indigo-700 shadow-sm' : 'text-muted-foreground hover:bg-accent hover:text-foreground'
@@ -467,6 +480,11 @@ export default function CalendarPage() {
             {viewMode === 'insights' && (
               <div className="min-h-full bg-background rounded-xl md:rounded-3xl p-2 md:p-6 overflow-x-hidden">
                 <InsightsClient />
+              </div>
+            )}
+            {viewMode === 'template_center' && (
+              <div className="min-h-full bg-background rounded-xl md:rounded-3xl p-2 md:p-6 overflow-x-hidden border border-border shadow-sm">
+                <TemplateCenterTab />
               </div>
             )}
             {viewMode === 'archive_notes' && (
