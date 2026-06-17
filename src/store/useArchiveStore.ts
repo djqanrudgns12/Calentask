@@ -60,6 +60,8 @@ interface ArchiveState {
 
   // Board Data Items
   items: Record<string, BoardItem[]>;
+  spreadsheetData: Record<string, any[]>;
+  updateSpreadsheetData: (boardId: string, data: any[]) => void;
   boardConfigs: Record<string, any>;
   setBoardConfig: (boardId: string, config: any) => void;
   
@@ -325,6 +327,10 @@ export const useArchiveStore = create<ArchiveState>()(
   setOptimisticAgendaTasks: (tasks) => set({ optimisticAgendaTasks: tasks }),
 
   items: {},
+  spreadsheetData: {},
+  updateSpreadsheetData: (boardId, data) => set(state => ({
+    spreadsheetData: { ...state.spreadsheetData, [boardId]: data }
+  })),
 
   // 에디터 뷰 설정 (탭별)
   tabViewModes: {},
@@ -574,6 +580,7 @@ export const useArchiveStore = create<ArchiveState>()(
         activeTabId: state.activeTabId,
         boardConfigs: state.boardConfigs,
         tabViewModes: state.tabViewModes,
+        spreadsheetData: state.spreadsheetData,
       }),
       merge: (persistedState: any, currentState) => ({
         ...currentState,

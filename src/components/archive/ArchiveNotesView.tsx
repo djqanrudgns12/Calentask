@@ -6,7 +6,7 @@ import { PinPadOverlay } from '@/components/archive/PinPadOverlay';
 import { DocumentBoard } from '@/components/archive/boards/DocumentBoard';
 import { CanvasBoard } from '@/components/archive/boards/CanvasBoard';
 import { MasonryBoard } from '@/components/archive/boards/MasonryBoard';
-import { TableBoard } from '@/components/archive/boards/TableBoard';
+import { SpreadsheetBoard } from '@/components/archive/boards/SpreadsheetBoard';
 import { MediaBoard } from '@/components/archive/boards/MediaBoard';
 import { JournalBoard } from '@/components/archive/boards/JournalBoard';
 import { GraphBoard } from '@/components/archive/boards/GraphBoard';
@@ -377,7 +377,7 @@ export function ArchiveNotesView() {
                   {tabs.find((t: any) => t.id === activeTabId)?.board_type === 'list' && <DocumentBoard />}
                   {tabs.find((t: any) => t.id === activeTabId)?.board_type === 'canvas' && <CanvasBoard />}
                   {tabs.find((t: any) => t.id === activeTabId)?.board_type === 'masonry' && <MasonryBoard />}
-                  {tabs.find((t: any) => t.id === activeTabId)?.board_type === 'table' && <TableBoard />}
+                  {tabs.find((t: any) => t.id === activeTabId)?.board_type === 'table' && <SpreadsheetBoard />}
                   {tabs.find((t: any) => t.id === activeTabId)?.board_type === 'kanban' && <MediaBoard />}
                   {tabs.find((t: any) => t.id === activeTabId)?.board_type === 'journal' && <JournalBoard />}
                   {tabs.find((t: any) => t.id === activeTabId)?.board_type === 'graph' && <GraphBoard />}
