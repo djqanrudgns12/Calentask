@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { useCalendarStore } from '@/store/useCalendarStore'
 import { useState } from 'react'
 import { useAgendaStore } from '@/store/useAgendaStore'
+import { useDeleteActivity } from '@/hooks/useCalendarQueries'
 
 export function DeleteConfirmDialog() {
   const { deletingEventId, closeDeleteConfirm } = useCalendarStore()

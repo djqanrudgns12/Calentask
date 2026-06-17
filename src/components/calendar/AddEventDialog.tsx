@@ -87,6 +87,7 @@ export function AddEventDialog({ children }: { children?: React.ReactNode }) {
   const [newCategoryName, setNewCategoryName] = useState('')
   const [isTemplateOpen, setIsTemplateOpen] = useState(false)
   const [templateId, setTemplateId] = useState<string | null>(null)
+  const [isAlsoAgenda, setIsAlsoAgenda] = useState(false)
 
   const currentMonthStart = startOfMonth(new Date()).toISOString()
   const currentMonthEnd = endOfMonth(new Date()).toISOString()
@@ -142,6 +143,7 @@ export function AddEventDialog({ children }: { children?: React.ReactNode }) {
       setSelectedCategories((prefillEventData as any)?.category_ids || [])
       setCustomColor(null); setMemo(prefillEventData?.memo || ''); setTemplateId(null)
       setAttachments([]); setIsAddingCategory(false); setNewCategoryName(''); setIsTemplateOpen(false)
+      setIsAlsoAgenda(false)
     }
   }, [isAddEventOpen, addEventDate, prefillEventData, editingEvent])
 
@@ -198,13 +200,24 @@ export function AddEventDialog({ children }: { children?: React.ReactNode }) {
     if (sO.getTime() >= eO.getTime()) return alert('종료는 시작보다 이후여야 합니다.')
 
     const payload = { title, start_time: sO.toISOString(), end_time: eO.toISOString(), is_all_day: isAllDay, type: 'EVENT' as const, memo, hex_color: customColor, template_id: templateId, attachments }
+    
+    const onSuccessAction = () => {
+      if (prefillAgendaTaskId) useAgendaStore.getState().updateTask(prefillAgendaTaskId, { is_calendar_registered: true })
+      closeAddEvent()
+      if (isAlsoAgenda) {
+        useAgendaStore.getState().openAddDialog({
+          title,
+          memo: memo || null,
+          deadline: sO.toISOString(),
+          category_id: selectedCategories[0] || null,
+        })
+      }
+    }
+
     if (editingEvent) {
-      updateActivity({ id: editingEvent.id, payload, categoryIds: selectedCategories }, { onSuccess: closeAddEvent })
+      updateActivity({ id: editingEvent.id, payload, categoryIds: selectedCategories }, { onSuccess: onSuccessAction })
     } else {
-      createActivity({ payload, categoryIds: selectedCategories }, { onSuccess: () => {
-        if (prefillAgendaTaskId) useAgendaStore.getState().updateTask(prefillAgendaTaskId, { is_calendar_registered: true })
-        closeAddEvent()
-      }})
+      createActivity({ payload, categoryIds: selectedCategories }, { onSuccess: onSuccessAction })
     }
   }
 
@@ -408,6 +421,22 @@ export function AddEventDialog({ children }: { children?: React.ReactNode }) {
               className="w-full py-3 border-2 border-dashed border-border rounded-2xl flex items-center justify-center gap-2 text-muted-foreground hover:text-[#007AFF] hover:border-[#007AFF]/40 hover:bg-[#007AFF]/5 transition-all group">
               <Plus className="w-4 h-4 group-hover:text-[#007AFF] transition-colors" />
               <span className="text-[13px] font-bold">첨부파일 추가</span>
+            </button>
+          </div>
+          
+          {/* 아젠다 동시 등록 토글 */}
+          <div className="px-5 py-4 flex items-center justify-between bg-indigo-50/50 rounded-[20px] border border-indigo-100/50">
+            <div className="flex flex-col">
+              <span className="text-[14px] font-bold text-indigo-900 flex items-center gap-1.5">
+                <span className="text-indigo-500">✨</span> 아젠다에도 등록하기
+              </span>
+              <span className="text-[11px] font-medium text-indigo-600/70 mt-0.5">
+                저장 후 아젠다 세부 입력 폼이 나타납니다.
+              </span>
+            </div>
+            <button type="button" onClick={() => setIsAlsoAgenda(!isAlsoAgenda)}
+              className={`w-[50px] h-[30px] rounded-full transition-colors relative shrink-0 ${isAlsoAgenda ? 'bg-indigo-500' : 'bg-slate-200'}`}>
+              <div className={`w-[26px] h-[26px] bg-card rounded-full shadow-sm transition-transform absolute top-[2px] ${isAlsoAgenda ? 'left-[22px]' : 'left-[2px]'}`} />
             </button>
           </div>
         </div>

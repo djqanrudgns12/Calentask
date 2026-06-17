@@ -21,9 +21,13 @@ interface AgendaState {
   isLoading: boolean;
   isInitialized: boolean;
   viewMode: AgendaViewMode;
+  isAddDialogOpen: boolean;
+  prefillData: Partial<AgendaTask> | null;
   setViewMode: (mode: AgendaViewMode) => void;
+  openAddDialog: (data?: Partial<AgendaTask>) => void;
+  closeAddDialog: () => void;
   fetchTasks: () => Promise<void>;
-  addTask: (task: { title: string; memo?: string | null; deadline?: string | null; category_id?: string | null; subtasks?: string[] }) => Promise<void>;
+  addTask: (task: { title: string; memo?: string | null; deadline?: string | null; category_id?: string | null; subtasks?: string[]; is_important?: boolean }) => Promise<void>;
   updateTask: (id: string, updates: Partial<AgendaTask>) => Promise<void>;
   deleteTask: (id: string) => Promise<void>; // Hard delete
   setTaskStatus: (id: string, status: TaskStatus) => Promise<void>;
@@ -37,8 +41,12 @@ export const useAgendaStore = create<AgendaState>()((set, get) => ({
   isLoading: false,
   isInitialized: false,
   viewMode: 'list',
+  isAddDialogOpen: false,
+  prefillData: null,
 
   setViewMode: (mode) => set({ viewMode: mode }),
+  openAddDialog: (data) => set({ isAddDialogOpen: true, prefillData: data || null }),
+  closeAddDialog: () => set({ isAddDialogOpen: false, prefillData: null }),
 
   fetchTasks: async () => {
     set({ isLoading: true });

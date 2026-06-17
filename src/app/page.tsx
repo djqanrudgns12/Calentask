@@ -38,6 +38,7 @@ import { TrashView } from '@/components/data-center/TrashView'
 import { ClearAllDataDialog } from '@/components/profile/ClearAllDataDialog'
 import { CalendarHeader } from '@/components/calendar/CalendarHeader'
 import { AnniversaryConfetti } from '@/components/anniversary/AnniversaryConfetti'
+import { AddAgendaTaskDialog } from '@/components/archive/AddAgendaTaskDialog'
 import { UpcomingAnniversaryWidget } from '@/components/anniversary/UpcomingAnniversaryWidget'
 import { useAnniversaryOverlay } from '@/hooks/useAnniversaryOverlay'
 import { AnniversarySettingsView } from '@/components/anniversary/AnniversarySettingsView'
@@ -565,6 +566,9 @@ export default function CalendarPage() {
 
       {/* Global Add Event Dialog - always mounted so it can be opened from any view (e.g. archive agenda "캘린더에 등록") */}
       <AddEventDialog />
+      
+      {/* Global Add Agenda Task Dialog */}
+      <AddAgendaTaskDialog />
 
       {/* Global Command Palette */}
       <CommandPalette />

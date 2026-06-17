@@ -1,10 +1,12 @@
 import { useCalendarStore } from '@/store/useCalendarStore'
 import { format } from 'date-fns'
-import { X, Pencil, Trash2, Clock, AlignLeft } from 'lucide-react'
+import { X, Pencil, Trash2, Clock, AlignLeft, Sparkles } from 'lucide-react'
 import { getEventPrimaryColor } from '@/lib/eventColor'
+import { useAgendaStore } from '@/store/useAgendaStore'
 
 export function EventDetailPopover() {
   const { selectedEventDetail, closeEventDetail, openEditEvent, openDeleteConfirm } = useCalendarStore()
+  const openAddDialog = useAgendaStore(state => state.openAddDialog)
 
   if (!selectedEventDetail) return null
 
@@ -21,6 +23,17 @@ export function EventDetailPopover() {
   const handleDelete = () => {
     closeEventDetail()
     openDeleteConfirm(event.id)
+  }
+
+  // 아젠다로 보내기
+  const handleSendToAgenda = () => {
+    closeEventDetail()
+    openAddDialog({
+      title: event.title,
+      memo: event.memo,
+      deadline: event.start_time,
+      category_id: event.categories?.[0]?.id || null,
+    })
   }
 
   return (
@@ -104,21 +117,36 @@ export function EventDetailPopover() {
           </div>
 
           {/* Action Footer */}
-          <div className="flex items-center justify-end gap-2 px-4 py-3 bg-muted/50 border-t border-border">
-            <button 
-              onClick={handleDelete}
-              className="px-4 py-2 text-sm font-semibold text-red-600 hover:bg-red-50 rounded-lg transition-colors flex items-center gap-1.5"
-            >
-              <Trash2 className="w-4 h-4" />
-              삭제
-            </button>
-            <button 
-              onClick={handleEdit}
-              className="px-4 py-2 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 shadow-sm rounded-lg transition-colors flex items-center gap-1.5"
-            >
-              <Pencil className="w-4 h-4" />
-              편집
-            </button>
+          <div className="flex flex-col gap-3 px-5 py-4 border-t border-border/50 bg-slate-50/50">
+            <div className="text-[11px] font-bold text-muted-foreground flex items-center gap-1.5 px-1">
+              <span className="text-amber-500">💡</span>
+              세부 입력 폼과 데드라인 등은 아젠다에서 직접 조정해주세요!
+            </div>
+            <div className="flex items-center justify-between">
+              <button
+                onClick={handleSendToAgenda}
+                className="px-4 py-2 text-sm font-semibold text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors flex items-center gap-1.5"
+              >
+                <Sparkles className="w-4 h-4" />
+                아젠다로 보내기
+              </button>
+              <div className="flex gap-2">
+                <button 
+                  onClick={handleDelete}
+                  className="px-4 py-2 text-sm font-semibold text-red-600 hover:bg-red-50 rounded-lg transition-colors flex items-center gap-1.5"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  삭제
+                </button>
+                <button 
+                  onClick={handleEdit}
+                  className="px-4 py-2 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 shadow-sm rounded-lg transition-colors flex items-center gap-1.5"
+                >
+                  <Pencil className="w-4 h-4" />
+                  편집
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
