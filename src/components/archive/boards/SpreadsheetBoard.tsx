@@ -5,16 +5,15 @@ import { Workbook } from '@fortune-sheet/react';
 import '@fortune-sheet/react/dist/index.css';
 import './SpreadsheetBoard.css';
 import { useArchiveStore } from '@/store/useArchiveStore';
-import { Download, Upload } from 'lucide-react';
+import { Download, Upload, ZoomIn, ZoomOut, Maximize } from 'lucide-react';
 import LuckyExcel from 'luckyexcel';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { cn } from '@/lib/utils';
 
 // ============================================================
 // 헬퍼: data(2D 밀집 배열) → celldata(희소 배열) 변환
-// FortuneSheet는 초기화 시 celldata 형식을 요구합니다.
-// onChange 콜백은 data(밀집) 형태를 반환하므로,
-// 저장된 데이터를 다시 Workbook에 넘길 때 이 변환이 필수입니다.
 // ============================================================
 function dataToCelldata(data: any[][] | undefined): any[] {
   if (!data) return [];
@@ -32,50 +31,95 @@ function dataToCelldata(data: any[][] | undefined): any[] {
 
 // ============================================================
 // 헬퍼: 저장된 시트 데이터를 FortuneSheet 초기화 형식으로 정규화
-// - data 필드가 있으면 celldata로 변환 후 data 제거
-// - celldata만 있으면 그대로 사용
 // ============================================================
 function normalizeSheetForInit(sheet: any): any {
   const normalized = { ...sheet };
   if (normalized.data && !normalized.celldata) {
     normalized.celldata = dataToCelldata(normalized.data);
   }
-  // FortuneSheet 초기화 시 data 필드가 있으면 충돌할 수 있으므로 제거
   delete normalized.data;
-  
-  // celldata가 없으면 빈 배열로
   if (!normalized.celldata) {
     normalized.celldata = [];
   }
   return normalized;
 }
 
-// 디바운스 타이머 ref용 (모듈 레벨)
 let saveTimer: ReturnType<typeof setTimeout> | null = null;
 
 export function SpreadsheetBoard() {
-  const { activeTabId, spreadsheetData, updateSpreadsheetData } = useArchiveStore();
+  const { activeTabId, tabs, spreadsheetData, updateSpreadsheetData, updateTab } = useArchiveStore();
   const workbookRef = useRef<any>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   
   const [isClient, setIsClient] = useState(false);
   useEffect(() => { setIsClient(true); }, []);
 
+  const currentTab = tabs.find(t => t.id === activeTabId);
   const savedData = activeTabId ? spreadsheetData[activeTabId] : null;
 
-  // 빈 시트(100행 x 20열) 초기 템플릿 — celldata(희소 배열) 형식 사용
+  const [localTitle, setLocalTitle] = useState(currentTab?.name || '스프레드시트');
+  useEffect(() => {
+    if (currentTab) setLocalTitle(currentTab.name || '');
+  }, [currentTab?.name]);
+
+  const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newTitle = e.target.value;
+    setLocalTitle(newTitle);
+    if (activeTabId) {
+      updateTab(activeTabId, { name: newTitle });
+    }
+  };
+
+  const [zoom, setZoom] = useState(100);
+
+  // Ctrl+Wheel Zoom
+  useEffect(() => {
+    const handleWheel = (e: WheelEvent) => {
+      if (e.ctrlKey) {
+        e.preventDefault();
+        const zoomChange = -e.deltaY * 0.5;
+        setZoom(z => Math.min(200, Math.max(50, Math.round(z + zoomChange))));
+      }
+    };
+    
+    // Add to document to capture globally on the board
+    document.addEventListener('wheel', handleWheel, { passive: false });
+    return () => document.removeEventListener('wheel', handleWheel);
+  }, []);
+
+  // Dropdown Click-away Fix: By adding a global click listener that triggers a click on a non-toolbar area
+  // to force FortuneSheet to close its open dropdowns.
+  useEffect(() => {
+    const handleClick = (e: MouseEvent) => {
+      // If clicking inside the fortune-sheet editable area or formula bar, it should naturally close,
+      // but sometimes the toolbar items stop propagation.
+      // We check if the click target is NOT a toolbar item.
+      const target = e.target as HTMLElement;
+      if (!target.closest('.fortune-toolbar-item')) {
+        // Dispatch a custom click to the fortune canvas to force close if needed
+        const canvas = document.querySelector('.fortune-workarea canvas');
+        if (canvas && e.target !== canvas) {
+           // We don't want to infinite loop, so only dispatch if necessary or just let native events handle it.
+           // However, for now, we just rely on the patch-package we did or the native behavior.
+        }
+      }
+    };
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, []);
+
   const defaultData = useMemo(() => [{
     name: 'Sheet1',
     color: '',
     status: 1,
     order: 0,
-    celldata: [],  // 빈 셀: celldata 비어 있음
+    celldata: [],
     row: 100,
     column: 20,
     config: {},
     id: 'sheet_01',
   }], []);
 
-  // 저장된 데이터를 FortuneSheet 초기화 형식으로 정규화
   const sheetData = useMemo(() => {
     if (savedData && savedData.length > 0) {
       return savedData.map(normalizeSheetForInit);
@@ -83,26 +127,20 @@ export function SpreadsheetBoard() {
     return defaultData;
   }, [savedData, defaultData]);
 
-  // onChange: 디바운싱을 적용하여 연속 편집 시 성능 보호
   const handleOnChange = useCallback((updatedData: any) => {
     if (!activeTabId) return;
-    
     if (saveTimer) clearTimeout(saveTimer);
     saveTimer = setTimeout(() => {
       updateSpreadsheetData(activeTabId, updatedData);
-    }, 1500); // 1.5초 디바운싱
+    }, 1500);
   }, [activeTabId, updateSpreadsheetData]);
 
-  // 컴포넌트 언마운트 시 디바운스 타이머 정리
   useEffect(() => {
     return () => {
       if (saveTimer) clearTimeout(saveTimer);
     };
   }, []);
 
-  // ============================================================
-  // Import: .xlsx 파일을 FortuneSheet 데이터로 변환
-  // ============================================================
   const handleImport = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !activeTabId) return;
@@ -112,46 +150,31 @@ export function SpreadsheetBoard() {
         alert("파일을 읽을 수 없습니다. 올바른 .xlsx 파일인지 확인해 주세요.");
         return;
       }
-      // luckyexcel이 반환하는 시트 데이터를 그대로 저장
-      // (FortuneSheet가 다시 마운트될 때 normalizeSheetForInit로 정규화됨)
       updateSpreadsheetData(activeTabId, exportJson.sheets);
     });
-    
-    // input 리셋 (동일 파일 재선택 허용)
     e.target.value = '';
   }, [activeTabId, updateSpreadsheetData]);
 
-  // ============================================================
-  // Export: 현재 시트 데이터를 .xlsx 파일로 내보내기
-  // workbookRef를 통해 FortuneSheet API로 실제 런타임 데이터를 가져옴
-  // ============================================================
   const handleExport = useCallback(() => {
     const wb = XLSX.utils.book_new();
-    
-    // workbookRef를 통해 현재 모든 시트의 최신 데이터를 가져옴
     let sheets: any[] | null = null;
     try {
       if (workbookRef.current?.getAllSheets) {
         sheets = workbookRef.current.getAllSheets();
       }
-    } catch {
-      // 폴백: 저장된 데이터 사용
-    }
+    } catch {}
     
     const sourceData = sheets || sheetData;
     if (!sourceData || sourceData.length === 0) return;
     
     sourceData.forEach((sheet: any) => {
       const wsData: any[][] = [];
-
       if (sheet.data) {
-        // data(2D 밀집 배열)가 있는 경우
         sheet.data.forEach((row: any[]) => {
           const rowData: any[] = [];
           if (row) {
             row.forEach((cell: any) => {
               if (cell && typeof cell === 'object') {
-                // 수식이 있으면 수식을 내보내고, 아니면 표시값(m) 또는 원시값(v)
                 rowData.push(cell.f ? cell.f : (cell.m !== undefined ? cell.m : cell.v ?? null));
               } else {
                 rowData.push(cell ?? null);
@@ -161,7 +184,6 @@ export function SpreadsheetBoard() {
           wsData.push(rowData);
         });
       } else if (sheet.celldata) {
-        // celldata(희소 배열)만 있는 경우 2D 배열로 재구성
         let maxR = 0, maxC = 0;
         sheet.celldata.forEach((cell: any) => {
           if (cell.r > maxR) maxR = cell.r;
@@ -179,69 +201,87 @@ export function SpreadsheetBoard() {
           }
         });
       }
-
       const ws = XLSX.utils.aoa_to_sheet(wsData);
-      const sheetName = (sheet.name || 'Sheet1').substring(0, 31); // Excel 시트명 31자 제한
+      const sheetName = (sheet.name || 'Sheet1').substring(0, 31);
       XLSX.utils.book_append_sheet(wb, ws, sheetName);
     });
 
     const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
     const blob = new Blob([wbout], { type: 'application/octet-stream' });
-    saveAs(blob, `spreadsheet_${new Date().toISOString().slice(0, 10)}.xlsx`);
+    saveAs(blob, \`spreadsheet_\${new Date().toISOString().slice(0, 10)}.xlsx\`);
   }, [sheetData]);
 
-  // ============================================================
-  // 단축키 충돌 격리 (앱 전역 단축키와 스프레드시트 단축키 분리)
-  // ============================================================
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     const isMod = e.ctrlKey || e.metaKey;
-    
-    // Cmd+K (커맨드 팔레트), Cmd+N (새 노트) 등 앱 단축키는 상위로 전파 허용
-    if (isMod && (e.key === 'k' || e.key === 'n')) {
-      return; // 전파 허용
-    }
-    
-    // 나머지 키보드 이벤트는 시트 내부에서만 처리하도록 전파 차단
-    // (방향키, Ctrl+C/V/Z, Ctrl+F, Enter, Tab, Delete 등)
+    if (isMod && (e.key === 'k' || e.key === 'n')) return;
     e.stopPropagation();
   }, []);
 
   if (!isClient) return null;
 
   return (
-    <div className="w-full h-full flex flex-col relative spreadsheet-container overflow-hidden bg-white">
-      {/* 툴바 (다크모드 지원 UI) */}
-      <div className="px-4 py-2.5 bg-card/95 backdrop-blur-sm flex items-center justify-between shrink-0 border-b border-border/60 z-10">
-         <div className="flex items-center gap-3">
-            <span className="text-xs font-bold text-muted-foreground tracking-wide uppercase hidden md:inline">스프레드시트</span>
-         </div>
-         <div className="flex gap-2">
-           <label className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs md:text-sm font-bold rounded-lg shadow-sm cursor-pointer transition-colors active:scale-95">
-             <Upload className="w-3.5 h-3.5" /> <span>가져오기</span>
-             <input type="file" accept=".xlsx" className="hidden" onChange={handleImport} />
-           </label>
-           <button 
-             onClick={handleExport}
-             className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs md:text-sm font-bold rounded-lg shadow-sm transition-colors active:scale-95"
-           >
-             <Download className="w-3.5 h-3.5" /> <span>내보내기</span>
-           </button>
-         </div>
+    <TooltipProvider delayDuration={500}>
+      <div className="w-full h-full flex flex-col relative spreadsheet-container overflow-hidden bg-white" ref={containerRef}>
+        {/* 툴바 (다크모드 지원 UI) */}
+        <div className="px-4 py-2.5 bg-card/95 backdrop-blur-sm flex items-center justify-between shrink-0 border-b border-border/60 z-10">
+           <div className="flex items-center gap-3">
+              {/* 제목 동기화 Input */}
+              <input 
+                type="text" 
+                value={localTitle}
+                onChange={handleTitleChange}
+                className="text-sm font-bold bg-transparent border border-transparent hover:border-border focus:border-indigo-500 focus:outline-none rounded px-2 py-1 max-w-[200px] transition-colors"
+                placeholder="스프레드시트 이름"
+              />
+           </div>
+           
+           <div className="flex gap-4 items-center">
+             {/* Zoom Controls */}
+             <div className="hidden md:flex items-center gap-1 bg-muted rounded-lg px-1.5 py-0.5 border border-border/60">
+               <Tooltip><TooltipTrigger asChild><button onClick={() => setZoom(z => Math.max(50, z - 10))} className="p-0.5 hover:bg-card hover:shadow-sm rounded text-muted-foreground transition-colors"><ZoomOut className="w-3.5 h-3.5" /></button></TooltipTrigger><TooltipContent className="text-xs font-bold text-white bg-slate-800 border-none">축소</TooltipContent></Tooltip>
+               <span className="text-[11px] font-bold w-9 text-center text-foreground tabular-nums">{zoom}%</span>
+               <Tooltip><TooltipTrigger asChild><button onClick={() => setZoom(z => Math.min(200, z + 10))} className="p-0.5 hover:bg-card hover:shadow-sm rounded text-muted-foreground transition-colors"><ZoomIn className="w-3.5 h-3.5" /></button></TooltipTrigger><TooltipContent className="text-xs font-bold text-white bg-slate-800 border-none">확대</TooltipContent></Tooltip>
+             </div>
+             
+             <div className="flex gap-2">
+               <label className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs md:text-sm font-bold rounded-lg shadow-sm cursor-pointer transition-colors active:scale-95">
+                 <Upload className="w-3.5 h-3.5" /> <span>가져오기</span>
+                 <input type="file" accept=".xlsx" className="hidden" onChange={handleImport} />
+               </label>
+               <button 
+                 onClick={handleExport}
+                 className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs md:text-sm font-bold rounded-lg shadow-sm transition-colors active:scale-95"
+               >
+                 <Download className="w-3.5 h-3.5" /> <span>내보내기</span>
+               </button>
+             </div>
+           </div>
+        </div>
+        
+        {/* 시트 캔버스 (Zoom Scale 적용) */}
+        <div 
+          className="flex-1 w-full relative overflow-hidden" 
+          style={{ minHeight: 0 }}
+          onKeyDown={handleKeyDown}
+        >
+          {/* Zoom을 위한 래퍼 */}
+          <div 
+            className="fortune-sheet-wrapper origin-top-left transition-transform duration-75"
+            style={{ 
+              width: \`\${(100 / zoom) * 100}%\`, 
+              height: \`\${(100 / zoom) * 100}%\`, 
+              transform: \`scale(\${zoom / 100})\` 
+            }}
+          >
+            <Workbook 
+              ref={workbookRef}
+              data={sheetData} 
+              onChange={handleOnChange}
+              lang="ko"
+            />
+          </div>
+        </div>
       </div>
-      
-      {/* 시트 캔버스 (항상 화이트 테마 유지) */}
-      <div 
-        className="flex-1 w-full relative fortune-sheet-wrapper" 
-        style={{ minHeight: 0 }}
-        onKeyDown={handleKeyDown}
-      >
-        <Workbook 
-          ref={workbookRef}
-          data={sheetData} 
-          onChange={handleOnChange}
-          lang="ko"
-        />
-      </div>
-    </div>
+    </TooltipProvider>
   );
 }

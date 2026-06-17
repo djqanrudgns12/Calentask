@@ -1,0 +1,144 @@
+[      99ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:3000/login:0
+[     150ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:3000/_next/static/chunks/0fke_react-dom_0utferw._.js:15305
+[     164ms] Error: ./Downloads/Calentask/src/app/globals.css:10542:8
+Parsing CSS source code failed
+  10540 | @import url('https://webfontworld.github.io/gmarket/GmarketSans.css');
+  10541 | @import url('https://webfontworld.github.io/NanumSquareNeo/NanumSquareNeo.css');
+> 10542 | @import url('https://webfontworld.github.io/woowa/BMJua.css');
+        |        ^
+  10543 | :root {
+  10544 |   --background: oklch(1 0 0);
+  10545 |   --foreground: oklch(0.145 0 0);
+
+@import rules must precede all rules aside from @charset and @layer statements
+
+Generated code of PostCSS transform of file content of Downloads/Calentask/src/app/globals.css:
+./Downloads/Calentask/src/app/globals.css:10542:8
+  10540 | @import url('https://webfontworld.github.io/gmarket/GmarketSans.css');
+  10541 | @import url('https://webfontworld.github.io/NanumSquareNeo/NanumSquareNeo.css');
+> 10542 | @import url('https://webfontworld.github.io/woowa/BMJua.css');
+        |        ^
+  10543 | :root {
+  10544 |   --background: oklch(1 0 0);
+  10545 |   --foreground: oklch(0.145 0 0);
+
+Import trace:
+  Client Component Browser:
+    ./Downloads/Calentask/src/app/globals.css [Client Component Browser]
+    ./Downloads/Calentask/src/app/layout.tsx [Server Component]
+
+
+    at <unknown> (Error: ./Downloads/Calentask/src/app/globals.css:10542:8)
+    at <unknown> (./Downloads/Calentask/src/app/globals.css:10542:8)
+    at Object.getCompilationErrors (file://C:\Users\User\Downloads\Calentask\node_modules\next\dist\server\dev\hot-reloader-turbopack.js:1186:59)
+    at DevBundlerService.getCompilationError (file://C:\Users\User\Downloads\Calentask\node_modules\next\dist\server\lib\dev-bundler-service.js:44:55)
+    at DevServer.getCompilationError (file://C:\Users\User\Downloads\Calentask\node_modules\next\dist\server\dev\next-dev-server.js:720:42)
+    at DevServer.findPageComponents (file://C:\Users\User\Downloads\Calentask\node_modules\next\dist\server\dev\next-dev-server.js:690:43)
+    at async DevServer.renderErrorToResponseImpl (file://C:\Users\User\Downloads\Calentask\node_modules\next\dist\server\base-server.js:1753:26)
+[     165ms] [LOG] [HMR] connected @ http://localhost:3000/_next/static/chunks/0fke_next_dist_0tpalbg._.js:1226
+[     166ms] [ERROR] ./Downloads/Calentask/src/app/globals.css:10542:8
+Parsing CSS source code failed
+  10540 | @import url('https://webfontworld.github.io/gmarket/GmarketSans.css');
+  10541 | @import url('https://webfontworld.github.io/NanumSquareNeo/NanumSquareNeo.css');
+> 10542 | @import url('https://webfontworld.github.io/woowa/BMJua.css');
+        |        ^
+  10543 | :root {
+  10544 |   --background: oklch(1 0 0);
+  10545 |   --foreground: oklch(0.145 0 0);
+
+@import rules must precede all rules aside from @charset and @layer statements
+
+Generated code of PostCSS transform of file content of Downloads/Calentask/src/app/globals.css:
+./Downloads/Calentask/src/app/globals.css:10542:8
+  10540 | @import url('https://webfontworld.github.io/gmarket/GmarketSans.css');
+  10541 | @import url('https://webfontworld.github.io/NanumSquareNeo/NanumSquareNeo.css');
+> 10542 | @import url('https://webfontworld.github.io/woowa/BMJua.css');
+        |        ^
+  10543 | :root {
+  10544 |   --background: oklch(1 0 0);
+  10545 |   --foreground: oklch(0.145 0 0);
+
+Import trace:
+  Client Component Browser:
+    ./Downloads/Calentask/src/app/globals.css [Client Component Browser]
+    ./Downloads/Calentask/src/app/layout.tsx [Server Component] @ http://localhost:3000/_next/static/chunks/0fke_next_dist_0tpalbg._.js:1945
+[     169ms] [ERROR] ./Downloads/Calentask/src/app/globals.css:10542:8
+Parsing CSS source code failed
+  10540 | @import url('https://webfontworld.github.io/gmarket/GmarketSans.css');
+  10541 | @import url('https://webfontworld.github.io/NanumSquareNeo/NanumSquareNeo.css');
+> 10542 | @import url('https://webfontworld.github.io/woowa/BMJua.css');
+        |        ^
+  10543 | :root {
+  10544 |   --background: oklch(1 0 0);
+  10545 |   --foreground: oklch(0.145 0 0);
+
+@import rules must precede all rules aside from @charset and @layer statements
+
+Generated code of PostCSS transform of file content of Downloads/Calentask/src/app/globals.css:
+./Downloads/Calentask/src/app/globals.css:10542:8
+  10540 | @import url('https://webfontworld.github.io/gmarket/GmarketSans.css');
+  10541 | @import url('https://webfontworld.github.io/NanumSquareNeo/NanumSquareNeo.css');
+> 10542 | @import url('https://webfontworld.github.io/woowa/BMJua.css');
+        |        ^
+  10543 | :root {
+  10544 |   --background: oklch(1 0 0);
+  10545 |   --foreground: oklch(0.145 0 0);
+
+Import trace:
+  Client Component Browser:
+    ./Downloads/Calentask/src/app/globals.css [Client Component Browser]
+    ./Downloads/Calentask/src/app/layout.tsx [Server Component] @ http://localhost:3000/_next/static/chunks/0fke_next_dist_0tpalbg._.js:1945
+[     249ms] [ERROR] ./Downloads/Calentask/src/app/globals.css:10542:8
+Parsing CSS source code failed
+  10540 | @import url('https://webfontworld.github.io/gmarket/GmarketSans.css');
+  10541 | @import url('https://webfontworld.github.io/NanumSquareNeo/NanumSquareNeo.css');
+> 10542 | @import url('https://webfontworld.github.io/woowa/BMJua.css');
+        |        ^
+  10543 | :root {
+  10544 |   --background: oklch(1 0 0);
+  10545 |   --foreground: oklch(0.145 0 0);
+
+@import rules must precede all rules aside from @charset and @layer statements
+
+Generated code of PostCSS transform of file content of Downloads/Calentask/src/app/globals.css:
+./Downloads/Calentask/src/app/globals.css:10542:8
+  10540 | @import url('https://webfontworld.github.io/gmarket/GmarketSans.css');
+  10541 | @import url('https://webfontworld.github.io/NanumSquareNeo/NanumSquareNeo.css');
+> 10542 | @import url('https://webfontworld.github.io/woowa/BMJua.css');
+        |        ^
+  10543 | :root {
+  10544 |   --background: oklch(1 0 0);
+  10545 |   --foreground: oklch(0.145 0 0);
+
+Import trace:
+  Client Component Browser:
+    ./Downloads/Calentask/src/app/globals.css [Client Component Browser]
+    ./Downloads/Calentask/src/app/layout.tsx [Server Component] @ http://localhost:3000/_next/static/chunks/0fke_next_dist_0tpalbg._.js:1945
+[     281ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/0fke_next_dist_0tpalbg._.js:1226
+[     327ms] [ERROR] ./Downloads/Calentask/src/app/globals.css:10542:8
+Parsing CSS source code failed
+  10540 | @import url('https://webfontworld.github.io/gmarket/GmarketSans.css');
+  10541 | @import url('https://webfontworld.github.io/NanumSquareNeo/NanumSquareNeo.css');
+> 10542 | @import url('https://webfontworld.github.io/woowa/BMJua.css');
+        |        ^
+  10543 | :root {
+  10544 |   --background: oklch(1 0 0);
+  10545 |   --foreground: oklch(0.145 0 0);
+
+@import rules must precede all rules aside from @charset and @layer statements
+
+Generated code of PostCSS transform of file content of Downloads/Calentask/src/app/globals.css:
+./Downloads/Calentask/src/app/globals.css:10542:8
+  10540 | @import url('https://webfontworld.github.io/gmarket/GmarketSans.css');
+  10541 | @import url('https://webfontworld.github.io/NanumSquareNeo/NanumSquareNeo.css');
+> 10542 | @import url('https://webfontworld.github.io/woowa/BMJua.css');
+        |        ^
+  10543 | :root {
+  10544 |   --background: oklch(1 0 0);
+  10545 |   --foreground: oklch(0.145 0 0);
+
+Import trace:
+  Client Component Browser:
+    ./Downloads/Calentask/src/app/globals.css [Client Component Browser]
+    ./Downloads/Calentask/src/app/layout.tsx [Server Component] @ http://localhost:3000/_next/static/chunks/0fke_next_dist_0tpalbg._.js:1945
+[     401ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/0fke_next_dist_0tpalbg._.js:1226

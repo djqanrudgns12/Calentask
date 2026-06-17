@@ -64,8 +64,20 @@ const EMPTY_ARRAY: any[] = [];
 const FONT_FAMILIES = [
   { name: '기본 글꼴', value: 'Inter, sans-serif' },
   { name: '맑은 고딕', value: '"Malgun Gothic", sans-serif' },
+  { name: '애플 SD 산돌고딕 Neo', value: '"Apple SD Gothic Neo", sans-serif' },
+  { name: '돋움', value: 'Dotum, sans-serif' },
+  { name: '굴림', value: 'Gulim, sans-serif' },
   { name: '바탕체', value: 'Batang, serif' },
-  { name: '굴림체', value: 'Gulim, sans-serif' },
+  { name: '궁서체', value: 'Gungsuh, serif' },
+  { name: '함초롬돋움', value: '"HCR Dotum", sans-serif' },
+  { name: '함초롬바탕', value: '"HCR Batang", serif' },
+  { name: '본고딕', value: '"Noto Sans KR", sans-serif' },
+  { name: '본명조', value: '"Noto Serif KR", serif' },
+  { name: '프리텐다드', value: 'Pretendard, sans-serif' },
+  { name: '나눔고딕', value: '"Nanum Gothic", sans-serif' },
+  { name: '나눔스퀘어 네오', value: '"NanumSquareNeo", sans-serif' },
+  { name: '지마켓 산스', value: '"GmarketSans", sans-serif' },
+  { name: '배달의민족 주아', value: '"BMJUA", sans-serif' },
 ];
 
 const FONT_SIZES = ['12px', '14px', '16px', '18px', '20px', '24px', '30px', '36px'];
