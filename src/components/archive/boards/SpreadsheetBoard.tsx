@@ -220,7 +220,7 @@ export function SpreadsheetBoard() {
   if (!isClient) return null;
 
   return (
-    <TooltipProvider delayDuration={500}>
+    <TooltipProvider delay={500}>
       <div className="w-full h-full flex flex-col relative spreadsheet-container overflow-hidden bg-white" ref={containerRef}>
         {/* 툴바 (다크모드 지원 UI) */}
         <div className="px-4 py-2.5 bg-card/95 backdrop-blur-sm flex items-center justify-between shrink-0 border-b border-border/60 z-10">
