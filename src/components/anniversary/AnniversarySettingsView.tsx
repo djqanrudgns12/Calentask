@@ -18,7 +18,7 @@ export function AnniversarySettingsView() {
     queryKey: ['anniversaries_list'],
     queryFn: async () => {
       const { data: userData } = await supabase.auth.getUser();
-      const { data } = await supabase.from('anniversaries').select('*').eq('user_id', userData.user?.id);
+      const { data } = await supabase.from('anniversaries').select('*').eq('user_id', userData.user?.id).is('deleted_at', null);
       return data as Anniversary[];
     }
   });
@@ -42,7 +42,7 @@ export function AnniversarySettingsView() {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      await supabase.from('anniversaries').delete().eq('id', id);
+      await supabase.from('anniversaries').update({ deleted_at: new Date().toISOString() }).eq('id', id);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['anniversaries_list'] });

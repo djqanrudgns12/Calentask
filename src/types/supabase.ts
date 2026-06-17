@@ -192,6 +192,7 @@ export type Database = {
         Row: {
           completed_at: string | null
           created_at: string | null
+          deleted_at: string | null
           description: string | null
           expected_duration_minutes: number | null
           id: string
@@ -206,6 +207,7 @@ export type Database = {
         Insert: {
           completed_at?: string | null
           created_at?: string | null
+          deleted_at?: string | null
           description?: string | null
           expected_duration_minutes?: number | null
           id?: string
@@ -220,6 +222,7 @@ export type Database = {
         Update: {
           completed_at?: string | null
           created_at?: string | null
+          deleted_at?: string | null
           description?: string | null
           expected_duration_minutes?: number | null
           id?: string
@@ -246,6 +249,7 @@ export type Database = {
           base_date: string
           calculation_rule: Json
           created_at: string
+          deleted_at: string | null
           id: string
           is_lunar: boolean
           preset_type: Database["public"]["Enums"]["anniversary_preset_type"]
@@ -257,6 +261,7 @@ export type Database = {
           base_date: string
           calculation_rule: Json
           created_at?: string
+          deleted_at?: string | null
           id?: string
           is_lunar?: boolean
           preset_type: Database["public"]["Enums"]["anniversary_preset_type"]
@@ -268,6 +273,7 @@ export type Database = {
           base_date?: string
           calculation_rule?: Json
           created_at?: string
+          deleted_at?: string | null
           id?: string
           is_lunar?: boolean
           preset_type?: Database["public"]["Enums"]["anniversary_preset_type"]
@@ -281,6 +287,7 @@ export type Database = {
         Row: {
           board_type: string
           created_at: string | null
+          deleted_at: string | null
           icon: string | null
           id: string
           is_secure: boolean | null
@@ -291,6 +298,7 @@ export type Database = {
         Insert: {
           board_type: string
           created_at?: string | null
+          deleted_at?: string | null
           icon?: string | null
           id?: string
           is_secure?: boolean | null
@@ -301,6 +309,7 @@ export type Database = {
         Update: {
           board_type?: string
           created_at?: string | null
+          deleted_at?: string | null
           icon?: string | null
           id?: string
           is_secure?: boolean | null
@@ -373,6 +382,7 @@ export type Database = {
         Row: {
           content_data: Json | null
           created_at: string | null
+          deleted_at: string | null
           id: string
           is_pinned: boolean | null
           tab_id: string
@@ -383,6 +393,7 @@ export type Database = {
         Insert: {
           content_data?: Json | null
           created_at?: string | null
+          deleted_at?: string | null
           id?: string
           is_pinned?: boolean | null
           tab_id: string
@@ -393,6 +404,7 @@ export type Database = {
         Update: {
           content_data?: Json | null
           created_at?: string | null
+          deleted_at?: string | null
           id?: string
           is_pinned?: boolean | null
           tab_id?: string

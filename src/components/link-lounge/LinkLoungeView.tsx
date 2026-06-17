@@ -25,24 +25,27 @@ export function LinkLoungeView() {
   // Focus mode specific state
   const [focusedItemId, setFocusedItemId] = useState<string | null>(null);
 
+  // 활성(삭제되지 않은) 북마크만 필터링
+  const activeBookmarks = useMemo(() => bookmarks.filter(b => b.deletedAt == null), [bookmarks]);
+
   // 모든 고유 카테고리 추출 (폴더 개념)
   const allCategories = useMemo(() => {
     const cats = new Set<string>();
-    bookmarks.forEach(item => {
+    activeBookmarks.forEach(item => {
       if (item.category) cats.add(item.category);
     });
     return Array.from(cats).sort();
-  }, [bookmarks]);
+  }, [activeBookmarks]);
 
   const filteredItems = useMemo(() => {
-    return bookmarks.filter(item => {
+    return activeBookmarks.filter(item => {
       const matchesSearch = item.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
                            (item.description || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
                            (item.url || '').toLowerCase().includes(searchQuery.toLowerCase());
       const matchesCategory = selectedCategory ? item.category === selectedCategory : true;
       return matchesSearch && matchesCategory;
     });
-  }, [bookmarks, searchQuery, selectedCategory]);
+  }, [activeBookmarks, searchQuery, selectedCategory]);
 
   const handleSaveBookmark = (data: any) => {
     if (editingItem) {
@@ -90,7 +93,7 @@ export function LinkLoungeView() {
   };
 
   // 기존 URL 집합 (중복 판별용)
-  const existingUrls = useMemo(() => new Set(bookmarks.map(b => b.url)), [bookmarks]);
+  const existingUrls = useMemo(() => new Set(activeBookmarks.map(b => b.url)), [activeBookmarks]);
 
   // 크롬 북마크 HTML 파일 선택 핸들러
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -125,8 +128,8 @@ export function LinkLoungeView() {
 
   // 내보내기 핸들러
   const handleExport = () => {
-    if (bookmarks.length === 0) return;
-    downloadBookmarksFile(bookmarks);
+    if (activeBookmarks.length === 0) return;
+    downloadBookmarksFile(activeBookmarks);
   };
 
   return (
@@ -219,7 +222,7 @@ export function LinkLoungeView() {
             {/* 북마크 내보내기 버튼 */}
             <button
               onClick={handleExport}
-              disabled={bookmarks.length === 0}
+              disabled={activeBookmarks.length === 0}
               className="flex items-center gap-1.5 px-3 md:px-4 py-2.5 bg-card border border-border text-foreground font-bold rounded-xl hover:bg-muted transition-colors text-sm whitespace-nowrap shadow-sm disabled:opacity-40 disabled:cursor-not-allowed"
               title="크롬 북마크 내보내기"
             >

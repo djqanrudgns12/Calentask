@@ -226,7 +226,29 @@ export function useDeleteActivity() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: (id: string) => deleteActivity(id),
-    onSuccess: () => {
+    onMutate: async (id) => {
+      // 현재 캐시된 모든 activities 쿼리를 취소하고 낙관적 업데이트
+      await queryClient.cancelQueries({ queryKey: ['activities'] })
+      
+      // 모든 ['activities', ...] 쿼리 데이터에서 삭제 대상 제거
+      const queriesData = queryClient.getQueriesData<Activity[]>({ queryKey: ['activities'] })
+      const previousQueries = queriesData.map(([key, data]) => [key, data] as const)
+      
+      queriesData.forEach(([key, data]) => {
+        if (data) {
+          queryClient.setQueryData(key, data.filter(a => a.id !== id))
+        }
+      })
+      
+      return { previousQueries }
+    },
+    onError: (_err, _id, context) => {
+      // 에러 시 모든 쿼리를 이전 상태로 롤백
+      context?.previousQueries.forEach(([key, data]) => {
+        queryClient.setQueryData(key, data)
+      })
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['activities'] })
       queryClient.invalidateQueries({ queryKey: ['deleted_activities'] })
     }
