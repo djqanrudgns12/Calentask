@@ -3,21 +3,43 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { useCalendarStore } from '@/store/useCalendarStore'
-import { useDeleteActivity } from '@/hooks/useCalendarQueries'
+import { useState } from 'react'
+import { useAgendaStore } from '@/store/useAgendaStore'
 
 export function DeleteConfirmDialog() {
   const { deletingEventId, closeDeleteConfirm } = useCalendarStore()
   const { mutate: deleteActivity, isPending } = useDeleteActivity()
+  
+  const updateAgendaTask = useAgendaStore(state => state.updateTask)
+  const agendaTasks = useAgendaStore(state => state.tasks)
+  const [isAgendaDeleting, setIsAgendaDeleting] = useState(false)
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (deletingEventId) {
-      deleteActivity(deletingEventId, {
-        onSuccess: () => {
+      // 아젠다 일정인지 확인
+      const isAgendaTask = agendaTasks.some(t => t.id === deletingEventId)
+      
+      if (isAgendaTask) {
+        setIsAgendaDeleting(true)
+        try {
+          // 아젠다 일정을 휴지통으로 이동하고 캘린더 등록 취소
+          await updateAgendaTask(deletingEventId, { status: 'trash', is_calendar_registered: false })
           closeDeleteConfirm()
+        } finally {
+          setIsAgendaDeleting(false)
         }
-      })
+      } else {
+        // 일반 캘린더 일정 삭제
+        deleteActivity(deletingEventId, {
+          onSuccess: () => {
+            closeDeleteConfirm()
+          }
+        })
+      }
     }
   }
+
+  const isDeleting = isPending || isAgendaDeleting
 
   return (
     <Dialog open={!!deletingEventId} onOpenChange={(open) => !open && closeDeleteConfirm()}>
@@ -40,11 +62,11 @@ export function DeleteConfirmDialog() {
           </Button>
           <Button
             type="button"
-            disabled={isPending}
+            disabled={isDeleting}
             onClick={handleDelete}
             className="bg-red-500 hover:bg-red-600 text-white rounded-full px-6 shadow-sm shadow-red-200 transition-all active:scale-95"
           >
-            {isPending ? '삭제 중...' : '삭제'}
+            {isDeleting ? '삭제 중...' : '삭제'}
           </Button>
         </DialogFooter>
       </DialogContent>
