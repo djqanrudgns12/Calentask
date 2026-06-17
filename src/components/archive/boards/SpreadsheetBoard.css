@@ -1,0 +1,77 @@
+/* ============================================================
+ * FortuneSheet CSS 캡슐화
+ * - 앱 전역(Tailwind 다크모드)과 시트 내부(항상 화이트) 분리
+ * - 이 파일은 SpreadsheetBoard.tsx에서만 import됩니다.
+ * ============================================================ */
+
+/* 시트 내부 격자 배경은 항상 화이트 유지 */
+.spreadsheet-container .fortune-sheet-wrapper {
+  background-color: #ffffff;
+}
+
+/* FortuneSheet 내부 텍스트 색상 보장 */
+.spreadsheet-container .luckysheet-wrap,
+.spreadsheet-container .fortune-container {
+  color: #333333 !important;
+}
+
+/* 내장 툴바 배경 (구글 시트 스타일) */
+.spreadsheet-container .luckysheet-toolbar,
+.spreadsheet-container .fortune-toolbar {
+  background-color: #f3f4f6 !important;
+  border-bottom: 1px solid #e5e7eb !important;
+}
+
+/* 내장 툴바 버튼 색상 */
+.spreadsheet-container .luckysheet-toolbar-button,
+.spreadsheet-container .fortune-toolbar-button {
+  color: #4b5563 !important;
+}
+
+.spreadsheet-container .luckysheet-toolbar-button:hover,
+.spreadsheet-container .fortune-toolbar-button:hover {
+  background-color: #e5e7eb !important;
+}
+
+/* 시트 격자 배경 강제 화이트 */
+.spreadsheet-container .luckysheet-grid-container,
+.spreadsheet-container .fortune-sheet-container,
+.spreadsheet-container .luckysheet-cell-main {
+  background-color: #ffffff !important;
+}
+
+/* 시트 탭(하단) 영역 — 밝은 배경 유지 */
+.spreadsheet-container .luckysheet-sheet-list,
+.spreadsheet-container .fortune-sheet-tab-container {
+  background-color: #f9fafb !important;
+  border-top: 1px solid #e5e7eb !important;
+}
+
+/* 수식 바 배경 */
+.spreadsheet-container .luckysheet-wa-editor,
+.spreadsheet-container .fortune-fx-editor {
+  background-color: #ffffff !important;
+  color: #1f2937 !important;
+}
+
+/* 스크롤바 스타일링 (시트 내부) */
+.spreadsheet-container .luckysheet-scrollbar-y,
+.spreadsheet-container .luckysheet-scrollbar-x {
+  background-color: #f3f4f6 !important;
+}
+
+/* 컨텍스트 메뉴 (우클릭) 다크모드 충돌 방지 */
+.spreadsheet-container .luckysheet-cols-menu,
+.spreadsheet-container .fortune-context-menu {
+  background-color: #ffffff !important;
+  color: #1f2937 !important;
+  border: 1px solid #e5e7eb !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* 검색/바꾸기 다이얼로그 다크모드 충돌 방지 */
+.luckysheet-search-replace,
+.fortune-search-replace {
+  background-color: #ffffff !important;
+  color: #1f2937 !important;
+}
