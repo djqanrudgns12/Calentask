@@ -1,10 +1,17 @@
 import React, { useState } from 'react';
 import { FolderOpen, Edit2, Trash2, Plus, X, Check } from 'lucide-react';
-import { DndContext, closestCenter, KeyboardSensor, PointerSensor, TouchSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
+import { DndContext, closestCenter, KeyboardSensor, PointerSensor, TouchSensor, useSensor, useSensors, DragEndEvent, Modifier } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, horizontalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { useLinkLoungeStore } from '@/store/useLinkLoungeStore';
 import { DeleteCategoryModal } from './DeleteCategoryModal';
+
+const restrictToHorizontalAxis: Modifier = ({ transform }) => {
+  return {
+    ...transform,
+    y: 0,
+  };
+};
 
 interface SortableTabProps {
   category: string;
@@ -20,11 +27,12 @@ function SortableTab({ category, isSelected, onSelect, onEdit, onDelete }: Sorta
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-    opacity: isDragging ? 0.5 : 1,
+    opacity: isDragging ? 0.8 : 1,
+    zIndex: isDragging ? 50 : 'auto',
   };
 
   return (
-    <div ref={setNodeRef} style={style} className="relative group shrink-0 flex items-center">
+    <div ref={setNodeRef} style={style} className={`relative group shrink-0 flex items-center ${isDragging ? 'scale-105 drop-shadow-md' : ''}`}>
       <button 
         {...attributes}
         {...listeners}
@@ -162,7 +170,7 @@ export function LinkLoungeCategoryTabs({ selectedCategory, setSelectedCategory }
         전체 보기
       </button>
 
-      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd} modifiers={[restrictToHorizontalAxis]}>
         <SortableContext items={categories} strategy={horizontalListSortingStrategy}>
           {categories.map((cat) => {
             if (editingCategory === cat) {
