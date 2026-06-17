@@ -238,9 +238,9 @@ export function SpreadsheetBoard() {
            <div className="flex gap-4 items-center">
              {/* Zoom Controls */}
              <div className="hidden md:flex items-center gap-1 bg-muted rounded-lg px-1.5 py-0.5 border border-border/60">
-               <Tooltip><TooltipTrigger asChild><button onClick={() => setZoom(z => Math.max(50, z - 10))} className="p-0.5 hover:bg-card hover:shadow-sm rounded text-muted-foreground transition-colors"><ZoomOut className="w-3.5 h-3.5" /></button></TooltipTrigger><TooltipContent className="text-xs font-bold text-white bg-slate-800 border-none">축소</TooltipContent></Tooltip>
+               <Tooltip><TooltipTrigger onClick={() => setZoom(z => Math.max(50, z - 10))} className="p-0.5 hover:bg-card hover:shadow-sm rounded text-muted-foreground transition-colors"><ZoomOut className="w-3.5 h-3.5" /></TooltipTrigger><TooltipContent className="text-xs font-bold text-white bg-slate-800 border-none">축소</TooltipContent></Tooltip>
                <span className="text-[11px] font-bold w-9 text-center text-foreground tabular-nums">{zoom}%</span>
-               <Tooltip><TooltipTrigger asChild><button onClick={() => setZoom(z => Math.min(200, z + 10))} className="p-0.5 hover:bg-card hover:shadow-sm rounded text-muted-foreground transition-colors"><ZoomIn className="w-3.5 h-3.5" /></button></TooltipTrigger><TooltipContent className="text-xs font-bold text-white bg-slate-800 border-none">확대</TooltipContent></Tooltip>
+               <Tooltip><TooltipTrigger onClick={() => setZoom(z => Math.min(200, z + 10))} className="p-0.5 hover:bg-card hover:shadow-sm rounded text-muted-foreground transition-colors"><ZoomIn className="w-3.5 h-3.5" /></TooltipTrigger><TooltipContent className="text-xs font-bold text-white bg-slate-800 border-none">확대</TooltipContent></Tooltip>
              </div>
              
              <div className="flex gap-2">
