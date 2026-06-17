@@ -18,6 +18,7 @@ export interface Bookmark {
 
 interface LinkLoungeState {
   bookmarks: Bookmark[];
+  categories: string[];
   viewMode: 'lineup' | 'showcase' | 'focus';
   addBookmark: (bookmark: Omit<Bookmark, 'id' | 'createdAt' | 'deletedAt'>) => void;
   updateBookmark: (id: string, updates: Partial<Bookmark>) => void;
@@ -25,6 +26,13 @@ interface LinkLoungeState {
   setViewMode: (mode: 'lineup' | 'showcase' | 'focus') => void;
   // 벌크 가져오기 액션 — 크롬 북마크 Import 시 사용
   importBookmarks: (items: Omit<Bookmark, 'id' | 'createdAt' | 'deletedAt'>[]) => void;
+  // 카테고리 관리 함수
+  addCategory: (name: string) => void;
+  renameCategory: (oldName: string, newName: string) => void;
+  deleteCategory: (name: string, deleteLinks: boolean) => void;
+  reorderCategories: (newOrder: string[]) => void;
+  // 북마크 순서 변경
+  reorderBookmarks: (activeId: string, overId: string) => void;
   // 휴지통 관련 함수
   getDeletedBookmarks: () => Bookmark[];
   restoreBookmark: (id: string) => void;
@@ -37,36 +45,50 @@ export const useLinkLoungeStore = create<LinkLoungeState>()(
   persist(
     (set, get) => ({
       bookmarks: [],
+      categories: ['기타'],
       viewMode: 'showcase',
       
-      addBookmark: (bookmarkData) => set((state) => ({
-        bookmarks: [
-          {
-            ...bookmarkData,
-            // 카테고리 정규화: 공백 제거, 빈 문자열은 '기타'로 대체
-            category: bookmarkData.category?.trim() || '기타',
-            id: crypto.randomUUID(),
-            createdAt: new Date().toISOString(),
-            deletedAt: null
-          },
-          ...state.bookmarks
-        ]
-      })),
+      addBookmark: (bookmarkData) => set((state) => {
+        const category = bookmarkData.category?.trim() || '기타';
+        const newCategories = state.categories.includes(category) 
+          ? state.categories 
+          : [...state.categories, category];
+          
+        return {
+          categories: newCategories,
+          bookmarks: [
+            {
+              ...bookmarkData,
+              category,
+              id: crypto.randomUUID(),
+              createdAt: new Date().toISOString(),
+              deletedAt: null
+            },
+            ...state.bookmarks
+          ]
+        };
+      }),
       
-      updateBookmark: (id, updates) => set((state) => ({
-        bookmarks: state.bookmarks.map((bookmark) => 
-          bookmark.id === id 
-            ? { 
-                ...bookmark, 
-                ...updates,
-                // 카테고리가 업데이트되는 경우 정규화 적용
-                ...(updates.category !== undefined 
-                  ? { category: updates.category.trim() || '기타' } 
-                  : {})
-              } 
-            : bookmark
-        )
-      })),
+      updateBookmark: (id, updates) => set((state) => {
+        const updatedCategory = updates.category !== undefined ? updates.category.trim() || '기타' : undefined;
+        let newCategories = state.categories;
+        if (updatedCategory && !state.categories.includes(updatedCategory)) {
+          newCategories = [...state.categories, updatedCategory];
+        }
+        
+        return {
+          categories: newCategories,
+          bookmarks: state.bookmarks.map((bookmark) => 
+            bookmark.id === id 
+              ? { 
+                  ...bookmark, 
+                  ...updates,
+                  ...(updatedCategory !== undefined ? { category: updatedCategory } : {})
+                } 
+              : bookmark
+          )
+        };
+      }),
       
       // 소프트 삭제: deletedAt 타임스탬프 추가
       deleteBookmark: (id) => set((state) => ({
@@ -79,20 +101,76 @@ export const useLinkLoungeStore = create<LinkLoungeState>()(
       
       setViewMode: (mode) => set({ viewMode: mode }),
 
-      // 벌크 가져오기: 여러 북마크를 한 번에 추가
-      // 동일 카테고리명은 자연스럽게 기존 카테고리에 합류 (별도 엔티티가 아닌 문자열 필드)
-      importBookmarks: (items) => set((state) => ({
-        bookmarks: [
-          ...items.map((item) => ({
+      // 벌크 가져오기
+      importBookmarks: (items) => set((state) => {
+        const newCategoriesSet = new Set(state.categories);
+        const newBookmarks = items.map((item) => {
+          const category = item.category?.trim() || '기타';
+          newCategoriesSet.add(category);
+          return {
             ...item,
-            category: item.category?.trim() || '기타',
+            category,
             id: crypto.randomUUID(),
             createdAt: new Date().toISOString(),
             deletedAt: null as string | null
-          })),
-          ...state.bookmarks
-        ]
-      })),
+          };
+        });
+        
+        return {
+          categories: Array.from(newCategoriesSet),
+          bookmarks: [...newBookmarks, ...state.bookmarks]
+        };
+      }),
+
+      addCategory: (name) => set((state) => {
+        const trimmed = name.trim();
+        if (!trimmed || state.categories.includes(trimmed)) return state;
+        return { categories: [...state.categories, trimmed] };
+      }),
+
+      renameCategory: (oldName, newName) => set((state) => {
+        const trimmed = newName.trim();
+        if (!trimmed || state.categories.includes(trimmed)) return state;
+        return {
+          categories: state.categories.map(c => c === oldName ? trimmed : c),
+          bookmarks: state.bookmarks.map(b => b.category === oldName ? { ...b, category: trimmed } : b)
+        };
+      }),
+
+      deleteCategory: (name, deleteLinks) => set((state) => {
+        const newCategories = state.categories.filter(c => c !== name);
+        if (!deleteLinks && !newCategories.includes('기타')) {
+          newCategories.push('기타');
+        }
+
+        return {
+          categories: newCategories,
+          bookmarks: state.bookmarks.map(b => {
+            if (b.category === name && b.deletedAt == null) {
+              if (deleteLinks) {
+                return { ...b, deletedAt: new Date().toISOString() };
+              } else {
+                return { ...b, category: '기타' };
+              }
+            }
+            return b;
+          })
+        };
+      }),
+
+      reorderCategories: (newOrder) => set({ categories: newOrder }),
+
+      reorderBookmarks: (activeId, overId) => set((state) => {
+        const oldIndex = state.bookmarks.findIndex(b => b.id === activeId);
+        const newIndex = state.bookmarks.findIndex(b => b.id === overId);
+        if (oldIndex === -1 || newIndex === -1) return state;
+
+        const newBookmarks = [...state.bookmarks];
+        const [movedItem] = newBookmarks.splice(oldIndex, 1);
+        newBookmarks.splice(newIndex, 0, movedItem);
+
+        return { bookmarks: newBookmarks };
+      }),
 
       // 삭제된 북마크 조회
       getDeletedBookmarks: () => {
@@ -131,8 +209,8 @@ export const useLinkLoungeStore = create<LinkLoungeState>()(
     }),
     {
       name: 'calentask-link-lounge-storage',
-      // 버전 관리: 기존 tags 배열 → 단일 category 문자열로 마이그레이션
-      version: 2,
+      // 버전 관리: 기존 tags 배열 → 단일 category 문자열로 마이그레이션, 그리고 categories 배열 추가
+      version: 3,
       migrate: (persistedState: any, version: number) => {
         if (version === 0 || version === undefined) {
           // v0 → v1: tags[] → category, icon 필드 추가
@@ -146,7 +224,7 @@ export const useLinkLoungeStore = create<LinkLoungeState>()(
               return {
                 ...rest,
                 category,
-                icon: rest.icon || '', // 기존 데이터에 icon 필드가 없으면 빈 문자열
+                icon: rest.icon || '',
                 deletedAt: null,
               };
             });
@@ -161,6 +239,22 @@ export const useLinkLoungeStore = create<LinkLoungeState>()(
               deletedAt: bm.deletedAt || null,
             }));
           }
+        }
+        if (version <= 2) {
+          // v2 → v3: categories 배열 명시적 추가
+          const state = persistedState as any;
+          const extractedCategories = new Set<string>();
+          if (state.bookmarks && Array.isArray(state.bookmarks)) {
+            state.bookmarks.forEach((bm: any) => {
+              if (bm.category && bm.deletedAt == null) {
+                extractedCategories.add(bm.category);
+              }
+            });
+          }
+          if (extractedCategories.size === 0 || !extractedCategories.has('기타')) {
+            extractedCategories.add('기타');
+          }
+          state.categories = Array.from(extractedCategories);
         }
         return persistedState as LinkLoungeState;
       },

@@ -7,9 +7,13 @@ import { ImportPreviewModal } from './components/ImportPreviewModal';
 import { parseChromeBookmarks, downloadBookmarksFile, type ParsedBookmark } from '@/lib/chromeBookmarkUtils';
 import { Plus, Search, ChevronDown, LayoutList, LayoutGrid, Maximize2, ExternalLink, Edit2, Trash2, Bookmark as BookmarkIcon, AlignLeft, FolderOpen, Upload, Download } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { LinkLoungeCategoryTabs } from './components/LinkLoungeCategoryTabs';
+import { SortableBookmark } from './components/SortableBookmark';
+import { DndContext, closestCenter, KeyboardSensor, PointerSensor, TouchSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
+import { SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, rectSortingStrategy } from '@dnd-kit/sortable';
 
 export function LinkLoungeView() {
-  const { bookmarks, viewMode, setViewMode, addBookmark, updateBookmark, deleteBookmark, importBookmarks } = useLinkLoungeStore();
+  const { bookmarks, categories, viewMode, setViewMode, addBookmark, updateBookmark, deleteBookmark, importBookmarks, reorderBookmarks } = useLinkLoungeStore();
   
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
@@ -28,14 +32,18 @@ export function LinkLoungeView() {
   // 활성(삭제되지 않은) 북마크만 필터링
   const activeBookmarks = useMemo(() => bookmarks.filter(b => b.deletedAt == null), [bookmarks]);
 
-  // 모든 고유 카테고리 추출 (폴더 개념)
-  const allCategories = useMemo(() => {
-    const cats = new Set<string>();
-    activeBookmarks.forEach(item => {
-      if (item.category) cats.add(item.category);
-    });
-    return Array.from(cats).sort();
-  }, [activeBookmarks]);
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 250, tolerance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  );
+
+  const handleDragEndBookmarks = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (over && active.id !== over.id) {
+      reorderBookmarks(active.id as string, over.id as string);
+    }
+  };
 
   const filteredItems = useMemo(() => {
     return activeBookmarks.filter(item => {
@@ -242,32 +250,7 @@ export function LinkLoungeView() {
         </div>
 
         {/* 카테고리 필터 필(Pill) 네비게이션 */}
-        <div className="flex items-center gap-2 overflow-x-auto hide-scrollbar pb-1 pt-1">
-          <button 
-            onClick={() => setSelectedCategory(null)}
-            className={`px-4 py-1.5 rounded-full text-sm font-bold whitespace-nowrap transition-all ${
-              selectedCategory === null 
-              ? 'bg-slate-800 text-white shadow-md' 
-              : 'bg-card text-foreground hover:bg-muted border border-border/60'
-            }`}
-          >
-            전체 보기
-          </button>
-          {allCategories.map(cat => (
-            <button 
-              key={cat}
-              onClick={() => setSelectedCategory(cat)}
-              className={`px-4 py-1.5 rounded-full text-sm font-bold whitespace-nowrap transition-all flex items-center gap-1.5 ${
-                selectedCategory === cat 
-                ? 'bg-indigo-600 text-white shadow-md' 
-                : 'bg-card text-foreground hover:bg-muted border border-border/60'
-              }`}
-            >
-              <FolderOpen className="w-3.5 h-3.5" />
-              {cat}
-            </button>
-          ))}
-        </div>
+        <LinkLoungeCategoryTabs selectedCategory={selectedCategory} setSelectedCategory={setSelectedCategory} />
       </div>
 
       {/* Main Content Area */}
@@ -292,85 +275,97 @@ export function LinkLoungeView() {
             
             {/* VIEW MODE: LINEUP (List) */}
             {viewMode === 'lineup' && (
-              <div className="flex flex-col gap-3">
-                {filteredItems.map(item => (
-                  <div key={item.id} onClick={(e) => handleOpenLink(e, item.url)} className="group flex items-stretch bg-card border border-border/60 rounded-2xl p-3 md:p-4 hover:shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:border-indigo-200 transition-all cursor-pointer">
-                    <div className="w-16 h-16 md:w-20 md:h-20 shrink-0 bg-muted rounded-xl overflow-hidden border border-border">
-                      {item.image ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img src={item.image} alt={item.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
-                      ) : item.icon ? (
-                        <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-900">
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img src={item.icon} alt="" className="w-6 h-6" onError={(e) => { e.currentTarget.style.display = 'none' }} />
+              <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEndBookmarks}>
+                <SortableContext items={filteredItems.map(i => i.id)} strategy={verticalListSortingStrategy}>
+                  <div className="flex flex-col gap-3">
+                    {filteredItems.map(item => (
+                      <SortableBookmark key={item.id} id={item.id}>
+                        <div onClick={(e) => handleOpenLink(e, item.url)} className="group flex items-stretch bg-card border border-border/60 rounded-2xl p-3 md:p-4 hover:shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:border-indigo-200 transition-all cursor-pointer">
+                          <div className="w-16 h-16 md:w-20 md:h-20 shrink-0 bg-muted rounded-xl overflow-hidden border border-border">
+                            {item.image ? (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img src={item.image} alt={item.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                            ) : item.icon ? (
+                              <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-900">
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                <img src={item.icon} alt="" className="w-6 h-6" onError={(e) => { e.currentTarget.style.display = 'none' }} />
+                              </div>
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center"><BookmarkIcon className="w-6 h-6 text-muted-foreground/50" /></div>
+                            )}
+                          </div>
+                          
+                          <div className="ml-4 flex-1 min-w-0 flex flex-col justify-center">
+                            <div className="flex items-center justify-between gap-4">
+                              <h3 className="text-base md:text-lg font-extrabold text-foreground truncate">{item.title}</h3>
+                              <div className="hidden sm:flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <button onPointerDown={(e) => openEdit(e, item)} className="p-2 text-muted-foreground hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"><Edit2 className="w-4 h-4" /></button>
+                                <button onPointerDown={(e) => handleDelete(e, item.id)} className="p-2 text-muted-foreground hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"><Trash2 className="w-4 h-4" /></button>
+                              </div>
+                            </div>
+                            <p className="text-xs md:text-sm text-muted-foreground truncate mb-1">{item.url}</p>
+                            <p className="text-xs md:text-sm text-foreground font-medium truncate mb-2">{item.description}</p>
+                            
+                            {item.category && (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-muted text-foreground text-[10px] md:text-xs font-bold rounded-md">
+                                <FolderOpen className="w-3 h-3" />{item.category}
+                              </span>
+                            )}
+                          </div>
                         </div>
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center"><BookmarkIcon className="w-6 h-6 text-muted-foreground/50" /></div>
-                      )}
-                    </div>
-                    
-                    <div className="ml-4 flex-1 min-w-0 flex flex-col justify-center">
-                      <div className="flex items-center justify-between gap-4">
-                        <h3 className="text-base md:text-lg font-extrabold text-foreground truncate">{item.title}</h3>
-                        <div className="hidden sm:flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <button onClick={(e) => openEdit(e, item)} className="p-2 text-muted-foreground hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"><Edit2 className="w-4 h-4" /></button>
-                          <button onClick={(e) => handleDelete(e, item.id)} className="p-2 text-muted-foreground hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"><Trash2 className="w-4 h-4" /></button>
-                        </div>
-                      </div>
-                      <p className="text-xs md:text-sm text-muted-foreground truncate mb-1">{item.url}</p>
-                      <p className="text-xs md:text-sm text-foreground font-medium truncate mb-2">{item.description}</p>
-                      
-                      {item.category && (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-muted text-foreground text-[10px] md:text-xs font-bold rounded-md">
-                          <FolderOpen className="w-3 h-3" />{item.category}
-                        </span>
-                      )}
-                    </div>
+                      </SortableBookmark>
+                    ))}
                   </div>
-                ))}
-              </div>
+                </SortableContext>
+              </DndContext>
             )}
 
             {/* VIEW MODE: SHOWCASE (Grid) */}
             {viewMode === 'showcase' && (
-              <div className="columns-1 sm:columns-2 md:columns-3 lg:columns-4 gap-6 space-y-6">
-                {filteredItems.map(item => (
-                  <div key={item.id} onClick={(e) => handleOpenLink(e, item.url)} className="relative break-inside-avoid group bg-card border border-border/60 rounded-3xl p-3 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer overflow-hidden flex flex-col">
-                    <div className="w-full aspect-[4/3] bg-muted rounded-2xl overflow-hidden mb-4 relative">
-                      {item.image ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img src={item.image} alt={item.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                      ) : item.icon ? (
-                        /* 커버 이미지가 없고 파비콘만 있을 때: 파비콘을 중앙에 크게 표시 */
-                        <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-900">
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img src={item.icon} alt="" className="w-10 h-10 mb-2 drop-shadow-md" onError={(e) => { e.currentTarget.style.display = 'none' }} />
-                          <span className="text-[10px] font-bold text-muted-foreground/60 truncate max-w-[80%]">{new URL(item.url).hostname.replace('www.','')}</span>
+              <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEndBookmarks}>
+                <SortableContext items={filteredItems.map(i => i.id)} strategy={rectSortingStrategy}>
+                  <div className="columns-1 sm:columns-2 md:columns-3 lg:columns-4 gap-6 space-y-6">
+                    {filteredItems.map(item => (
+                      <SortableBookmark key={item.id} id={item.id}>
+                        <div onClick={(e) => handleOpenLink(e, item.url)} className="relative break-inside-avoid group bg-card border border-border/60 rounded-3xl p-3 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer overflow-hidden flex flex-col">
+                          <div className="w-full aspect-[4/3] bg-muted rounded-2xl overflow-hidden mb-4 relative">
+                            {item.image ? (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img src={item.image} alt={item.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                            ) : item.icon ? (
+                              /* 커버 이미지가 없고 파비콘만 있을 때: 파비콘을 중앙에 크게 표시 */
+                              <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-900">
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                <img src={item.icon} alt="" className="w-10 h-10 mb-2 drop-shadow-md" onError={(e) => { e.currentTarget.style.display = 'none' }} />
+                                <span className="text-[10px] font-bold text-muted-foreground/60 truncate max-w-[80%]">{new URL(item.url).hostname.replace('www.','')}</span>
+                              </div>
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center"><BookmarkIcon className="w-10 h-10 text-muted-foreground/50" /></div>
+                            )}
+                            <div className="absolute top-2 right-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                              <button onPointerDown={(e) => openEdit(e, item)} className="p-2 bg-card/90 backdrop-blur shadow-sm text-foreground hover:text-indigo-600 rounded-full transition-colors"><Edit2 className="w-3.5 h-3.5" /></button>
+                              <button onPointerDown={(e) => handleDelete(e, item.id)} className="p-2 bg-card/90 backdrop-blur shadow-sm text-foreground hover:text-rose-600 rounded-full transition-colors"><Trash2 className="w-3.5 h-3.5" /></button>
+                            </div>
+                          </div>
+                          
+                          <div className="px-1 flex-1 flex flex-col">
+                            <h3 className="text-base font-extrabold text-foreground line-clamp-2 leading-snug mb-1">{item.title}</h3>
+                            <p className="text-xs text-muted-foreground font-medium line-clamp-2 mb-3 flex-1">{item.description}</p>
+                            
+                            <div className="flex flex-wrap gap-1.5 mt-auto pt-2 border-t border-border">
+                              {item.category && (
+                                <span className="inline-flex items-center gap-1 px-2 py-1 bg-muted text-foreground text-[10px] font-bold rounded-lg border border-border/60">
+                                  <FolderOpen className="w-3 h-3" />{item.category}
+                                </span>
+                              )}
+                            </div>
+                          </div>
                         </div>
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center"><BookmarkIcon className="w-10 h-10 text-muted-foreground/50" /></div>
-                      )}
-                      <div className="absolute top-2 right-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-10">
-                        <button onClick={(e) => openEdit(e, item)} className="p-2 bg-card/90 backdrop-blur shadow-sm text-foreground hover:text-indigo-600 rounded-full transition-colors"><Edit2 className="w-3.5 h-3.5" /></button>
-                        <button onClick={(e) => handleDelete(e, item.id)} className="p-2 bg-card/90 backdrop-blur shadow-sm text-foreground hover:text-rose-600 rounded-full transition-colors"><Trash2 className="w-3.5 h-3.5" /></button>
-                      </div>
-                    </div>
-                    
-                    <div className="px-1 flex-1 flex flex-col">
-                      <h3 className="text-base font-extrabold text-foreground line-clamp-2 leading-snug mb-1">{item.title}</h3>
-                      <p className="text-xs text-muted-foreground font-medium line-clamp-2 mb-3 flex-1">{item.description}</p>
-                      
-                      <div className="flex flex-wrap gap-1.5 mt-auto pt-2 border-t border-border">
-                        {item.category && (
-                          <span className="inline-flex items-center gap-1 px-2 py-1 bg-muted text-foreground text-[10px] font-bold rounded-lg border border-border/60">
-                            <FolderOpen className="w-3 h-3" />{item.category}
-                          </span>
-                        )}
-                      </div>
-                    </div>
+                      </SortableBookmark>
+                    ))}
                   </div>
-                ))}
-              </div>
+                </SortableContext>
+              </DndContext>
             )}
 
             {/* VIEW MODE: FOCUS (Detail) */}
@@ -498,7 +493,7 @@ export function LinkLoungeView() {
         onClose={() => setIsModalOpen(false)} 
         onSave={handleSaveBookmark}
         initialData={editingItem}
-        existingCategories={allCategories}
+        existingCategories={categories}
       />
 
       <ImportPreviewModal
