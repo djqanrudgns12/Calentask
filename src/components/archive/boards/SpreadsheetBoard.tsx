@@ -208,7 +208,7 @@ export function SpreadsheetBoard() {
 
     const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
     const blob = new Blob([wbout], { type: 'application/octet-stream' });
-    saveAs(blob, \`spreadsheet_\${new Date().toISOString().slice(0, 10)}.xlsx\`);
+    saveAs(blob, `spreadsheet_${new Date().toISOString().slice(0, 10)}.xlsx`);
   }, [sheetData]);
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
@@ -268,9 +268,9 @@ export function SpreadsheetBoard() {
           <div 
             className="fortune-sheet-wrapper origin-top-left transition-transform duration-75"
             style={{ 
-              width: \`\${(100 / zoom) * 100}%\`, 
-              height: \`\${(100 / zoom) * 100}%\`, 
-              transform: \`scale(\${zoom / 100})\` 
+              width: `${(100 / zoom) * 100}%`, 
+              height: `${(100 / zoom) * 100}%`, 
+              transform: `scale(${zoom / 100})` 
             }}
           >
             <Workbook 
