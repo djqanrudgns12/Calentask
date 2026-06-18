@@ -3,7 +3,7 @@ import { FolderOpen, Edit2, Trash2, Plus, X, Check } from 'lucide-react';
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, TouchSensor, useSensor, useSensors, DragEndEvent, Modifier } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, horizontalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { useLinkLoungeStore } from '@/store/useLinkLoungeStore';
+import { useLinkLoungeBookmarks, useLinkLoungeCategories, useLinkLoungeMutations } from '@/hooks/useLinkLoungeQueries';
 import { DeleteCategoryModal } from './DeleteCategoryModal';
 
 const restrictToHorizontalAxis: Modifier = ({ transform }) => {
@@ -72,7 +72,9 @@ interface LinkLoungeCategoryTabsProps {
 }
 
 export function LinkLoungeCategoryTabs({ selectedCategory, setSelectedCategory }: LinkLoungeCategoryTabsProps) {
-  const { categories, addCategory, renameCategory, deleteCategory, reorderCategories, bookmarks } = useLinkLoungeStore();
+  const { data: categories = ['기타'] } = useLinkLoungeCategories();
+  const { data: bookmarks = [] } = useLinkLoungeBookmarks();
+  const { updateCategories, removeCategory } = useLinkLoungeMutations();
   
   const [editingCategory, setEditingCategory] = useState<string | null>(null);
   const [editValue, setEditValue] = useState('');
@@ -105,7 +107,8 @@ export function LinkLoungeCategoryTabs({ selectedCategory, setSelectedCategory }
     if (over && active.id !== over.id) {
       const oldIndex = categories.indexOf(active.id as string);
       const newIndex = categories.indexOf(over.id as string);
-      reorderCategories(arrayMove(categories, oldIndex, newIndex));
+      const newOrder = arrayMove(categories, oldIndex, newIndex);
+      updateCategories.mutate(newOrder);
     }
   };
 
@@ -116,8 +119,10 @@ export function LinkLoungeCategoryTabs({ selectedCategory, setSelectedCategory }
 
   const saveEdit = () => {
     if (editingCategory && editValue.trim() && editValue.trim() !== editingCategory) {
-      renameCategory(editingCategory, editValue.trim());
-      if (selectedCategory === editingCategory) setSelectedCategory(editValue.trim());
+      const newName = editValue.trim();
+      const newCategories = categories.map(c => c === editingCategory ? newName : c);
+      updateCategories.mutate(newCategories);
+      if (selectedCategory === editingCategory) setSelectedCategory(newName);
     }
     setEditingCategory(null);
   };
@@ -129,8 +134,11 @@ export function LinkLoungeCategoryTabs({ selectedCategory, setSelectedCategory }
 
   const saveAdd = () => {
     if (addValue.trim()) {
-      addCategory(addValue.trim());
-      setSelectedCategory(addValue.trim());
+      const newName = addValue.trim();
+      if (!categories.includes(newName)) {
+        updateCategories.mutate([...categories, newName]);
+      }
+      setSelectedCategory(newName);
     }
     setIsAdding(false);
   };
@@ -139,7 +147,7 @@ export function LinkLoungeCategoryTabs({ selectedCategory, setSelectedCategory }
     const count = bookmarks.filter(b => b.category === cat && b.deletedAt == null).length;
     if (count === 0) {
       // 빈 카테고리는 즉시 삭제
-      deleteCategory(cat, false);
+      removeCategory.mutate({ name: cat, deleteLinks: false });
       if (selectedCategory === cat) setSelectedCategory(null);
     } else {
       // 북마크가 있으면 모달 호출
@@ -150,7 +158,7 @@ export function LinkLoungeCategoryTabs({ selectedCategory, setSelectedCategory }
 
   const confirmDelete = (deleteLinks: boolean) => {
     if (categoryToDelete) {
-      deleteCategory(categoryToDelete, deleteLinks);
+      removeCategory.mutate({ name: categoryToDelete, deleteLinks });
       if (selectedCategory === categoryToDelete) setSelectedCategory(null);
     }
     setDeleteModalOpen(false);

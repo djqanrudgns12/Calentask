@@ -5,21 +5,23 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Bookmark as BookmarkIcon, ExternalLink, ArrowRight, Link, Copy, Check, FolderOpen } from 'lucide-react'
 import { useLinkLoungeStore } from '@/store/useLinkLoungeStore'
 import { useCalendarStore } from '@/store/useCalendarStore'
+import { useLinkLoungeBookmarks, useLinkLoungeCategories } from '@/hooks/useLinkLoungeQueries'
+import { useLinkLoungeMigration } from '@/hooks/useLinkLoungeMigration'
 
 export function LinkLoungeCard() {
-  const { bookmarks } = useLinkLoungeStore()
+  useLinkLoungeMigration() // 로컬 스토리지 -> 서버 자동 마이그레이션
+
+  const { data: bookmarks = [] } = useLinkLoungeBookmarks()
+  const { data: serverCategories = ['기타'] } = useLinkLoungeCategories()
+  
   const { setViewMode } = useCalendarStore()
   const [selectedCategory, setSelectedCategory] = useState<string>('전체')
   const [copiedId, setCopiedId] = useState<string | null>(null)
 
   // 추출된 모든 고유 카테고리들 (폴더 개념)
   const allCategories = useMemo(() => {
-    const cats = new Set<string>()
-    bookmarks.forEach(bm => {
-      if (bm.category) cats.add(bm.category)
-    })
-    return ['전체', ...Array.from(cats)]
-  }, [bookmarks])
+    return ['전체', ...serverCategories]
+  }, [serverCategories])
 
   // 필터링 및 정렬된 북마크
   const displayedBookmarks = useMemo(() => {

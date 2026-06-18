@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useRef } from 'react';
 import { useLinkLoungeStore, Bookmark } from '@/store/useLinkLoungeStore';
+import { useLinkLoungeBookmarks, useLinkLoungeCategories, useLinkLoungeMutations } from '@/hooks/useLinkLoungeQueries';
 import { AddBookmarkModal } from './components/AddBookmarkModal';
 import { ImportPreviewModal } from './components/ImportPreviewModal';
 import { parseChromeBookmarks, downloadBookmarksFile, type ParsedBookmark } from '@/lib/chromeBookmarkUtils';
@@ -13,7 +14,10 @@ import { DndContext, closestCenter, KeyboardSensor, PointerSensor, TouchSensor, 
 import { SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, rectSortingStrategy } from '@dnd-kit/sortable';
 
 export function LinkLoungeView() {
-  const { bookmarks, categories, viewMode, setViewMode, addBookmark, updateBookmark, deleteBookmark, importBookmarks, reorderBookmarks } = useLinkLoungeStore();
+  const { viewMode, setViewMode } = useLinkLoungeStore();
+  const { data: bookmarks = [] } = useLinkLoungeBookmarks();
+  const { data: categories = ['기타'] } = useLinkLoungeCategories();
+  const { createBookmark, updateBookmark, removeBookmark, importBookmarks } = useLinkLoungeMutations();
   
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
@@ -39,10 +43,7 @@ export function LinkLoungeView() {
   );
 
   const handleDragEndBookmarks = (event: DragEndEvent) => {
-    const { active, over } = event;
-    if (over && active.id !== over.id) {
-      reorderBookmarks(active.id as string, over.id as string);
-    }
+    // 서버 환경에서는 개별 북마크 순서 변경 기능을 우선 제외 (또는 추후 서버 API로 구현)
   };
 
   const filteredItems = useMemo(() => {
@@ -57,15 +58,18 @@ export function LinkLoungeView() {
 
   const handleSaveBookmark = (data: any) => {
     if (editingItem) {
-      updateBookmark(editingItem.id, {
-        title: data.title,
-        url: data.url,
-        description: data.description,
-        image: data.image,
-        category: data.category
+      updateBookmark.mutate({
+        id: editingItem.id,
+        updates: {
+          title: data.title,
+          url: data.url,
+          description: data.description,
+          image: data.image,
+          category: data.category
+        }
       });
     } else {
-      addBookmark({
+      createBookmark.mutate({
         title: data.title,
         url: data.url,
         description: data.description,
@@ -85,7 +89,7 @@ export function LinkLoungeView() {
   const handleDelete = (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
     if (confirm('정말 이 링크를 삭제하시겠습니까?')) {
-      deleteBookmark(id);
+      removeBookmark.mutate(id);
       if (focusedItemId === id) setFocusedItemId(null);
     }
   };
@@ -131,7 +135,7 @@ export function LinkLoungeView() {
       category: item.category,
       icon: item.icon,
     }));
-    importBookmarks(itemsToImport);
+    importBookmarks.mutate(itemsToImport);
   };
 
   // 내보내기 핸들러

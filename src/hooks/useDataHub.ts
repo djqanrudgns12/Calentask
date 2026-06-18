@@ -9,7 +9,7 @@ import {
   getDeletedActivities, restoreActivity, hardDeleteActivity, emptyTrash
 } from '@/app/actions/calendar'
 import { createClient } from '@/lib/supabase/client'
-import { useLinkLoungeStore } from '@/store/useLinkLoungeStore'
+import { useDeletedLinkBookmarks, useDeletedLinkLoungeMutations } from '@/hooks/useLinkLoungeQueries'
 import type { Activity } from '@/app/actions/calendar'
 import type { AgendaTask } from '@/app/actions/agenda'
 
@@ -92,11 +92,9 @@ export function useDataHub() {
   const { data: deletedArchiveTabs = [], isLoading: isLoadingArchive } = useDeletedArchiveTabs()
   const { data: deletedAnniversaries = [], isLoading: isLoadingAnniversaries } = useDeletedAnniversaries()
   
-  // 링크 라운지 (Zustand)
-  const deletedBookmarks = useLinkLoungeStore(state => state.bookmarks.filter(b => b.deletedAt != null))
-  const restoreBookmarkStore = useLinkLoungeStore(state => state.restoreBookmark)
-  const hardDeleteBookmarkStore = useLinkLoungeStore(state => state.hardDeleteBookmark)
-  const emptyBookmarkTrashStore = useLinkLoungeStore(state => state.emptyBookmarkTrash)
+  // 링크 라운지 (React Query)
+  const { data: deletedBookmarks = [] } = useDeletedLinkBookmarks()
+  const { restoreBookmark, hardDeleteBookmark, emptyTrash: emptyLinkTrash } = useDeletedLinkLoungeMutations()
 
   const isLoading = isLoadingActivities || isLoadingAgenda || isLoadingArchive || isLoadingAnniversaries
 
@@ -241,7 +239,7 @@ export function useDataHub() {
         restoreAnniversaryMutation.mutate(item.id)
         break
       case 'link':
-        restoreBookmarkStore(item.id)
+        restoreBookmark.mutate(item.id)
         break
     }
   }
@@ -262,7 +260,7 @@ export function useDataHub() {
           hardDeleteAnniversaryMutation.mutate(item.id)
           break
         case 'link':
-          hardDeleteBookmarkStore(item.id)
+          hardDeleteBookmark.mutate(item.id)
           break
       }
     }
@@ -271,7 +269,7 @@ export function useDataHub() {
   const handleEmptyTrash = () => {
     if (confirm('휴지통을 비우시겠습니까? 모든 항목이 영구 삭제됩니다.')) {
       emptyTrashMutation.mutate()
-      emptyBookmarkTrashStore()
+      emptyLinkTrash.mutate()
       emptyArchiveTrash().then(() => {
         queryClient.invalidateQueries({ queryKey: ['deleted_archive_tabs'] })
       })
@@ -309,7 +307,10 @@ export function useDataHub() {
     }
 
     // 링크 라운지
-    useLinkLoungeStore.getState().cleanupExpiredBookmarks(days)
+    const expiredBookmarks = deletedBookmarks.filter(b => b.deletedAt && b.deletedAt < cutoff)
+    for (const b of expiredBookmarks) {
+      hardDeleteBookmark.mutate(b.id)
+    }
   }
 
   const isRestoring = restoreActivityMutation.isPending || restoreAgendaMutation.isPending || restoreArchiveMutation.isPending || restoreAnniversaryMutation.isPending
