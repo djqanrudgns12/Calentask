@@ -77,7 +77,9 @@ export function SpreadsheetBoard() {
     const handleWheel = (e: WheelEvent) => {
       if (e.ctrlKey) {
         e.preventDefault();
-        const zoomChange = -e.deltaY * 0.5;
+        const zoomChange = Math.abs(e.deltaY) >= 50 
+          ? -Math.sign(e.deltaY) * 10 // 일반 마우스 휠: 10%씩 조절
+          : -e.deltaY * 0.5;          // 트랙패드 핀치 줌: 부드러운 조절
         setZoom(z => Math.min(200, Math.max(50, Math.round(z + zoomChange))));
       }
     };
