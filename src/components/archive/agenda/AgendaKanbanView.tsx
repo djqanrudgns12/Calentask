@@ -64,7 +64,7 @@ const KanbanCard = ({ task, id, openDetail, onAddToCalendar }: { task: AgendaTas
       className="bg-card p-4 rounded-2xl shadow-sm border border-border hover:shadow-md transition-shadow cursor-grab active:cursor-grabbing mb-3"
     >
       <div className="flex justify-between items-start mb-2 gap-2">
-        <h4 className={cn("font-bold text-sm leading-tight line-clamp-2", task.status === 'done' ? "text-muted-foreground line-through" : "text-foreground")}>
+        <h4 className={cn("font-bold text-sm leading-tight line-clamp-2 break-words", task.status === 'done' ? "text-muted-foreground line-through" : "text-foreground")}>
           {task.title}
         </h4>
         <div className="flex items-center shrink-0">
@@ -111,7 +111,7 @@ const KanbanColumn = ({ id, title, tasks, openDetail, onAddToCalendar }: { id: s
   return (
     <div 
       ref={setNodeRef}
-      className="flex flex-col w-full min-w-[280px] bg-muted/50 rounded-3xl p-4 border border-border/50"
+      className="flex flex-col w-full min-w-[260px] md:min-w-[280px] bg-muted/50 rounded-3xl p-3 md:p-4 border border-border/50"
     >
       <div className="flex justify-between items-center mb-4 px-2">
         <h3 className="font-extrabold text-foreground text-sm">{title}</h3>

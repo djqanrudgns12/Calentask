@@ -247,23 +247,25 @@ export function ArchiveAgendaView() {
           )}
         >
           {/* Main Input Line */}
-          <div className="relative flex items-center h-16 px-5 group">
-            <Plus className="w-6 h-6 text-muted-foreground group-focus-within:text-indigo-600 transition-colors shrink-0" />
-            <input 
-              ref={inputRef}
-              type="text"
-              value={inputValue}
-              onChange={handleInputChange}
-              onKeyDown={handleMainInputKeyDown}
-              placeholder="예: '내일 오후 3시 팀 미팅 준비'"
-              className="flex-1 h-full bg-transparent px-4 outline-none text-foreground font-bold text-xl placeholder:text-muted-foreground placeholder:font-medium"
-            />
+          <div className="relative flex flex-col sm:flex-row sm:items-center min-h-[4rem] p-3 sm:px-5 sm:py-0 gap-3 group">
+            <div className="flex items-center flex-1 w-full gap-2">
+              <Plus className="w-5 h-5 sm:w-6 sm:h-6 text-muted-foreground group-focus-within:text-indigo-600 transition-colors shrink-0" />
+              <input 
+                ref={inputRef}
+                type="text"
+                value={inputValue}
+                onChange={handleInputChange}
+                onKeyDown={handleMainInputKeyDown}
+                placeholder="예: '내일 오후 3시 팀 미팅 준비'"
+                className="flex-1 h-10 sm:h-full bg-transparent px-2 sm:px-4 outline-none text-foreground font-bold text-base sm:text-xl placeholder:text-muted-foreground placeholder:font-medium"
+              />
+            </div>
             
-            <div className="flex items-center gap-2 shrink-0">
+            <div className="flex items-center justify-end gap-2 shrink-0 w-full sm:w-auto">
               {parsedData.date && !isQuickAddExpanded && (
                 <div className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 text-indigo-600 rounded-full border border-indigo-100">
                   <Clock className="w-3.5 h-3.5" />
-                  <span className="text-xs font-bold uppercase tracking-wide">
+                  <span className="text-xs font-bold uppercase tracking-wide truncate max-w-[120px] sm:max-w-none">
                     {format(parsedData.date, 'MMM d, h:mm a', { locale: ko })}
                   </span>
                 </div>
@@ -517,15 +519,15 @@ export function ArchiveAgendaView() {
                   )}
 
                   {/* Task Content */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
+                  <div className="flex-1 min-w-0 pr-8 md:pr-0">
+                    <div className="flex items-start md:items-center gap-2 mb-1">
                       <button 
                         onClick={(e) => { e.stopPropagation(); updateTask(task.id, { is_important: !task.is_important }); }}
-                        className={cn("p-1 -ml-1 rounded-full transition-colors flex-shrink-0", task.is_important ? "text-amber-400 hover:bg-amber-50" : "text-muted-foreground/50 hover:text-amber-400 hover:bg-muted")}
+                        className={cn("p-1 -ml-1 mt-0.5 md:mt-0 rounded-full transition-colors flex-shrink-0", task.is_important ? "text-amber-400 hover:bg-amber-50" : "text-muted-foreground/50 hover:text-amber-400 hover:bg-muted")}
                       >
                         <Star className={cn("w-5 h-5", task.is_important ? "fill-current" : "")} />
                       </button>
-                      <h3 className={cn("text-[17px] font-extrabold truncate transition-all", task.status === 'done' ? "text-muted-foreground line-through" : "text-foreground")}>
+                      <h3 className={cn("text-[15px] md:text-[17px] leading-snug md:leading-normal font-extrabold break-words transition-all", task.status === 'done' ? "text-muted-foreground line-through" : "text-foreground")}>
                         {task.title}
                       </h3>
                     </div>
@@ -585,7 +587,7 @@ export function ArchiveAgendaView() {
                   </div>
 
                   {/* Hover Quick Actions */}
-                  <div className="flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-2 absolute right-5 top-1/2 -translate-y-1/2 bg-card/90 backdrop-blur-xl px-2 py-1.5 rounded-xl border border-border shadow-sm z-10">
+                  <div className="flex-shrink-0 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity flex items-center gap-1 md:gap-2 absolute right-3 md:right-5 top-4 md:top-1/2 md:-translate-y-1/2 bg-card/90 md:backdrop-blur-xl px-1 md:px-2 py-1 md:py-1.5 rounded-xl md:border md:border-border md:shadow-sm z-10">
                     <AgendaTaskContextMenu 
                       status={task.status} 
                       onEdit={() => openDetail(task)} 

@@ -24,6 +24,32 @@ export interface DbCategory {
   order_index: number
 }
 
+async function ensureCategoriesExist(supabase: any, userId: string, categories: string[]) {
+  const validCategories = categories.filter(c => c && c !== '기타')
+  if (validCategories.length === 0) return
+
+  const { data: existing } = await supabase
+    .from('link_lounge_categories')
+    .select('name, order_index')
+    .eq('user_id', userId)
+    .order('order_index', { ascending: true })
+
+  const existingNames = existing?.map((c: any) => c.name) || []
+  let nextOrder = existing?.length ? existing[existing.length - 1].order_index + 1 : 0
+
+  const newInserts = [...new Set(validCategories)]
+    .filter(c => !existingNames.includes(c))
+    .map(c => ({
+      user_id: userId,
+      name: c,
+      order_index: nextOrder++
+    }))
+
+  if (newInserts.length > 0) {
+    await supabase.from('link_lounge_categories').insert(newInserts)
+  }
+}
+
 // ─── 카테고리 관리 ───
 
 export async function getLinkCategories() {
@@ -43,6 +69,23 @@ export async function getLinkCategories() {
   }
 
   const categoryNames = data.map((c) => c.name)
+
+  // 동적으로 북마크에서 카테고리 추출 (혹시나 동기화가 누락된 경우를 대비한 안전 장치)
+  const { data: bookmarkData } = await supabase
+    .from('link_lounge_bookmarks')
+    .select('category')
+    .eq('user_id', userData.user.id)
+    .is('deleted_at', null)
+
+  if (bookmarkData) {
+    const bookmarkCategories = [...new Set(bookmarkData.map((b) => b.category))]
+    bookmarkCategories.forEach((cat) => {
+      if (cat && cat !== '기타' && !categoryNames.includes(cat)) {
+        categoryNames.push(cat)
+      }
+    })
+  }
+
   if (!categoryNames.includes('기타')) {
     return [...categoryNames, '기타']
   }
@@ -144,6 +187,10 @@ export async function createLinkBookmark(bookmark: Omit<Bookmark, 'id' | 'create
   const { data: userData } = await supabase.auth.getUser()
   if (!userData.user) throw new Error('Not authenticated')
 
+  if (bookmark.category && bookmark.category !== '기타') {
+    await ensureCategoriesExist(supabase, userData.user.id, [bookmark.category])
+  }
+
   const { data, error } = await supabase
     .from('link_lounge_bookmarks')
     .insert([{
@@ -166,6 +213,10 @@ export async function updateLinkBookmark(id: string, updates: Partial<Omit<Bookm
   const supabase = await createClient()
   const { data: userData } = await supabase.auth.getUser()
   if (!userData.user) throw new Error('Not authenticated')
+
+  if (updates.category && updates.category !== '기타') {
+    await ensureCategoriesExist(supabase, userData.user.id, [updates.category])
+  }
 
   const payload: any = {}
   if (updates.url !== undefined) payload.url = updates.url
@@ -267,6 +318,11 @@ export async function importLinkBookmarks(items: Omit<Bookmark, 'id' | 'createdA
   const supabase = await createClient()
   const { data: userData } = await supabase.auth.getUser()
   if (!userData.user) throw new Error('Not authenticated')
+
+  const categoriesToEnsure = items.map(item => item.category).filter(Boolean) as string[]
+  if (categoriesToEnsure.length > 0) {
+    await ensureCategoriesExist(supabase, userData.user.id, categoriesToEnsure)
+  }
 
   const inserts = items.map((item) => ({
     user_id: userData.user.id,

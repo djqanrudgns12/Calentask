@@ -95,7 +95,7 @@ const MatrixCard = ({
       {/* 콘텐츠 */}
       <div className="flex-1 min-w-0">
         <h4 className={cn(
-          'font-bold text-sm leading-tight line-clamp-2',
+          'font-bold text-sm leading-tight line-clamp-2 break-words',
           isDone ? 'text-muted-foreground line-through' : 'text-foreground'
         )}>
           {task.title}
@@ -195,7 +195,7 @@ const MatrixQuadrant = ({
 
   return (
     <div className={cn(
-      'flex flex-col h-full rounded-3xl p-4 border transition-all',
+      'flex flex-col h-full rounded-2xl md:rounded-3xl p-3 md:p-4 border transition-all',
       config.bgClass,
       config.borderClass
     )}>
@@ -296,7 +296,7 @@ export const AgendaMatrixView = ({ openDetail, onAddToCalendar }: { openDetail: 
   ];
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 min-h-[65vh] pb-8 w-full">
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4 min-h-[65vh] pb-8 w-full">
       {quadrantConfigs.map(config => (
         <MatrixQuadrant
           key={config.id}
