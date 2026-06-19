@@ -476,7 +476,7 @@ export function DocumentBoard() {
                       <ChevronDown className="w-3 h-3 ml-1 text-muted-foreground" />
                     </button>
                   </PopoverTrigger>
-                  <PopoverContent align="start" className="w-36 p-1 z-50">
+                  <PopoverContent align="start" className="w-36 p-1 max-h-64 overflow-y-auto z-50">
                     {FONT_FAMILIES.map(f => (
                       <button key={f.name} onClick={() => { (editor as any).chain().focus().setFontFamily(f.value).run(); setShowFontFamily(false); }} className="w-full text-left px-3 py-1.5 text-xs hover:bg-muted flex justify-between items-center rounded-sm">
                         <span style={{ fontFamily: f.value }}>{f.name}</span>
@@ -701,7 +701,7 @@ export function DocumentBoard() {
                       {focusFontFamily && (
                         <>
                           <div className="fixed inset-0 z-[60]" onClick={() => setFocusFontFamily(false)} />
-                          <div className="absolute top-full left-0 mt-1 w-36 bg-card border border-border rounded shadow-lg z-[70] py-1">
+                          <div className="absolute top-full left-0 mt-1 w-36 bg-card border border-border rounded shadow-lg z-[70] py-1 max-h-64 overflow-y-auto">
                             {FONT_FAMILIES.map(f => (
                               <button key={f.name} onClick={() => { (editor as any).chain().focus().setFontFamily(f.value).run(); setFocusFontFamily(false); }} className="w-full text-left px-3 py-1.5 text-xs hover:bg-muted flex justify-between items-center">
                                 <span style={{ fontFamily: f.value }}>{f.name}</span>
