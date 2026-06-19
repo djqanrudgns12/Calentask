@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { format, subMonths, addMonths, subWeeks, addWeeks, startOfWeek, endOfWeek, isSameMonth, isSameYear } from 'date-fns'
-import { Menu, ChevronLeft, ChevronRight, Search, Sparkles, Bell, CalendarHeart, Activity, BrainCircuit, Home, Bookmark, NotebookPen, Tag, Trash2 } from 'lucide-react'
+import { Menu, ChevronLeft, ChevronRight, Search, Sparkles, Bell, CalendarHeart, Activity, BrainCircuit, Home, Bookmark, NotebookPen, Tag, Trash2, PanelLeftOpen } from 'lucide-react'
 import { useCalendarStore } from '@/store/useCalendarStore'
 import { GlobalCategoryFilter } from '@/components/calendar/GlobalCategoryFilter'
 import { CategoryPresetMenu } from '@/components/calendar/CategoryPresetMenu'
@@ -13,9 +13,10 @@ import { AnimatePresence, motion } from 'framer-motion'
 
 interface CalendarHeaderProps {
   onOpenSettings: () => void
+  onOpenMobileSidebar?: () => void
 }
 
-export function CalendarHeader({ onOpenSettings }: CalendarHeaderProps) {
+export function CalendarHeader({ onOpenSettings, onOpenMobileSidebar }: CalendarHeaderProps) {
   const { 
     currentDate, viewMode, setViewMode,
     semesterYear, semesterTerm,
@@ -494,7 +495,16 @@ export function CalendarHeader({ onOpenSettings }: CalendarHeaderProps) {
     <>
       <header className="px-2 sm:px-6 py-2 sm:py-4 w-full z-20 relative">
         <div className="flex w-full items-center gap-2">
-          {/* Mobile Menu Button Removed */}
+          {/* Mobile Sidebar Trigger */}
+          {onOpenMobileSidebar && (
+            <button
+              onClick={onOpenMobileSidebar}
+              className="md:hidden flex items-center justify-center w-10 h-10 rounded-xl bg-card border border-border shadow-sm text-muted-foreground hover:text-foreground hover:bg-accent active:scale-95 transition-all shrink-0"
+              aria-label="메뉴 열기"
+            >
+              <PanelLeftOpen className="w-5 h-5" />
+            </button>
+          )}
 
           {/* Unified Dynamic Wrapper */}
           <div className={wrapperClassName}>

@@ -49,6 +49,7 @@ import { HomeDashboard } from '@/components/home/HomeDashboard'
 import { BottomNavigation } from '@/components/ui/BottomNavigation'
 import { CommandPalette } from '@/components/ui/CommandPalette'
 import { MobileCategoryBar } from '@/components/calendar/MobileCategoryBar'
+import { MobileSidebar } from '@/components/ui/MobileSidebar'
 import dynamic from 'next/dynamic'
 
 const TemplateCenterTab = dynamic(() => import('@/components/insights/TemplateCenterTab'), { ssr: false })
@@ -56,6 +57,7 @@ const TemplateCenterTab = dynamic(() => import('@/components/insights/TemplateCe
 export default function CalendarPage() {
   const [mounted, setMounted] = useState(false)
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false)
   const [settingsTab, setSettingsTab] = useState<'profile' | 'display'>('profile')
   const queryClient = useQueryClient()
   const router = useRouter()
@@ -456,10 +458,13 @@ export default function CalendarPage() {
       {/* Main Content */}
       <main className="flex-1 flex flex-col min-w-0 relative pb-[calc(4rem+env(safe-area-inset-bottom)+0.5rem)] md:pb-0">
         {/* Unified Calendar Header */}
-        <CalendarHeader onOpenSettings={() => {
-          setSettingsTab('profile')
-          setIsSettingsOpen(true)
-        }} />
+        <CalendarHeader 
+          onOpenSettings={() => {
+            setSettingsTab('profile')
+            setIsSettingsOpen(true)
+          }}
+          onOpenMobileSidebar={() => setIsMobileSidebarOpen(true)}
+        />
 
         {/* Dynamic Views Area - Add padding for floating effect */}
         <DndContext
@@ -543,6 +548,14 @@ export default function CalendarPage() {
         setViewMode={setViewMode} 
         onOpenSettings={() => { setSettingsTab('profile'); setIsSettingsOpen(true); }} 
         onOpenTags={() => setViewMode('tags')} 
+        onOpenMobileSidebar={() => setIsMobileSidebarOpen(true)}
+      />
+
+      {/* Mobile Sidebar Drawer */}
+      <MobileSidebar
+        open={isMobileSidebarOpen}
+        onOpenChange={setIsMobileSidebarOpen}
+        onOpenSettings={() => { setSettingsTab('profile'); setIsSettingsOpen(true); }}
       />
 
       {/* Settings Modal */}
