@@ -72,7 +72,7 @@ export function SpreadsheetBoard() {
 
   const [zoom, setZoom] = useState(100);
 
-  // Ctrl+Wheel Zoom
+  // Zoom Logic (Wheel + Touch)
   useEffect(() => {
     const handleWheel = (e: WheelEvent) => {
       if (e.ctrlKey) {
@@ -81,10 +81,53 @@ export function SpreadsheetBoard() {
         setZoom(z => Math.min(200, Math.max(50, Math.round(z + zoomChange))));
       }
     };
+
+    let initialPinchDistance: number | null = null;
+
+    const handleTouchStart = (e: TouchEvent) => {
+      if (e.touches.length === 2) {
+        initialPinchDistance = Math.hypot(
+          e.touches[0].clientX - e.touches[1].clientX,
+          e.touches[0].clientY - e.touches[1].clientY
+        );
+      }
+    };
+
+    const handleTouchMove = (e: TouchEvent) => {
+      if (e.touches.length === 2 && initialPinchDistance !== null) {
+        // e.preventDefault() can be risky on document level, but we want to prevent browser zoom
+        if (e.cancelable) e.preventDefault(); 
+        const currentDistance = Math.hypot(
+          e.touches[0].clientX - e.touches[1].clientX,
+          e.touches[0].clientY - e.touches[1].clientY
+        );
+        
+        const ratio = currentDistance / initialPinchDistance;
+        setZoom(currentZoom => Math.min(200, Math.max(50, Math.round(currentZoom * ratio))));
+        
+        // Update distance for next move
+        initialPinchDistance = currentDistance;
+      }
+    };
+
+    const handleTouchEnd = (e: TouchEvent) => {
+      if (e.touches.length < 2) {
+        initialPinchDistance = null;
+      }
+    };
     
     // Add to document to capture globally on the board
     document.addEventListener('wheel', handleWheel, { passive: false });
-    return () => document.removeEventListener('wheel', handleWheel);
+    document.addEventListener('touchstart', handleTouchStart, { passive: false });
+    document.addEventListener('touchmove', handleTouchMove, { passive: false });
+    document.addEventListener('touchend', handleTouchEnd);
+    
+    return () => {
+      document.removeEventListener('wheel', handleWheel);
+      document.removeEventListener('touchstart', handleTouchStart);
+      document.removeEventListener('touchmove', handleTouchMove);
+      document.removeEventListener('touchend', handleTouchEnd);
+    };
   }, []);
 
   // Dropdown Click-away Fix: By adding a global click listener that triggers a click on a non-toolbar area
@@ -244,15 +287,15 @@ export function SpreadsheetBoard() {
              </div>
              
              <div className="flex gap-2">
-               <label className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs md:text-sm font-bold rounded-lg shadow-sm cursor-pointer transition-colors active:scale-95">
-                 <Upload className="w-3.5 h-3.5" /> <span>가져오기</span>
+               <label className="flex items-center gap-1.5 px-2.5 py-2 md:px-3 md:py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs md:text-sm font-bold rounded-lg shadow-sm cursor-pointer transition-colors active:scale-95 whitespace-nowrap">
+                 <Upload className="w-4 h-4 md:w-3.5 md:h-3.5" /> <span className="hidden md:inline">가져오기</span>
                  <input type="file" accept=".xlsx" className="hidden" onChange={handleImport} />
                </label>
                <button 
                  onClick={handleExport}
-                 className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs md:text-sm font-bold rounded-lg shadow-sm transition-colors active:scale-95"
+                 className="flex items-center gap-1.5 px-2.5 py-2 md:px-3 md:py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs md:text-sm font-bold rounded-lg shadow-sm transition-colors active:scale-95 whitespace-nowrap"
                >
-                 <Download className="w-3.5 h-3.5" /> <span>내보내기</span>
+                 <Download className="w-4 h-4 md:w-3.5 md:h-3.5" /> <span className="hidden md:inline">내보내기</span>
                </button>
              </div>
            </div>

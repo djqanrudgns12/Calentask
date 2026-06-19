@@ -223,7 +223,7 @@ export function DocumentBoard() {
 
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
-  // Handle Ctrl+Wheel for Zoom (Trackpad Pinch)
+  // Handle Zoom (Wheel + Touch)
   useEffect(() => {
     const handleWheel = (e: WheelEvent) => {
       if (e.ctrlKey) {
@@ -234,11 +234,52 @@ export function DocumentBoard() {
         setZoom(z => Math.min(200, Math.max(50, Math.round(z + zoomChange))));
       }
     };
+
+    let initialPinchDistance: number | null = null;
+
+    const handleTouchStart = (e: TouchEvent) => {
+      if (e.touches.length === 2) {
+        initialPinchDistance = Math.hypot(
+          e.touches[0].clientX - e.touches[1].clientX,
+          e.touches[0].clientY - e.touches[1].clientY
+        );
+      }
+    };
+
+    const handleTouchMove = (e: TouchEvent) => {
+      if (e.touches.length === 2 && initialPinchDistance !== null) {
+        if (e.cancelable) e.preventDefault();
+        const currentDistance = Math.hypot(
+          e.touches[0].clientX - e.touches[1].clientX,
+          e.touches[0].clientY - e.touches[1].clientY
+        );
+        
+        const ratio = currentDistance / initialPinchDistance;
+        setZoom(currentZoom => Math.min(200, Math.max(50, Math.round(currentZoom * ratio))));
+        
+        initialPinchDistance = currentDistance;
+      }
+    };
+
+    const handleTouchEnd = (e: TouchEvent) => {
+      if (e.touches.length < 2) {
+        initialPinchDistance = null;
+      }
+    };
     
     // Attach to document to ensure it works even if the container renders later,
     // and catches all pinch gestures on the board.
     document.addEventListener('wheel', handleWheel, { passive: false });
-    return () => document.removeEventListener('wheel', handleWheel);
+    document.addEventListener('touchstart', handleTouchStart, { passive: false });
+    document.addEventListener('touchmove', handleTouchMove, { passive: false });
+    document.addEventListener('touchend', handleTouchEnd);
+    
+    return () => {
+      document.removeEventListener('wheel', handleWheel);
+      document.removeEventListener('touchstart', handleTouchStart);
+      document.removeEventListener('touchmove', handleTouchMove);
+      document.removeEventListener('touchend', handleTouchEnd);
+    };
   }, []);
 
   const getValidContent = () => {

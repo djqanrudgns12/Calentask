@@ -433,6 +433,9 @@ export function CanvasBoard() {
         fitView={!config?.viewport}
         className="bg-muted"
         deleteKeyCode={['Backspace', 'Delete']}
+        zoomOnPinch={true}
+        panOnScroll={true}
+        zoomOnDoubleClick={false}
       >
         <Background variant={BackgroundVariant.Dots} gap={32} size={2.5} color="#cbd5e1" />
         <Controls className="bg-card shadow-xl border-none rounded-xl overflow-hidden mb-28 md:mb-6 ml-4 md:ml-6 fill-slate-700" showInteractive={false} />
