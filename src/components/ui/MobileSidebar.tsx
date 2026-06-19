@@ -248,7 +248,6 @@ export function MobileSidebar({ open, onOpenChange, onOpenSettings }: MobileSide
                 activeBg="bg-blue-50/70 text-blue-700"
                 onToggle={() => {
                   setCalendarOpen(!calendarOpen)
-                  if (!isCalendarMenuOpen && !calendarOpen) navigate('monthly')
                 }}
               >
                 <SubMenuItem
@@ -286,7 +285,6 @@ export function MobileSidebar({ open, onOpenChange, onOpenSettings }: MobileSide
                 activeBg="bg-accent text-foreground"
                 onToggle={() => {
                   setArchiveOpen(!archiveOpen)
-                  if (!isArchiveMenuOpen && !archiveOpen) navigate('archive_notes')
                 }}
               >
                 <SubMenuItem
@@ -323,7 +321,6 @@ export function MobileSidebar({ open, onOpenChange, onOpenSettings }: MobileSide
                 activeBg="bg-teal-50/70 text-teal-800"
                 onToggle={() => {
                   setDataCenterOpen(!dataCenterOpen)
-                  if (!isDataCenterMenuOpen && !dataCenterOpen) navigate('insights')
                 }}
               >
                 <SubMenuItem
