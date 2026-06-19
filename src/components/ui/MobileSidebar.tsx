@@ -13,6 +13,9 @@ import { useCalendarStore, ViewMode } from '@/store/useCalendarStore'
 import { UpcomingAnniversaryWidget } from '@/components/anniversary/UpcomingAnniversaryWidget'
 import { logout } from '@/app/actions/auth'
 import { useQueryClient } from '@tanstack/react-query'
+import { Download } from 'lucide-react'
+import { usePwaInstall } from '@/hooks/usePWAInstall'
+import { IOSInstallGuideModal } from '@/components/pwa/IOSInstallGuideModal'
 
 interface MobileSidebarProps {
   open: boolean
@@ -158,6 +161,8 @@ function CollapsibleGroup({
 export function MobileSidebar({ open, onOpenChange, onOpenSettings }: MobileSidebarProps) {
   const { viewMode, setViewMode, resetStore } = useCalendarStore()
   const queryClient = useQueryClient()
+  const { isInstallable, isStandalone, installApp } = usePwaInstall()
+  const [showIOSModal, setShowIOSModal] = useState(false)
 
   // 아코디언 상태
   const isCalendarMenuOpen = ['monthly', 'weekly', 'list', 'semester', 'archive_agenda', 'anniversary'].includes(viewMode)
@@ -183,6 +188,15 @@ export function MobileSidebar({ open, onOpenChange, onOpenSettings }: MobileSide
   const handleOpenSettings = () => {
     onOpenChange(false)
     onOpenSettings()
+  }
+
+  const handleInstallClick = async () => {
+    const result = await installApp()
+    if (result?.action === 'show-ios-guide') {
+      setShowIOSModal(true)
+    } else if (result?.action === 'show-desktop-guide') {
+      alert('설치 프롬프트를 띄울 수 없거나 이미 설치되어 있습니다.')
+    }
   }
 
   return (
@@ -370,6 +384,16 @@ export function MobileSidebar({ open, onOpenChange, onOpenSettings }: MobileSide
 
         {/* ── 하단 고정 영역 (safe area 대응) ── */}
         <div className="shrink-0 border-t border-border px-4 py-4 space-y-2" style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}>
+          {!isStandalone && (
+            <Button
+              variant="default"
+              onClick={handleInstallClick}
+              className="w-full text-[14px] font-bold flex items-center justify-center gap-2 h-10 whitespace-nowrap bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white border-0 shadow-md shadow-blue-500/20 transition-all active:scale-95"
+            >
+              <Download className="w-4 h-4 shrink-0" />
+              <span className="truncate">앱 설치하기</span>
+            </Button>
+          )}
           <Button
             variant="outline"
             onClick={handleOpenSettings}
@@ -387,6 +411,7 @@ export function MobileSidebar({ open, onOpenChange, onOpenSettings }: MobileSide
           </button>
         </div>
       </SheetContent>
+      <IOSInstallGuideModal open={showIOSModal} onOpenChange={setShowIOSModal} />
     </Sheet>
   )
 }

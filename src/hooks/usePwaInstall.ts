@@ -32,22 +32,29 @@ export function usePwaInstall() {
   const [browserType, setBrowserType] = useState<BrowserType>('other')
 
   useEffect(() => {
-    // 1. 스탠드얼론(설치된 앱) 모드인지 감지
-    const isStandaloneMode = 
-      window.matchMedia('(display-mode: standalone)').matches ||
-      (window.navigator as any).standalone === true
+    // 1. 스탠드얼론(설치된 앱) 모드인지 감지 및 동적 리스너 등록
+    const checkStandalone = () => {
+      return window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone === true
+    }
+    
+    setIsStandalone(checkStandalone())
 
-    setIsStandalone(isStandaloneMode)
+    const mediaQuery = window.matchMedia('(display-mode: standalone)')
+    const handleMediaQueryChange = (e: MediaQueryListEvent) => {
+      setIsStandalone(e.matches || (window.navigator as any).standalone === true)
+    }
+    if (mediaQuery.addEventListener) {
+      mediaQuery.addEventListener('change', handleMediaQueryChange)
+    } else if (mediaQuery.addListener) {
+      mediaQuery.addListener(handleMediaQueryChange)
+    }
 
-    // 만약 이미 앱으로 실행 중이라면 더 이상 진행하지 않음 (버튼 숨김)
-    if (isStandaloneMode) return
-
-    // 2. 브라우저 종류 감지 (가이드 모달에서 브라우저별 안내를 위해)
+    // 2. 브라우저 종류 감지
     setBrowserType(detectBrowser())
 
-    // 3. iOS 기기 감지
+    // 3. iOS 기기 감지 (아이패드 데스크톱 모드 포함)
     const userAgent = window.navigator.userAgent.toLowerCase()
-    const isIosDevice = /iphone|ipad|ipod/.test(userAgent)
+    const isIosDevice = /iphone|ipad|ipod/.test(userAgent) || (userAgent.includes('mac') && 'ontouchend' in document)
     setIsIos(isIosDevice)
 
     if (isIosDevice) {
@@ -96,6 +103,11 @@ export function usePwaInstall() {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
       window.removeEventListener('appinstalled', handleAppInstalled)
       clearTimeout(retryTimer)
+      if (mediaQuery.removeEventListener) {
+        mediaQuery.removeEventListener('change', handleMediaQueryChange)
+      } else if (mediaQuery.removeListener) {
+        mediaQuery.removeListener(handleMediaQueryChange)
+      }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
