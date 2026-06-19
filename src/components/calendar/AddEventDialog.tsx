@@ -235,9 +235,6 @@ export function AddEventDialog({ children }: { children?: React.ReactNode }) {
         className="w-[95vw] max-w-[460px] p-0 overflow-hidden flex flex-col max-h-[90vh] border border-transparent/50 rounded-[28px]"
         style={{ background: 'linear-gradient(180deg, #f8f9fc 0%, #f0f2f7 100%)', boxShadow: '0 24px 80px -12px rgba(0,0,0,0.12)' }}
       >
-        {previewColor && (
-          <div className="absolute top-0 left-0 right-0 h-[6px] z-10 transition-colors duration-300" style={{ backgroundColor: previewColor }} />
-        )}
         {/* ── HEADER: 제목만 (Shadcn 기본 닫기 버튼 활용) ── */}
         <DialogHeader className="flex-shrink-0 px-6 py-5 flex flex-row items-center justify-center relative" style={{ borderBottom: '1px solid rgba(0,0,0,0.04)' }}>
           <DialogTitle className="text-[17px] font-bold text-foreground tracking-tight">
@@ -270,28 +267,28 @@ export function AddEventDialog({ children }: { children?: React.ReactNode }) {
             </div>
 
             {/* 시작 — 모바일에서 라벨/패딩 축소, TimeSelect 너비 확대로 한국어 시간 표기(오전/오후) 잘림 방지 */}
-            <div className="flex items-center gap-2 md:gap-3 py-3" style={{ borderBottom: '1px solid rgba(0,0,0,0.04)' }}>
-              <span className={`${LABEL} min-w-[52px] md:min-w-[70px]`}><Play className="w-4 h-4 mr-1 md:mr-1.5 text-muted-foreground"/>시작</span>
-              <div className="flex-1 min-w-0 flex items-center gap-1.5 md:gap-2 justify-end">
+            <div className="flex flex-wrap items-center justify-between gap-2 md:gap-3 py-3" style={{ borderBottom: '1px solid rgba(0,0,0,0.04)' }}>
+              <span className={`${LABEL} shrink-0`}><Play className="w-4 h-4 mr-1 md:mr-1.5 text-muted-foreground"/>시작</span>
+              <div className="flex flex-1 min-w-[240px] items-center gap-1.5 md:gap-2 justify-end">
                 <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} required
-                  className="bg-muted/60 hover:bg-muted text-foreground font-medium text-[13px] rounded-xl px-2 md:px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 transition-colors min-w-0" />
+                  className="flex-1 sm:flex-none min-w-[120px] bg-muted/60 hover:bg-muted text-foreground font-medium text-[13px] rounded-xl px-2 md:px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 transition-colors" />
                 {!isAllDay && (
-                  <div className="w-[105px] shrink-0">
-                    <TimeSelect value={startTime} onChange={handleStartTimeChange} required className="!h-[34px] !text-[13px] !rounded-xl !bg-muted/60 hover:!bg-muted !border-0 transition-colors" />
+                  <div className="flex-1 sm:flex-none min-w-[120px]">
+                    <TimeSelect value={startTime} onChange={handleStartTimeChange} required className="w-full !h-[34px] !text-[13px] !rounded-xl !bg-muted/60 hover:!bg-muted !border-0 transition-colors" />
                   </div>
                 )}
               </div>
             </div>
 
             {/* 종료 — 시작과 동일한 모바일 최적화 적용 */}
-            <div className={`flex items-center gap-2 md:gap-3 py-3 ${!isAllDay ? '' : 'opacity-40 pointer-events-none'}`} style={{ borderBottom: !isAllDay ? '1px solid rgba(0,0,0,0.04)' : 'none' }}>
-              <span className={`${LABEL} min-w-[52px] md:min-w-[70px]`}><Square className="w-4 h-4 mr-1 md:mr-1.5 text-muted-foreground"/>종료</span>
-              <div className="flex-1 min-w-0 flex items-center gap-1.5 md:gap-2 justify-end">
+            <div className={`flex flex-wrap items-center justify-between gap-2 md:gap-3 py-3 ${!isAllDay ? '' : 'opacity-40 pointer-events-none'}`} style={{ borderBottom: !isAllDay ? '1px solid rgba(0,0,0,0.04)' : 'none' }}>
+              <span className={`${LABEL} shrink-0`}><Square className="w-4 h-4 mr-1 md:mr-1.5 text-muted-foreground"/>종료</span>
+              <div className="flex flex-1 min-w-[240px] items-center gap-1.5 md:gap-2 justify-end">
                 <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} required={!isAllDay} disabled={isAllDay}
-                  className="bg-muted/60 hover:bg-muted text-foreground font-medium text-[13px] rounded-xl px-2 md:px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 disabled:opacity-50 transition-colors min-w-0" />
+                  className="flex-1 sm:flex-none min-w-[120px] bg-muted/60 hover:bg-muted text-foreground font-medium text-[13px] rounded-xl px-2 md:px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 disabled:opacity-50 transition-colors" />
                 {!isAllDay && (
-                  <div className="w-[105px] shrink-0">
-                    <TimeSelect value={endTime} onChange={setEndTime} required className="!h-[34px] !text-[13px] !rounded-xl !bg-muted/60 hover:!bg-muted !border-0 transition-colors" />
+                  <div className="flex-1 sm:flex-none min-w-[120px]">
+                    <TimeSelect value={endTime} onChange={setEndTime} required className="w-full !h-[34px] !text-[13px] !rounded-xl !bg-muted/60 hover:!bg-muted !border-0 transition-colors" />
                   </div>
                 )}
               </div>
