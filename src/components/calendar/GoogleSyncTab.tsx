@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Globe2, Smartphone, Monitor, CheckCircle2, ChevronRight, AlertCircle, RefreshCw, Settings2, Zap, CalendarDays } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { useUserProfile } from '@/hooks/useCalendarQueries'
-import { getGoogleCalendarListAction, startGoogleSyncAction, forceSyncNowAction } from '@/app/actions/calendar'
+import { getGoogleCalendarListAction, startGoogleSyncAction, forceSyncNowAction, verifyGoogleTokenAction } from '@/app/actions/calendar'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useQueryClient } from '@tanstack/react-query'
 
@@ -37,6 +37,24 @@ export function GoogleSyncTab() {
   const googleIdentity = authUser?.identities?.find((i: any) => i.provider === 'google')
   const isGoogleLinked = isGooglePrimary || !!googleIdentity || profile?.is_google_linked
   const needsReauth = isGoogleLinked && !profile?.google_refresh_token
+
+  // 백그라운드 실시간 토큰 검증
+  useEffect(() => {
+    let mounted = true
+    const verifyToken = async () => {
+      // 이미 명백히 토큰이 없거나 연동되지 않았다면 검증 불필요
+      if (!isGoogleLinked || needsReauth) return
+      
+      const result = await verifyGoogleTokenAction()
+      if (mounted && !result.valid && result.reason === 'revoked') {
+        // 백그라운드에서 권한 해제가 감지되면 즉시 UI 갱신 (needsReauth가 true가 되도록)
+        queryClient.invalidateQueries({ queryKey: ['userProfile'] })
+        refetchProfile()
+      }
+    }
+    verifyToken()
+    return () => { mounted = false }
+  }, [isGoogleLinked, needsReauth])
 
   // Sync Setup State
   const isSyncSetupComplete = !!profile?.google_channel_id || !!profile?.google_sync_calendar_name
@@ -70,6 +88,23 @@ export function GoogleSyncTab() {
   const handleLinkGoogle = async () => {
     setIsLinking(true)
     const supabase = createClient()
+
+    // 1. 실제 구글 인증 상태를 서버에서 먼저 확인
+    if (isGoogleLinked) {
+      try {
+        const verifyResult = await verifyGoogleTokenAction()
+        if (verifyResult.valid) {
+          alert('이미 구글 캘린더 인증에 성공하여 정상적으로 연결된 상태입니다.')
+          setIsLinking(false)
+          // UI 갱신 (혹시 경고가 떠 있었다면 없애기)
+          queryClient.invalidateQueries({ queryKey: ['userProfile'] })
+          refetchProfile()
+          return
+        }
+      } catch (err) {
+        console.error('Token verification failed:', err)
+      }
+    }
 
     // 이미 구글이 연결된 상태에서 재인증하는 경우, 먼저 연동 해제 후 재연동
     if (needsReauth && !isGooglePrimary) {

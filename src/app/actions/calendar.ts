@@ -670,3 +670,49 @@ export async function forceSyncNowAction() {
 
   return { success: true }
 }
+
+export async function verifyGoogleTokenAction() {
+  const supabase = await createClient()
+  const { data: userData } = await supabase.auth.getUser()
+  if (!userData.user) return { valid: false, reason: 'unauthenticated' }
+
+  try {
+    const { createAdminClient } = await import('@/lib/supabase/server')
+    const { getGoogleAuthClient } = await import('@/lib/google-calendar')
+    const { google } = await import('googleapis')
+    
+    const adminClient = createAdminClient()
+    const auth = await getGoogleAuthClient(userData.user.id, adminClient)
+    
+    if (!auth) {
+      return { valid: false, reason: 'missing_token' }
+    }
+
+    const calendar = google.calendar({ version: 'v3', auth })
+    // 가벼운 API 호출로 토큰 유효성 검증
+    await calendar.calendarList.list({ maxResults: 1 })
+
+    return { valid: true }
+  } catch (error: any) {
+    console.error('verifyGoogleTokenAction error:', error.message)
+    
+    // 권한이 해제되었거나 토큰이 유효하지 않은 경우 DB 정리
+    if (error.message?.includes('invalid_grant') || error.message?.includes('invalid credentials')) {
+      const { createAdminClient } = await import('@/lib/supabase/server')
+      const adminClient = createAdminClient()
+      
+      await adminClient.from('users').update({
+        google_refresh_token: null,
+        google_channel_id: null,
+        google_resource_id: null,
+        google_sync_token: null,
+        google_sync_calendar_id: null,
+        google_sync_calendar_name: null
+      }).eq('id', userData.user.id)
+
+      return { valid: false, reason: 'revoked' }
+    }
+    
+    return { valid: false, reason: 'api_error' }
+  }
+}
