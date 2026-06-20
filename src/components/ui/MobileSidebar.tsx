@@ -14,7 +14,7 @@ import { UpcomingAnniversaryWidget } from '@/components/anniversary/UpcomingAnni
 import { logout } from '@/app/actions/auth'
 import { useQueryClient } from '@tanstack/react-query'
 import { Download } from 'lucide-react'
-import { usePwaInstall } from '@/hooks/usePWAInstall'
+import { usePwaInstall } from '@/hooks/usePwaInstall'
 import { IOSInstallGuideModal } from '@/components/pwa/IOSInstallGuideModal'
 
 interface MobileSidebarProps {
