@@ -480,7 +480,7 @@ export function CanvasBoard() {
         dragMomentum={false}
         dragConstraints={constraintsRef}
         initial={{ x: 16, y: 100 }}
-        style={{ position: 'absolute', zIndex: 50 }}
+        style={{ position: 'absolute', top: 0, left: 0, zIndex: 50 }}
       >
         <div className={cn(
           "bg-card/95 backdrop-blur-xl shadow-2xl rounded-2xl p-1.5 md:p-2 flex border border-border/60 items-center transition-all",
