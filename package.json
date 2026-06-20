@@ -51,6 +51,7 @@
     "fast-average-color": "^9.5.2",
     "file-saver": "^2.0.5",
     "framer-motion": "^12.40.0",
+    "googleapis": "^173.0.0",
     "html-to-docx": "^1.8.0",
     "katex": "^0.17.0",
     "lucide-react": "^1.16.0",

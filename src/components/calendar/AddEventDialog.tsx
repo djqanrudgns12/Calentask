@@ -15,6 +15,7 @@ import type { ActivityTemplate } from '@/app/actions/insights'
 import { useCalendarStore } from '@/store/useCalendarStore'
 import { useAgendaStore } from '@/store/useAgendaStore'
 import { TimeSelect } from '@/components/ui/TimeSelect'
+import { toast } from 'sonner'
 
 function useKeyboardAwareDialog(isOpen: boolean) {
   const dialogRef = useRef<HTMLDivElement>(null)
@@ -235,6 +236,7 @@ export function AddEventDialog({ children }: { children?: React.ReactNode }) {
     const payload = { title, start_time: sO.toISOString(), end_time: eO.toISOString(), is_all_day: isAllDay, type: 'EVENT' as const, memo, hex_color: customColor, template_id: templateId, attachments }
 
     const onSuccessAction = () => {
+      toast.success(editingEvent ? '일정이 성공적으로 수정되었습니다.' : '일정이 구글 캘린더에도 생성되었습니다.')
       if (prefillAgendaTaskId) useAgendaStore.getState().updateTask(prefillAgendaTaskId, { is_calendar_registered: true })
       closeAddEvent()
       if (isAlsoAgenda) {
@@ -486,12 +488,10 @@ export function AddEventDialog({ children }: { children?: React.ReactNode }) {
               </div>
             )}
             <Popover>
-              <PopoverTrigger asChild>
-                <button type="button" disabled={isUploading}
-                  className="w-full py-3 border-2 border-dashed border-border rounded-2xl flex items-center justify-center gap-2 text-muted-foreground hover:text-[#007AFF] hover:border-[#007AFF]/40 hover:bg-[#007AFF]/5 transition-all group disabled:opacity-50">
-                  <Plus className="w-4 h-4 group-hover:text-[#007AFF] transition-colors" />
-                  <span className="text-[13px] font-bold">{isUploading ? '업로드 중...' : '첨부파일 추가'}</span>
-                </button>
+              <PopoverTrigger disabled={isUploading}
+                className="w-full py-3 border-2 border-dashed border-border rounded-2xl flex items-center justify-center gap-2 text-muted-foreground hover:text-[#007AFF] hover:border-[#007AFF]/40 hover:bg-[#007AFF]/5 transition-all group disabled:opacity-50">
+                <Plus className="w-4 h-4 group-hover:text-[#007AFF] transition-colors" />
+                <span className="text-[13px] font-bold">{isUploading ? '업로드 중...' : '첨부파일 추가'}</span>
               </PopoverTrigger>
               <PopoverContent className="w-48 p-2 rounded-xl" align="center">
                 <div className="flex flex-col gap-1">

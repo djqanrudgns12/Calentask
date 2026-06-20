@@ -3,6 +3,7 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
+import { syncActivityToGoogle, deleteActivityFromGoogle } from '@/lib/google-calendar'
 
 export type Activity = {
   id: string
@@ -267,6 +268,13 @@ export async function createActivity(
     if (mappingError) throw new Error(mappingError.message)
   }
 
+  // Google Calendar 동기화 (에러 발생 시에도 메인 흐름 중단 안 함)
+  try {
+    await syncActivityToGoogle(userData.user.id, activity, categoryIds)
+  } catch (e) {
+    console.error('Google Sync Error (Create):', e)
+  }
+
   revalidatePath('/')
   return activity
 }
@@ -313,6 +321,13 @@ export async function updateActivity(
     if (mappingError) throw new Error(mappingError.message)
   }
 
+  // Google Calendar 동기화
+  try {
+    await syncActivityToGoogle(userData.user.id, activity, categoryIds)
+  } catch (e) {
+    console.error('Google Sync Error (Update):', e)
+  }
+
   revalidatePath('/')
   return activity
 }
@@ -320,12 +335,23 @@ export async function updateActivity(
 // 일정 소프트 삭제 (휴지통)
 export async function deleteActivity(id: string) {
   const supabase = await createClient()
+  const { data: userData } = await supabase.auth.getUser()
+  if (!userData.user) throw new Error('Not authenticated')
+
   const { error } = await supabase
     .from('activities')
     .update({ deleted_at: new Date().toISOString() })
     .eq('id', id)
 
   if (error) throw new Error(error.message)
+
+  // 휴지통으로 이동 시 구글 캘린더에서는 완전 삭제 (정책 반영)
+  try {
+    await deleteActivityFromGoogle(userData.user.id, id)
+  } catch (e) {
+    console.error('Google Sync Error (Soft Delete):', e)
+  }
+
   revalidatePath('/')
   return true
 }
@@ -347,12 +373,26 @@ export async function getDeletedActivities() {
 // 휴지통 항목 복구하기
 export async function restoreActivity(id: string) {
   const supabase = await createClient()
-  const { error } = await supabase
+  const { data: userData } = await supabase.auth.getUser()
+  if (!userData.user) throw new Error('Not authenticated')
+
+  const { data: activity, error } = await supabase
     .from('activities')
     .update({ deleted_at: null })
     .eq('id', id)
+    .select()
+    .single()
 
   if (error) throw new Error(error.message)
+
+  // 휴지통 복구 시 구글 캘린더에 재성성 (정책 반영)
+  try {
+    // 카테고리는 단순 복구 시에는 매핑 쿼리를 생략하거나 빈 배열 전달 (여기선 단방향 복구)
+    await syncActivityToGoogle(userData.user.id, activity, [])
+  } catch (e) {
+    console.error('Google Sync Error (Restore):', e)
+  }
+
   revalidatePath('/')
   return true
 }
@@ -360,12 +400,23 @@ export async function restoreActivity(id: string) {
 // 휴지통 영구 삭제
 export async function hardDeleteActivity(id: string) {
   const supabase = await createClient()
+  const { data: userData } = await supabase.auth.getUser()
+  if (!userData.user) throw new Error('Not authenticated')
+
   const { error } = await supabase
     .from('activities')
     .delete()
     .eq('id', id)
 
   if (error) throw new Error(error.message)
+
+  // 영구 삭제 시 구글 캘린더에서도 삭제 확인 사살
+  try {
+    await deleteActivityFromGoogle(userData.user.id, id)
+  } catch (e) {
+    console.error('Google Sync Error (Hard Delete):', e)
+  }
+
   revalidatePath('/')
   return true
 }

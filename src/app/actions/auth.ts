@@ -152,3 +152,28 @@ export async function logout() {
   await supabase.auth.signOut()
   redirect('/login')
 }
+
+export async function signInWithGoogle() {
+  const supabase = await createClient()
+  
+  const { data, error } = await supabase.auth.signInWithOAuth({
+    provider: 'google',
+    options: {
+      redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/auth/callback`,
+      scopes: 'https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile',
+      queryParams: {
+        access_type: 'offline',
+        prompt: 'consent', // Forces Google to issue a refresh token every time
+      },
+    },
+  })
+
+  if (error) {
+    console.error('Google OAuth error:', error.message)
+    return redirect('/login?error=oauth_failed')
+  }
+
+  if (data.url) {
+    redirect(data.url)
+  }
+}
