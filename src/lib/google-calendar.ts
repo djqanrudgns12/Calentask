@@ -1,12 +1,12 @@
 import { google } from 'googleapis'
-import { createClient, createAdminClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/server'
 
 /**
  * Creates an authenticated Google OAuth2 client for the given user.
  * It retrieves the google_refresh_token from the users table.
  */
 export async function getGoogleAuthClient(userId: string, customSupabase?: any) {
-  const supabase = customSupabase || await createClient()
+  const supabase = customSupabase || createAdminClient()
   const { data: user, error } = await supabase
     .from('users')
     .select('google_refresh_token')
@@ -37,7 +37,7 @@ export async function getGoogleAuthClient(userId: string, customSupabase?: any) 
  * Returns the calendar ID.
  */
 export async function getSyncCalendarId(userId: string, auth: any, customSupabase?: any): Promise<string | null> {
-  const supabase = customSupabase || await createAdminClient()
+  const supabase = customSupabase || createAdminClient()
   const { data: user } = await supabase.from('users').select('google_sync_calendar_id').eq('id', userId).single()
 
   if (user?.google_sync_calendar_id) {
@@ -130,10 +130,11 @@ function mapActivityToGoogleEvent(activity: any, categories: any[]) {
  */
 export async function syncActivityToGoogle(userId: string, activity: any, categories: any[] = []) {
   try {
-    const auth = await getGoogleAuthClient(userId)
+    const supabase = createAdminClient()
+    const auth = await getGoogleAuthClient(userId, supabase)
     if (!auth) return
 
-    const calendarId = await getSyncCalendarId(userId, auth)
+    const calendarId = await getSyncCalendarId(userId, auth, supabase)
     if (!calendarId) return
 
     const calendar = google.calendar({ version: 'v3', auth })
@@ -190,10 +191,11 @@ export async function syncActivityToGoogle(userId: string, activity: any, catego
  */
 export async function deleteActivityFromGoogle(userId: string, activityId: string) {
   try {
-    const auth = await getGoogleAuthClient(userId)
+    const supabase = createAdminClient()
+    const auth = await getGoogleAuthClient(userId, supabase)
     if (!auth) return
 
-    const calendarId = await getSyncCalendarId(userId, auth)
+    const calendarId = await getSyncCalendarId(userId, auth, supabase)
     if (!calendarId) return
 
     const calendar = google.calendar({ version: 'v3', auth })
@@ -223,10 +225,11 @@ export async function deleteActivityFromGoogle(userId: string, activityId: strin
  */
 export async function watchGoogleCalendar(userId: string) {
   try {
-    const auth = await getGoogleAuthClient(userId)
+    const supabase = createAdminClient()
+    const auth = await getGoogleAuthClient(userId, supabase)
     if (!auth) return
 
-    const calendarId = await getSyncCalendarId(userId, auth)
+    const calendarId = await getSyncCalendarId(userId, auth, supabase)
     if (!calendarId) return
 
     const calendar = google.calendar({ version: 'v3', auth })
@@ -250,7 +253,6 @@ export async function watchGoogleCalendar(userId: string) {
     console.log('Successfully subscribed to Google Calendar webhooks:', response.data)
     
     // Save channelId, resourceId, and expiration to the users table
-    const supabase = await createAdminClient()
     await supabase
       .from('users')
       .update({
@@ -275,7 +277,7 @@ export async function watchGoogleCalendar(userId: string) {
  */
 export async function handleGoogleCalendarSync(userId: string, customSupabase?: any) {
   try {
-    const supabase = customSupabase || await createAdminClient()
+    const supabase = customSupabase || createAdminClient()
     const auth = await getGoogleAuthClient(userId, supabase)
     if (!auth) return
 
@@ -440,7 +442,8 @@ export async function handleGoogleCalendarSync(userId: string, customSupabase?: 
 
 export async function fetchGoogleCalendars(userId: string) {
   try {
-    const auth = await getGoogleAuthClient(userId)
+    const supabase = createAdminClient()
+    const auth = await getGoogleAuthClient(userId, supabase)
     if (!auth) return []
 
     const calendar = google.calendar({ version: 'v3', auth })
@@ -460,12 +463,12 @@ export async function fetchGoogleCalendars(userId: string) {
 
 export async function syncAllActivitiesToGoogle(userId: string, customSupabase?: any) {
   try {
-    const supabase = customSupabase || await createAdminClient()
+    const supabase = customSupabase || createAdminClient()
     
     // Fetch all non-deleted activities for the user
     const { data: activities } = await supabase
       .from('activities')
-      .select('*, categories(*)')
+      .select('*, activity_category_map(categories(*))')
       .eq('user_id', userId)
       .is('deleted_at', null)
       

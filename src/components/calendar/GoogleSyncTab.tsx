@@ -31,6 +31,7 @@ export function GoogleSyncTab() {
   const isGooglePrimary = authUser?.app_metadata?.provider === 'google'
   const googleIdentity = authUser?.identities?.find((i: any) => i.provider === 'google')
   const isGoogleLinked = isGooglePrimary || !!googleIdentity || profile?.is_google_linked
+  const needsReauth = isGoogleLinked && !profile?.google_refresh_token
 
   // Sync Setup State
   const isSyncSetupComplete = !!profile?.google_channel_id || !!profile?.google_sync_calendar_name
@@ -244,8 +245,37 @@ export function GoogleSyncTab() {
             </div>
           )}
 
+          {/* Re-auth Notice Block */}
+          {isGoogleLinked && needsReauth && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mt-4 p-5 bg-amber-50 border border-amber-200 rounded-xl"
+            >
+              <div className="flex items-start gap-4">
+                <div className="w-10 h-10 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center shrink-0 mt-0.5">
+                  <AlertCircle className="w-5 h-5" />
+                </div>
+                <div className="flex-1">
+                  <h4 className="font-bold text-amber-900 mb-1">구글 재인증이 필요합니다</h4>
+                  <p className="text-sm text-amber-800 mb-3">
+                    구글 계정은 연결되어 있지만, 캘린더 동기화에 필요한 인증 토큰이 만료되었거나 저장되지 않았습니다.
+                    아래 버튼을 눌러 구글 계정을 다시 인증해주세요.
+                  </p>
+                  <p className="text-xs text-amber-700/80 mb-4">
+                    💡 만약 계속 이 메시지가 보이면, <a href="https://myaccount.google.com/permissions" target="_blank" rel="noopener noreferrer" className="underline font-semibold">구글 계정 관리 → 서드파티 앱</a>에서 Calentask 권한을 제거한 후 다시 연동해보세요.
+                  </p>
+                  <Button onClick={handleLinkGoogle} disabled={isLinking} className="bg-amber-600 hover:bg-amber-700 text-white">
+                    <Globe2 className={`w-4 h-4 mr-2 ${isLinking ? 'animate-spin' : ''}`} />
+                    {isLinking ? '인증 중...' : '구글 재인증하기'}
+                  </Button>
+                </div>
+              </div>
+            </motion.div>
+          )}
+
           {/* Sync Options Block */}
-          {isGoogleLinked && !isSyncSetupComplete && (
+          {isGoogleLinked && !isSyncSetupComplete && !needsReauth && (
             <motion.div 
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}

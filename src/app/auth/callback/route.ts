@@ -45,6 +45,19 @@ export async function GET(request: Request) {
           if (updateError) {
             console.error('Failed to store google info:', updateError.message)
           }
+
+          // Trigger initial sync in background if refresh token was saved
+          if (providerRefreshToken && googleIdentity) {
+            Promise.resolve().then(async () => {
+              try {
+                const { watchGoogleCalendar, syncAllActivitiesToGoogle } = await import('@/lib/google-calendar')
+                await watchGoogleCalendar(data.session.user.id)
+                await syncAllActivitiesToGoogle(data.session.user.id, adminClient)
+              } catch (err) {
+                console.error('Background initial sync failed:', err)
+              }
+            })
+          }
         }
       }
 
