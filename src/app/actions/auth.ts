@@ -21,29 +21,39 @@ export async function login(formData: FormData) {
 
   const supabase = await createClient()
   
-  // 우회 로직: 아이디 -> 가짜 이메일 변환
   const username = formData.get('username') as string
   const password = formData.get('password') as string
-  const email = `${username}@calentask.com`
 
+  const adminClient = createAdminClient()
+  
+  // 1. Get the user ID from public.users using username
+  const { data: publicUser } = await adminClient
+    .from('users')
+    .select('id')
+    .eq('username', username)
+    .single()
+
+  if (!publicUser) {
+    return redirect('/login?error=user_not_found')
+  }
+
+  // 2. Get the real email from auth.users using admin client
+  const { data: authUser, error: authUserError } = await adminClient.auth.admin.getUserById(publicUser.id)
+  
+  if (authUserError || !authUser.user || !authUser.user.email) {
+    return redirect('/login?error=user_not_found')
+  }
+
+  const email = authUser.user.email
+
+  // 3. Sign in using the real email
   const { data: authData, error } = await supabase.auth.signInWithPassword({
     email,
     password,
   })
 
   if (error) {
-    const adminClient = createAdminClient()
-    const { data: userExists } = await adminClient
-      .from('users')
-      .select('username')
-      .eq('username', username)
-      .single()
-
-    if (!userExists) {
-      return redirect('/login?error=user_not_found')
-    } else {
-      return redirect('/login?error=invalid_password')
-    }
+    return redirect('/login?error=invalid_password')
   }
 
   // 실제 클라이언트 IP/UA를 session_metadata에 저장
@@ -211,16 +221,13 @@ export async function linkLocalAccount(formData: FormData) {
     return { success: false, error: '이미 사용 중인 아이디입니다.' }
   }
 
-  const email = `${username}@calentask.com`
-
   const { data: { user }, error: userError } = await supabase.auth.getUser()
   if (userError || !user) {
     return { success: false, error: '인증에 실패했습니다.' }
   }
 
-  // 1. Update Auth User (Email and Password)
+  // 1. Update Auth User (Only Password, preserving original email)
   const { error: updateAuthError } = await supabase.auth.updateUser({
-    email,
     password,
   })
 
