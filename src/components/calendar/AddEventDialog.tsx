@@ -5,10 +5,11 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { X, Plus, Pencil, Zap, Link as LinkIcon, Image as ImageIcon, FileText, Paperclip, ToggleRight, Play, Square, Clock, Tag, Palette, AlignLeft } from 'lucide-react'
+import { X, Plus, Pencil, Zap, Link as LinkIcon, Image as ImageIcon, FileText, Paperclip, ToggleRight, Play, Square, Clock, Tag, Palette, AlignLeft, Upload } from 'lucide-react'
 import { useCategories, useCreateActivity, useUpdateActivity, useCreateCategory, useDeleteCategory } from '@/hooks/useCalendarQueries'
 import { format, startOfMonth, endOfMonth, parseISO } from 'date-fns'
 import { Popover, PopoverContent, PopoverTrigger, PopoverHeader, PopoverTitle } from '@/components/ui/popover'
+import { createClient } from '@/lib/supabase/client'
 import { useActivityTemplates } from '@/hooks/useInsightsQueries'
 import type { ActivityTemplate } from '@/app/actions/insights'
 import { useCalendarStore } from '@/store/useCalendarStore'
@@ -88,6 +89,8 @@ export function AddEventDialog({ children }: { children?: React.ReactNode }) {
   const [isTemplateOpen, setIsTemplateOpen] = useState(false)
   const [templateId, setTemplateId] = useState<string | null>(null)
   const [isAlsoAgenda, setIsAlsoAgenda] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [isUploading, setIsUploading] = useState(false)
 
   const currentMonthStart = startOfMonth(new Date()).toISOString()
   const currentMonthEnd = endOfMonth(new Date()).toISOString()
@@ -183,14 +186,44 @@ export function AddEventDialog({ children }: { children?: React.ReactNode }) {
     }
     setIsTemplateOpen(false)
   }
-  const handleAddAttachment = () => {
-    const url = prompt('파일, 이미지 또는 링크 URL을 입력하세요')
+  const handleAddLink = () => {
+    const url = prompt('링크 URL을 입력하세요')
     if (!url) return
-    const name = prompt('첨부 이름을 입력하세요', '새 첨부파일') || '첨부파일'
-    let type: 'link' | 'image' | 'file' = 'link'
-    if (url.match(/\.(jpeg|jpg|gif|png|webp)$/i)) type = 'image'
-    else if (url.match(/\.(pdf|doc|docx|xls|xlsx|txt)$/i)) type = 'file'
-    setAttachments(p => [...p, { id: crypto.randomUUID(), type, url, name }])
+    const name = prompt('링크 이름을 입력하세요', '새 링크') || '링크'
+    setAttachments(p => [...p, { id: crypto.randomUUID(), type: 'link', url, name }])
+  }
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    try {
+      setIsUploading(true)
+      const supabase = createClient()
+      const fileExt = file.name.split('.').pop()
+      const filePath = `calendar/${crypto.randomUUID()}.${fileExt}`
+
+      const { error } = await supabase.storage
+        .from('archive_media')
+        .upload(filePath, file)
+
+      if (error) throw error
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('archive_media')
+        .getPublicUrl(filePath)
+
+      let type: 'image' | 'file' = 'file'
+      if (file.type.startsWith('image/')) type = 'image'
+
+      setAttachments(p => [...p, { id: crypto.randomUUID(), type, url: publicUrl, name: file.name }])
+    } catch (error) {
+      console.error('Upload error:', error)
+      alert('파일 업로드에 실패했습니다.')
+    } finally {
+      setIsUploading(false)
+      if (fileInputRef.current) fileInputRef.current.value = ''
+    }
   }
 
   const handleSubmit = (e?: React.FormEvent) => {
@@ -452,11 +485,28 @@ export function AddEventDialog({ children }: { children?: React.ReactNode }) {
                 ))}
               </div>
             )}
-            <button type="button" onClick={handleAddAttachment}
-              className="w-full py-3 border-2 border-dashed border-border rounded-2xl flex items-center justify-center gap-2 text-muted-foreground hover:text-[#007AFF] hover:border-[#007AFF]/40 hover:bg-[#007AFF]/5 transition-all group">
-              <Plus className="w-4 h-4 group-hover:text-[#007AFF] transition-colors" />
-              <span className="text-[13px] font-bold">첨부파일 추가</span>
-            </button>
+            <Popover>
+              <PopoverTrigger asChild>
+                <button type="button" disabled={isUploading}
+                  className="w-full py-3 border-2 border-dashed border-border rounded-2xl flex items-center justify-center gap-2 text-muted-foreground hover:text-[#007AFF] hover:border-[#007AFF]/40 hover:bg-[#007AFF]/5 transition-all group disabled:opacity-50">
+                  <Plus className="w-4 h-4 group-hover:text-[#007AFF] transition-colors" />
+                  <span className="text-[13px] font-bold">{isUploading ? '업로드 중...' : '첨부파일 추가'}</span>
+                </button>
+              </PopoverTrigger>
+              <PopoverContent className="w-48 p-2 rounded-xl" align="center">
+                <div className="flex flex-col gap-1">
+                  <button type="button" onClick={() => fileInputRef.current?.click()}
+                    className="flex items-center gap-2 px-3 py-2 text-[13px] font-medium rounded-lg hover:bg-muted transition-colors text-foreground">
+                    <Upload className="w-4 h-4" /> 내 컴퓨터에서 업로드
+                  </button>
+                  <button type="button" onClick={handleAddLink}
+                    className="flex items-center gap-2 px-3 py-2 text-[13px] font-medium rounded-lg hover:bg-muted transition-colors text-foreground">
+                    <LinkIcon className="w-4 h-4" /> URL 링크 추가
+                  </button>
+                </div>
+              </PopoverContent>
+            </Popover>
+            <input type="file" ref={fileInputRef} onChange={handleFileUpload} className="hidden" />
           </div>
 
           {/* 아젠다 동시 등록 토글 */}
