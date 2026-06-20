@@ -521,18 +521,37 @@ export function ProfileTab() {
                 <Button 
                   size="sm"
                   className="bg-indigo-600 hover:bg-indigo-700 text-white"
-                  onClick={async () => {
+                  onClick={async (e) => {
+                    const btn = e.currentTarget
+                    btn.disabled = true
+                    btn.innerHTML = '<span class="animate-spin mr-1.5">🌀</span> 연동 중...'
+                    
                     const supabase = createClient()
-                    await supabase.auth.linkIdentity({
+                    const { data, error } = await supabase.auth.linkIdentity({
                       provider: 'google',
                       options: {
                         redirectTo: `${window.location.origin}/auth/callback`,
+                        scopes: 'https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile',
                         queryParams: {
                           access_type: 'offline',
                           prompt: 'consent'
                         }
                       }
                     })
+
+                    if (error) {
+                      alert('구글 계정 연동 요청 중 오류가 발생했습니다: ' + error.message)
+                      btn.disabled = false
+                      btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-globe2 w-3.5 h-3.5 mr-1.5"><path d="M12 22A10 10 0 0 0 12 2A10 10 0 0 0 12 22Z"></path><path d="M2 12A10 10 0 0 0 22 12A10 10 0 0 0 2 12Z"></path><path d="M12 2c2.68 0 5 4.48 5 10s-2.32 10-5 10-5-4.48-5-10S9.32 2 12 2Z"></path></svg> Google 계정 연동하기'
+                      return
+                    }
+
+                    if (data?.url) {
+                      window.location.href = data.url
+                    } else {
+                      btn.disabled = false
+                      btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-globe2 w-3.5 h-3.5 mr-1.5"><path d="M12 22A10 10 0 0 0 12 2A10 10 0 0 0 12 22Z"></path><path d="M2 12A10 10 0 0 0 22 12A10 10 0 0 0 2 12Z"></path><path d="M12 2c2.68 0 5 4.48 5 10s-2.32 10-5 10-5-4.48-5-10S9.32 2 12 2Z"></path></svg> Google 계정 연동하기'
+                    }
                   }}
                 >
                   <Globe2 className="w-3.5 h-3.5 mr-1.5" />

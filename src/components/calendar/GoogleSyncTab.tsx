@@ -17,18 +17,34 @@ export function GoogleSyncTab() {
   const isGooglePrimary = authUser?.app_metadata?.provider === 'google'
   const isGoogleLinked = isGooglePrimary || profile?.is_google_linked
 
+  const [isLinking, setIsLinking] = useState(false)
+
   const handleLinkGoogle = async () => {
+    setIsLinking(true)
     const supabase = createClient()
-    await supabase.auth.linkIdentity({
+    const { data, error } = await supabase.auth.linkIdentity({
       provider: 'google',
       options: {
         redirectTo: `${window.location.origin}/auth/callback`,
+        scopes: 'https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile',
         queryParams: {
           access_type: 'offline',
           prompt: 'consent'
         }
       }
     })
+
+    if (error) {
+      alert('구글 계정 연동 요청 중 오류가 발생했습니다: ' + error.message)
+      setIsLinking(false)
+      return
+    }
+
+    if (data?.url) {
+      window.location.href = data.url
+    } else {
+      setIsLinking(false)
+    }
   }
 
   return (
@@ -87,10 +103,11 @@ export function GoogleSyncTab() {
               </div>
               <Button 
                 onClick={handleLinkGoogle}
+                disabled={isLinking}
                 className="bg-indigo-600 hover:bg-indigo-700 text-white shrink-0"
               >
-                <Globe2 className="w-4 h-4 mr-2" />
-                구글 계정 연동하기
+                <Globe2 className={`w-4 h-4 mr-2 ${isLinking ? 'animate-spin' : ''}`} />
+                {isLinking ? '연동 중...' : '구글 계정 연동하기'}
               </Button>
             </div>
           )}
