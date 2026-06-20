@@ -15,7 +15,9 @@ export function GoogleSyncTab() {
   }, [])
 
   const isGooglePrimary = authUser?.app_metadata?.provider === 'google'
-  const isGoogleLinked = isGooglePrimary || profile?.is_google_linked
+  const googleIdentity = authUser?.identities?.find((i: any) => i.provider === 'google')
+  const isGoogleLinked = isGooglePrimary || !!googleIdentity || profile?.is_google_linked
+
 
   const [isLinking, setIsLinking] = useState(false)
 

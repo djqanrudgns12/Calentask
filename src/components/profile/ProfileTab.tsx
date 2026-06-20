@@ -211,7 +211,13 @@ export function ProfileTab() {
     createClient().auth.getUser().then(({ data }) => setAuthUser(data.user))
   }, [])
 
+  const googleIdentity = authUser?.identities?.find((i: any) => i.provider === 'google')
+  const isGooglePrimary = authUser?.app_metadata?.provider === 'google'
+  const isGoogleLinked = isGooglePrimary || !!googleIdentity || profile?.is_google_linked
 
+  const displayGoogleName = profile?.google_name || googleIdentity?.identity_data?.full_name || googleIdentity?.identity_data?.name || 'Google 연동 사용자'
+  const displayGoogleEmail = profile?.google_email || googleIdentity?.identity_data?.email
+  const displayGoogleAvatar = profile?.google_avatar_url || googleIdentity?.identity_data?.avatar_url || googleIdentity?.identity_data?.picture || '/icon.png'
 
   const [fullName, setFullName] = useState('')
   const [username, setUsername] = useState('')
@@ -505,13 +511,13 @@ export function ProfileTab() {
         <h3 className="text-base md:text-lg font-bold text-foreground">구글 캘린더 동기화</h3>
         
         <div className="space-y-4">
-            {profile?.is_google_linked ? (
+            {isGoogleLinked ? (
               <div className="bg-card border border-border p-4 rounded-xl flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <img src={profile?.google_avatar_url || '/icon.png'} alt="Google profile" className="w-10 h-10 rounded-full bg-muted" />
+                  <img src={displayGoogleAvatar} alt="Google profile" className="w-10 h-10 rounded-full bg-muted" />
                   <div>
-                    <p className="font-semibold text-sm">{profile?.google_name || 'Google 연동 사용자'}</p>
-                    <p className="text-xs text-muted-foreground">{profile?.google_email}</p>
+                    <p className="font-semibold text-sm">{displayGoogleName}</p>
+                    <p className="text-xs text-muted-foreground">{displayGoogleEmail}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
