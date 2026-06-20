@@ -8,10 +8,10 @@ import { FastAverageColor } from 'fast-average-color';
 
 // Extract YouTube video ID from various URL formats
 function extractYouTubeId(url: string): string | null {
-  const ytRegExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+  const ytRegExp = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/|youtube\.com\/(?:shorts|live)\/)([^"&?\/\s]{11})/i;
   const match = url.match(ytRegExp);
-  if (match && match[2].length === 11) {
-    return match[2];
+  if (match && match[1].length === 11) {
+    return match[1];
   }
   return null;
 }
@@ -246,6 +246,11 @@ export function MediaBoard() {
                       src={item.data.thumbnail} 
                       alt={item.title} 
                       className={`w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity ${viewMode === 'masonry' ? 'aspect-auto min-h-[160px]' : ''}`} 
+                      onError={(e) => {
+                        if (e.currentTarget.src.includes('maxresdefault.jpg')) {
+                          e.currentTarget.src = item.data.thumbnail.replace('maxresdefault.jpg', 'hqdefault.jpg');
+                        }
+                      }}
                     />
                   ) : (
                     <div className="w-full h-full aspect-video flex items-center justify-center">
