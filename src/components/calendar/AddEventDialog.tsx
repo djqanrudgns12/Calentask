@@ -143,6 +143,20 @@ export function AddEventDialog({ children }: { children?: React.ReactNode }) {
       }
       setReminderMinutes(initialReminder)
       setIsAddingCategory(false); setNewCategoryName('')
+      
+      // 반복 일정 상태 초기화
+      const rrule = (editingEvent as any).recurrence_rule
+      if (rrule) {
+        if (rrule.includes('DAILY')) setRecurrence('DAILY')
+        else if (rrule.includes('WEEKLY')) setRecurrence('WEEKLY')
+        else if (rrule.includes('MONTHLY')) setRecurrence('MONTHLY')
+        else if (rrule.includes('YEARLY')) setRecurrence('YEARLY')
+        else setRecurrence('NONE')
+      } else {
+        setRecurrence('NONE')
+      }
+      setEditMode('THIS_EVENT')
+      setOriginalStartTime((editingEvent as any).original_start_time || editingEvent.start_time)
     } else {
       let iS: Date | null = null, iE: Date | null = null
       if (prefillEventData?.start_time) { iS = new Date(prefillEventData.start_time); iE = new Date(iS.getTime() + 3600000) }
@@ -160,7 +174,7 @@ export function AddEventDialog({ children }: { children?: React.ReactNode }) {
       setCustomColor(null); setMemo(prefillEventData?.memo || ''); setTemplateId(null)
       setAttachments([]); setIsAddingCategory(false); setNewCategoryName(''); setIsTemplateOpen(false)
       setReminderMinutes(null)
-      setIsAlsoAgenda(false)
+      setIsAlsoAgenda(false); setRecurrence('NONE'); setEditMode('THIS_EVENT'); setOriginalStartTime(null)
     }
   }, [isAddEventOpen, addEventDate, prefillEventData, editingEvent])
 
@@ -277,8 +291,10 @@ export function AddEventDialog({ children }: { children?: React.ReactNode }) {
 
     if (editingEvent) {
       if ((editingEvent as any).recurrence_rule || (editingEvent as any).parent_activity_id) {
+        // 합성 ID(예: uuid_timestamp)인 경우 실제 부모 ID를 추출
+        const realId = editingEvent.id.includes('_') ? editingEvent.id.split('_').slice(0, 5).join('-') : editingEvent.id
         // Use custom action for recurring events
-        updateRecurringActivity(editingEvent.id, finalPayload as any, selectedCategories, editMode, originalStartTime!).then(() => onSuccessAction()).catch(e => toast.error(e.message))
+        updateRecurringActivity(realId, finalPayload as any, selectedCategories, editMode, originalStartTime!).then(() => onSuccessAction()).catch(e => toast.error(e.message))
       } else {
         updateActivity({ id: editingEvent.id, payload: finalPayload, categoryIds: selectedCategories }, { onSuccess: onSuccessAction })
       }

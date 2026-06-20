@@ -166,7 +166,7 @@ export const MonthlyView = React.memo(function MonthlyView({ currentDate, events
                           <Pencil className="w-3 h-3" />
                         </button>
                         <button
-                          onClick={(e) => { e.stopPropagation(); openDeleteConfirm(event.id); }}
+                          onClick={(e) => { e.stopPropagation(); openDeleteConfirm(event.id, event); }}
                           className="p-1 hover:bg-muted rounded text-muted-foreground hover:text-red-600 transition-colors"
                         >
                           <Trash2 className="w-3 h-3" />

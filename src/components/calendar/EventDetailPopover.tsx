@@ -22,7 +22,7 @@ export function EventDetailPopover() {
   // 삭제 버튼: 팝오버를 먼저 닫고, 삭제 확인 다이얼로그를 띄움
   const handleDelete = () => {
     closeEventDetail()
-    openDeleteConfirm(event.id)
+    openDeleteConfirm(event.id, event)
   }
 
   // 아젠다로 보내기

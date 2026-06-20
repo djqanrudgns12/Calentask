@@ -150,7 +150,7 @@ export const SemesterView = React.memo(function SemesterView({ events }: Semeste
                                       <Pencil className="w-2.5 h-2.5" />
                                     </button>
                                     <button
-                                      onClick={(e) => { e.stopPropagation(); openDeleteConfirm(event.id); }}
+                                      onClick={(e) => { e.stopPropagation(); openDeleteConfirm(event.id, event); }}
                                       className="p-0.5 hover:bg-muted rounded text-muted-foreground hover:text-red-600 transition-colors"
                                     >
                                       <Trash2 className="w-2.5 h-2.5" />

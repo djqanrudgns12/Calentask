@@ -161,7 +161,7 @@ export const ScheduleTimeline = React.memo(function ScheduleTimeline({ events, c
                 <Pencil className="w-4 h-4" />
               </button>
               <button
-                onClick={(e) => { e.stopPropagation(); openDeleteConfirm(event.id); }}
+                onClick={(e) => { e.stopPropagation(); openDeleteConfirm(event.id, event); }}
                 className="p-1.5 rounded-lg text-muted-foreground hover:text-red-600 hover:bg-red-50 transition-colors"
                 title="삭제"
               >
@@ -239,7 +239,7 @@ export const ScheduleTimeline = React.memo(function ScheduleTimeline({ events, c
                 <Pencil className="w-4 h-4" />
               </button>
               <button
-                onClick={(e) => { e.stopPropagation(); openDeleteConfirm(event.id); }}
+                onClick={(e) => { e.stopPropagation(); openDeleteConfirm(event.id, event); }}
                 className="p-1.5 rounded-lg text-muted-foreground hover:text-red-600 hover:bg-red-50 transition-colors"
                 title="삭제"
               >

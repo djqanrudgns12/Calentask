@@ -19,6 +19,7 @@ interface CalendarState {
   prefillEventData: Partial<Activity> | null
   editingEvent: Activity | null
   deletingEventId: string | null
+  deletingEvent: Activity | null
   editingCategory: Category | null
   showHolidays: boolean
   showHolidaysAsTags: boolean
@@ -38,7 +39,7 @@ interface CalendarState {
   openAddEventWithPrefill: (taskId: string, data: Partial<Activity>) => void
   openEditEvent: (event: Activity) => void
   closeAddEvent: () => void
-  openDeleteConfirm: (id: string) => void
+  openDeleteConfirm: (id: string, event?: Activity) => void
   closeDeleteConfirm: () => void
   openEditCategory: (category: Category) => void
   closeEditCategory: () => void
@@ -72,6 +73,7 @@ export const useCalendarStore = create<CalendarState>()(
       prefillEventData: null,
       editingEvent: null,
       deletingEventId: null,
+      deletingEvent: null,
       editingCategory: null,
       showHolidays: true,
       showHolidaysAsTags: false,
@@ -91,8 +93,8 @@ export const useCalendarStore = create<CalendarState>()(
       openAddEventWithPrefill: (taskId, data) => set({ isAddEventOpen: true, addEventDate: null, prefillAgendaTaskId: taskId, prefillEventData: data, editingEvent: null, selectedDaySummary: null, selectedEventDetail: null }),
       openEditEvent: (event) => set({ isAddEventOpen: true, addEventDate: new Date(event.start_time), editingEvent: event, prefillAgendaTaskId: null, prefillEventData: null, selectedDaySummary: null, selectedEventDetail: null }),
       closeAddEvent: () => set({ isAddEventOpen: false, addEventDate: null, prefillAgendaTaskId: null, prefillEventData: null, editingEvent: null }),
-      openDeleteConfirm: (id) => set({ deletingEventId: id }),
-      closeDeleteConfirm: () => set({ deletingEventId: null }),
+      openDeleteConfirm: (id, event) => set({ deletingEventId: id, deletingEvent: event || null }),
+      closeDeleteConfirm: () => set({ deletingEventId: null, deletingEvent: null }),
       openEditCategory: (category) => set({ editingCategory: category }),
       closeEditCategory: () => set({ editingCategory: null }),
       setShowHolidays: (show) => set({ showHolidays: show }),
@@ -142,6 +144,7 @@ export const useCalendarStore = create<CalendarState>()(
         prefillEventData: null,
         editingEvent: null,
         deletingEventId: null,
+        deletingEvent: null,
         editingCategory: null,
         selectedDaySummary: null,
         selectedEventDetail: null,

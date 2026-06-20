@@ -133,7 +133,7 @@ export function ListView({ currentDate, events }: ListViewProps) {
                           <Pencil className="w-3.5 h-3.5" />
                         </button>
                         <button 
-                          onClick={(e) => { e.stopPropagation(); openDeleteConfirm(event.id); }}
+                          onClick={(e) => { e.stopPropagation(); openDeleteConfirm(event.id, event); }}
                           className="p-1 hover:bg-muted rounded text-muted-foreground hover:text-red-600 transition-colors"
                         >
                           <Trash2 className="w-3.5 h-3.5" />

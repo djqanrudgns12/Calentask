@@ -224,7 +224,7 @@ export async function getActivities(startDate: string, endDate: string) {
         categories(*)
       )
     `)
-    .or(`and(start_time.lte.${endDate},end_time.gte.${startDate},deleted_at.is.null),and(recurrence_rule.not.is.null,deleted_at.is.null),parent_activity_id.not.is.null`)
+    .or(`and(start_time.lte.${endDate},end_time.gte.${startDate},deleted_at.is.null),and(recurrence_rule.not.is.null,deleted_at.is.null),and(parent_activity_id.not.is.null,deleted_at.is.null)`)
 
   if (error) throw new Error(error.message)
 
@@ -566,6 +566,9 @@ export async function deleteRecurringActivity(
   originalStartTime: string
 ) {
   const supabase = await createClient()
+  const { data: userData } = await supabase.auth.getUser()
+  if (!userData.user) throw new Error('Not authenticated')
+
   const { data: originalActivity } = await supabase
     .from('activities')
     .select('*')
@@ -577,16 +580,16 @@ export async function deleteRecurringActivity(
   const parentId = originalActivity.parent_activity_id || originalActivity.id
 
   if (editMode === 'THIS_EVENT') {
-    // 예외 일정으로 생성 후 삭제 처리
-    const { data: newExc } = await supabase.from('activities').insert({
-      ...originalActivity,
-      id: undefined,
+    // 예외 일정으로 생성 후 삭제 처리 (해당 회차만 삭제했음을 마킹)
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { id, created_at, updated_at, activity_category_map, ...rest } = originalActivity
+    await supabase.from('activities').insert({
+      ...rest,
+      user_id: userData.user.id,
       parent_activity_id: parentId,
       original_start_time: originalStartTime,
       deleted_at: new Date().toISOString()
-    }).select().single()
-
-    // 구글 동기화 필요 시 여기서 처리
+    })
   } else if (editMode === 'ALL_EVENTS') {
     await deleteActivity(parentId)
   } else if (editMode === 'THIS_AND_FOLLOWING') {
@@ -602,4 +605,68 @@ export async function deleteRecurringActivity(
     }
     await supabase.from('activities').update({ recurrence_rule: newParentRRule }).eq('id', parentId)
   }
+
+  revalidatePath('/')
+}
+
+// 구글 캘린더 관련 액션
+export async function getGoogleCalendarListAction() {
+  const supabase = await createClient()
+  const { data: userData } = await supabase.auth.getUser()
+  if (!userData.user) throw new Error('Not authenticated')
+
+  const { fetchGoogleCalendars } = await import('@/lib/google-calendar')
+  return await fetchGoogleCalendars(userData.user.id)
+}
+
+export async function startGoogleSyncAction(calendarId?: string, calendarName?: string) {
+  const supabase = await createClient()
+  const { data: userData } = await supabase.auth.getUser()
+  if (!userData.user) throw new Error('Not authenticated')
+  
+  if (calendarId && calendarName) {
+    await supabase.from('users').update({
+      google_sync_calendar_id: calendarId,
+      google_sync_calendar_name: calendarName
+    }).eq('id', userData.user.id)
+  } else {
+    // 간편 동기화의 경우 명시적으로 null 처리하여 Calentask 캘린더 생성 유도
+    await supabase.from('users').update({
+      google_sync_calendar_id: null,
+      google_sync_calendar_name: null
+    }).eq('id', userData.user.id)
+  }
+
+  // 비동기 백그라운드 처리
+  Promise.resolve().then(async () => {
+    const { createAdminClient } = await import('@/lib/supabase/server')
+    const { watchGoogleCalendar, syncAllActivitiesToGoogle } = await import('@/lib/google-calendar')
+    const adminClient = createAdminClient()
+    await watchGoogleCalendar(userData.user.id)
+    await syncAllActivitiesToGoogle(userData.user.id, adminClient)
+  }).catch(console.error)
+
+  revalidatePath('/')
+  return { success: true }
+}
+
+export async function forceSyncNowAction() {
+  const supabase = await createClient()
+  const { data: userData } = await supabase.auth.getUser()
+  if (!userData.user) throw new Error('Not authenticated')
+
+  // 비동기 백그라운드 처리 (시간 지연 방지)
+  Promise.resolve().then(async () => {
+    const { createAdminClient } = await import('@/lib/supabase/server')
+    const { syncAllActivitiesToGoogle, handleGoogleCalendarSync } = await import('@/lib/google-calendar')
+    const adminClient = createAdminClient()
+    
+    // Push (전체 밀어넣기)
+    await syncAllActivitiesToGoogle(userData.user.id, adminClient)
+    
+    // Pull (구글 변경점 가져오기)
+    await handleGoogleCalendarSync(userData.user.id, adminClient)
+  }).catch(console.error)
+
+  return { success: true }
 }

@@ -2,13 +2,27 @@
 
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
-import { Globe2, Smartphone, Monitor, CheckCircle2, ChevronRight, AlertCircle } from 'lucide-react'
+import { Globe2, Smartphone, Monitor, CheckCircle2, ChevronRight, AlertCircle, RefreshCw, Settings2, Zap, CalendarDays } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { useUserProfile } from '@/hooks/useCalendarQueries'
+import { getGoogleCalendarListAction, startGoogleSyncAction, forceSyncNowAction } from '@/app/actions/calendar'
+import { motion, AnimatePresence } from 'framer-motion'
 
 export function GoogleSyncTab() {
   const { data: profile } = useUserProfile()
   const [authUser, setAuthUser] = useState<any>(null)
+  
+  // Custom Sync State
+  const [isCustomOpen, setIsCustomOpen] = useState(false)
+  const [calendarList, setCalendarList] = useState<any[]>([])
+  const [selectedCalendarId, setSelectedCalendarId] = useState('')
+  const [customCalendarName, setCustomCalendarName] = useState('')
+  
+  // Loading States
+  const [isLinking, setIsLinking] = useState(false)
+  const [isUnlinking, setIsUnlinking] = useState(false)
+  const [isLoadingCalendars, setIsLoadingCalendars] = useState(false)
+  const [isSyncing, setIsSyncing] = useState(false)
 
   useEffect(() => {
     createClient().auth.getUser().then(({ data }) => setAuthUser(data.user))
@@ -17,6 +31,9 @@ export function GoogleSyncTab() {
   const isGooglePrimary = authUser?.app_metadata?.provider === 'google'
   const googleIdentity = authUser?.identities?.find((i: any) => i.provider === 'google')
   const isGoogleLinked = isGooglePrimary || !!googleIdentity || profile?.is_google_linked
+
+  // Sync Setup State
+  const isSyncSetupComplete = !!profile?.google_channel_id || !!profile?.google_sync_calendar_name
 
   const displayGoogleName = profile?.google_name || googleIdentity?.identity_data?.full_name || googleIdentity?.identity_data?.name || 'Google 계정'
   const displayGoogleEmail = profile?.google_email || googleIdentity?.identity_data?.email || ''
@@ -28,9 +45,6 @@ export function GoogleSyncTab() {
     const d = new Date(googleIdentity.created_at)
     linkedDate = `${d.getFullYear()}. ${String(d.getMonth() + 1).padStart(2, '0')}. ${String(d.getDate()).padStart(2, '0')}.`
   }
-
-  const [isLinking, setIsLinking] = useState(false)
-  const [isUnlinking, setIsUnlinking] = useState(false)
 
   const handleUnlinkGoogle = async () => {
     if (!confirm('정말 구글 계정 연동을 해제하시겠습니까? 구글 캘린더 동기화가 중단됩니다.')) return
@@ -46,7 +60,6 @@ export function GoogleSyncTab() {
       setIsUnlinking(false)
     }
   }
-
 
   const handleLinkGoogle = async () => {
     setIsLinking(true)
@@ -73,6 +86,59 @@ export function GoogleSyncTab() {
       window.location.href = data.url
     } else {
       setIsLinking(false)
+    }
+  }
+
+  const handleOpenCustomSync = async () => {
+    setIsCustomOpen(true)
+    if (calendarList.length === 0) {
+      setIsLoadingCalendars(true)
+      try {
+        const cals = await getGoogleCalendarListAction()
+        setCalendarList(cals.filter((c: any) => c.id !== profile?.google_sync_calendar_id))
+      } catch (err) {
+        console.error(err)
+        alert('캘린더 목록을 불러오지 못했습니다.')
+      } finally {
+        setIsLoadingCalendars(false)
+      }
+    }
+  }
+
+  const handleStartSync = async (type: 'simple' | 'custom') => {
+    setIsSyncing(true)
+    try {
+      if (type === 'simple') {
+        await startGoogleSyncAction()
+        alert('간편 동기화가 시작되었습니다! 백그라운드에서 기존 일정들이 구글 캘린더(Calentask)로 복사됩니다.')
+      } else {
+        if (!selectedCalendarId) {
+          alert('캘린더를 선택해주세요.')
+          setIsSyncing(false)
+          return
+        }
+        const selectedCal = calendarList.find(c => c.id === selectedCalendarId)
+        await startGoogleSyncAction(selectedCalendarId, selectedCal?.summary)
+        alert('선택하신 캘린더와 동기화가 시작되었습니다!')
+      }
+      window.location.reload()
+    } catch (error) {
+      console.error(error)
+      alert('동기화 시작 중 오류가 발생했습니다.')
+      setIsSyncing(false)
+    }
+  }
+
+  const handleForceSyncNow = async () => {
+    setIsSyncing(true)
+    try {
+      await forceSyncNowAction()
+      alert('즉시 동기화가 요청되었습니다. 백그라운드에서 양쪽 캘린더의 차이를 비교하여 최신 상태로 맞춥니다.')
+    } catch (err) {
+      console.error(err)
+      alert('동기화 중 오류가 발생했습니다.')
+    } finally {
+      setIsSyncing(false)
     }
   }
 
@@ -126,16 +192,23 @@ export function GoogleSyncTab() {
                   {linkedDate && (
                     <div className="flex items-center gap-1.5 text-xs text-slate-400">
                       <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                      <span>{linkedDate} 연동 완료</span>
+                      <span>{linkedDate} 구글 계정 연결됨</span>
                     </div>
                   )}
                 </div>
               </div>
               
               <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full md:w-auto">
-                <div className="hidden md:block text-xs font-medium text-emerald-700 bg-emerald-50 px-3 py-2 rounded-lg text-center border border-emerald-100/50 mr-2">
-                  캘린더 동기화 지원
-                </div>
+                {isSyncSetupComplete ? (
+                  <Button 
+                    onClick={handleForceSyncNow}
+                    disabled={isSyncing}
+                    className="bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200"
+                  >
+                    <RefreshCw className={`w-4 h-4 mr-2 ${isSyncing ? 'animate-spin' : ''}`} />
+                    {isSyncing ? '동기화 진행 중...' : '즉시 동기화'}
+                  </Button>
+                ) : null}
                 {!isGooglePrimary && (
                   <button 
                     onClick={handleUnlinkGoogle}
@@ -169,6 +242,130 @@ export function GoogleSyncTab() {
                 {isLinking ? '연동 중...' : '구글 계정 연동하기'}
               </Button>
             </div>
+          )}
+
+          {/* Sync Options Block */}
+          {isGoogleLinked && !isSyncSetupComplete && (
+            <motion.div 
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mt-6 p-6 border border-slate-200 rounded-2xl bg-slate-50/50"
+            >
+              <div className="mb-6">
+                <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                  <RefreshCw className="w-5 h-5 text-blue-600" />
+                  동기화 설정 및 시작
+                </h3>
+                <p className="text-sm text-slate-600 mt-1">
+                  어떻게 동기화하시겠어요? 한 번만 연결해 두면, 바깥에서 스마트폰 구글 캘린더 앱으로 일정을 고쳐도 이곳에 자동으로 똑같이 고쳐집니다.
+                </p>
+              </div>
+
+              <div className="grid md:grid-cols-2 gap-4">
+                {/* 간편 동기화 */}
+                <div className="bg-white border border-blue-100 rounded-xl p-5 hover:border-blue-300 transition-colors shadow-sm cursor-pointer" onClick={() => handleStartSync('simple')}>
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-10 h-10 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center shrink-0">
+                      <Zap className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-slate-900">간편 동기화 시작</h4>
+                      <p className="text-xs text-blue-600 font-medium">원클릭 추천 설정</p>
+                    </div>
+                  </div>
+                  <p className="text-sm text-slate-600 mb-4 h-10">
+                    구글 캘린더 안에 "Calentask" 전용 캘린더를 알아서 만들고 일정을 복사합니다.
+                  </p>
+                  <Button className="w-full bg-blue-600 hover:bg-blue-700" disabled={isSyncing}>
+                    {isSyncing ? '동기화 중...' : '간편하게 시작하기'}
+                  </Button>
+                </div>
+
+                {/* 커스텀 동기화 */}
+                <div className={`bg-white border transition-colors shadow-sm rounded-xl p-5 ${isCustomOpen ? 'border-indigo-300 ring-2 ring-indigo-50' : 'border-slate-200 hover:border-slate-300 cursor-pointer'}`} onClick={!isCustomOpen ? handleOpenCustomSync : undefined}>
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-10 h-10 bg-slate-100 text-slate-600 rounded-full flex items-center justify-center shrink-0">
+                      <Settings2 className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-slate-900">내 캘린더 직접 선택</h4>
+                      <p className="text-xs text-slate-500 font-medium">기존 구글 일정과 통합</p>
+                    </div>
+                  </div>
+                  <p className="text-sm text-slate-600 mb-4 h-10">
+                    이미 구글에서 사용 중인 캘린더(예: 가족 일정, 업무용)를 골라 서로 연결합니다.
+                  </p>
+
+                  <AnimatePresence>
+                    {!isCustomOpen ? (
+                      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                        <Button variant="outline" className="w-full" onClick={(e) => { e.stopPropagation(); handleOpenCustomSync() }}>
+                          캘린더 목록 불러오기
+                        </Button>
+                      </motion.div>
+                    ) : (
+                      <motion.div 
+                        initial={{ opacity: 0, height: 0 }} 
+                        animate={{ opacity: 1, height: 'auto' }} 
+                        className="space-y-3 pt-2"
+                      >
+                        {isLoadingCalendars ? (
+                          <div className="text-center py-2 text-sm text-slate-500 animate-pulse">
+                            구글에서 캘린더 목록을 가져오는 중...
+                          </div>
+                        ) : (
+                          <>
+                            <select 
+                              className="w-full text-sm p-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-100 outline-none"
+                              value={selectedCalendarId}
+                              onChange={(e) => setSelectedCalendarId(e.target.value)}
+                            >
+                              <option value="">연결할 구글 캘린더 선택...</option>
+                              {calendarList.map(cal => (
+                                <option key={cal.id} value={cal.id}>
+                                  {cal.summary} {cal.primary && '(기본)'}
+                                </option>
+                              ))}
+                            </select>
+                            <Button 
+                              className="w-full bg-indigo-600 hover:bg-indigo-700" 
+                              disabled={!selectedCalendarId || isSyncing}
+                              onClick={(e) => { e.stopPropagation(); handleStartSync('custom'); }}
+                            >
+                              {isSyncing ? '동기화 중...' : '선택한 캘린더로 시작'}
+                            </Button>
+                          </>
+                        )}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              </div>
+            </motion.div>
+          )}
+
+          {/* Active Sync Info Block */}
+          {isGoogleLinked && isSyncSetupComplete && (
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="mt-4 flex items-center justify-between p-4 bg-emerald-50/50 border border-emerald-100 rounded-xl"
+            >
+              <div className="flex items-center gap-3">
+                <CalendarDays className="w-5 h-5 text-emerald-600" />
+                <div>
+                  <div className="text-sm font-medium text-emerald-900 flex items-center gap-2">
+                    실시간 자동 동기화 작동 중
+                    <span className="flex items-center text-[10px] bg-emerald-100 text-emerald-700 font-bold px-1.5 py-0.5 rounded border border-emerald-200">
+                      ON
+                    </span>
+                  </div>
+                  <div className="text-xs text-emerald-700/80 mt-0.5">
+                    연결된 캘린더: <span className="font-bold">{profile.google_sync_calendar_name || 'Calentask'}</span>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
           )}
         </div>
       </div>
