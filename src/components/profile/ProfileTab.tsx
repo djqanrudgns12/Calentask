@@ -2,6 +2,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useSearchParams, useRouter } from 'next/navigation'
 import { useUserProfile, useUpdateProfile, useUpdatePassword } from '@/hooks/useCalendarQueries'
 import { verifyCurrentPassword } from '@/app/actions/profile'
 import { Button } from '@/components/ui/button'
@@ -197,7 +198,7 @@ function DesktopInstallGuideModal({
   )
 }
 
-import { LinkLocalAccountForm } from './LinkLocalAccountForm'
+
 
 export function ProfileTab() {
   const { data: profile } = useUserProfile()
@@ -210,7 +211,7 @@ export function ProfileTab() {
     createClient().auth.getUser().then(({ data }) => setAuthUser(data.user))
   }, [])
 
-  const isGooglePrimary = authUser?.app_metadata?.provider === 'google'
+
 
   const [fullName, setFullName] = useState('')
   const [username, setUsername] = useState('')
@@ -248,6 +249,54 @@ export function ProfileTab() {
   const { isStandalone, isIos, browserType, installApp } = usePwaInstall()
   const [showIosGuide, setShowIosGuide] = useState(false)
   const [showDesktopGuide, setShowDesktopGuide] = useState(false)
+
+  // 회원 탈퇴 상태
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const [deleteConfirmText, setDeleteConfirmText] = useState('')
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false)
+
+  const searchParams = useSearchParams()
+  const router = useRouter()
+
+  useEffect(() => {
+    if (searchParams?.get('error') === 'identity_already_linked') {
+      toast.error('이 구글 계정은 이미 다른 사용자(혹은 과거 가입 계정)에게 연동되어 있습니다. 기존 구글 로그인 계정을 탈퇴하시거나 다른 구글 계정을 연동해 주세요.', {
+        duration: 8000
+      })
+      
+      // Remove error from URL without reloading
+      const params = new URLSearchParams(searchParams.toString())
+      params.delete('error')
+      router.replace(`/?${params.toString()}`, { scroll: false })
+    }
+  }, [searchParams, router])
+
+  const handleDeleteAccount = async () => {
+    if (deleteConfirmText !== profile?.username && deleteConfirmText !== '탈퇴합니다') {
+      toast.error('확인 문구가 올바르지 않습니다.')
+      return
+    }
+    
+    if (!confirm('정말 계정을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.')) return
+    
+    setIsDeletingAccount(true)
+    try {
+      const res = await fetch('/api/auth/delete-account', { method: 'POST' })
+      if (!res.ok) {
+        const errorData = await res.json()
+        throw new Error(errorData.error || '회원 탈퇴에 실패했습니다.')
+      }
+      
+      toast.success('회원 탈퇴가 완료되었습니다. 이용해 주셔서 감사합니다.')
+      // Supabase signOut
+      const supabase = createClient()
+      await supabase.auth.signOut()
+      window.location.href = '/login'
+    } catch (e: any) {
+      toast.error(e.message)
+      setIsDeletingAccount(false)
+    }
+  }
 
   useEffect(() => {
     if (profile) {
@@ -451,30 +500,11 @@ export function ProfileTab() {
         </div>
       </section>
 
-      {/* 구글 계정 연동 관리 섹션 */}
+      {/* 구글 캘린더 연동 관리 섹션 */}
       <section className="space-y-3 md:space-y-4 pt-4 md:pt-6 border-t border-border">
-        <h3 className="text-base md:text-lg font-bold text-foreground">구글 연동 및 계정 관리</h3>
+        <h3 className="text-base md:text-lg font-bold text-foreground">구글 캘린더 동기화</h3>
         
-        {isGooglePrimary ? (
-          <div className="space-y-4">
-            <div className="bg-card border border-border p-4 rounded-xl flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <img src={profile?.google_avatar_url || '/icon.png'} alt="Google profile" className="w-10 h-10 rounded-full bg-muted" />
-                <div>
-                  <p className="font-semibold text-sm">{profile?.google_name || 'Google 사용자'}</p>
-                  <p className="text-xs text-muted-foreground">{profile?.google_email}</p>
-                </div>
-              </div>
-              <span className="text-xs px-2 py-1 bg-indigo-50 text-indigo-600 font-bold rounded-lg border border-indigo-100">
-                구글 연동 완료 (기본 계정)
-              </span>
-            </div>
-            
-            {/* 구글 기반 가입자는 로컬 폼 렌더링 */}
-            <LinkLocalAccountForm />
-          </div>
-        ) : (
-          <div className="space-y-4">
+        <div className="space-y-4">
             {profile?.is_google_linked ? (
               <div className="bg-card border border-border p-4 rounded-xl flex items-center justify-between">
                 <div className="flex items-center gap-3">
@@ -560,7 +590,6 @@ export function ProfileTab() {
               </div>
             )}
           </div>
-        )}
       </section>
 
       {/* 보안 섹션 (비밀번호 변경) */}
@@ -767,8 +796,90 @@ export function ProfileTab() {
       <section className="space-y-3 md:space-y-4 pt-4 md:pt-6 border-t border-border">
         <ActiveSessions />
       </section>
+      {/* 회원 탈퇴 섹션 */}
+      <section className="space-y-3 md:space-y-4 pt-4 md:pt-6 border-t border-border mt-8">
+        <div className="bg-red-50/50 border border-red-100 p-5 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div>
+            <h3 className="text-base font-bold text-red-600 mb-1">회원 탈퇴 (계정 영구 삭제)</h3>
+            <p className="text-sm text-red-500/80">
+              계정을 삭제하면 모든 캘린더 일정과 설정이 즉시 영구 삭제되며, 복구할 수 없습니다.
+            </p>
+          </div>
+          <Button 
+            variant="destructive"
+            className="shrink-0"
+            onClick={() => setShowDeleteModal(true)}
+          >
+            회원 탈퇴
+          </Button>
+        </div>
+      </section>
 
     </div>
+
+    {/* 회원 탈퇴 확인 모달 */}
+    <AnimatePresence>
+      {showDeleteModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+          <motion.div 
+            initial={{ scale: 0.95, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.95, opacity: 0 }}
+            className="bg-card rounded-2xl w-full max-w-md overflow-hidden shadow-2xl relative p-6 border border-red-100"
+          >
+            <button 
+              onClick={() => { setShowDeleteModal(false); setDeleteConfirmText('') }}
+              className="absolute top-4 right-4 p-2 text-muted-foreground hover:bg-slate-100 rounded-full transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            
+            <div className="text-center mb-6">
+              <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4 text-red-600">
+                <LogOut className="w-6 h-6" />
+              </div>
+              <h3 className="text-xl font-bold text-foreground mb-2">정말 탈퇴하시겠습니까?</h3>
+              <p className="text-sm text-muted-foreground">
+                이 작업은 되돌릴 수 없으며, 작성하신 <strong className="text-red-500">모든 데이터가 영구 삭제</strong>됩니다.
+              </p>
+            </div>
+            
+            <div className="space-y-4">
+              <div className="bg-muted p-4 rounded-xl text-sm">
+                탈퇴를 진행하시려면 아래 입력창에 <strong>{profile?.username}</strong> 또는 <strong>탈퇴합니다</strong> 라고 입력해 주세요.
+              </div>
+              
+              <Input 
+                value={deleteConfirmText}
+                onChange={(e) => setDeleteConfirmText(e.target.value)}
+                placeholder={`${profile?.username} 또는 탈퇴합니다`}
+                className="bg-card text-center"
+                autoFocus
+              />
+              
+              <div className="flex gap-3 mt-6">
+                <Button 
+                  variant="outline" 
+                  className="w-1/2"
+                  onClick={() => { setShowDeleteModal(false); setDeleteConfirmText('') }}
+                >
+                  취소
+                </Button>
+                <Button 
+                  variant="destructive" 
+                  className="w-1/2 font-bold"
+                  disabled={isDeletingAccount || (deleteConfirmText !== profile?.username && deleteConfirmText !== '탈퇴합니다')}
+                  onClick={handleDeleteAccount}
+                >
+                  {isDeletingAccount ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+                  영구 삭제
+                </Button>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      )}
+    </AnimatePresence>
 
     {/* iOS 가이드 모달 */}
     <AnimatePresence>

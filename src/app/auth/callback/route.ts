@@ -62,6 +62,14 @@ export async function GET(request: Request) {
     }
   }
 
+  // Handle specific OAuth errors like Identity already linked
+  const errorParam = searchParams.get('error')
+  const errorDescription = searchParams.get('error_description')
+  
+  if (errorParam === 'server_error' && errorDescription?.includes('Identity is already linked')) {
+    return NextResponse.redirect(`${origin}/?tab=profile&error=identity_already_linked`)
+  }
+
   // return the user to an error page with instructions
   return NextResponse.redirect(`${origin}/login?error=oauth_failed`)
 }
