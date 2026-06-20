@@ -34,9 +34,10 @@ export async function GET(request: Request) {
         }
 
         if (Object.keys(updatePayload).length > 0) {
-          // NOTE: We update the users table directly via admin client or RLS allowed policy
-          // Since the user is authenticated, if RLS allows updating their own profile, this works.
-          const { error: updateError } = await supabase
+          // Use Admin client to ensure RLS doesn't block the update
+          const { createAdminClient } = await import('@/lib/supabase/server')
+          const adminClient = createAdminClient()
+          const { error: updateError } = await adminClient
             .from('users')
             .update(updatePayload)
             .eq('id', data.session.user.id)

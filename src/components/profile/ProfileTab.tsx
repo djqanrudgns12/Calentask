@@ -530,7 +530,7 @@ export function ProfileTab() {
                     const { data, error } = await supabase.auth.linkIdentity({
                       provider: 'google',
                       options: {
-                        redirectTo: `${window.location.origin}/auth/callback`,
+                        redirectTo: `${window.location.origin}/auth/callback?next=/`,
                         scopes: 'https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile',
                         queryParams: {
                           access_type: 'offline',
