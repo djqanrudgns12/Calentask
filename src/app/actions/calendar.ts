@@ -709,7 +709,7 @@ export async function verifyGoogleTokenAction() {
 
 export async function getGoogleSyncSettingsAction() {
   const { createClient } = await import('@/lib/supabase/server')
-  const supabase = createClient()
+  const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) throw new Error('Unauthorized')
 
@@ -725,7 +725,7 @@ export async function getGoogleSyncSettingsAction() {
 
 export async function updateGoogleSyncSettingsAction(settings: any) {
   const { createClient } = await import('@/lib/supabase/server')
-  const supabase = createClient()
+  const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) throw new Error('Unauthorized')
 
@@ -740,7 +740,7 @@ export async function updateGoogleSyncSettingsAction(settings: any) {
 
 export async function clearGoogleSyncDataAction() {
   const { createClient } = await import('@/lib/supabase/server')
-  const supabase = createClient()
+  const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) throw new Error('Unauthorized')
 

@@ -288,7 +288,7 @@ export async function clearSyncedActivitiesFromGoogle(userId: string) {
 
     for (const calId of calendarIdsToClear) {
       try {
-        let pageToken = undefined
+        let pageToken: string | null | undefined = undefined
         do {
           const res = await calendar.events.list({
             calendarId: calId,
