@@ -219,6 +219,12 @@ export function ProfileTab() {
   const displayGoogleEmail = profile?.google_email || googleIdentity?.identity_data?.email
   const displayGoogleAvatar = profile?.google_avatar_url || googleIdentity?.identity_data?.avatar_url || googleIdentity?.identity_data?.picture || '/icon.png'
 
+  let linkedDate = ''
+  if (googleIdentity?.created_at) {
+    const d = new Date(googleIdentity.created_at)
+    linkedDate = `${d.getFullYear()}. ${String(d.getMonth() + 1).padStart(2, '0')}. ${String(d.getDate()).padStart(2, '0')}.`
+  }
+
   const [fullName, setFullName] = useState('')
   const [username, setUsername] = useState('')
   const [recoveryEmail, setRecoveryEmail] = useState('')
@@ -512,18 +518,27 @@ export function ProfileTab() {
         
         <div className="space-y-4">
             {isGoogleLinked ? (
-              <div className="bg-card border border-border p-4 rounded-xl flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <img src={displayGoogleAvatar} alt="Google profile" className="w-10 h-10 rounded-full bg-muted" />
+              <div className="bg-card border border-border p-4 md:p-5 rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div className="flex items-center gap-4">
+                  <div className="relative">
+                    <img src={displayGoogleAvatar} alt="Google profile" className="w-12 h-12 rounded-full border border-border shadow-sm" />
+                    <div className="absolute -bottom-1 -right-1 bg-background p-[2px] rounded-full">
+                      <div className="w-3.5 h-3.5 bg-emerald-500 rounded-full border-2 border-background"></div>
+                    </div>
+                  </div>
                   <div>
-                    <p className="font-semibold text-sm">{displayGoogleName}</p>
-                    <p className="text-xs text-muted-foreground">{displayGoogleEmail}</p>
+                    <div className="flex items-center gap-2 mb-0.5">
+                      <p className="font-bold text-sm md:text-base text-foreground">{displayGoogleName}</p>
+                      <span className="text-[10px] bg-emerald-50 text-emerald-600 font-bold px-1.5 py-0.5 rounded-md border border-emerald-100 flex items-center gap-1">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                        연동됨
+                      </span>
+                    </div>
+                    <p className="text-xs text-muted-foreground mb-1">{displayGoogleEmail}</p>
+                    {linkedDate && <p className="text-[10px] text-muted-foreground/70">{linkedDate} 연동 완료</p>}
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs px-2 py-1 bg-green-50 text-green-600 font-bold rounded-lg border border-green-100 mr-2">
-                    연동됨
-                  </span>
+                <div className="flex items-center gap-2 mt-2 md:mt-0">
                   <Button 
                     variant="outline" 
                     size="sm"

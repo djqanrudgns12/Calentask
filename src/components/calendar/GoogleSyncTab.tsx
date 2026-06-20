@@ -18,8 +18,35 @@ export function GoogleSyncTab() {
   const googleIdentity = authUser?.identities?.find((i: any) => i.provider === 'google')
   const isGoogleLinked = isGooglePrimary || !!googleIdentity || profile?.is_google_linked
 
+  const displayGoogleName = profile?.google_name || googleIdentity?.identity_data?.full_name || googleIdentity?.identity_data?.name || 'Google 계정'
+  const displayGoogleEmail = profile?.google_email || googleIdentity?.identity_data?.email || ''
+  const displayGoogleAvatar = profile?.google_avatar_url || googleIdentity?.identity_data?.avatar_url || googleIdentity?.identity_data?.picture || '/icon.png'
+  const isVerified = googleIdentity?.identity_data?.email_verified === true
+
+  let linkedDate = ''
+  if (googleIdentity?.created_at) {
+    const d = new Date(googleIdentity.created_at)
+    linkedDate = `${d.getFullYear()}. ${String(d.getMonth() + 1).padStart(2, '0')}. ${String(d.getDate()).padStart(2, '0')}.`
+  }
 
   const [isLinking, setIsLinking] = useState(false)
+  const [isUnlinking, setIsUnlinking] = useState(false)
+
+  const handleUnlinkGoogle = async () => {
+    if (!confirm('정말 구글 계정 연동을 해제하시겠습니까? 구글 캘린더 동기화가 중단됩니다.')) return
+    
+    setIsUnlinking(true)
+    try {
+      const res = await fetch('/api/auth/google-unlink', { method: 'POST' })
+      if (!res.ok) throw new Error('연동 해제 실패')
+      alert('구글 계정 연동이 해제되었습니다.')
+      window.location.reload()
+    } catch (e: any) {
+      alert(e.message)
+      setIsUnlinking(false)
+    }
+  }
+
 
   const handleLinkGoogle = async () => {
     setIsLinking(true)
@@ -74,20 +101,50 @@ export function GoogleSyncTab() {
         
         <div className="p-5 md:p-6 space-y-4">
           {isGoogleLinked ? (
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-5 bg-emerald-50 border border-emerald-100 rounded-xl">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-sm">
-                  <CheckCircle2 className="w-6 h-6 text-emerald-600" />
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 p-6 bg-white border border-emerald-100/60 shadow-[0_2px_12px_-4px_rgba(16,185,129,0.15)] rounded-2xl relative overflow-hidden">
+              <div className="absolute top-0 left-0 w-1 h-full bg-emerald-500"></div>
+              
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5">
+                <div className="relative">
+                  <img src={displayGoogleAvatar} alt="Google Profile" className="w-16 h-16 rounded-full border-2 border-emerald-50 shadow-sm" />
+                  <div className="absolute -bottom-1 -right-1 bg-white p-0.5 rounded-full shadow-sm">
+                    <CheckCircle2 className="w-5 h-5 text-emerald-500" />
+                  </div>
                 </div>
+                
                 <div>
-                  <h4 className="font-bold text-emerald-900">구글 계정 연동 완료</h4>
-                  <p className="text-sm text-emerald-700 mt-0.5">
-                    {profile?.google_email || '구글 계정이 성공적으로 연결되었습니다.'}
-                  </p>
+                  <div className="flex items-center gap-2 mb-1">
+                    <h4 className="font-bold text-slate-900 text-lg">{displayGoogleName}</h4>
+                    {isVerified && (
+                      <span className="flex items-center text-[10px] bg-blue-50 text-blue-600 font-bold px-1.5 py-0.5 rounded-md border border-blue-100">
+                        인증됨
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-sm text-slate-500 font-medium mb-2">{displayGoogleEmail}</p>
+                  
+                  {linkedDate && (
+                    <div className="flex items-center gap-1.5 text-xs text-slate-400">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                      <span>{linkedDate} 연동 완료</span>
+                    </div>
+                  )}
                 </div>
               </div>
-              <div className="text-sm font-medium text-emerald-800 bg-emerald-100/50 px-4 py-2 rounded-lg text-center">
-                이제 캘린더 화면에서 구글 일정을 동기화할 수 있습니다.
+              
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full md:w-auto">
+                <div className="hidden md:block text-xs font-medium text-emerald-700 bg-emerald-50 px-3 py-2 rounded-lg text-center border border-emerald-100/50 mr-2">
+                  캘린더 동기화 지원
+                </div>
+                {!isGooglePrimary && (
+                  <button 
+                    onClick={handleUnlinkGoogle}
+                    disabled={isUnlinking}
+                    className="text-sm px-4 py-2 text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 hover:text-red-600 hover:border-red-200 font-semibold rounded-xl transition-all disabled:opacity-50"
+                  >
+                    {isUnlinking ? '해제 중...' : '연동 해제'}
+                  </button>
+                )}
               </div>
             </div>
           ) : (
