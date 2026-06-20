@@ -1,4 +1,11 @@
-import { google } from 'googleapis'
+import os
+
+file_path = "src/lib/google-calendar.ts"
+
+with open(file_path, "r") as f:
+    content = f.read()
+
+new_content = """import { google } from 'googleapis'
 import { createAdminClient } from '@/lib/supabase/server'
 
 export interface GoogleSyncSettings {
@@ -265,67 +272,7 @@ export async function deleteActivityFromGoogle(userId: string, activityId: strin
 }
 
 /**
- * Bulk deletes all Calentask synced events from Google Calendar without unlinking
- */
-export async function clearSyncedActivitiesFromGoogle(userId: string) {
-  try {
-    const supabase = createAdminClient()
-    const auth = await getGoogleAuthClient(userId, supabase)
-    if (!auth) return { success: false, reason: 'no_auth' }
-
-    // We fetch all mapped calendars from settings to clear them all
-    const { data: user } = await supabase.from('users').select('google_sync_settings, google_sync_calendar_id').eq('id', userId).single()
-    const settings: GoogleSyncSettings = user?.google_sync_settings || {}
-    
-    const calendarIdsToClear = new Set<string>()
-    if (user?.google_sync_calendar_id) calendarIdsToClear.add(user.google_sync_calendar_id)
-    if (settings.groupMapping) {
-      Object.values(settings.groupMapping).forEach(id => calendarIdsToClear.add(id))
-    }
-
-    const calendar = google.calendar({ version: 'v3', auth })
-    let deletedCount = 0
-
-    for (const calId of calendarIdsToClear) {
-      try {
-        let pageToken = undefined
-        do {
-          const res = await calendar.events.list({
-            calendarId: calId,
-            privateExtendedProperty: ['type=event', 'type=EVENT', 'type=TASK'], // anything with type
-            pageToken,
-          })
-          
-          if (res.data.items) {
-            for (const event of res.data.items) {
-              if (event.extendedProperties?.private?.calentask_id) {
-                await calendar.events.delete({
-                  calendarId: calId,
-                  eventId: event.id as string,
-                })
-                deletedCount++
-                // Rate limit
-                await new Promise(r => setTimeout(r, 200))
-              }
-            }
-          }
-          pageToken = res.data.nextPageToken
-        } while (pageToken)
-      } catch (err: any) {
-        console.warn(`Failed to clear calendar ${calId}:`, err.message)
-      }
-    }
-
-    return { success: true, deletedCount }
-  } catch (error: any) {
-    console.error('Failed to clear synced activities from Google:', error)
-    return { success: false, error: error.message }
-  }
-}
-
-/**
  * Subscribes to Google Calendar Webhooks (Watch API)
-
  */
 export async function watchGoogleCalendar(userId: string) {
   try {
@@ -651,3 +598,7 @@ export async function syncBatchActivitiesToGoogle(userId: string, activities: an
 
   return result
 }
+"""
+
+with open(file_path, "w") as f:
+    f.write(new_content)

@@ -527,6 +527,14 @@ export type Database = {
           id: string
           recovery_email: string | null
           username: string | null
+          google_refresh_token: string | null
+          google_channel_id: string | null
+          google_resource_id: string | null
+          google_channel_expiration: string | null
+          google_sync_token: string | null
+          google_sync_calendar_id: string | null
+          google_sync_calendar_name: string | null
+          google_sync_settings: Json | null
         }
         Insert: {
           created_at?: string
@@ -534,6 +542,14 @@ export type Database = {
           id: string
           recovery_email?: string | null
           username?: string | null
+          google_refresh_token?: string | null
+          google_channel_id?: string | null
+          google_resource_id?: string | null
+          google_channel_expiration?: string | null
+          google_sync_token?: string | null
+          google_sync_calendar_id?: string | null
+          google_sync_calendar_name?: string | null
+          google_sync_settings?: Json | null
         }
         Update: {
           created_at?: string
@@ -541,6 +557,14 @@ export type Database = {
           id?: string
           recovery_email?: string | null
           username?: string | null
+          google_refresh_token?: string | null
+          google_channel_id?: string | null
+          google_resource_id?: string | null
+          google_channel_expiration?: string | null
+          google_sync_token?: string | null
+          google_sync_calendar_id?: string | null
+          google_sync_calendar_name?: string | null
+          google_sync_settings?: Json | null
         }
         Relationships: []
       }
