@@ -16,7 +16,7 @@ import { SortableContext, sortableKeyboardCoordinates, verticalListSortingStrate
 export function LinkLoungeView() {
   const { viewMode, setViewMode } = useLinkLoungeStore();
   const { data: bookmarks = [] } = useLinkLoungeBookmarks();
-  const { data: categories = ['기타'] } = useLinkLoungeCategories();
+  const { data: serverCategories = ['기타'] } = useLinkLoungeCategories();
   const { createBookmark, updateBookmark, removeBookmark, importBookmarks } = useLinkLoungeMutations();
   
   const [searchQuery, setSearchQuery] = useState('');
@@ -35,6 +35,18 @@ export function LinkLoungeView() {
 
   // 활성(삭제되지 않은) 북마크만 필터링
   const activeBookmarks = useMemo(() => bookmarks.filter(b => b.deletedAt == null), [bookmarks]);
+
+  const combinedCategories = useMemo(() => {
+    const bookmarkCats = new Set(activeBookmarks.filter(b => b.category).map(b => b.category));
+    const merged = [...serverCategories];
+    bookmarkCats.forEach(cat => {
+      if (cat && cat !== '기타' && !merged.includes(cat)) {
+        merged.push(cat);
+      }
+    });
+    if (!merged.includes('기타')) merged.push('기타');
+    return merged;
+  }, [serverCategories, activeBookmarks]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -497,7 +509,7 @@ export function LinkLoungeView() {
         onClose={() => setIsModalOpen(false)} 
         onSave={handleSaveBookmark}
         initialData={editingItem}
-        existingCategories={categories}
+        existingCategories={combinedCategories}
       />
 
       <ImportPreviewModal

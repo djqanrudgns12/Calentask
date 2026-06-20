@@ -246,7 +246,12 @@ export function useCreateActivity(startDate: string, endDate: string) {
           template_id: newActivityData.payload.template_id || null,
           deleted_at: null,
           categories: [],
-          attachments: []
+          attachments: [],
+          attendees: [],
+          reminders: [],
+          recurrence_rule: null,
+          parent_activity_id: null,
+          original_start_time: null
         }
         
         queryClient.setQueryData(['activities', startDate, endDate], [...previousActivities, optimisticActivity])

@@ -57,28 +57,29 @@ export async function getLinkCategories() {
   const { data: userData } = await supabase.auth.getUser()
   if (!userData.user) return ['기타']
 
-  const { data, error } = await supabase
-    .from('link_lounge_categories')
-    .select('*')
-    .eq('user_id', userData.user.id)
-    .order('order_index', { ascending: true })
+  const [categoryRes, bookmarkRes] = await Promise.all([
+    supabase
+      .from('link_lounge_categories')
+      .select('*')
+      .eq('user_id', userData.user.id)
+      .order('order_index', { ascending: true }),
+    supabase
+      .from('link_lounge_bookmarks')
+      .select('category')
+      .eq('user_id', userData.user.id)
+      .is('deleted_at', null)
+  ])
 
-  if (error) {
-    console.error('Failed to fetch categories:', error)
+  if (categoryRes.error) {
+    console.error('Failed to fetch categories:', categoryRes.error)
     return ['기타']
   }
 
-  const categoryNames = data.map((c) => c.name)
+  const categoryNames = categoryRes.data.map((c: any) => c.name)
 
   // 동적으로 북마크에서 카테고리 추출 (혹시나 동기화가 누락된 경우를 대비한 안전 장치)
-  const { data: bookmarkData } = await supabase
-    .from('link_lounge_bookmarks')
-    .select('category')
-    .eq('user_id', userData.user.id)
-    .is('deleted_at', null)
-
-  if (bookmarkData) {
-    const bookmarkCategories = [...new Set(bookmarkData.map((b) => b.category))]
+  if (bookmarkRes.data) {
+    const bookmarkCategories = [...new Set(bookmarkRes.data.map((b: any) => b.category))]
     bookmarkCategories.forEach((cat) => {
       if (cat && cat !== '기타' && !categoryNames.includes(cat)) {
         categoryNames.push(cat)
@@ -187,11 +188,11 @@ export async function createLinkBookmark(bookmark: Omit<Bookmark, 'id' | 'create
   const { data: userData } = await supabase.auth.getUser()
   if (!userData.user) throw new Error('Not authenticated')
 
-  if (bookmark.category && bookmark.category !== '기타') {
-    await ensureCategoriesExist(supabase, userData.user.id, [bookmark.category])
-  }
+  const categoryPromise = (bookmark.category && bookmark.category !== '기타') 
+    ? ensureCategoriesExist(supabase, userData.user.id, [bookmark.category]) 
+    : Promise.resolve();
 
-  const { data, error } = await supabase
+  const insertPromise = supabase
     .from('link_lounge_bookmarks')
     .insert([{
       user_id: userData.user.id,
@@ -203,7 +204,9 @@ export async function createLinkBookmark(bookmark: Omit<Bookmark, 'id' | 'create
       icon: bookmark.icon || null,
     }])
     .select()
-    .single()
+    .single();
+
+  const [_, { data, error }] = await Promise.all([categoryPromise, insertPromise]);
 
   if (error) throw new Error(error.message)
   return mapDbBookmarkToUI(data)
@@ -214,9 +217,9 @@ export async function updateLinkBookmark(id: string, updates: Partial<Omit<Bookm
   const { data: userData } = await supabase.auth.getUser()
   if (!userData.user) throw new Error('Not authenticated')
 
-  if (updates.category && updates.category !== '기타') {
-    await ensureCategoriesExist(supabase, userData.user.id, [updates.category])
-  }
+  const categoryPromise = (updates.category && updates.category !== '기타') 
+    ? ensureCategoriesExist(supabase, userData.user.id, [updates.category]) 
+    : Promise.resolve();
 
   const payload: any = {}
   if (updates.url !== undefined) payload.url = updates.url
@@ -226,13 +229,15 @@ export async function updateLinkBookmark(id: string, updates: Partial<Omit<Bookm
   if (updates.category !== undefined) payload.category = updates.category
   if (updates.icon !== undefined) payload.icon = updates.icon
 
-  const { data, error } = await supabase
+  const updatePromise = supabase
     .from('link_lounge_bookmarks')
     .update(payload)
     .eq('id', id)
     .eq('user_id', userData.user.id)
     .select()
-    .single()
+    .single();
+
+  const [_, { data, error }] = await Promise.all([categoryPromise, updatePromise]);
 
   if (error) throw new Error(error.message)
   return mapDbBookmarkToUI(data)
@@ -320,9 +325,10 @@ export async function importLinkBookmarks(items: Omit<Bookmark, 'id' | 'createdA
   if (!userData.user) throw new Error('Not authenticated')
 
   const categoriesToEnsure = items.map(item => item.category).filter(Boolean) as string[]
-  if (categoriesToEnsure.length > 0) {
-    await ensureCategoriesExist(supabase, userData.user.id, categoriesToEnsure)
-  }
+  
+  const categoryPromise = categoriesToEnsure.length > 0 
+    ? ensureCategoriesExist(supabase, userData.user.id, categoriesToEnsure)
+    : Promise.resolve();
 
   const inserts = items.map((item) => ({
     user_id: userData.user.id,
@@ -334,9 +340,11 @@ export async function importLinkBookmarks(items: Omit<Bookmark, 'id' | 'createdA
     icon: item.icon || null,
   }))
 
-  const { error } = await supabase
+  const insertPromise = supabase
     .from('link_lounge_bookmarks')
-    .insert(inserts)
+    .insert(inserts);
+
+  const [_, { error }] = await Promise.all([categoryPromise, insertPromise]);
 
   if (error) throw new Error(error.message)
   return true

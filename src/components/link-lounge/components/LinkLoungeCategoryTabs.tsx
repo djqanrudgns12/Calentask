@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { FolderOpen, Edit2, Trash2, Plus, X, Check } from 'lucide-react';
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, TouchSensor, useSensor, useSensors, DragEndEvent, Modifier } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, horizontalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
@@ -72,9 +72,21 @@ interface LinkLoungeCategoryTabsProps {
 }
 
 export function LinkLoungeCategoryTabs({ selectedCategory, setSelectedCategory }: LinkLoungeCategoryTabsProps) {
-  const { data: categories = ['기타'] } = useLinkLoungeCategories();
+  const { data: serverCategories = ['기타'] } = useLinkLoungeCategories();
   const { data: bookmarks = [] } = useLinkLoungeBookmarks();
   const { updateCategories, removeCategory } = useLinkLoungeMutations();
+  
+  const categories = useMemo(() => {
+    const bookmarkCats = new Set(bookmarks.filter(b => b.deletedAt == null && b.category).map(b => b.category));
+    const merged = [...serverCategories];
+    bookmarkCats.forEach(cat => {
+      if (cat && cat !== '기타' && !merged.includes(cat)) {
+        merged.push(cat);
+      }
+    });
+    if (!merged.includes('기타')) merged.push('기타');
+    return merged;
+  }, [serverCategories, bookmarks]);
   
   const [editingCategory, setEditingCategory] = useState<string | null>(null);
   const [editValue, setEditValue] = useState('');

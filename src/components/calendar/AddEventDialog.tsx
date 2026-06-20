@@ -5,7 +5,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { X, Plus, Pencil, Zap, Link as LinkIcon, Image as ImageIcon, FileText, Paperclip, ToggleRight, Play, Square, Clock, Tag, Palette, AlignLeft, Upload, Users, Bell } from 'lucide-react'
+import { X, Plus, Pencil, Zap, Link as LinkIcon, Image as ImageIcon, FileText, Paperclip, ToggleRight, Play, Square, Clock, Tag, Palette, AlignLeft, Upload, Users, Bell, RefreshCcw } from 'lucide-react'
 import { useCategories, useCreateActivity, useUpdateActivity, useCreateCategory, useDeleteCategory } from '@/hooks/useCalendarQueries'
 import { updateRecurringActivity } from '@/app/actions/calendar'
 import { format, startOfMonth, endOfMonth, parseISO } from 'date-fns'
@@ -275,7 +275,7 @@ export function AddEventDialog({ children }: { children?: React.ReactNode }) {
     if (sO.getTime() >= eO.getTime()) return alert('종료는 시작보다 이후여야 합니다.')
 
     const reminders = reminderMinutes !== null ? [{ method: 'popup', minutes: reminderMinutes }] : []
-    const payload = { title, start_time: sO.toISOString(), end_time: eO.toISOString(), is_all_day: isAllDay, type: 'EVENT' as const, memo, hex_color: customColor, template_id: templateId, attachments, attendees, reminders }
+    const payload = { title, start_time: sO.toISOString(), end_time: eO.toISOString(), is_all_day: isAllDay, type: 'EVENT' as const, memo, hex_color: customColor, template_id: templateId, attachments, attendees, reminders, parent_activity_id: null, original_start_time: null }
 
     const onSuccessAction = () => {
       toast.success(editingEvent ? '일정이 성공적으로 수정되었습니다.' : '일정이 구글 캘린더에도 생성되었습니다.')
@@ -415,12 +415,12 @@ export function AddEventDialog({ children }: { children?: React.ReactNode }) {
             <div className="flex items-center justify-between pt-3 pb-1" style={{ borderTop: '1px solid rgba(0,0,0,0.04)' }}>
               <span className={LABEL}><RefreshCcw className="w-4 h-4 mr-1.5 text-muted-foreground" />반복</span>
               <Popover open={isRecurrenceOpen} onOpenChange={setIsRecurrenceOpen}>
-                <PopoverTrigger asChild>
+                <PopoverTrigger render={
                   <button type="button" className="flex items-center gap-1.5 px-3 py-1.5 text-[13px] font-bold bg-muted/60 hover:bg-muted text-foreground rounded-xl transition-colors">
                     {recurrence === 'NONE' ? '반복 안 함' : recurrence === 'DAILY' ? '매일' : recurrence === 'WEEKLY' ? '매주' : recurrence === 'MONTHLY' ? '매월' : '매년'}
                     <span className="text-[10px] opacity-60">▼</span>
                   </button>
-                </PopoverTrigger>
+                } />
                 <PopoverContent align="end" className="w-40 p-1.5 shadow-xl border-border rounded-2xl bg-card z-[110]">
                   {['NONE', 'DAILY', 'WEEKLY', 'MONTHLY', 'YEARLY'].map(r => (
                     <button key={r} type="button" onClick={() => { setRecurrence(r); setIsRecurrenceOpen(false) }}
