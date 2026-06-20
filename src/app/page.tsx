@@ -8,7 +8,7 @@ import { useCalendarStore } from '@/store/useCalendarStore'
 import { useArchiveStore } from '@/store/useArchiveStore'
 import { useAgendaStore } from '@/store/useAgendaStore'
 import { Button } from '@/components/ui/button'
-import { Plus, Tags, Database, LogOut, Calendar as CalendarIcon, DownloadCloud, Gift, Sparkles, ChevronDown, Archive, NotebookPen, Bookmark, Trash2, Settings, Home, Puzzle } from 'lucide-react'
+import { Plus, Tags, Database, LogOut, Calendar as CalendarIcon, DownloadCloud, Gift, Sparkles, ChevronDown, Archive, NotebookPen, Bookmark, Trash2, Settings, Home, Puzzle, Globe2 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 
 import { startOfWeek, endOfWeek } from 'date-fns'
@@ -42,6 +42,7 @@ import { AddAgendaTaskDialog } from '@/components/archive/AddAgendaTaskDialog'
 import { UpcomingAnniversaryWidget } from '@/components/anniversary/UpcomingAnniversaryWidget'
 import { useAnniversaryOverlay } from '@/hooks/useAnniversaryOverlay'
 import { AnniversarySettingsView } from '@/components/anniversary/AnniversarySettingsView'
+import { GoogleSyncTab } from '@/components/calendar/GoogleSyncTab'
 import InsightsClient from '@/app/insights/InsightsClient'
 import { ArchiveNotesView } from '@/components/archive/ArchiveNotesView'
 import { ArchiveAgendaView } from '@/components/archive/ArchiveAgendaView'
@@ -68,7 +69,7 @@ export default function CalendarPage() {
   } = useCalendarStore()
 
   const isHome = viewMode === 'home'
-  const isCalendarMenuOpen = ['monthly', 'weekly', 'list', 'semester', 'archive_agenda', 'anniversary'].includes(viewMode)
+  const isCalendarMenuOpen = ['monthly', 'weekly', 'list', 'semester', 'archive_agenda', 'anniversary', 'google_sync'].includes(viewMode)
   const isMyCalendarActive = ['monthly', 'weekly', 'list', 'semester'].includes(viewMode)
   const isArchiveMenuOpen = ['archive_notes', 'link_lounge'].includes(viewMode)
   const isDataCenterMenuOpen = ['insights', 'nice_import', 'tags', 'trash', 'template_center'].includes(viewMode)
@@ -282,6 +283,18 @@ export default function CalendarPage() {
                         <Gift className={`w-3.5 h-3.5 ${viewMode === 'anniversary' ? 'text-rose-600' : 'text-muted-foreground/50'}`} />
                         기념일 설정
                       </button>
+
+                      <button 
+                        onClick={() => setViewMode('google_sync')}
+                        className={`w-full text-left px-3 py-2 rounded-lg text-[13px] font-medium transition-all duration-300 flex items-center gap-2.5 ${
+                          viewMode === 'google_sync' 
+                          ? 'bg-emerald-50/70 text-emerald-700 shadow-sm' 
+                          : 'bg-transparent text-muted-foreground hover:bg-accent hover:text-foreground'
+                        }`}
+                      >
+                        <Globe2 className={`w-3.5 h-3.5 ${viewMode === 'google_sync' ? 'text-emerald-600' : 'text-muted-foreground/50'}`} />
+                        구글 계정/캘린더 연동
+                      </button>
                     </div>
                   </motion.div>
                 )}
@@ -483,6 +496,7 @@ export default function CalendarPage() {
             {viewMode === 'semester' && <SemesterView currentDate={currentDate} events={events} />}
             {viewMode === 'nice_import' && <NiceImportView />}
             {viewMode === 'anniversary' && <AnniversarySettingsView />}
+            {viewMode === 'google_sync' && <GoogleSyncTab />}
             {viewMode === 'insights' && (
               <div className="min-h-full bg-background rounded-xl md:rounded-3xl p-2 md:p-6 overflow-x-hidden">
                 <InsightsClient />

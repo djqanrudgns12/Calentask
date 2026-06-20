@@ -177,3 +177,73 @@ export async function signInWithGoogle() {
     redirect(data.url)
   }
 }
+
+export async function linkLocalAccount(formData: FormData) {
+  const supabase = await createClient()
+
+  const fullName = formData.get('fullName') as string
+  const username = formData.get('username') as string
+  const password = formData.get('password') as string
+  const passwordConfirm = formData.get('passwordConfirm') as string
+  const recoveryEmail = formData.get('recoveryEmail') as string
+
+  if (!fullName || !username || !password || !passwordConfirm) {
+    return { success: false, error: '모든 필수 항목을 입력해주세요.' }
+  }
+
+  if (password.length < 8) {
+    return { success: false, error: '비밀번호는 8자 이상이어야 합니다.' }
+  }
+
+  if (password !== passwordConfirm) {
+    return { success: false, error: '비밀번호가 일치하지 않습니다.' }
+  }
+
+  // 중복 아이디 체크
+  const adminClient = createAdminClient()
+  const { data: existingUser } = await adminClient
+    .from('users')
+    .select('id')
+    .eq('username', username)
+    .single()
+
+  if (existingUser) {
+    return { success: false, error: '이미 사용 중인 아이디입니다.' }
+  }
+
+  const email = `${username}@calentask.com`
+
+  const { data: { user }, error: userError } = await supabase.auth.getUser()
+  if (userError || !user) {
+    return { success: false, error: '인증에 실패했습니다.' }
+  }
+
+  // 1. Update Auth User (Email and Password)
+  const { error: updateAuthError } = await supabase.auth.updateUser({
+    email,
+    password,
+  })
+
+  if (updateAuthError) {
+    console.error('Failed to update auth user:', updateAuthError.message)
+    return { success: false, error: '계정 설정에 실패했습니다. (Auth 오류)' }
+  }
+
+  // 2. Update Public Users Table
+  const { error: updatePublicError } = await supabase
+    .from('users')
+    .update({
+      username,
+      full_name: fullName,
+      recovery_email: recoveryEmail || null
+    })
+    .eq('id', user.id)
+
+  if (updatePublicError) {
+    console.error('Failed to update public user:', updatePublicError.message)
+    return { success: false, error: '계정 설정에 실패했습니다. (DB 오류)' }
+  }
+
+  revalidatePath('/', 'layout')
+  return { success: true }
+}

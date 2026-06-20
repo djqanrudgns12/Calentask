@@ -1,0 +1,5 @@
+ALTER TABLE public.users 
+ADD COLUMN IF NOT EXISTS google_email TEXT,
+ADD COLUMN IF NOT EXISTS google_name TEXT,
+ADD COLUMN IF NOT EXISTS google_avatar_url TEXT,
+ADD COLUMN IF NOT EXISTS is_google_linked BOOLEAN DEFAULT false;

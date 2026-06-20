@@ -16,17 +16,34 @@ export async function GET(request: Request) {
       // Extract Google Refresh Token if it exists and store it in users table
       const providerRefreshToken = data.session.provider_refresh_token
 
-      if (providerRefreshToken && data.session.user) {
-        // NOTE: We update the users table directly via admin client or RLS allowed policy
-        // Since the user is authenticated, if RLS allows updating their own profile, this works.
-        // If not, we might need an admin client. Let's try regular client first.
-        const { error: updateError } = await supabase
-          .from('users')
-          .update({ google_refresh_token: providerRefreshToken })
-          .eq('id', data.session.user.id)
-          
-        if (updateError) {
-          console.error('Failed to store google_refresh_token:', updateError.message)
+      if (data.session.user) {
+        // Find Google identity to extract profile info
+        const googleIdentity = data.session.user.identities?.find(i => i.provider === 'google')
+        
+        let updatePayload: any = {}
+
+        if (providerRefreshToken) {
+          updatePayload.google_refresh_token = providerRefreshToken
+        }
+
+        if (googleIdentity) {
+          updatePayload.google_email = googleIdentity.identity_data?.email
+          updatePayload.google_name = googleIdentity.identity_data?.full_name || googleIdentity.identity_data?.name
+          updatePayload.google_avatar_url = googleIdentity.identity_data?.avatar_url || googleIdentity.identity_data?.picture
+          updatePayload.is_google_linked = true
+        }
+
+        if (Object.keys(updatePayload).length > 0) {
+          // NOTE: We update the users table directly via admin client or RLS allowed policy
+          // Since the user is authenticated, if RLS allows updating their own profile, this works.
+          const { error: updateError } = await supabase
+            .from('users')
+            .update(updatePayload)
+            .eq('id', data.session.user.id)
+            
+          if (updateError) {
+            console.error('Failed to store google info:', updateError.message)
+          }
         }
       }
 

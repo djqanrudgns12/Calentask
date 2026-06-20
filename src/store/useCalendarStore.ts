@@ -2,7 +2,7 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { Activity, Category } from '@/app/actions/calendar'
 
-export type ViewMode = 'home' | 'monthly' | 'weekly' | 'list' | 'semester' | 'nice_import' | 'anniversary' | 'insights' | 'archive_notes' | 'archive_agenda' | 'link_lounge' | 'tags' | 'trash' | 'template_center'
+export type ViewMode = 'home' | 'monthly' | 'weekly' | 'list' | 'semester' | 'nice_import' | 'anniversary' | 'google_sync' | 'insights' | 'archive_notes' | 'archive_agenda' | 'link_lounge' | 'tags' | 'trash' | 'template_center'
 
 
 interface CalendarState {

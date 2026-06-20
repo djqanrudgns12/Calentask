@@ -197,11 +197,21 @@ function DesktopInstallGuideModal({
   )
 }
 
+import { LinkLocalAccountForm } from './LinkLocalAccountForm'
+
 export function ProfileTab() {
   const { data: profile } = useUserProfile()
   const { mutate: updateProfile, isPending: isUpdatingProfile } = useUpdateProfile()
   const { mutateAsync: updatePassword, isPending: isUpdatingPassword } = useUpdatePassword()
   
+  const [authUser, setAuthUser] = useState<any>(null)
+  
+  useEffect(() => {
+    createClient().auth.getUser().then(({ data }) => setAuthUser(data.user))
+  }, [])
+
+  const isGooglePrimary = authUser?.app_metadata?.provider === 'google'
+
   const [fullName, setFullName] = useState('')
   const [username, setUsername] = useState('')
   const [recoveryEmail, setRecoveryEmail] = useState('')
@@ -439,6 +449,99 @@ export function ProfileTab() {
             ) : '변경사항 저장'}
           </Button>
         </div>
+      </section>
+
+      {/* 구글 계정 연동 관리 섹션 */}
+      <section className="space-y-3 md:space-y-4 pt-4 md:pt-6 border-t border-border">
+        <h3 className="text-base md:text-lg font-bold text-foreground">구글 연동 및 계정 관리</h3>
+        
+        {isGooglePrimary ? (
+          <div className="space-y-4">
+            <div className="bg-card border border-border p-4 rounded-xl flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <img src={profile?.google_avatar_url || '/icon.png'} alt="Google profile" className="w-10 h-10 rounded-full bg-muted" />
+                <div>
+                  <p className="font-semibold text-sm">{profile?.google_name || 'Google 사용자'}</p>
+                  <p className="text-xs text-muted-foreground">{profile?.google_email}</p>
+                </div>
+              </div>
+              <span className="text-xs px-2 py-1 bg-indigo-50 text-indigo-600 font-bold rounded-lg border border-indigo-100">
+                구글 연동 완료 (기본 계정)
+              </span>
+            </div>
+            
+            {/* 구글 기반 가입자는 로컬 폼 렌더링 */}
+            <LinkLocalAccountForm />
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {profile?.is_google_linked ? (
+              <div className="bg-card border border-border p-4 rounded-xl flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <img src={profile?.google_avatar_url || '/icon.png'} alt="Google profile" className="w-10 h-10 rounded-full bg-muted" />
+                  <div>
+                    <p className="font-semibold text-sm">{profile?.google_name || 'Google 연동 사용자'}</p>
+                    <p className="text-xs text-muted-foreground">{profile?.google_email}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs px-2 py-1 bg-green-50 text-green-600 font-bold rounded-lg border border-green-100 mr-2">
+                    연동됨
+                  </span>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    className="text-xs text-red-600 hover:text-red-700 hover:bg-red-50 border-red-100"
+                    onClick={async () => {
+                      if (confirm('구글 계정 연동을 해제하시겠습니까?')) {
+                        try {
+                          const res = await fetch('/api/auth/google-unlink', { method: 'POST' })
+                          if (res.ok) {
+                            alert('구글 계정 연동이 해제되었습니다.')
+                            window.location.reload()
+                          } else {
+                            alert('해제 중 오류가 발생했습니다.')
+                          }
+                        } catch (e) {
+                          alert('해제 중 오류가 발생했습니다.')
+                        }
+                      }
+                    }}
+                  >
+                    연동 해제
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <div className="bg-card border border-border p-4 rounded-xl flex items-center justify-between">
+                <div>
+                  <p className="font-semibold text-sm">구글 캘린더 연동</p>
+                  <p className="text-xs text-muted-foreground">구글 계정을 연동하면 캘린더 데이터를 가져오거나 내보낼 수 있습니다.</p>
+                </div>
+                <Button 
+                  size="sm"
+                  className="bg-indigo-600 hover:bg-indigo-700 text-white"
+                  onClick={async () => {
+                    const supabase = createClient()
+                    await supabase.auth.linkIdentity({
+                      provider: 'google',
+                      options: {
+                        redirectTo: `${window.location.origin}/auth/callback`,
+                        queryParams: {
+                          access_type: 'offline',
+                          prompt: 'consent'
+                        }
+                      }
+                    })
+                  }}
+                >
+                  <Globe2 className="w-3.5 h-3.5 mr-1.5" />
+                  Google 계정 연동하기
+                </Button>
+              </div>
+            )}
+          </div>
+        )}
       </section>
 
       {/* 보안 섹션 (비밀번호 변경) */}

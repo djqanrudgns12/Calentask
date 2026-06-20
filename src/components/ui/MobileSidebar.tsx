@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
   Home, Calendar as CalendarIcon, Sparkles, Gift, Archive, NotebookPen,
   Bookmark, Database, DownloadCloud, Tags, Trash2, Settings, LogOut,
-  ChevronDown, Puzzle
+  ChevronDown, Puzzle, Globe2
 } from 'lucide-react'
 import { useCalendarStore, ViewMode } from '@/store/useCalendarStore'
 import { UpcomingAnniversaryWidget } from '@/components/anniversary/UpcomingAnniversaryWidget'
@@ -287,6 +287,14 @@ export function MobileSidebar({ open, onOpenChange, onOpenSettings }: MobileSide
                   iconColor="text-rose-600"
                   activeBg="bg-rose-50/70 text-rose-700"
                   onClick={() => navigate('anniversary')}
+                />
+                <SubMenuItem
+                  icon={Globe2}
+                  label="구글 계정/캘린더 연동"
+                  isActive={viewMode === 'google_sync'}
+                  iconColor="text-emerald-600"
+                  activeBg="bg-emerald-50/70 text-emerald-700"
+                  onClick={() => navigate('google_sync')}
                 />
               </CollapsibleGroup>
 
