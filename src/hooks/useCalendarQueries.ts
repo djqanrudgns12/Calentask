@@ -247,7 +247,6 @@ export function useCreateActivity(startDate: string, endDate: string) {
           deleted_at: null,
           categories: [],
           attachments: [],
-          attendees: [],
           reminders: [],
           recurrence_rule: null,
           parent_activity_id: null,

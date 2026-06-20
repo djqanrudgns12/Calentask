@@ -87,14 +87,6 @@ function mapActivityToGoogleEvent(activity: any, categories: any[]) {
     ? { date: activity.end_time.split('T')[0] }
     : { dateTime: activity.end_time }
 
-  let attendees = undefined
-  if (activity.attendees && Array.isArray(activity.attendees) && activity.attendees.length > 0) {
-    attendees = activity.attendees.map((a: any) => ({
-      email: a.email,
-      responseStatus: a.status || 'needsAction'
-    }))
-  }
-
   let reminders: any = { useDefault: true }
   if (activity.reminders && Array.isArray(activity.reminders) && activity.reminders.length > 0) {
     reminders = {
@@ -109,7 +101,6 @@ function mapActivityToGoogleEvent(activity: any, categories: any[]) {
     start,
     end,
     colorId,
-    attendees,
     reminders,
     ...(activity.recurrence_rule ? { recurrence: [`RRULE:${activity.recurrence_rule}`] } : {}),
     extendedProperties: {
@@ -168,14 +159,12 @@ export async function syncActivityToGoogle(userId: string, activity: any, catego
       await calendar.events.update({
         calendarId,
         eventId: existingEvent.id,
-        sendUpdates: 'all',
         requestBody: eventBody,
       })
     } else {
       // Insert
       await calendar.events.insert({
         calendarId,
-        sendUpdates: 'all',
         requestBody: eventBody,
       })
     }

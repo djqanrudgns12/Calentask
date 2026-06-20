@@ -20,7 +20,6 @@ export type Activity = {
   categories: Category[]
   attachments: any[]
   reminders?: any[] | null
-  attendees: any[]
   recurrence_rule: string | null
   parent_activity_id: string | null
   original_start_time: string | null

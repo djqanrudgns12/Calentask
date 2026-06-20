@@ -77,8 +77,6 @@ export function AddEventDialog({ children }: { children?: React.ReactNode }) {
   const { dialogRef, scrollRef, handleFocusScroll } = useKeyboardAwareDialog(isAddEventOpen)
 
   const [title, setTitle] = useState('')
-  const [attendees, setAttendees] = useState<{email: string, status: string}[]>([])
-  const [emailInput, setEmailInput] = useState('')
   const [reminderMinutes, setReminderMinutes] = useState<number | null>(null)
   const [isAllDay, setIsAllDay] = useState(false)
   const [startDate, setStartDate] = useState(format(new Date(), 'yyyy-MM-dd'))
@@ -139,7 +137,6 @@ export function AddEventDialog({ children }: { children?: React.ReactNode }) {
       setCustomColor(editingEvent.hex_color); setMemo(editingEvent.memo || '')
       setTemplateId(editingEvent.template_id || null)
       setAttachments((editingEvent as any).attachments || [])
-      setAttendees((editingEvent as any).attendees || [])
       let initialReminder: number | null = null
       if ((editingEvent as any).reminders && Array.isArray((editingEvent as any).reminders) && (editingEvent as any).reminders.length > 0) {
         initialReminder = (editingEvent as any).reminders[0].minutes
@@ -162,7 +159,6 @@ export function AddEventDialog({ children }: { children?: React.ReactNode }) {
       setSelectedCategories((prefillEventData as any)?.category_ids || [])
       setCustomColor(null); setMemo(prefillEventData?.memo || ''); setTemplateId(null)
       setAttachments([]); setIsAddingCategory(false); setNewCategoryName(''); setIsTemplateOpen(false)
-      setAttendees([]); setEmailInput('')
       setReminderMinutes(null)
       setIsAlsoAgenda(false)
     }
@@ -203,29 +199,6 @@ export function AddEventDialog({ children }: { children?: React.ReactNode }) {
       setEndDate(format(ne, 'yyyy-MM-dd')); setEndTime(format(ne, 'HH:mm'))
     }
     setIsTemplateOpen(false)
-  }
-  const handleEmailKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' || e.key === ' ' || e.key === ',') {
-      e.preventDefault()
-      const email = emailInput.trim()
-      if (!email) return
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-      if (!emailRegex.test(email)) {
-        toast.error('유효한 이메일 주소를 입력해주세요.')
-        return
-      }
-      if (attendees.some(a => a.email === email)) {
-        toast.error('이미 추가된 참석자입니다.')
-        setEmailInput('')
-        return
-      }
-      setAttendees(prev => [...prev, { email, status: 'needsAction' }])
-      setEmailInput('')
-    }
-  }
-
-  const removeAttendee = (email: string) => {
-    setAttendees(prev => prev.filter(a => a.email !== email))
   }
 
   const handleAddLink = () => {
@@ -275,7 +248,7 @@ export function AddEventDialog({ children }: { children?: React.ReactNode }) {
     if (sO.getTime() >= eO.getTime()) return alert('종료는 시작보다 이후여야 합니다.')
 
     const reminders = reminderMinutes !== null ? [{ method: 'popup', minutes: reminderMinutes }] : []
-    const payload = { title, start_time: sO.toISOString(), end_time: eO.toISOString(), is_all_day: isAllDay, type: 'EVENT' as const, memo, hex_color: customColor, template_id: templateId, attachments, attendees, reminders, parent_activity_id: null, original_start_time: null }
+    const payload = { title, start_time: sO.toISOString(), end_time: eO.toISOString(), is_all_day: isAllDay, type: 'EVENT' as const, memo, hex_color: customColor, template_id: templateId, attachments, reminders, parent_activity_id: null, original_start_time: null }
 
     const onSuccessAction = () => {
       toast.success(editingEvent ? '일정이 성공적으로 수정되었습니다.' : '일정이 구글 캘린더에도 생성되었습니다.')
@@ -579,27 +552,6 @@ export function AddEventDialog({ children }: { children?: React.ReactNode }) {
                 ))}
               </div>
             </div>
-          </div>
-
-          {/* ▸ 참석자 카드 */}
-          <div className={`${CARD} px-5 py-4`}>
-            <span className={`${LABEL} block mb-3`}><Users className="w-4 h-4 mr-1.5 text-muted-foreground" />참석자 초대</span>
-            <div className="flex flex-wrap gap-2 mb-3">
-              {attendees.map(a => (
-                <div key={a.email} className="flex items-center gap-1.5 px-3 py-1.5 bg-muted/60 text-foreground text-[13px] font-medium rounded-full border border-border">
-                  <div className={`w-2 h-2 rounded-full ${a.status === 'accepted' ? 'bg-green-500' : a.status === 'declined' ? 'bg-red-500' : 'bg-yellow-500'}`} />
-                  {a.email}
-                  <button type="button" onClick={() => removeAttendee(a.email)} className="ml-1 p-0.5 rounded-full hover:bg-muted-foreground/20 text-muted-foreground transition-colors"><X className="w-3 h-3" /></button>
-                </div>
-              ))}
-            </div>
-            <Input 
-              value={emailInput} 
-              onChange={e => setEmailInput(e.target.value)}
-              onKeyDown={handleEmailKeyDown}
-              placeholder="이메일 입력 후 Enter..."
-              className="w-full bg-transparent text-[14px] text-foreground font-medium border-0 border-b border-border rounded-none px-1 py-2 focus-visible:ring-0 focus-visible:border-[#007AFF] transition-colors" 
-            />
           </div>
 
           {/* ▸ 메모 카드 */}
