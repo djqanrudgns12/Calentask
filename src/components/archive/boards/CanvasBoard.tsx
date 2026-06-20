@@ -17,11 +17,13 @@ import ReactFlow, {
   MarkerType,
   applyNodeChanges,
   applyEdgeChanges,
-  Viewport
+  Viewport,
+  ControlButton
 } from 'reactflow';
 import 'reactflow/dist/style.css';
-import { MousePointer2, Type, Square, Circle, Trash2, Bold, AlignLeft, AlignCenter, AlignRight, RectangleHorizontal } from 'lucide-react';
+import { MousePointer2, Type, Square, Circle, Trash2, Bold, AlignLeft, AlignCenter, AlignRight, RectangleHorizontal, Maximize, Minimize, GripHorizontal, GripVertical, RotateCcw } from 'lucide-react';
 import { useArchiveStore } from '@/store/useArchiveStore';
+import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 
 const COLORS = ['#fef08a', '#bbf7d0', '#bfdbfe', '#fbcfe8', '#e5e7eb', '#ffffff'];
@@ -188,6 +190,11 @@ export function CanvasBoard() {
   // ReactFlow States
   const [nodes, setNodes] = useState<Node[]>([]);
   const [edges, setEdges] = useState<Edge[]>([]);
+
+  // Fullscreen & Toolbar States
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [toolbarOrientation, setToolbarOrientation] = useState<'horizontal' | 'vertical'>('vertical');
+  const constraintsRef = useRef<HTMLDivElement>(null);
 
   // 드래그 상태 추적: 드래그 중에는 items→nodes 재동기화를 차단
   const isDraggingRef = useRef(false);
@@ -416,7 +423,13 @@ export function CanvasBoard() {
   };
 
   return (
-    <div className="w-full h-full relative overflow-hidden bg-background rounded-3xl">
+    <div 
+      ref={constraintsRef} 
+      className={cn(
+        "w-full h-full overflow-hidden bg-background transition-all duration-300",
+        isFullscreen ? "fixed inset-0 z-[100] rounded-none" : "relative rounded-3xl"
+      )}
+    >
       <ReactFlow
         nodes={nodes}
         edges={edges}
@@ -438,7 +451,15 @@ export function CanvasBoard() {
         zoomOnDoubleClick={false}
       >
         <Background variant={BackgroundVariant.Dots} gap={32} size={2.5} color="#cbd5e1" />
-        <Controls className="bg-card shadow-xl border-none rounded-xl overflow-hidden mb-28 md:mb-6 ml-4 md:ml-6 fill-slate-700" showInteractive={false} />
+        <Controls 
+          className="bg-card shadow-xl border-none rounded-xl overflow-hidden mb-6 ml-4 md:ml-6 fill-slate-700" 
+          showInteractive={false} 
+          showFitView={false}
+        >
+          <ControlButton onClick={() => setIsFullscreen(!isFullscreen)} title="전체화면 전환">
+            {isFullscreen ? <Minimize className="w-4 h-4 text-slate-700 mx-auto" /> : <Maximize className="w-4 h-4 text-slate-700 mx-auto" />}
+          </ControlButton>
+        </Controls>
         <MiniMap 
           nodeColor={(node) => {
              const type = node.type;
@@ -446,7 +467,7 @@ export function CanvasBoard() {
              const c = node.data?.item?.data?.color;
              return c === '#ffffff' ? '#e2e8f0' : (c || '#cbd5e1');
           }}
-          className="bg-card/90 backdrop-blur shadow-2xl rounded-2xl border border-border overflow-hidden mb-28 md:mb-6 mr-4 md:mr-6" 
+          className="hidden md:block bg-card/90 backdrop-blur shadow-2xl rounded-2xl border border-border overflow-hidden mb-6 mr-6" 
           maskColor="rgba(248, 250, 252, 0.7)"
           zoomable
           pannable
@@ -454,14 +475,42 @@ export function CanvasBoard() {
       </ReactFlow>
 
       {/* Floating Action Toolbar */}
-      <div className="absolute md:left-8 bottom-24 left-1/2 -translate-x-1/2 md:translate-x-0 md:bottom-auto md:top-1/2 md:-translate-y-1/2 bg-card/95 backdrop-blur-xl shadow-2xl rounded-2xl md:p-2.5 p-2 flex flex-row md:flex-col gap-2 md:gap-2.5 border border-border/60 z-50">
-        <div className="hidden md:block text-[10px] font-extrabold text-muted-foreground text-center uppercase tracking-widest mb-1 mt-1">Tools</div>
-        <button className="p-2.5 md:p-3.5 bg-indigo-50 text-indigo-600 rounded-xl hover:bg-indigo-100 transition-colors shadow-sm" title="선택 도구"><MousePointer2 className="w-5 h-5" /></button>
-        <div className="w-px md:w-full h-8 md:h-px bg-muted my-auto md:my-0.5 mx-1 md:mx-0" />
-        <button onClick={handleAddSticky} className="p-2.5 md:p-3.5 hover:bg-muted text-foreground rounded-xl transition-colors hover:shadow-sm" title="스티키 노트 추가"><Square className="w-5 h-5 fill-yellow-200" /></button>
-        <button onClick={handleAddShape} className="p-2.5 md:p-3.5 hover:bg-muted text-foreground rounded-xl transition-colors hover:shadow-sm" title="다이어그램 도형 추가"><Circle className="w-5 h-5" /></button>
-        <button onClick={handleAddText} className="p-2.5 md:p-3.5 hover:bg-muted text-foreground rounded-xl transition-colors hover:shadow-sm" title="텍스트 블록 추가"><Type className="w-5 h-5" /></button>
-      </div>
+      <motion.div 
+        drag
+        dragMomentum={false}
+        dragConstraints={constraintsRef}
+        initial={{ x: 16, y: 100 }}
+        style={{ position: 'absolute', zIndex: 50 }}
+      >
+        <div className={cn(
+          "bg-card/95 backdrop-blur-xl shadow-2xl rounded-2xl p-1.5 md:p-2 flex border border-border/60 items-center transition-all",
+          toolbarOrientation === 'vertical' ? "flex-col gap-1.5 md:gap-2" : "flex-row gap-1.5 md:gap-2"
+        )}>
+          <div className={cn(
+            "flex items-center justify-center cursor-grab active:cursor-grabbing text-muted-foreground/50 hover:text-indigo-500",
+            toolbarOrientation === 'vertical' ? "w-full py-1" : "h-full px-1"
+          )}>
+            {toolbarOrientation === 'vertical' ? <GripHorizontal className="w-4 h-4" /> : <GripVertical className="w-4 h-4" />}
+          </div>
+          
+          <div className={cn("bg-muted rounded-full", toolbarOrientation === 'vertical' ? "w-full h-px" : "h-5 w-px")} />
+
+          <button className="p-2 md:p-3 bg-indigo-50 text-indigo-600 rounded-xl hover:bg-indigo-100 transition-colors shadow-sm" title="선택 도구"><MousePointer2 className="w-4 h-4 md:w-5 md:h-5" /></button>
+          <button onClick={handleAddSticky} className="p-2 md:p-3 hover:bg-muted text-foreground rounded-xl transition-colors hover:shadow-sm" title="스티키 노트 추가"><Square className="w-4 h-4 md:w-5 md:h-5 fill-yellow-200" /></button>
+          <button onClick={handleAddShape} className="p-2 md:p-3 hover:bg-muted text-foreground rounded-xl transition-colors hover:shadow-sm" title="다이어그램 도형 추가"><Circle className="w-4 h-4 md:w-5 md:h-5" /></button>
+          <button onClick={handleAddText} className="p-2 md:p-3 hover:bg-muted text-foreground rounded-xl transition-colors hover:shadow-sm" title="텍스트 블록 추가"><Type className="w-4 h-4 md:w-5 md:h-5" /></button>
+          
+          <div className={cn("bg-muted rounded-full", toolbarOrientation === 'vertical' ? "w-full h-px" : "h-5 w-px")} />
+          
+          <button 
+            onClick={() => setToolbarOrientation(prev => prev === 'vertical' ? 'horizontal' : 'vertical')} 
+            className="p-1.5 hover:bg-muted text-muted-foreground rounded-lg transition-colors" 
+            title="툴바 방향 전환"
+          >
+            <RotateCcw className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      </motion.div>
     </div>
   );
 }
