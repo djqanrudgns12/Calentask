@@ -3,14 +3,29 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { useArchiveStore } from '@/store/useArchiveStore';
 import { PinPadOverlay } from '@/components/archive/PinPadOverlay';
-import { DocumentBoard } from '@/components/archive/boards/DocumentBoard';
-import { CanvasBoard } from '@/components/archive/boards/CanvasBoard';
-import { MasonryBoard } from '@/components/archive/boards/MasonryBoard';
-import { SpreadsheetBoard } from '@/components/archive/boards/SpreadsheetBoard';
-import { MediaBoard } from '@/components/archive/boards/MediaBoard';
-import { JournalBoard } from '@/components/archive/boards/JournalBoard';
-import { GraphBoard } from '@/components/archive/boards/GraphBoard';
-import { CalendarBoard } from '@/components/archive/boards/CalendarBoard';
+import dynamic from 'next/dynamic';
+
+const BoardLoadingSkeleton = () => (
+  <div className="absolute inset-0 flex flex-col p-8 bg-card z-10 rounded-2xl w-full h-full overflow-hidden">
+    <div className="h-10 w-1/3 bg-muted animate-pulse rounded-xl mb-8" />
+    <div className="space-y-4">
+      <div className="h-6 w-full bg-muted animate-pulse rounded-lg" />
+      <div className="h-6 w-11/12 bg-muted animate-pulse rounded-lg" />
+      <div className="h-6 w-4/5 bg-muted animate-pulse rounded-lg" />
+      <div className="h-6 w-full bg-muted animate-pulse rounded-lg" />
+      <div className="h-6 w-3/4 bg-muted animate-pulse rounded-lg" />
+    </div>
+  </div>
+);
+
+const DocumentBoard = dynamic(() => import('@/components/archive/boards/DocumentBoard').then(m => m.DocumentBoard), { ssr: false, loading: () => <BoardLoadingSkeleton /> });
+const CanvasBoard = dynamic(() => import('@/components/archive/boards/CanvasBoard').then(m => m.CanvasBoard), { ssr: false, loading: () => <BoardLoadingSkeleton /> });
+const MasonryBoard = dynamic(() => import('@/components/archive/boards/MasonryBoard').then(m => m.MasonryBoard), { ssr: false, loading: () => <BoardLoadingSkeleton /> });
+const SpreadsheetBoard = dynamic(() => import('@/components/archive/boards/SpreadsheetBoard').then(m => m.SpreadsheetBoard), { ssr: false, loading: () => <BoardLoadingSkeleton /> });
+const MediaBoard = dynamic(() => import('@/components/archive/boards/MediaBoard').then(m => m.MediaBoard), { ssr: false, loading: () => <BoardLoadingSkeleton /> });
+const JournalBoard = dynamic(() => import('@/components/archive/boards/JournalBoard').then(m => m.JournalBoard), { ssr: false, loading: () => <BoardLoadingSkeleton /> });
+const GraphBoard = dynamic(() => import('@/components/archive/boards/GraphBoard').then(m => m.GraphBoard), { ssr: false, loading: () => <BoardLoadingSkeleton /> });
+const CalendarBoard = dynamic(() => import('@/components/archive/boards/CalendarBoard').then(m => m.CalendarBoard), { ssr: false, loading: () => <BoardLoadingSkeleton /> });
 import { Plus, LayoutGrid, LayoutList, Grip, GripVertical, Image as ImageIcon, Table, Columns, Clock, FolderOpen, Video, FileText, Network, Calendar, Trash2, Bookmark } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { AddNoteDialog } from './AddNoteDialog';
