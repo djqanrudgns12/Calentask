@@ -74,18 +74,17 @@ export async function GET(request: Request) {
       return NextResponse.redirect(`${origin}/?tab=profile&error=db_update_failed`)
     }
 
-    // 백그라운드에서 초기 동기화 트리거
+    // 백그라운드 초기 동기화 대신 클라이언트 기반 청크 동기화 트리거 파라미터 추가
     if (tokens.refresh_token) {
-      Promise.resolve().then(async () => {
-        try {
-          const { watchGoogleCalendar, syncAllActivitiesToGoogle } = await import('@/lib/google-calendar')
-          await watchGoogleCalendar(user.id)
-          await syncAllActivitiesToGoogle(user.id, adminClient)
-          console.log('[Custom Google Callback] Background initial sync completed')
-        } catch (err) {
-          console.error('[Custom Google Callback] Background initial sync failed:', err)
-        }
-      })
+      // watchGoogleCalendar는 구글 캘린더에서 Calentask 서버로 변경사항을 쏴주기 위한 웹훅 설정이므로
+      // 이 작업은 서버에서 동기적으로 처리해도 오래 걸리지 않습니다.
+      try {
+        const { watchGoogleCalendar } = await import('@/lib/google-calendar')
+        await watchGoogleCalendar(user.id)
+      } catch (err) {
+        console.error('[Custom Google Callback] watchGoogleCalendar failed:', err)
+      }
+      return NextResponse.redirect(`${origin}/?tab=profile&success=google_linked&trigger_sync=true`)
     }
 
     return NextResponse.redirect(`${origin}/?tab=profile&success=google_linked`)

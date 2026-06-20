@@ -6,7 +6,7 @@ export async function GET(request: Request) {
   const code = searchParams.get('code')
   
   // if "next" is in param, use it as the redirect URL
-  const next = searchParams.get('next') ?? '/'
+  let next = searchParams.get('next') ?? '/'
 
   if (code) {
     const supabase = await createClient()
@@ -63,16 +63,18 @@ export async function GET(request: Request) {
 
           // Trigger initial sync in background if refresh token was saved
           if (providerRefreshToken && googleIdentity) {
-            Promise.resolve().then(async () => {
-              try {
-                const { watchGoogleCalendar, syncAllActivitiesToGoogle } = await import('@/lib/google-calendar')
-                await watchGoogleCalendar(data.session.user.id)
-                await syncAllActivitiesToGoogle(data.session.user.id, adminClient)
-                console.log('[Auth Callback] Background initial sync completed')
-              } catch (err) {
-                console.error('[Auth Callback] Background initial sync failed:', err)
-              }
-            })
+            try {
+              const { watchGoogleCalendar } = await import('@/lib/google-calendar')
+              await watchGoogleCalendar(data.session.user.id)
+            } catch (err) {
+              console.error('[Auth Callback] watchGoogleCalendar failed:', err)
+            }
+            
+            if (next.includes('?')) {
+              next += '&trigger_sync=true'
+            } else {
+              next += '?trigger_sync=true'
+            }
           }
         }
       }

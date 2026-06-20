@@ -8,6 +8,7 @@ import { useUserProfile } from '@/hooks/useCalendarQueries'
 import { getGoogleCalendarListAction, startGoogleSyncAction, forceSyncNowAction, verifyGoogleTokenAction } from '@/app/actions/calendar'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useQueryClient } from '@tanstack/react-query'
+import { SyncProgressModal } from './SyncProgressModal'
 
 export function GoogleSyncTab() {
   const queryClient = useQueryClient()
@@ -25,12 +26,27 @@ export function GoogleSyncTab() {
   const [isUnlinking, setIsUnlinking] = useState(false)
   const [isLoadingCalendars, setIsLoadingCalendars] = useState(false)
   const [isSyncing, setIsSyncing] = useState(false)
+  const [isSyncModalOpen, setIsSyncModalOpen] = useState(false)
 
   useEffect(() => {
     createClient().auth.getUser().then(({ data }) => setAuthUser(data.user))
     // OAuth 리다이렉트 후 돌아왔을 때 즉시 최신 프로필을 가져옴
     queryClient.invalidateQueries({ queryKey: ['userProfile'] })
     refetchProfile()
+
+    // 자동 동기화 트리거 감지
+    const params = new URLSearchParams(window.location.search)
+    if (params.get('trigger_sync') === 'true') {
+      // 파라미터 지우기
+      const url = new URL(window.location.href)
+      url.searchParams.delete('trigger_sync')
+      window.history.replaceState({}, '', url.toString())
+      
+      // 약간의 지연 후 모달 열기 (프로필 refetch 완료 대기)
+      setTimeout(() => {
+        setIsSyncModalOpen(true)
+      }, 500)
+    }
   }, [])
 
   const isGooglePrimary = authUser?.app_metadata?.provider === 'google'
@@ -130,7 +146,6 @@ export function GoogleSyncTab() {
     try {
       if (type === 'simple') {
         await startGoogleSyncAction()
-        alert('간편 동기화가 시작되었습니다! 백그라운드에서 기존 일정들이 구글 캘린더(Calentask)로 복사됩니다.')
       } else {
         if (!selectedCalendarId) {
           alert('캘린더를 선택해주세요.')
@@ -139,12 +154,14 @@ export function GoogleSyncTab() {
         }
         const selectedCal = calendarList.find(c => c.id === selectedCalendarId)
         await startGoogleSyncAction(selectedCalendarId, selectedCal?.summary)
-        alert('선택하신 캘린더와 동기화가 시작되었습니다!')
       }
-      // 새로고침 대신 캐시만 즉시 무효화하여 UI 실시간 반영
+      // 서버 DB가 업데이트 되었으므로 UI 리패치
       await queryClient.invalidateQueries({ queryKey: ['userProfile'] })
       await refetchProfile()
       setIsSyncing(false)
+      
+      // 청크 동기화 모달 띄우기
+      setIsSyncModalOpen(true)
     } catch (error) {
       console.error(error)
       alert('동기화 시작 중 오류가 발생했습니다.')
@@ -155,10 +172,14 @@ export function GoogleSyncTab() {
   const handleForceSyncNow = async () => {
     setIsSyncing(true)
     try {
+      // Pull (Google -> Calentask)
       await forceSyncNowAction()
-      alert('즉시 동기화가 요청되었습니다. 백그라운드에서 양쪽 캘린더의 차이를 비교하여 최신 상태로 맞춥니다.')
+      
       await queryClient.invalidateQueries({ queryKey: ['userProfile'] })
       await refetchProfile()
+      
+      // Push (Calentask -> Google) via Chunk Modal
+      setIsSyncModalOpen(true)
     } catch (err) {
       console.error(err)
       alert('동기화 중 오류가 발생했습니다.')
@@ -486,6 +507,14 @@ export function GoogleSyncTab() {
         </div>
       </div>
 
+      <SyncProgressModal 
+        isOpen={isSyncModalOpen} 
+        onClose={() => setIsSyncModalOpen(false)}
+        onSuccess={() => {
+          queryClient.invalidateQueries({ queryKey: ['userProfile'] })
+          refetchProfile()
+        }}
+      />
     </div>
   )
 }

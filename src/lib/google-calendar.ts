@@ -461,25 +461,86 @@ export async function fetchGoogleCalendars(userId: string) {
   }
 }
 
-export async function syncAllActivitiesToGoogle(userId: string, customSupabase?: any) {
+export async function syncBatchActivitiesToGoogle(userId: string, activities: any[]) {
+  const result = {
+    synced: 0,
+    skipped: 0,
+    failed: 0,
+    failedItems: [] as any[]
+  }
+  
+  if (!activities || activities.length === 0) return result
+
   try {
-    const supabase = customSupabase || createAdminClient()
-    
-    // Fetch all non-deleted activities for the user
-    const { data: activities } = await supabase
-      .from('activities')
-      .select('*, activity_category_map(categories(*))')
-      .eq('user_id', userId)
-      .is('deleted_at', null)
-      
-    if (!activities || activities.length === 0) return
+    const supabase = createAdminClient()
+    const auth = await getGoogleAuthClient(userId, supabase)
+    if (!auth) throw new Error('No auth client')
+
+    const calendarId = await getSyncCalendarId(userId, auth, supabase)
+    if (!calendarId) throw new Error('No calendar ID')
+
+    const calendar = google.calendar({ version: 'v3', auth })
 
     for (const activity of activities) {
-      await syncActivityToGoogle(userId, activity, activity.categories || [])
+      try {
+        // Extract categories safely from activity_category_map
+        let categories: any[] = []
+        if (activity.activity_category_map && Array.isArray(activity.activity_category_map)) {
+          categories = activity.activity_category_map.map((acm: any) => acm.categories).filter(Boolean)
+        }
+
+        const eventBody = mapActivityToGoogleEvent(activity, categories)
+
+        if (activity.parent_activity_id) {
+          const parentSearchResult = await calendar.events.list({
+            calendarId,
+            privateExtendedProperty: [`calentask_id=${activity.parent_activity_id}`],
+          })
+          const existingParentEvent = parentSearchResult.data.items?.[0]
+          if (existingParentEvent?.id) {
+            (eventBody as any).recurringEventId = existingParentEvent.id
+            if (activity.original_start_time) {
+              const originalStart = activity.is_all_day 
+                ? { date: activity.original_start_time.split('T')[0] }
+                : { dateTime: activity.original_start_time }
+              ;(eventBody as any).originalStartTime = originalStart
+            }
+          }
+        }
+
+        const searchResult = await calendar.events.list({
+          calendarId,
+          privateExtendedProperty: [`calentask_id=${activity.id}`],
+        })
+
+        const existingEvent = searchResult.data.items?.[0]
+
+        if (existingEvent?.id) {
+          await calendar.events.update({
+            calendarId,
+            eventId: existingEvent.id,
+            requestBody: eventBody,
+          })
+          result.skipped++ // 이미 등록된 일정 업데이트 (건너뜀으로 분류)
+        } else {
+          await calendar.events.insert({
+            calendarId,
+            requestBody: eventBody,
+          })
+          result.synced++ // 신규 등록
+        }
+        // Delay to prevent hitting Google API Rate Limit (2 calls/activity × 200ms ≈ 5 QPS, 제한: 10 QPS)
+        await new Promise(r => setTimeout(r, 200))
+      } catch (err: any) {
+        console.error(`Failed to sync activity ${activity.id}:`, err)
+        result.failed++
+        result.failedItems.push({ id: activity.id, title: activity.title, error: err.message })
+      }
     }
-    
-    console.log(`Successfully synced ${activities.length} activities to Google Calendar for user ${userId}.`)
-  } catch (error) {
-    console.error('Failed to sync all activities to Google:', error)
+  } catch (error: any) {
+    console.error('Failed to process batch sync:', error)
+    throw error
   }
+
+  return result
 }

@@ -637,14 +637,7 @@ export async function startGoogleSyncAction(calendarId?: string, calendarName?: 
     }).eq('id', userData.user.id)
   }
 
-  // 비동기 백그라운드 처리
-  Promise.resolve().then(async () => {
-    const { createAdminClient } = await import('@/lib/supabase/server')
-    const { watchGoogleCalendar, syncAllActivitiesToGoogle } = await import('@/lib/google-calendar')
-    const adminClient = createAdminClient()
-    await watchGoogleCalendar(userData.user.id)
-    await syncAllActivitiesToGoogle(userData.user.id, adminClient)
-  }).catch(console.error)
+  // 기존 백그라운드 동기화 로직 제거 (클라이언트 청크 동기화로 대체됨)
 
   revalidatePath('/')
   return { success: true }
@@ -655,18 +648,15 @@ export async function forceSyncNowAction() {
   const { data: userData } = await supabase.auth.getUser()
   if (!userData.user) throw new Error('Not authenticated')
 
-  // 비동기 백그라운드 처리 (시간 지연 방지)
-  Promise.resolve().then(async () => {
+  // Pull (구글 변경점 가져오기) 작업만 서버 액션으로 수행
+  try {
     const { createAdminClient } = await import('@/lib/supabase/server')
-    const { syncAllActivitiesToGoogle, handleGoogleCalendarSync } = await import('@/lib/google-calendar')
+    const { handleGoogleCalendarSync } = await import('@/lib/google-calendar')
     const adminClient = createAdminClient()
-    
-    // Push (전체 밀어넣기)
-    await syncAllActivitiesToGoogle(userData.user.id, adminClient)
-    
-    // Pull (구글 변경점 가져오기)
     await handleGoogleCalendarSync(userData.user.id, adminClient)
-  }).catch(console.error)
+  } catch (error) {
+    console.error('Failed to handle google calendar pull sync:', error)
+  }
 
   return { success: true }
 }
