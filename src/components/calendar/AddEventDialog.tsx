@@ -5,8 +5,9 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { X, Plus, Pencil, Zap, Link as LinkIcon, Image as ImageIcon, FileText, Paperclip, ToggleRight, Play, Square, Clock, Tag, Palette, AlignLeft, Upload } from 'lucide-react'
+import { X, Plus, Pencil, Zap, Link as LinkIcon, Image as ImageIcon, FileText, Paperclip, ToggleRight, Play, Square, Clock, Tag, Palette, AlignLeft, Upload, Users, Bell } from 'lucide-react'
 import { useCategories, useCreateActivity, useUpdateActivity, useCreateCategory, useDeleteCategory } from '@/hooks/useCalendarQueries'
+import { updateRecurringActivity } from '@/app/actions/calendar'
 import { format, startOfMonth, endOfMonth, parseISO } from 'date-fns'
 import { Popover, PopoverContent, PopoverTrigger, PopoverHeader, PopoverTitle } from '@/components/ui/popover'
 import { createClient } from '@/lib/supabase/client'
@@ -76,6 +77,9 @@ export function AddEventDialog({ children }: { children?: React.ReactNode }) {
   const { dialogRef, scrollRef, handleFocusScroll } = useKeyboardAwareDialog(isAddEventOpen)
 
   const [title, setTitle] = useState('')
+  const [attendees, setAttendees] = useState<{email: string, status: string}[]>([])
+  const [emailInput, setEmailInput] = useState('')
+  const [reminderMinutes, setReminderMinutes] = useState<number | null>(null)
   const [isAllDay, setIsAllDay] = useState(false)
   const [startDate, setStartDate] = useState(format(new Date(), 'yyyy-MM-dd'))
   const [startTime, setStartTime] = useState('09:00')
@@ -92,6 +96,11 @@ export function AddEventDialog({ children }: { children?: React.ReactNode }) {
   const [isAlsoAgenda, setIsAlsoAgenda] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [isUploading, setIsUploading] = useState(false)
+  const [recurrence, setRecurrence] = useState<string>('NONE')
+  const [isRecurrenceOpen, setIsRecurrenceOpen] = useState(false)
+  const [editMode, setEditMode] = useState<'THIS_EVENT' | 'THIS_AND_FOLLOWING' | 'ALL_EVENTS'>('THIS_EVENT')
+  const [originalStartTime, setOriginalStartTime] = useState<string | null>(null)
+
 
   const currentMonthStart = startOfMonth(new Date()).toISOString()
   const currentMonthEnd = endOfMonth(new Date()).toISOString()
@@ -130,6 +139,12 @@ export function AddEventDialog({ children }: { children?: React.ReactNode }) {
       setCustomColor(editingEvent.hex_color); setMemo(editingEvent.memo || '')
       setTemplateId(editingEvent.template_id || null)
       setAttachments((editingEvent as any).attachments || [])
+      setAttendees((editingEvent as any).attendees || [])
+      let initialReminder: number | null = null
+      if ((editingEvent as any).reminders && Array.isArray((editingEvent as any).reminders) && (editingEvent as any).reminders.length > 0) {
+        initialReminder = (editingEvent as any).reminders[0].minutes
+      }
+      setReminderMinutes(initialReminder)
       setIsAddingCategory(false); setNewCategoryName('')
     } else {
       let iS: Date | null = null, iE: Date | null = null
@@ -147,6 +162,8 @@ export function AddEventDialog({ children }: { children?: React.ReactNode }) {
       setSelectedCategories((prefillEventData as any)?.category_ids || [])
       setCustomColor(null); setMemo(prefillEventData?.memo || ''); setTemplateId(null)
       setAttachments([]); setIsAddingCategory(false); setNewCategoryName(''); setIsTemplateOpen(false)
+      setAttendees([]); setEmailInput('')
+      setReminderMinutes(null)
       setIsAlsoAgenda(false)
     }
   }, [isAddEventOpen, addEventDate, prefillEventData, editingEvent])
@@ -187,6 +204,30 @@ export function AddEventDialog({ children }: { children?: React.ReactNode }) {
     }
     setIsTemplateOpen(false)
   }
+  const handleEmailKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' || e.key === ' ' || e.key === ',') {
+      e.preventDefault()
+      const email = emailInput.trim()
+      if (!email) return
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+      if (!emailRegex.test(email)) {
+        toast.error('유효한 이메일 주소를 입력해주세요.')
+        return
+      }
+      if (attendees.some(a => a.email === email)) {
+        toast.error('이미 추가된 참석자입니다.')
+        setEmailInput('')
+        return
+      }
+      setAttendees(prev => [...prev, { email, status: 'needsAction' }])
+      setEmailInput('')
+    }
+  }
+
+  const removeAttendee = (email: string) => {
+    setAttendees(prev => prev.filter(a => a.email !== email))
+  }
+
   const handleAddLink = () => {
     const url = prompt('링크 URL을 입력하세요')
     if (!url) return
@@ -233,7 +274,8 @@ export function AddEventDialog({ children }: { children?: React.ReactNode }) {
     const eO = isAllDay ? new Date(`${startDate}T23:59:59`) : new Date(`${endDate}T${endTime}:00`)
     if (sO.getTime() >= eO.getTime()) return alert('종료는 시작보다 이후여야 합니다.')
 
-    const payload = { title, start_time: sO.toISOString(), end_time: eO.toISOString(), is_all_day: isAllDay, type: 'EVENT' as const, memo, hex_color: customColor, template_id: templateId, attachments }
+    const reminders = reminderMinutes !== null ? [{ method: 'popup', minutes: reminderMinutes }] : []
+    const payload = { title, start_time: sO.toISOString(), end_time: eO.toISOString(), is_all_day: isAllDay, type: 'EVENT' as const, memo, hex_color: customColor, template_id: templateId, attachments, attendees, reminders }
 
     const onSuccessAction = () => {
       toast.success(editingEvent ? '일정이 성공적으로 수정되었습니다.' : '일정이 구글 캘린더에도 생성되었습니다.')
@@ -249,10 +291,26 @@ export function AddEventDialog({ children }: { children?: React.ReactNode }) {
       }
     }
 
+    const getRRuleString = (type: string) => {
+      switch(type) {
+        case 'DAILY': return 'FREQ=DAILY'
+        case 'WEEKLY': return 'FREQ=WEEKLY'
+        case 'MONTHLY': return 'FREQ=MONTHLY'
+        case 'YEARLY': return 'FREQ=YEARLY'
+        default: return null
+      }
+    }
+    const finalPayload = { ...payload, recurrence_rule: getRRuleString(recurrence) }
+
     if (editingEvent) {
-      updateActivity({ id: editingEvent.id, payload, categoryIds: selectedCategories }, { onSuccess: onSuccessAction })
+      if ((editingEvent as any).recurrence_rule || (editingEvent as any).parent_activity_id) {
+        // Use custom action for recurring events
+        updateRecurringActivity(editingEvent.id, finalPayload as any, selectedCategories, editMode, originalStartTime!).then(() => onSuccessAction()).catch(e => toast.error(e.message))
+      } else {
+        updateActivity({ id: editingEvent.id, payload: finalPayload, categoryIds: selectedCategories }, { onSuccess: onSuccessAction })
+      }
     } else {
-      createActivity({ payload, categoryIds: selectedCategories }, { onSuccess: onSuccessAction })
+      createActivity({ payload: finalPayload, categoryIds: selectedCategories }, { onSuccess: onSuccessAction })
     }
   }
 
@@ -281,6 +339,28 @@ export function AddEventDialog({ children }: { children?: React.ReactNode }) {
 
         {/* ── SCROLL AREA ── */}
         <div ref={scrollRef} onFocusCapture={handleFocusScroll} className="flex-1 min-h-0 overflow-y-auto px-5 py-5 space-y-4 hide-scrollbar">
+
+
+          {editingEvent && ((editingEvent as any).recurrence_rule || (editingEvent as any).parent_activity_id) && (
+            <div className={`${CARD} px-5 py-4 bg-orange-50/50 border-orange-100/50`}>
+              <span className={`${LABEL} block mb-3 text-orange-800`}><RefreshCcw className="w-4 h-4 mr-1.5 text-orange-600" />반복 일정 수정 옵션</span>
+              <div className="flex flex-col gap-2">
+                {[
+                  { value: 'THIS_EVENT', label: '이 회차만', desc: '선택한 일정만 예외로 수정합니다.' },
+                  { value: 'THIS_AND_FOLLOWING', label: '이후 모든 일정', desc: '이 일정을 포함해 앞으로의 일정을 수정합니다.' },
+                  { value: 'ALL_EVENTS', label: '모든 일정', desc: '과거와 미래의 모든 일정을 한 번에 수정합니다.' }
+                ].map(opt => (
+                  <label key={opt.value} className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-colors ${editMode === opt.value ? 'bg-white border-orange-300 shadow-sm' : 'bg-transparent border-transparent hover:bg-orange-100/50'}`}>
+                    <input type="radio" name="editMode" value={opt.value} checked={editMode === opt.value} onChange={() => setEditMode(opt.value as any)} className="mt-0.5 accent-orange-500" />
+                    <div className="flex flex-col">
+                      <span className="text-[13px] font-bold text-orange-900">{opt.label}</span>
+                      <span className="text-[11px] text-orange-700/80 mt-0.5">{opt.desc}</span>
+                    </div>
+                  </label>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* ▸ 제목 카드 */}
           <div className={`${CARD} px-5 py-4 focus-within:ring-2 focus-within:ring-indigo-500/20 transition-shadow`}>
@@ -330,6 +410,28 @@ export function AddEventDialog({ children }: { children?: React.ReactNode }) {
               </div>
             </div>
 
+
+            {/* 반복 옵션 */}
+            <div className="flex items-center justify-between pt-3 pb-1" style={{ borderTop: '1px solid rgba(0,0,0,0.04)' }}>
+              <span className={LABEL}><RefreshCcw className="w-4 h-4 mr-1.5 text-muted-foreground" />반복</span>
+              <Popover open={isRecurrenceOpen} onOpenChange={setIsRecurrenceOpen}>
+                <PopoverTrigger asChild>
+                  <button type="button" className="flex items-center gap-1.5 px-3 py-1.5 text-[13px] font-bold bg-muted/60 hover:bg-muted text-foreground rounded-xl transition-colors">
+                    {recurrence === 'NONE' ? '반복 안 함' : recurrence === 'DAILY' ? '매일' : recurrence === 'WEEKLY' ? '매주' : recurrence === 'MONTHLY' ? '매월' : '매년'}
+                    <span className="text-[10px] opacity-60">▼</span>
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent align="end" className="w-40 p-1.5 shadow-xl border-border rounded-2xl bg-card z-[110]">
+                  {['NONE', 'DAILY', 'WEEKLY', 'MONTHLY', 'YEARLY'].map(r => (
+                    <button key={r} type="button" onClick={() => { setRecurrence(r); setIsRecurrenceOpen(false) }}
+                      className={`w-full text-left px-3 py-2 text-[13px] font-semibold rounded-xl transition-colors ${recurrence === r ? 'bg-[#007AFF]/10 text-[#007AFF]' : 'hover:bg-muted text-foreground'}`}>
+                      {r === 'NONE' ? '반복 안 함' : r === 'DAILY' ? '매일' : r === 'WEEKLY' ? '매주' : r === 'MONTHLY' ? '매월' : '매년'}
+                    </button>
+                  ))}
+                </PopoverContent>
+              </Popover>
+            </div>
+
             {/* 소요시간 */}
             {!isAllDay && (
               <div className="flex items-center gap-2 md:gap-3 pt-3">
@@ -346,6 +448,26 @@ export function AddEventDialog({ children }: { children?: React.ReactNode }) {
                 </div>
               </div>
             )}
+
+            {/* 알림 */}
+            <div className={`flex items-center gap-2 md:gap-3 ${isAllDay ? 'pt-0' : 'pt-3 mt-3 border-t border-black/[0.04]'}`}>
+              <span className={`${LABEL} min-w-[66px] md:min-w-[80px]`}><Bell className="w-4 h-4 mr-1 md:mr-1.5 text-muted-foreground" />알림</span>
+              <div className="flex-1 min-w-0 flex justify-end">
+                <select 
+                  value={reminderMinutes === null ? '' : reminderMinutes} 
+                  onChange={e => setReminderMinutes(e.target.value === '' ? null : Number(e.target.value))}
+                  className="h-[32px] text-[12px] sm:text-[13px] font-semibold bg-black/[0.03] hover:bg-black/[0.06] text-foreground rounded-xl px-3 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 transition-colors border-0 cursor-pointer appearance-none text-center"
+                  style={{ backgroundImage: 'url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23666%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E")', backgroundRepeat: 'no-repeat', backgroundPosition: 'right .7em top 50%', backgroundSize: '.65em auto', paddingRight: '2.5em' }}
+                >
+                  <option value="">알림 없음</option>
+                  <option value="0">정각</option>
+                  <option value="10">10분 전</option>
+                  <option value="30">30분 전</option>
+                  <option value="60">1시간 전</option>
+                  <option value="1440">1일 전</option>
+                </select>
+              </div>
+            </div>
           </div>
 
           {/* ▸ 카테고리 + 색상 카드 */}
@@ -457,6 +579,27 @@ export function AddEventDialog({ children }: { children?: React.ReactNode }) {
                 ))}
               </div>
             </div>
+          </div>
+
+          {/* ▸ 참석자 카드 */}
+          <div className={`${CARD} px-5 py-4`}>
+            <span className={`${LABEL} block mb-3`}><Users className="w-4 h-4 mr-1.5 text-muted-foreground" />참석자 초대</span>
+            <div className="flex flex-wrap gap-2 mb-3">
+              {attendees.map(a => (
+                <div key={a.email} className="flex items-center gap-1.5 px-3 py-1.5 bg-muted/60 text-foreground text-[13px] font-medium rounded-full border border-border">
+                  <div className={`w-2 h-2 rounded-full ${a.status === 'accepted' ? 'bg-green-500' : a.status === 'declined' ? 'bg-red-500' : 'bg-yellow-500'}`} />
+                  {a.email}
+                  <button type="button" onClick={() => removeAttendee(a.email)} className="ml-1 p-0.5 rounded-full hover:bg-muted-foreground/20 text-muted-foreground transition-colors"><X className="w-3 h-3" /></button>
+                </div>
+              ))}
+            </div>
+            <Input 
+              value={emailInput} 
+              onChange={e => setEmailInput(e.target.value)}
+              onKeyDown={handleEmailKeyDown}
+              placeholder="이메일 입력 후 Enter..."
+              className="w-full bg-transparent text-[14px] text-foreground font-medium border-0 border-b border-border rounded-none px-1 py-2 focus-visible:ring-0 focus-visible:border-[#007AFF] transition-colors" 
+            />
           </div>
 
           {/* ▸ 메모 카드 */}

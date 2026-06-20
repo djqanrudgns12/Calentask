@@ -19,6 +19,11 @@ export type Activity = {
   deleted_at: string | null
   categories: Category[]
   attachments: any[]
+  reminders?: any[] | null
+  attendees: any[]
+  recurrence_rule: string | null
+  parent_activity_id: string | null
+  original_start_time: string | null
 }
 
 export type Category = {
@@ -220,9 +225,7 @@ export async function getActivities(startDate: string, endDate: string) {
         categories(*)
       )
     `)
-    .lte('start_time', endDate)
-    .gte('end_time', startDate)
-    .is('deleted_at', null)
+    .or(`and(start_time.lte.${endDate},end_time.gte.${startDate},deleted_at.is.null),and(recurrence_rule.not.is.null,deleted_at.is.null),parent_activity_id.not.is.null`)
 
   if (error) throw new Error(error.message)
 
@@ -492,4 +495,112 @@ export async function hardDeleteAllActivities() {
     .eq('user_id', userData.user.id)
 
   if (histError) throw new Error(histError.message)
+}
+
+// 반복 일정 수정 전용 액션
+export async function updateRecurringActivity(
+  originalActivityId: string,
+  payload: Partial<Omit<Activity, 'id' | 'user_id' | 'deleted_at' | 'categories'>>,
+  categoryIds: string[],
+  editMode: 'THIS_EVENT' | 'THIS_AND_FOLLOWING' | 'ALL_EVENTS',
+  originalStartTime: string
+) {
+  const supabase = await createClient()
+  const { data: userData } = await supabase.auth.getUser()
+  if (!userData.user) throw new Error('Not authenticated')
+
+  const { data: originalActivity, error: fetchErr } = await supabase
+    .from('activities')
+    .select('*')
+    .eq('id', originalActivityId)
+    .single()
+  
+  if (fetchErr) throw new Error(fetchErr.message)
+
+  const parentId = originalActivity.parent_activity_id || originalActivity.id
+
+  if (editMode === 'THIS_EVENT') {
+    // 자식 예외 일정 생성
+    return await createActivity({
+      ...payload,
+      parent_activity_id: parentId,
+      original_start_time: originalStartTime,
+    } as any, categoryIds)
+  } 
+  
+  if (editMode === 'ALL_EVENTS') {
+    // 부모 자체 수정
+    return await updateActivity(parentId, payload, categoryIds)
+  }
+
+  if (editMode === 'THIS_AND_FOLLOWING') {
+    // 1. 부모 일정 UNTIL 설정
+    const parentRRule = originalActivity.recurrence_rule || ''
+    // 간단한 UNTIL 치환 (실제로는 rrule 라이브러리를 통해 하는게 안전하나, 문자열 조작으로 임시 처리)
+    const untilDate = new Date(originalStartTime)
+    untilDate.setUTCHours(0,0,0,0)
+    const untilStr = untilDate.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z'
+    
+    let newParentRRule = parentRRule
+    if (newParentRRule.includes('UNTIL=')) {
+      newParentRRule = newParentRRule.replace(/UNTIL=[^;]+/, `UNTIL=${untilStr}`)
+    } else {
+      newParentRRule += `;UNTIL=${untilStr}`
+    }
+
+    await supabase.from('activities').update({ recurrence_rule: newParentRRule }).eq('id', parentId)
+    // 구글 동기화는 여기서 생략 (원래 부모를 업데이트 해야 함)
+
+    // 2. 새로운 부모 일정 생성
+    return await createActivity({
+      ...payload,
+      parent_activity_id: null,
+      original_start_time: null,
+    } as any, categoryIds)
+  }
+}
+
+// 반복 일정 삭제 전용 액션
+export async function deleteRecurringActivity(
+  originalActivityId: string,
+  editMode: 'THIS_EVENT' | 'THIS_AND_FOLLOWING' | 'ALL_EVENTS',
+  originalStartTime: string
+) {
+  const supabase = await createClient()
+  const { data: originalActivity } = await supabase
+    .from('activities')
+    .select('*')
+    .eq('id', originalActivityId)
+    .single()
+  
+  if (!originalActivity) return
+
+  const parentId = originalActivity.parent_activity_id || originalActivity.id
+
+  if (editMode === 'THIS_EVENT') {
+    // 예외 일정으로 생성 후 삭제 처리
+    const { data: newExc } = await supabase.from('activities').insert({
+      ...originalActivity,
+      id: undefined,
+      parent_activity_id: parentId,
+      original_start_time: originalStartTime,
+      deleted_at: new Date().toISOString()
+    }).select().single()
+
+    // 구글 동기화 필요 시 여기서 처리
+  } else if (editMode === 'ALL_EVENTS') {
+    await deleteActivity(parentId)
+  } else if (editMode === 'THIS_AND_FOLLOWING') {
+    const parentRRule = originalActivity.recurrence_rule || ''
+    const untilDate = new Date(originalStartTime)
+    untilDate.setUTCHours(0,0,0,0)
+    const untilStr = untilDate.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z'
+    let newParentRRule = parentRRule
+    if (newParentRRule.includes('UNTIL=')) {
+      newParentRRule = newParentRRule.replace(/UNTIL=[^;]+/, `UNTIL=${untilStr}`)
+    } else {
+      newParentRRule += `;UNTIL=${untilStr}`
+    }
+    await supabase.from('activities').update({ recurrence_rule: newParentRRule }).eq('id', parentId)
+  }
 }

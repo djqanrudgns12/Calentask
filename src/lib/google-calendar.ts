@@ -1,12 +1,12 @@
 import { google } from 'googleapis'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createAdminClient } from '@/lib/supabase/server'
 
 /**
  * Creates an authenticated Google OAuth2 client for the given user.
  * It retrieves the google_refresh_token from the users table.
  */
-export async function getGoogleAuthClient(userId: string) {
-  const supabase = await createClient()
+export async function getGoogleAuthClient(userId: string, customSupabase?: any) {
+  const supabase = customSupabase || await createClient()
   const { data: user, error } = await supabase
     .from('users')
     .select('google_refresh_token')
@@ -87,12 +87,31 @@ function mapActivityToGoogleEvent(activity: any, categories: any[]) {
     ? { date: activity.end_time.split('T')[0] }
     : { dateTime: activity.end_time }
 
+  let attendees = undefined
+  if (activity.attendees && Array.isArray(activity.attendees) && activity.attendees.length > 0) {
+    attendees = activity.attendees.map((a: any) => ({
+      email: a.email,
+      responseStatus: a.status || 'needsAction'
+    }))
+  }
+
+  let reminders: any = { useDefault: true }
+  if (activity.reminders && Array.isArray(activity.reminders) && activity.reminders.length > 0) {
+    reminders = {
+      useDefault: false,
+      overrides: activity.reminders
+    }
+  }
+
   return {
     summary: activity.title,
     description: activity.memo || '',
     start,
     end,
     colorId,
+    attendees,
+    reminders,
+    ...(activity.recurrence_rule ? { recurrence: [`RRULE:${activity.recurrence_rule}`] } : {}),
     extendedProperties: {
       private: {
         calentask_id: activity.id,
@@ -117,6 +136,24 @@ export async function syncActivityToGoogle(userId: string, activity: any, catego
     const calendar = google.calendar({ version: 'v3', auth })
     const eventBody = mapActivityToGoogleEvent(activity, categories)
 
+    if (activity.parent_activity_id) {
+      // Find parent event to set recurringEventId
+      const parentSearchResult = await calendar.events.list({
+        calendarId,
+        privateExtendedProperty: [`calentask_id=${activity.parent_activity_id}`],
+      })
+      const existingParentEvent = parentSearchResult.data.items?.[0]
+      if (existingParentEvent?.id) {
+        (eventBody as any).recurringEventId = existingParentEvent.id
+        if (activity.original_start_time) {
+          const originalStart = activity.is_all_day 
+            ? { date: activity.original_start_time.split('T')[0] }
+            : { dateTime: activity.original_start_time }
+          ;(eventBody as any).originalStartTime = originalStart
+        }
+      }
+    }
+
     // Check if the event already exists in Google
     // We use the Calentask ID stored in extended properties to find it
     const searchResult = await calendar.events.list({
@@ -131,12 +168,14 @@ export async function syncActivityToGoogle(userId: string, activity: any, catego
       await calendar.events.update({
         calendarId,
         eventId: existingEvent.id,
+        sendUpdates: 'all',
         requestBody: eventBody,
       })
     } else {
       // Insert
       await calendar.events.insert({
         calendarId,
+        sendUpdates: 'all',
         requestBody: eventBody,
       })
     }
@@ -209,11 +248,184 @@ export async function watchGoogleCalendar(userId: string) {
 
     console.log('Successfully subscribed to Google Calendar webhooks:', response.data)
     
-    // In a real implementation, you would save this `channelId` and `resourceId` 
-    // to the `users` table to match incoming webhooks to the correct user.
+    // Save channelId, resourceId, and expiration to the users table
+    const supabase = await createClient()
+    await supabase
+      .from('users')
+      .update({
+        google_channel_id: channelId,
+        google_resource_id: response.data.resourceId,
+        google_channel_expiration: response.data.expiration ? new Date(parseInt(response.data.expiration)).toISOString() : null,
+      })
+      .eq('id', userId)
+
+    // Initial full sync to get the first syncToken
+    await handleGoogleCalendarSync(userId, supabase)
+
     return response.data
   } catch (error) {
     console.error('Failed to watch Google Calendar:', error)
+  }
+}
+
+/**
+ * Handles delta sync with Google Calendar using syncToken.
+ * Implements Last Write Wins for collision resolution.
+ */
+export async function handleGoogleCalendarSync(userId: string, customSupabase?: any) {
+  try {
+    const supabase = customSupabase || await createAdminClient()
+    const auth = await getGoogleAuthClient(userId, supabase)
+    if (!auth) return
+
+    const calendarId = await getOrCreateCalentaskCalendar(auth)
+    if (!calendarId) return
+
+    const calendar = google.calendar({ version: 'v3', auth })
+    
+    // Get user's current syncToken
+    const { data: user } = await supabase
+      .from('users')
+      .select('google_sync_token')
+      .eq('id', userId)
+      .single()
+      
+    let syncToken = user?.google_sync_token
+
+    let requestParams: any = {
+      calendarId,
+    }
+
+    if (syncToken) {
+      requestParams.syncToken = syncToken
+    } else {
+      // If no syncToken, we can't use it. We must do a full sync from now to get initial syncToken.
+      requestParams.timeMin = new Date().toISOString()
+    }
+
+    let items: any[] = []
+    let pageToken = undefined
+
+    try {
+      do {
+        requestParams.pageToken = pageToken
+        const response = await calendar.events.list(requestParams)
+        
+        if (response.data.items) {
+          items = items.concat(response.data.items)
+        }
+        
+        pageToken = response.data.nextPageToken
+        if (response.data.nextSyncToken) {
+          syncToken = response.data.nextSyncToken
+        }
+      } while (pageToken)
+    } catch (err: any) {
+      // If syncToken is invalid (410 Gone), clear it and retry without syncToken
+      if (err.code === 410) {
+        console.warn('Sync token invalid, doing full sync')
+        await supabase.from('users').update({ google_sync_token: null }).eq('id', userId)
+        return handleGoogleCalendarSync(userId, supabase) // retry
+      }
+      throw err
+    }
+
+    // Process items (Delta)
+    for (const event of items) {
+      const isCancelled = event.status === 'cancelled'
+      const calentaskId = event.extendedProperties?.private?.calentask_id
+
+      if (calentaskId) {
+        // Find existing activity
+        const { data: activity } = await supabase
+          .from('activities')
+          .select('id, updated_at, deleted_at')
+          .eq('id', calentaskId)
+          .single()
+
+        if (activity) {
+          // Last Write Wins
+          const eventUpdated = new Date(event.updated as string).getTime()
+          const activityUpdated = new Date(activity.updated_at).getTime()
+          
+          // Add a small buffer (e.g. 2000ms) to avoid ping-pong updates due to sync latency
+          if (eventUpdated > activityUpdated + 2000) {
+            if (isCancelled && !activity.deleted_at) {
+              await supabase
+                .from('activities')
+                .update({ deleted_at: new Date().toISOString() })
+                .eq('id', calentaskId)
+            } else if (!isCancelled) {
+              const start = event.start?.dateTime || event.start?.date
+              const end = event.end?.dateTime || event.end?.date
+              const isAllDay = !!event.start?.date
+              
+              await supabase
+                .from('activities')
+                .update({
+                  title: event.summary || '제목 없음',
+                  memo: event.description || '',
+                  start_time: start,
+                  end_time: end,
+                  is_all_day: isAllDay,
+                  updated_at: new Date(event.updated as string).toISOString()
+                })
+                .eq('id', calentaskId)
+            }
+          }
+        }
+      } else {
+        // This is a new event created in Google Calendar!
+        if (!isCancelled) {
+          const start = event.start?.dateTime || event.start?.date
+          const end = event.end?.dateTime || event.end?.date
+          const isAllDay = !!event.start?.date
+          
+          const newActivity = {
+            user_id: userId,
+            title: event.summary || '제목 없음',
+            memo: event.description || '',
+            start_time: start,
+            end_time: end,
+            is_all_day: isAllDay,
+            type: 'event', // default type
+          }
+          
+          const { data: insertedActivity } = await supabase
+            .from('activities')
+            .insert(newActivity)
+            .select()
+            .single()
+
+          if (insertedActivity) {
+            // Update Google Event to include the new Calentask ID
+            await calendar.events.patch({
+              calendarId,
+              eventId: event.id as string,
+              requestBody: {
+                extendedProperties: {
+                  private: {
+                    calentask_id: insertedActivity.id,
+                    type: 'event'
+                  }
+                }
+              }
+            })
+          }
+        }
+      }
+    }
+
+    // Save the nextSyncToken
+    if (syncToken) {
+      await supabase
+        .from('users')
+        .update({ google_sync_token: syncToken })
+        .eq('id', userId)
+    }
+
+  } catch (error) {
+    console.error('Error in handleGoogleCalendarSync:', error)
   }
 }
 

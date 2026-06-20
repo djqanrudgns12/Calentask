@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/server'
+import { handleGoogleCalendarSync } from '@/lib/google-calendar'
 
 // Google Webhook 수신 엔드포인트
 export async function POST(request: Request) {
@@ -13,19 +14,30 @@ export async function POST(request: Request) {
       return NextResponse.json({ status: 'ok' })
     }
 
-    // 변경사항(exists)이 있을 때의 로직
-    // 실제 프로덕션에서는 x-goog-channel-id 로 어떤 유저의 캘린더인지 찾아서
-    // googleapis 패키지로 최근 변경된 일정을 긁어오고 Supabase를 업데이트합니다.
-    
-    // TODO: 
-    // 1. channel_id 로 users 테이블 조회하여 user_id 획득
-    // 2. 해당 유저의 google_refresh_token 으로 OAuth 클라이언트 생성
-    // 3. calendar.events.list({ syncToken: ... }) 호출하여 변경분(delta) 획득
-    // 4. Supabase DB (activities 테이블) 업데이트
-    
+    if (!channelId) {
+      return NextResponse.json({ error: 'Missing channel ID' }, { status: 400 })
+    }
+
     console.log(`[Google Webhook] Received update for channel: ${channelId}`)
 
-    // 구글 웹훅은 반드시 200 OK를 빨리 반환해야 합니다. 안 그러면 실패로 간주하고 계속 재시도합니다.
+    // 1. channel_id 로 users 테이블 조회하여 user_id 획득
+    const supabase = createAdminClient()
+    const { data: user } = await supabase
+      .from('users')
+      .select('id')
+      .eq('google_channel_id', channelId)
+      .single()
+
+    if (user?.id) {
+      // 2~4. 해당 유저의 변경분 동기화 로직 비동기 실행
+      // 구글 웹훅은 반드시 200 OK를 빨리 반환해야 하므로 백그라운드에서 실행합니다.
+      Promise.resolve().then(() => {
+        handleGoogleCalendarSync(user.id, supabase).catch(err => {
+          console.error(`[Google Webhook] Sync error for user ${user.id}:`, err)
+        })
+      })
+    }
+
     return NextResponse.json({ status: 'success' })
   } catch (error) {
     console.error('Google Webhook Error:', error)
