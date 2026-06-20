@@ -87,7 +87,7 @@ export function TimeSelect({ value, onChange, disabled, className = '', required
           className={`relative w-full flex items-center bg-card border border-border rounded-xl transition-colors focus-within:ring-2 focus-within:ring-indigo-500 focus-within:border-transparent overflow-hidden h-10 ${disabled ? 'opacity-50 cursor-not-allowed' : ''} ${className}`}
           onClick={() => { if (!disabled) inputRef.current?.focus() }}
         >
-          <Clock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+          <Clock className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
           <input
             ref={inputRef}
             type="time"
@@ -96,7 +96,7 @@ export function TimeSelect({ value, onChange, disabled, className = '', required
             onKeyDown={handleKeyDown}
             disabled={disabled}
             required={required}
-            className="w-full h-full pl-9 pr-3 bg-transparent text-foreground font-medium focus:outline-none placeholder:text-muted-foreground/50 [&::-webkit-calendar-picker-indicator]:hidden"
+            className="w-full h-full pl-8 pr-1.5 bg-transparent text-foreground font-medium focus:outline-none placeholder:text-muted-foreground/50 [&::-webkit-calendar-picker-indicator]:hidden tracking-tight"
           />
         </div>
       } />

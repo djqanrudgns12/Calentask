@@ -267,29 +267,29 @@ export function AddEventDialog({ children }: { children?: React.ReactNode }) {
               </button>
             </div>
 
-            {/* 시작 — flex-nowrap 강제, TimeSelect 내부 시계 아이콘 숨김 및 내부 여백 최소화로 시간 잘림 완전 방지 */}
+            {/* 시작 — flex-nowrap 강제, 모바일 대응을 위한 달력 아이콘 및 여백 최소화 */}
             <div className="flex items-center justify-between py-3" style={{ borderBottom: '1px solid rgba(0,0,0,0.04)' }}>
-              <span className={`${LABEL} shrink-0`}><Play className="w-4 h-4 mr-1 md:mr-1.5 text-muted-foreground" />시작</span>
+              <span className={`${LABEL} shrink-0 min-w-[44px]`}><Play className="w-3.5 h-3.5 mr-1 md:mr-1.5 text-muted-foreground" />시작</span>
               <div className="flex items-center gap-1 sm:gap-2 flex-nowrap shrink-0">
                 <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} required
-                  className="bg-muted/60 hover:bg-muted text-foreground font-medium text-[12px] sm:text-[13px] tracking-tight rounded-xl px-1.5 sm:px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 transition-colors w-[105px] sm:w-[125px] shrink-0" />
+                  className="bg-muted/60 hover:bg-muted text-foreground font-medium text-[12px] sm:text-[13px] tracking-tight rounded-xl px-1.5 sm:px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 transition-colors w-[110px] sm:w-[125px] shrink-0 [&::-webkit-calendar-picker-indicator]:scale-[0.8] [&::-webkit-calendar-picker-indicator]:-ml-1.5" />
                 {!isAllDay && (
-                  <div className="w-[85px] sm:w-[100px] shrink-0">
-                    <TimeSelect value={startTime} onChange={handleStartTimeChange} required className="!w-full !h-[34px] !text-[12px] sm:!text-[13px] tracking-tight !rounded-xl !bg-muted/60 hover:!bg-muted !border-0 transition-colors [&>svg]:hidden [&>input]:!pl-2 [&>input]:!pr-0.5" />
+                  <div className="w-[90px] sm:w-[105px] shrink-0">
+                    <TimeSelect value={startTime} onChange={handleStartTimeChange} required className="!w-full !h-[34px] !text-[12px] sm:!text-[13px] !rounded-xl !bg-muted/60 hover:!bg-muted !border-0 transition-colors" />
                   </div>
                 )}
               </div>
             </div>
 
-            {/* 종료 — flex-nowrap 강제, TimeSelect 내부 시계 아이콘 숨김 및 내부 여백 최소화로 시간 잘림 완전 방지 */}
+            {/* 종료 — flex-nowrap 강제, 모바일 대응을 위한 달력 아이콘 및 여백 최소화 */}
             <div className={`flex items-center justify-between py-3 ${!isAllDay ? '' : 'opacity-40 pointer-events-none'}`} style={{ borderBottom: !isAllDay ? '1px solid rgba(0,0,0,0.04)' : 'none' }}>
-              <span className={`${LABEL} shrink-0`}><Square className="w-4 h-4 mr-1 md:mr-1.5 text-muted-foreground" />종료</span>
+              <span className={`${LABEL} shrink-0 min-w-[44px]`}><Square className="w-3.5 h-3.5 mr-1 md:mr-1.5 text-muted-foreground" />종료</span>
               <div className="flex items-center gap-1 sm:gap-2 flex-nowrap shrink-0">
                 <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} required={!isAllDay} disabled={isAllDay}
-                  className="bg-muted/60 hover:bg-muted text-foreground font-medium text-[12px] sm:text-[13px] tracking-tight rounded-xl px-1.5 sm:px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 disabled:opacity-50 transition-colors w-[105px] sm:w-[125px] shrink-0" />
+                  className="bg-muted/60 hover:bg-muted text-foreground font-medium text-[12px] sm:text-[13px] tracking-tight rounded-xl px-1.5 sm:px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 disabled:opacity-50 transition-colors w-[110px] sm:w-[125px] shrink-0 [&::-webkit-calendar-picker-indicator]:scale-[0.8] [&::-webkit-calendar-picker-indicator]:-ml-1.5" />
                 {!isAllDay && (
-                  <div className="w-[85px] sm:w-[100px] shrink-0">
-                    <TimeSelect value={endTime} onChange={setEndTime} required className="!w-full !h-[34px] !text-[12px] sm:!text-[13px] tracking-tight !rounded-xl !bg-muted/60 hover:!bg-muted !border-0 transition-colors [&>svg]:hidden [&>input]:!pl-2 [&>input]:!pr-0.5" />
+                  <div className="w-[90px] sm:w-[105px] shrink-0">
+                    <TimeSelect value={endTime} onChange={setEndTime} required className="!w-full !h-[34px] !text-[12px] sm:!text-[13px] !rounded-xl !bg-muted/60 hover:!bg-muted !border-0 transition-colors" />
                   </div>
                 )}
               </div>
