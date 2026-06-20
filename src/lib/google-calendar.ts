@@ -290,10 +290,10 @@ export async function clearSyncedActivitiesFromGoogle(userId: string) {
       try {
         let pageToken: string | null | undefined = undefined
         do {
-          const res = await calendar.events.list({
+          const res: any = await calendar.events.list({
             calendarId: calId,
             privateExtendedProperty: ['type=event', 'type=EVENT', 'type=TASK'], // anything with type
-            pageToken,
+            pageToken: pageToken || undefined,
           })
           
           if (res.data.items) {
