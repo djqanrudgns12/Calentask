@@ -81,6 +81,30 @@ export function SpreadsheetBoard() {
           ? -Math.sign(e.deltaY) * 10 // 일반 마우스 휠: 10%씩 조절
           : -e.deltaY * 0.5;          // 트랙패드 핀치 줌: 부드러운 조절
         setZoom(z => Math.min(200, Math.max(50, Math.round(z + zoomChange))));
+      } else {
+        const target = e.target as HTMLElement;
+        if (containerRef.current && containerRef.current.contains(target)) {
+          // FortuneSheet 내부 스크롤바 래퍼 찾기
+          const scrollY = containerRef.current.querySelector('.luckysheet-scrollbar-y') as HTMLElement;
+          const scrollX = containerRef.current.querySelector('.luckysheet-scrollbar-x') as HTMLElement;
+          
+          if (scrollY || scrollX) {
+            // 이벤트 전파 차단하여 내부 휠 이벤트 핸들러 비활성화
+            e.stopPropagation();
+            e.preventDefault();
+            
+            // 휠 민감도 조절 (25% 수준)
+            const dampedDeltaY = e.deltaY * 0.25;
+            const dampedDeltaX = e.deltaX * 0.25;
+            
+            if (scrollY && Math.abs(dampedDeltaY) > 0) {
+              scrollY.scrollTop += dampedDeltaY;
+            }
+            if (scrollX && Math.abs(dampedDeltaX) > 0) {
+              scrollX.scrollLeft += dampedDeltaX;
+            }
+          }
+        }
       }
     };
 
@@ -118,17 +142,17 @@ export function SpreadsheetBoard() {
       }
     };
     
-    // Add to document to capture globally on the board
-    document.addEventListener('wheel', handleWheel, { passive: false });
-    document.addEventListener('touchstart', handleTouchStart, { passive: false });
-    document.addEventListener('touchmove', handleTouchMove, { passive: false });
-    document.addEventListener('touchend', handleTouchEnd);
+    // Add to document to capture globally on the board (capture mode required to intercept events)
+    document.addEventListener('wheel', handleWheel, { passive: false, capture: true });
+    document.addEventListener('touchstart', handleTouchStart, { passive: false, capture: true });
+    document.addEventListener('touchmove', handleTouchMove, { passive: false, capture: true });
+    document.addEventListener('touchend', handleTouchEnd, { capture: true });
     
     return () => {
-      document.removeEventListener('wheel', handleWheel);
-      document.removeEventListener('touchstart', handleTouchStart);
-      document.removeEventListener('touchmove', handleTouchMove);
-      document.removeEventListener('touchend', handleTouchEnd);
+      document.removeEventListener('wheel', handleWheel, { capture: true });
+      document.removeEventListener('touchstart', handleTouchStart, { capture: true });
+      document.removeEventListener('touchmove', handleTouchMove, { capture: true });
+      document.removeEventListener('touchend', handleTouchEnd, { capture: true });
     };
   }, []);
 
@@ -166,11 +190,15 @@ export function SpreadsheetBoard() {
   }], []);
 
   const sheetData = useMemo(() => {
+    let result = defaultData;
     if (savedData && savedData.length > 0) {
-      return savedData.map(normalizeSheetForInit);
+      result = savedData.map(normalizeSheetForInit);
     }
-    return defaultData;
-  }, [savedData, defaultData]);
+    return result.map(sheet => ({
+      ...sheet,
+      zoomRatio: zoom / 100
+    }));
+  }, [savedData, defaultData, zoom]);
 
   const handleOnChange = useCallback((updatedData: any) => {
     if (!activeTabId) return;
@@ -303,22 +331,15 @@ export function SpreadsheetBoard() {
            </div>
         </div>
         
-        {/* 시트 캔버스 (Zoom Scale 적용) */}
+        {/* 시트 캔버스 (Zoom Scale 적용 제거, 내부 zoomRatio 사용) */}
         <div 
-          className="flex-1 w-full relative overflow-hidden" 
+          className="flex-1 w-full relative overflow-hidden bg-white" 
           style={{ minHeight: 0 }}
           onKeyDown={handleKeyDown}
         >
-          {/* Zoom을 위한 래퍼 */}
-          <div 
-            className="fortune-sheet-wrapper origin-top-left transition-transform duration-75"
-            style={{ 
-              width: `${(100 / zoom) * 100}%`, 
-              height: `${(100 / zoom) * 100}%`, 
-              transform: `scale(${zoom / 100})` 
-            }}
-          >
+          <div className="fortune-sheet-wrapper w-full h-full relative">
             <Workbook 
+              key={`workbook-${zoom}`}
               ref={workbookRef}
               data={sheetData} 
               onChange={handleOnChange}

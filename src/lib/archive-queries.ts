@@ -14,6 +14,7 @@ export async function fetchTabsDirect() {
   const { data, error } = await supabase
     .from('archive_tabs')
     .select('*')
+    .is('deleted_at', null)
     .order('position', { ascending: true });
 
   if (error) {
@@ -31,7 +32,8 @@ export async function fetchNotesDirect(tabId: string) {
   const { data, error } = await supabase
     .from('notes')
     .select('*')
-    .eq('tab_id', tabId);
+    .eq('tab_id', tabId)
+    .is('deleted_at', null);
 
   if (error) {
     console.error('[archive-queries] fetchNotesDirect failed:', error);
@@ -49,6 +51,7 @@ export async function fetchAllNotesDirect() {
   const { data, error } = await supabase
     .from('notes')
     .select('*')
+    .is('deleted_at', null)
     .limit(5000); // 안전한 상한선
 
   if (error) {
