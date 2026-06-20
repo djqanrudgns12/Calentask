@@ -87,7 +87,6 @@ export function GoogleSyncTab() {
 
   const handleLinkGoogle = async () => {
     setIsLinking(true)
-    const supabase = createClient()
 
     // 1. 실제 구글 인증 상태를 서버에서 먼저 확인
     if (isGoogleLinked) {
@@ -106,59 +105,8 @@ export function GoogleSyncTab() {
       }
     }
 
-    // 이미 구글이 연결된 상태에서 재인증하는 경우, 먼저 연동 해제 후 재연동
-    if (needsReauth && !isGooglePrimary) {
-      try {
-        const res = await fetch('/api/auth/google-unlink', { method: 'POST' })
-        if (!res.ok) {
-          console.warn('Unlink failed, proceeding with linkIdentity directly')
-        }
-      } catch {
-        // 해제 실패해도 계속 진행
-      }
-    }
-
-    const { data, error } = await supabase.auth.linkIdentity({
-      provider: 'google',
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
-        scopes: 'https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile',
-        queryParams: {
-          access_type: 'offline',
-          prompt: 'consent'
-        }
-      }
-    })
-
-    if (error) {
-      // "Identity is already linked" 에러 시 signInWithOAuth로 대체
-      if (error.message?.includes('already linked') || error.message?.includes('Identity')) {
-        const { data: signInData } = await supabase.auth.signInWithOAuth({
-          provider: 'google',
-          options: {
-            redirectTo: `${window.location.origin}/auth/callback`,
-            scopes: 'https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile',
-            queryParams: {
-              access_type: 'offline',
-              prompt: 'consent'
-            }
-          }
-        })
-        if (signInData?.url) {
-          window.location.href = signInData.url
-          return
-        }
-      }
-      alert('구글 계정 연동 요청 중 오류가 발생했습니다: ' + error.message)
-      setIsLinking(false)
-      return
-    }
-
-    if (data?.url) {
-      window.location.href = data.url
-    } else {
-      setIsLinking(false)
-    }
+    // Supabase 연동 버그를 우회하기 위해 Custom Google OAuth 라우트로 리다이렉트
+    window.location.href = '/api/auth/google/sync'
   }
 
   const handleOpenCustomSync = async () => {
