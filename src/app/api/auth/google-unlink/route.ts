@@ -34,7 +34,9 @@ export async function POST(request: Request) {
         google_refresh_token: null,
         google_channel_id: null,
         google_resource_id: null,
-        google_sync_token: null
+        google_sync_token: null,
+        google_sync_calendar_id: null,
+        google_sync_calendar_name: null
       })
       .eq('id', user.id)
 

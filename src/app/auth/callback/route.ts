@@ -12,9 +12,19 @@ export async function GET(request: Request) {
     const supabase = await createClient()
     const { data, error } = await supabase.auth.exchangeCodeForSession(code)
     
+    console.log('[Auth Callback] exchangeCodeForSession result:', {
+      hasSession: !!data?.session,
+      hasError: !!error,
+      errorMsg: error?.message,
+      provider: data?.session?.user?.app_metadata?.provider,
+      hasRefreshToken: !!data?.session?.provider_refresh_token,
+      hasProviderToken: !!data?.session?.provider_token,
+    })
+
     if (!error && data?.session) {
       // Extract Google Refresh Token if it exists and store it in users table
       const providerRefreshToken = data.session.provider_refresh_token
+      const providerToken = data.session.provider_token
 
       if (data.session.user) {
         // Find Google identity to extract profile info
@@ -24,6 +34,9 @@ export async function GET(request: Request) {
 
         if (providerRefreshToken) {
           updatePayload.google_refresh_token = providerRefreshToken
+          console.log('[Auth Callback] Saving refresh token for user:', data.session.user.id)
+        } else {
+          console.warn('[Auth Callback] No provider_refresh_token received! Google sync will not work.')
         }
 
         if (googleIdentity) {
@@ -43,7 +56,9 @@ export async function GET(request: Request) {
             .eq('id', data.session.user.id)
             
           if (updateError) {
-            console.error('Failed to store google info:', updateError.message)
+            console.error('[Auth Callback] Failed to store google info:', updateError.message)
+          } else {
+            console.log('[Auth Callback] Successfully updated user profile with google info')
           }
 
           // Trigger initial sync in background if refresh token was saved
@@ -53,8 +68,9 @@ export async function GET(request: Request) {
                 const { watchGoogleCalendar, syncAllActivitiesToGoogle } = await import('@/lib/google-calendar')
                 await watchGoogleCalendar(data.session.user.id)
                 await syncAllActivitiesToGoogle(data.session.user.id, adminClient)
+                console.log('[Auth Callback] Background initial sync completed')
               } catch (err) {
-                console.error('Background initial sync failed:', err)
+                console.error('[Auth Callback] Background initial sync failed:', err)
               }
             })
           }
@@ -65,7 +81,6 @@ export async function GET(request: Request) {
       const isLocalEnv = process.env.NODE_ENV === 'development'
       
       if (isLocalEnv) {
-        // we can be sure that there is no load balancer in between, so no need to watch for X-Forwarded-Host
         return NextResponse.redirect(`${origin}${next}`)
       } else if (forwardedHost) {
         return NextResponse.redirect(`https://${forwardedHost}${next}`)

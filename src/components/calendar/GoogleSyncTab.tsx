@@ -7,9 +7,11 @@ import { createClient } from '@/lib/supabase/client'
 import { useUserProfile } from '@/hooks/useCalendarQueries'
 import { getGoogleCalendarListAction, startGoogleSyncAction, forceSyncNowAction } from '@/app/actions/calendar'
 import { motion, AnimatePresence } from 'framer-motion'
+import { useQueryClient } from '@tanstack/react-query'
 
 export function GoogleSyncTab() {
-  const { data: profile } = useUserProfile()
+  const queryClient = useQueryClient()
+  const { data: profile, refetch: refetchProfile } = useUserProfile()
   const [authUser, setAuthUser] = useState<any>(null)
   
   // Custom Sync State
@@ -26,6 +28,9 @@ export function GoogleSyncTab() {
 
   useEffect(() => {
     createClient().auth.getUser().then(({ data }) => setAuthUser(data.user))
+    // OAuth 리다이렉트 후 돌아왔을 때 즉시 최신 프로필을 가져옴
+    queryClient.invalidateQueries({ queryKey: ['userProfile'] })
+    refetchProfile()
   }, [])
 
   const isGooglePrimary = authUser?.app_metadata?.provider === 'google'
@@ -65,6 +70,19 @@ export function GoogleSyncTab() {
   const handleLinkGoogle = async () => {
     setIsLinking(true)
     const supabase = createClient()
+
+    // 이미 구글이 연결된 상태에서 재인증하는 경우, 먼저 연동 해제 후 재연동
+    if (needsReauth && !isGooglePrimary) {
+      try {
+        const res = await fetch('/api/auth/google-unlink', { method: 'POST' })
+        if (!res.ok) {
+          console.warn('Unlink failed, proceeding with linkIdentity directly')
+        }
+      } catch {
+        // 해제 실패해도 계속 진행
+      }
+    }
+
     const { data, error } = await supabase.auth.linkIdentity({
       provider: 'google',
       options: {
@@ -78,6 +96,24 @@ export function GoogleSyncTab() {
     })
 
     if (error) {
+      // "Identity is already linked" 에러 시 signInWithOAuth로 대체
+      if (error.message?.includes('already linked') || error.message?.includes('Identity')) {
+        const { data: signInData } = await supabase.auth.signInWithOAuth({
+          provider: 'google',
+          options: {
+            redirectTo: `${window.location.origin}/auth/callback`,
+            scopes: 'https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile',
+            queryParams: {
+              access_type: 'offline',
+              prompt: 'consent'
+            }
+          }
+        })
+        if (signInData?.url) {
+          window.location.href = signInData.url
+          return
+        }
+      }
       alert('구글 계정 연동 요청 중 오류가 발생했습니다: ' + error.message)
       setIsLinking(false)
       return
@@ -122,7 +158,10 @@ export function GoogleSyncTab() {
         await startGoogleSyncAction(selectedCalendarId, selectedCal?.summary)
         alert('선택하신 캘린더와 동기화가 시작되었습니다!')
       }
-      window.location.reload()
+      // 새로고침 대신 캐시만 즉시 무효화하여 UI 실시간 반영
+      await queryClient.invalidateQueries({ queryKey: ['userProfile'] })
+      await refetchProfile()
+      setIsSyncing(false)
     } catch (error) {
       console.error(error)
       alert('동기화 시작 중 오류가 발생했습니다.')
@@ -135,6 +174,8 @@ export function GoogleSyncTab() {
     try {
       await forceSyncNowAction()
       alert('즉시 동기화가 요청되었습니다. 백그라운드에서 양쪽 캘린더의 차이를 비교하여 최신 상태로 맞춥니다.')
+      await queryClient.invalidateQueries({ queryKey: ['userProfile'] })
+      await refetchProfile()
     } catch (err) {
       console.error(err)
       alert('동기화 중 오류가 발생했습니다.')
