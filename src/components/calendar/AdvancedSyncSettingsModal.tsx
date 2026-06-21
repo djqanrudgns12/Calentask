@@ -249,12 +249,12 @@ export function AdvancedSyncSettingsModal({ isOpen, onClose, calendarList, categ
                           <div key={cat.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 bg-white border border-slate-200 rounded-2xl shadow-sm hover:shadow-md transition-shadow">
                             <div className="flex items-center gap-3">
                               <div className="w-4 h-4 rounded-full shadow-sm" style={{ backgroundColor: cat.hex_color }} />
-                              <span className="font-bold text-slate-700">{cat.name}</span>
+                              <span className="font-bold text-slate-700 whitespace-nowrap">{cat.name}</span>
                             </div>
                             
                             <div className="flex items-center gap-4">
                               <div className="flex items-center gap-2">
-                                <span className="text-xs text-slate-500 font-semibold">구글 컬러 매핑:</span>
+                                <span className="text-xs text-slate-500 font-semibold whitespace-nowrap">구글 컬러 매핑:</span>
                                 <select 
                                   className="text-sm border border-slate-200 rounded-lg p-1.5 focus:ring-2 focus:ring-indigo-100 outline-none w-32"
                                   value={settings.colorMapping?.[cat.id] || ''}
@@ -285,7 +285,7 @@ export function AdvancedSyncSettingsModal({ isOpen, onClose, calendarList, categ
                                   <div className={`block w-10 h-6 rounded-full transition-colors ${settings.privacyMapping?.[cat.id] ? 'bg-emerald-500' : 'bg-slate-200'}`}></div>
                                   <div className={`dot absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform ${settings.privacyMapping?.[cat.id] ? 'transform translate-x-4' : ''}`}></div>
                                 </div>
-                                <span className={`text-xs font-bold ${settings.privacyMapping?.[cat.id] ? 'text-emerald-700' : 'text-slate-400 group-hover:text-slate-600'}`}>비공개 (바쁨)</span>
+                                <span className={`text-xs font-bold whitespace-nowrap ${settings.privacyMapping?.[cat.id] ? 'text-emerald-700' : 'text-slate-400 group-hover:text-slate-600'}`}>비공개 (바쁨)</span>
                               </label>
                             </div>
                           </div>
@@ -314,7 +314,7 @@ export function AdvancedSyncSettingsModal({ isOpen, onClose, calendarList, categ
                           <div key={cat.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 bg-white border border-slate-200 rounded-2xl shadow-sm hover:border-indigo-200 transition-colors">
                             <div className="flex items-center gap-3">
                               <div className="w-4 h-4 rounded-full shadow-sm" style={{ backgroundColor: cat.hex_color }} />
-                              <span className="font-bold text-slate-700">{cat.name}</span>
+                              <span className="font-bold text-slate-700 whitespace-nowrap">{cat.name}</span>
                             </div>
                             
                             <div className="flex items-center gap-2">

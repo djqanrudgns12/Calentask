@@ -290,22 +290,33 @@ export async function clearSyncedActivitiesFromGoogle(userId: string) {
       try {
         let pageToken: string | null | undefined = undefined
         do {
+          // Google Calendar API does not support filtering by key existence alone.
+          // We must fetch all events and filter client-side for calentask_id.
           const res: any = await calendar.events.list({
             calendarId: calId,
-            privateExtendedProperty: ['type=event', 'type=EVENT', 'type=TASK'], // anything with type
+            maxResults: 250,
+            singleEvents: false,
+            showDeleted: false,
             pageToken: pageToken || undefined,
           })
           
           if (res.data.items) {
             for (const event of res.data.items) {
               if (event.extendedProperties?.private?.calentask_id) {
-                await calendar.events.delete({
-                  calendarId: calId,
-                  eventId: event.id as string,
-                })
-                deletedCount++
-                // Rate limit
-                await new Promise(r => setTimeout(r, 200))
+                try {
+                  await calendar.events.delete({
+                    calendarId: calId,
+                    eventId: event.id as string,
+                  })
+                  deletedCount++
+                  // Rate limit to avoid Google API quota issues
+                  await new Promise(r => setTimeout(r, 200))
+                } catch (deleteErr: any) {
+                  // Skip already-deleted or not-found events
+                  if (deleteErr.code !== 404 && deleteErr.code !== 410) {
+                    console.warn(`Failed to delete event ${event.id}:`, deleteErr.message)
+                  }
+                }
               }
             }
           }
