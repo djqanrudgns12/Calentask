@@ -2,8 +2,9 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, AlertTriangle, CheckCircle2, RefreshCw, Filter, Shield, Settings2, FolderTree, ArrowRightLeft, ArrowDownToLine, ArrowUpFromLine, Trash2, Plus, GripVertical, Lock, Unlock } from 'lucide-react'
+import { X, AlertTriangle, CheckCircle2, RefreshCw, Filter, Shield, Settings2, FolderTree, ArrowRightLeft, ArrowDownToLine, ArrowUpFromLine, Trash2, Plus, GripVertical, Lock, Unlock, Clock } from 'lucide-react'
 import { getGoogleSyncSettingsAction, updateGoogleSyncSettingsAction, clearGoogleSyncDataAction, createGoogleCalendarAction, updateGoogleCalendarMetaAction, deleteGoogleCalendarAction, migrateActivitiesBetweenCalendarsAction } from '@/app/actions/calendar'
+import { SyncHistoryTab } from './SyncHistoryTab'
 import { Button } from '@/components/ui/button'
 import { DndContext, DragOverlay, closestCorners, KeyboardSensor, PointerSensor, useSensor, useSensors, useDroppable, defaultDropAnimationSideEffects } from '@dnd-kit/core'
 import { SortableContext, useSortable, verticalListSortingStrategy, arrayMove } from '@dnd-kit/sortable'
@@ -23,7 +24,7 @@ const GOOGLE_COLORS = [
 ]
 
 export function AdvancedSyncSettingsModal({ isOpen, onClose, onStartSync, calendarList, categories }: { isOpen: boolean, onClose: () => void, onStartSync?: () => void, calendarList: any[], categories: any[] }) {
-  const [activeTab, setActiveTab] = useState<'core' | 'group' | 'danger'>('core')
+  const [activeTab, setActiveTab] = useState<'core' | 'group' | 'history' | 'danger'>('core')
   
   const [settings, setSettings] = useState<any>({
     direction: 'TWO_WAY',
@@ -340,6 +341,7 @@ export function AdvancedSyncSettingsModal({ isOpen, onClose, onStartSync, calend
               <div className="flex sm:flex-col gap-2 w-max sm:w-full">
                 <TabButton active={activeTab === 'core'} onClick={() => setActiveTab('core')} icon={<ArrowRightLeft className="w-4 h-4 sm:w-5 sm:h-5"/>} label="핵심 동작 (Core)" />
                 <TabButton active={activeTab === 'group'} onClick={() => setActiveTab('group')} icon={<FolderTree className="w-4 h-4 sm:w-5 sm:h-5"/>} label="그룹 및 라우팅" />
+                <TabButton active={activeTab === 'history'} onClick={() => setActiveTab('history')} icon={<Clock className="w-4 h-4 sm:w-5 sm:h-5"/>} label="히스토리 관리" />
                 <div className="sm:pt-4 sm:mt-4 sm:border-t border-slate-200/60">
                   <TabButton active={activeTab === 'danger'} onClick={() => setActiveTab('danger')} icon={<AlertTriangle className="w-4 h-4 sm:w-5 sm:h-5"/>} label="위험 구역" variant="danger" />
                 </div>
@@ -431,6 +433,11 @@ export function AdvancedSyncSettingsModal({ isOpen, onClose, onStartSync, calend
                           ) : null}
                         </DragOverlay>
                       </DndContext>
+                    </motion.div>
+                  )}
+                  {activeTab === 'history' && (
+                    <motion.div key="history" initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -10 }} className="space-y-6">
+                      <SyncHistoryTab />
                     </motion.div>
                   )}
 

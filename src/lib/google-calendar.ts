@@ -20,6 +20,48 @@ export function toGoogleEventId(uuid: string): string {
 }
 
 /**
+ * Helper to log sync history to the database
+ */
+export async function logSyncHistory(
+  supabase: any,
+  params: {
+    userId: string
+    activityId?: string
+    googleEventId?: string
+    calendarId: string
+    calendarName?: string
+    categoryId?: string
+    categoryName?: string
+    action: 'CREATED' | 'UPDATED' | 'DELETED' | 'MIGRATED' | 'BATCH_SYNC' | 'ERROR'
+    status?: 'SUCCESS' | 'FAILED' | 'PENDING'
+    activityTitle?: string
+    activityStartTime?: string
+    errorMessage?: string
+    metadata?: any
+  }
+) {
+  try {
+    await supabase.from('sync_history').insert({
+      user_id: params.userId,
+      activity_id: params.activityId || null,
+      google_event_id: params.googleEventId || null,
+      calendar_id: params.calendarId,
+      calendar_name: params.calendarName || null,
+      category_id: params.categoryId || null,
+      category_name: params.categoryName || null,
+      action: params.action,
+      status: params.status || 'SUCCESS',
+      activity_title: params.activityTitle || null,
+      activity_start_time: params.activityStartTime || null,
+      error_message: params.errorMessage || null,
+      metadata: params.metadata || {}
+    })
+  } catch (err) {
+    console.error('Failed to log sync history:', err)
+  }
+}
+
+/**
  * Creates an authenticated Google OAuth2 client for the given user.
  * It retrieves the google_refresh_token from the users table.
  */
@@ -240,6 +282,7 @@ export async function syncActivityToGoogle(userId: string, activity: any, catego
         eventId: googleEventId,
         requestBody: eventBody,
       })
+      await logSyncHistory(supabase, { userId, activityId: activity.id, googleEventId, calendarId, action: 'UPDATED', activityTitle: activity.title, activityStartTime: activity.start_time })
     } catch (updateErr: any) {
       if (updateErr.code === 404) {
         // Custom ID로 존재하지 않음 → 기존 extendedProperty로 검색 (마이그레이션)
@@ -257,26 +300,31 @@ export async function syncActivityToGoogle(userId: string, activity: any, catego
               eventId: existingEvent.id,
               requestBody: eventBody,
             })
+            await logSyncHistory(supabase, { userId, activityId: activity.id, googleEventId: existingEvent.id, calendarId, action: 'UPDATED', activityTitle: activity.title, activityStartTime: activity.start_time })
           } else {
             // 완전히 새로운 이벤트 → Custom ID로 insert
             await calendar.events.insert({
               calendarId,
               requestBody: { ...eventBody, id: googleEventId },
             })
+            await logSyncHistory(supabase, { userId, activityId: activity.id, googleEventId, calendarId, action: 'CREATED', activityTitle: activity.title, activityStartTime: activity.start_time })
           }
         } catch (fallbackErr: any) {
           // Fallback도 실패하면 그냥 insert 시도 (ID 없이)
-          await calendar.events.insert({
+          const inserted = await calendar.events.insert({
             calendarId,
             requestBody: eventBody,
           })
+          await logSyncHistory(supabase, { userId, activityId: activity.id, googleEventId: inserted.data.id || googleEventId, calendarId, action: 'CREATED', activityTitle: activity.title, activityStartTime: activity.start_time })
         }
       } else {
+        await logSyncHistory(supabase, { userId, activityId: activity.id, googleEventId, calendarId, action: 'ERROR', status: 'FAILED', errorMessage: updateErr.message, activityTitle: activity.title, activityStartTime: activity.start_time })
         throw updateErr
       }
     }
-  } catch (error) {
+  } catch (error: any) {
     console.error('Failed to sync activity to Google Calendar:', error)
+    await logSyncHistory(createAdminClient(), { userId, activityId: activity.id, calendarId: 'unknown', action: 'ERROR', status: 'FAILED', errorMessage: error.message, activityTitle: activity.title, activityStartTime: activity.start_time })
   }
 }
 
@@ -323,6 +371,7 @@ export async function deleteActivityFromGoogle(userId: string, activityId: strin
           calendarId: calId,
           eventId: googleEventId,
         })
+        await logSyncHistory(supabase, { userId, activityId, googleEventId, calendarId: calId, action: 'DELETED' })
         return // 삭제 성공하면 더 이상 검색하지 않음
       } catch (err: any) {
         if (err.code === 404 || err.code === 410) {
@@ -338,6 +387,7 @@ export async function deleteActivityFromGoogle(userId: string, activityId: strin
                 calendarId: calId,
                 eventId: existingEvent.id,
               })
+              await logSyncHistory(supabase, { userId, activityId, googleEventId: existingEvent.id, calendarId: calId, action: 'DELETED' })
               return // 삭제 성공
             }
           } catch (fallbackErr: any) {
@@ -446,9 +496,14 @@ export async function clearSyncedActivitiesFromGoogle(userId: string) {
       google_sync_settings: {}
     }).eq('id', userId)
 
+    if (deletedCount > 0) {
+      await logSyncHistory(supabase, { userId, calendarId: 'ALL', action: 'DELETED', activityTitle: `배치 삭제 (${deletedCount}건)` })
+    }
+
     return { success: true, deletedCount }
   } catch (error: any) {
     console.error('Failed to clear synced activities from Google:', error)
+    await logSyncHistory(createAdminClient(), { userId, calendarId: 'unknown', action: 'ERROR', errorMessage: `일괄 삭제 실패: ${error.message}` })
     return { success: false, error: error.message }
   }
 }
@@ -604,10 +659,13 @@ export async function handleGoogleCalendarSync(userId: string, customSupabase?: 
             if (shouldUpdate) {
               if (isCancelled && !activity.deleted_at) {
                 updateTasks.push(
-                  supabase
-                    .from('activities')
-                    .update({ deleted_at: new Date().toISOString() })
-                    .eq('id', calentaskId)
+                  (async () => {
+                    await supabase
+                      .from('activities')
+                      .update({ deleted_at: new Date().toISOString() })
+                      .eq('id', calentaskId)
+                    await logSyncHistory(supabase, { userId, activityId: calentaskId, googleEventId: event.id as string, calendarId, action: 'DELETED', activityTitle: event.summary || '제목 없음' })
+                  })()
                 )
               } else if (!isCancelled) {
                 const start = event.start?.dateTime || event.start?.date
@@ -618,18 +676,21 @@ export async function handleGoogleCalendarSync(userId: string, customSupabase?: 
                   : []
                 
                 updateTasks.push(
-                  supabase
-                    .from('activities')
-                    .update({
-                      title: event.summary || '제목 없음',
-                      memo: event.description || '',
-                      start_time: start,
-                      end_time: end,
-                      is_all_day: isAllDay,
-                      reminders,
-                      updated_at: new Date(event.updated as string).toISOString()
-                    })
-                    .eq('id', calentaskId)
+                  (async () => {
+                    await supabase
+                      .from('activities')
+                      .update({
+                        title: event.summary || '제목 없음',
+                        memo: event.description || '',
+                        start_time: start,
+                        end_time: end,
+                        is_all_day: isAllDay,
+                        reminders,
+                        updated_at: new Date(event.updated as string).toISOString()
+                      })
+                      .eq('id', calentaskId)
+                    await logSyncHistory(supabase, { userId, activityId: calentaskId, googleEventId: event.id as string, calendarId, action: 'UPDATED', activityTitle: event.summary || '제목 없음', activityStartTime: start })
+                  })()
                 )
               }
             }
@@ -678,6 +739,7 @@ export async function handleGoogleCalendarSync(userId: string, customSupabase?: 
                       }
                     }
                   })
+                  await logSyncHistory(supabase, { userId, activityId: insertedActivity.id, googleEventId: event.id as string, calendarId, action: 'CREATED', activityTitle: event.summary || '제목 없음', activityStartTime: start })
                 }
               })()
             )
@@ -888,7 +950,7 @@ export async function syncBatchActivitiesToGoogle(userId: string, activities: an
                 if (existingEvent?.id) {
                   await executeWithRetry(() => calendar.events.update({
                     calendarId: targetCalendarId,
-                    eventId: existingEvent.id,
+                    eventId: existingEvent.id as string,
                     requestBody: eventBody,
                   }))
                   result.skipped++
@@ -919,8 +981,17 @@ export async function syncBatchActivitiesToGoogle(userId: string, activities: an
     )
 
     await Promise.allSettled(tasks)
+    
+    await logSyncHistory(supabase, {
+      userId,
+      calendarId: 'ALL',
+      action: 'BATCH_SYNC',
+      activityTitle: `배치 동기화: ${result.synced}건 생성, ${result.skipped}건 업데이트, ${result.failed}건 실패`
+    })
+
   } catch (error: any) {
     console.error('Failed to process batch sync:', error)
+    await logSyncHistory(createAdminClient(), { userId, calendarId: 'unknown', action: 'ERROR', errorMessage: `배치 동기화 실패: ${error.message}` })
     throw error
   }
 
@@ -1035,9 +1106,21 @@ export async function migrateCategoryActivitiesToCalendar(userId: string, catego
       pageToken = res.data.nextPageToken
     } while (pageToken)
     
+    if (movedCount > 0) {
+      await logSyncHistory(supabase, {
+        userId,
+        calendarId: newCalendarId,
+        action: 'MIGRATED',
+        categoryId,
+        activityTitle: `카테고리 캘린더 이동 (${movedCount}건)`,
+        metadata: { from: oldCalendarId, to: newCalendarId }
+      })
+    }
+    
     return { success: true, movedCount }
   } catch (error: any) {
     console.error('Failed to migrate activities:', error)
+    await logSyncHistory(createAdminClient(), { userId, calendarId: newCalendarId, action: 'ERROR', errorMessage: `캘린더 이동 실패: ${error.message}`, categoryId })
     throw error
   }
 }

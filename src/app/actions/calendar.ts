@@ -833,3 +833,66 @@ export async function migrateActivitiesBetweenCalendarsAction(categoryId: string
   if (!result?.success) throw new Error('Failed to migrate activities')
   return result
 }
+
+export async function getSyncHistoryAction() {
+  const { createClient } = await import('@/lib/supabase/server')
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Unauthorized')
+
+  const { data, error } = await supabase
+    .from('sync_history')
+    .select('*')
+    .eq('user_id', user.id)
+    .order('synced_at', { ascending: false })
+    .limit(500) // 500개 제한
+
+  if (error) throw error
+  return data
+}
+
+export async function clearSyncHistoryAction(ids?: string[]) {
+  const { createClient } = await import('@/lib/supabase/server')
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Unauthorized')
+
+  let query = supabase.from('sync_history').delete().eq('user_id', user.id)
+  if (ids && ids.length > 0) {
+    query = query.in('id', ids)
+  }
+
+  const { error } = await query
+  if (error) throw error
+  return { success: true }
+}
+
+export async function cleanupSyncHistoryAction() {
+  const { createClient } = await import('@/lib/supabase/server')
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Unauthorized')
+
+  const sixMonthsAgo = new Date()
+  sixMonthsAgo.setDate(sixMonthsAgo.getDate() - 180)
+
+  const { error } = await supabase
+    .from('sync_history')
+    .delete()
+    .eq('user_id', user.id)
+    .lt('synced_at', sixMonthsAgo.toISOString())
+
+  if (error) throw error
+  return { success: true }
+}
+
+export async function deleteGoogleEventAction(activityId: string) {
+  const { createClient } = await import('@/lib/supabase/server')
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Unauthorized')
+
+  const { deleteActivityFromGoogle } = await import('@/lib/google-calendar')
+  await deleteActivityFromGoogle(user.id, activityId)
+  return { success: true }
+}
