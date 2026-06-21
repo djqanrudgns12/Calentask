@@ -1,556 +1,674 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
-import { getSyncHistoryAction, cleanupSyncHistoryAction, clearSyncHistoryAction, deleteGoogleEventAction } from '@/app/actions/calendar'
-import { RefreshCw, Trash2, Calendar as CalendarIcon, Clock, AlertTriangle, CheckCircle2, ChevronRight, ChevronDown, Download, ArrowRightLeft, FolderTree, X, Search } from 'lucide-react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
+import { 
+  getSyncedActivitiesTreeAction, 
+  getCleanedSyncTimelineAction, 
+  deleteGoogleEventAction, 
+  unlinkGoogleEventAction, 
+  cleanupSyncHistoryAction 
+} from '@/app/actions/calendar'
+import { 
+  RefreshCw, Trash2, Calendar as CalendarIcon, Clock, 
+  CheckCircle2, ChevronRight, FolderTree, 
+  X, Search, Link2Off, AlertCircle, ArrowRight
+} from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { createClient } from '@/lib/supabase/client'
-import { motion, AnimatePresence } from 'framer-motion'
-import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
+import { Checkbox } from '@/components/ui/checkbox'
+import { motion, AnimatePresence } from 'framer-motion'
+import { createClient } from '@/lib/supabase/client'
+
+// Interfaces
+interface Activity {
+  id: string
+  title: string
+  startTime: string
+  googleEventId: string
+}
+interface Category {
+  categoryName: string
+  activities: Activity[]
+}
+interface CalendarGroup {
+  calendarName: string
+  calendarColor: string
+  categories: { [categoryId: string]: Category }
+}
+interface SyncedTree {
+  [calendarId: string]: CalendarGroup
+}
+interface TimelineLog {
+  id: string
+  syncedAt: string
+  icon: string
+  type: string
+  title: string
+  message: string
+  isError: boolean
+  rawAction: string
+}
 
 export function SyncHistoryTab() {
-  const [history, setHistory] = useState<any[]>([])
-  const [loading, setLoading] = useState(true)
+  // Data States
+  const [tree, setTree] = useState<SyncedTree>({})
+  const [timeline, setTimeline] = useState<TimelineLog[]>([])
   const [refreshing, setRefreshing] = useState(false)
-  const [stats, setStats] = useState({ total: 0, week: 0, failed: 0, lastSync: null as Date | null })
-  
-  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set())
-  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set())
-  const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set())
-  const [isDeleting, setIsDeleting] = useState(false)
-  const [selectedLogId, setSelectedLogId] = useState<string | null>(null)
-  const [searchQuery, setSearchQuery] = useState('')
 
-  const fetchHistory = useCallback(async () => {
+  // UI States
+  const [searchQuery, setSearchQuery] = useState('')
+  const [mobileTab, setMobileTab] = useState<'tree' | 'timeline'>('tree')
+  
+  // Accordion States
+  const [expandedCals, setExpandedCals] = useState<Set<string>>(new Set())
+  const [expandedCats, setExpandedCats] = useState<Set<string>>(new Set())
+  
+  // Selection & Action States
+  const [selectedActivities, setSelectedActivities] = useState<Set<string>>(new Set())
+  const [isProcessing, setIsProcessing] = useState(false)
+
+  // Drawer State
+  const [selectedItem, setSelectedItem] = useState<{ activity: Activity, calId: string, calName: string, catId: string, catName: string } | null>(null)
+
+  const fetchData = useCallback(async () => {
+    setRefreshing(true)
     try {
-      setRefreshing(true)
-      const data = await getSyncHistoryAction()
-      setHistory(data || [])
+      const [treeData, timelineData] = await Promise.all([
+        getSyncedActivitiesTreeAction(),
+        getCleanedSyncTimelineAction()
+      ])
+      setTree(treeData as SyncedTree)
+      setTimeline(timelineData as TimelineLog[])
       
-      // Calculate stats
-      const now = new Date()
-      const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
-      
-      let weekCount = 0
-      let failCount = 0
-      let last = null
-      
-      if (data && data.length > 0) {
-        last = new Date(data[0].synced_at)
-        data.forEach(item => {
-          if (new Date(item.synced_at) >= oneWeekAgo) weekCount++
-          if (item.status === 'FAILED' || item.action === 'ERROR') failCount++
-        })
+      // Auto expand first calendar and category
+      const cals = Object.keys(treeData)
+      if (cals.length > 0) {
+        setExpandedCals(new Set([cals[0]]))
+        const cats = Object.keys((treeData as SyncedTree)[cals[0]].categories)
+        if (cats.length > 0) {
+          setExpandedCats(new Set([`${cals[0]}_${cats[0]}`]))
+        }
       }
-      
-      setStats({
-        total: data?.length || 0,
-        week: weekCount,
-        failed: failCount,
-        lastSync: last
-      })
-      
-    } catch (err) {
-      console.error('Failed to fetch history:', err)
+    } catch (error) {
+      console.error('Failed to fetch history data:', error)
     } finally {
-      setLoading(false)
       setRefreshing(false)
     }
   }, [])
 
   useEffect(() => {
-    fetchHistory()
-    
+    fetchData()
+
     const supabase = createClient()
-    const channel = supabase.channel('history_changes')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'sync_history' }, payload => {
-        setHistory(prev => [payload.new, ...prev].slice(0, 500))
-        setStats(prev => ({
-          ...prev,
-          total: prev.total + 1,
-          week: prev.week + 1,
-          failed: (payload.new.status === 'FAILED' || payload.new.action === 'ERROR') ? prev.failed + 1 : prev.failed,
-          lastSync: new Date(payload.new.synced_at)
-        }))
+    const channel = supabase.channel('sync_history_changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'sync_history' }, () => {
+        fetchData()
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'activities' }, () => {
+        fetchData()
       })
       .subscribe()
 
     return () => {
       supabase.removeChannel(channel)
     }
-  }, [fetchHistory])
+  }, [fetchData])
 
-  const handleCleanup = async () => {
-    if (confirm('6개월이 지난 기록을 모두 정리하시겠습니까?')) {
-      await cleanupSyncHistoryAction()
-      fetchHistory()
-    }
-  }
-
-  const formatTime = (dateStr: string) => {
-    const d = new Date(dateStr)
-    return d.toLocaleString('ko-KR', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })
-  }
-
-  // Group by latest state
-  const getGroupedItems = () => {
-    const latestPerActivity = new Map<string, any>()
-    const otherLogs: any[] = [] // Logs not attached to a specific activity (e.g. batch)
-
-    history.forEach(log => {
-      if (log.activity_id) {
-        if (!latestPerActivity.has(log.activity_id)) {
-          latestPerActivity.set(log.activity_id, log)
-        }
-      } else {
-        otherLogs.push(log)
-      }
-    })
-
-    const groups: Record<string, { name: string, categories: Record<string, { name: string, items: any[] }> }> = {}
-
-    Array.from(latestPerActivity.values()).forEach(item => {
-      // Skip if the latest action was DELETED
-      if (item.action === 'DELETED') return
-
-      const calId = item.calendar_id || 'unknown'
-      const calName = item.calendar_name || '알 수 없는 캘린더'
-      const catId = item.category_id || 'unassigned'
-      const catName = item.category_name || '미배정'
-
-      if (!groups[calId]) {
-        groups[calId] = { name: calName, categories: {} }
-      }
-      if (!groups[calId].categories[catId]) {
-        groups[calId].categories[catId] = { name: catName, items: [] }
-      }
-      groups[calId].categories[catId].items.push(item)
-    })
-
-    return { groups, otherLogs }
-  }
-
-  const { groups, otherLogs } = getGroupedItems()
-
-  const toggleGroup = (id: string) => {
-    setExpandedGroups(prev => {
+  const handleToggleCal = (calId: string) => {
+    setExpandedCals(prev => {
       const next = new Set(prev)
-      if (next.has(id)) next.delete(id)
-      else next.add(id)
+      if (next.has(calId)) next.delete(calId)
+      else next.add(calId)
       return next
     })
   }
 
-  const toggleCategory = (id: string) => {
-    setExpandedCategories(prev => {
+  const handleToggleCat = (key: string) => {
+    setExpandedCats(prev => {
       const next = new Set(prev)
-      if (next.has(id)) next.delete(id)
-      else next.add(id)
+      if (next.has(key)) next.delete(key)
+      else next.add(key)
       return next
     })
   }
 
-  const toggleSelection = (activityId: string) => {
-    setSelectedItems(prev => {
+  const toggleSelection = (actId: string) => {
+    setSelectedActivities(prev => {
       const next = new Set(prev)
-      if (next.has(activityId)) next.delete(activityId)
-      else next.add(activityId)
+      if (next.has(actId)) next.delete(actId)
+      else next.add(actId)
       return next
     })
   }
 
-  const toggleAllInCategory = (catId: string, items: any[]) => {
-    const allSelected = items.every(i => selectedItems.has(i.activity_id))
-    setSelectedItems(prev => {
-      const next = new Set(prev)
-      items.forEach(i => {
-        if (allSelected) next.delete(i.activity_id)
-        else next.add(i.activity_id)
-      })
-      return next
-    })
-  }
+  const handleBatchDeleteFromGoogle = async () => {
+    if (selectedActivities.size === 0 || isProcessing) return
+    if (!confirm(`선택한 ${selectedActivities.size}개의 일정을 구글 캘린더에서 영구 삭제하시겠습니까? (Calentask 일정은 보존됩니다)`)) return
 
-  const handleDeleteSelected = async () => {
-    if (selectedItems.size === 0) return
-    if (!confirm(`선택한 ${selectedItems.size}개의 일정을 구글 캘린더에서 삭제하시겠습니까? (Calentask 일정은 삭제되지 않습니다)`)) return
-
-    setIsDeleting(true)
+    setIsProcessing(true)
     try {
-      for (const id of Array.from(selectedItems)) {
-        await deleteGoogleEventAction(id)
-      }
-      setSelectedItems(new Set())
-      await fetchHistory()
-    } catch (err) {
-      console.error(err)
+      await Promise.all(Array.from(selectedActivities).map(id => deleteGoogleEventAction(id)))
+      setSelectedActivities(new Set())
+      await fetchData()
+    } catch (error) {
+      console.error('Failed to batch delete:', error)
       alert('일부 일정 삭제에 실패했습니다.')
     } finally {
-      setIsDeleting(false)
+      setIsProcessing(false)
     }
   }
 
-  const selectedLog = history.find(h => h.id === selectedLogId)
+  const handleBatchUnlink = async () => {
+    if (selectedActivities.size === 0 || isProcessing) return
+    if (!confirm(`선택한 ${selectedActivities.size}개의 일정에 대한 연동을 해제하시겠습니까? (구글 캘린더에는 일정이 그대로 남습니다)`)) return
+
+    setIsProcessing(true)
+    try {
+      await Promise.all(Array.from(selectedActivities).map(id => unlinkGoogleEventAction(id)))
+      setSelectedActivities(new Set())
+      await fetchData()
+    } catch (error) {
+      console.error('Failed to batch unlink:', error)
+      alert('일부 일정 연동 해제에 실패했습니다.')
+    } finally {
+      setIsProcessing(false)
+    }
+  }
+
+  const handleCleanupTimeline = async () => {
+    if (!confirm('6개월 이상 경과한 로깅 기록을 모두 정리하시겠습니까? (실제 동기화된 일정에는 영향을 주지 않습니다)')) return
+    setIsProcessing(true)
+    try {
+      await cleanupSyncHistoryAction()
+      await fetchData()
+    } catch (error) {
+      console.error('Failed to cleanup:', error)
+    } finally {
+      setIsProcessing(false)
+    }
+  }
+
+  // Filter tree based on search query
+  const filteredTree = useMemo(() => {
+    if (!searchQuery.trim()) return tree
+    const query = searchQuery.toLowerCase()
+    const result: SyncedTree = {}
+    
+    for (const [calId, calGroup] of Object.entries(tree)) {
+      const filteredCategories: { [categoryId: string]: Category } = {}
+      let hasMatch = false
+
+      for (const [catId, catGroup] of Object.entries(calGroup.categories)) {
+        const matchedActs = catGroup.activities.filter(a => a.title.toLowerCase().includes(query))
+        const catMatch = catGroup.categoryName.toLowerCase().includes(query)
+        
+        if (matchedActs.length > 0 || catMatch) {
+          filteredCategories[catId] = {
+            ...catGroup,
+            activities: catMatch ? catGroup.activities : matchedActs
+          }
+          hasMatch = true
+        }
+      }
+
+      if (hasMatch) {
+        result[calId] = { ...calGroup, categories: filteredCategories }
+      }
+    }
+    return result
+  }, [tree, searchQuery])
+
+  const totalSynced = Object.values(tree).reduce((acc, cal) => 
+    acc + Object.values(cal.categories).reduce((sum, cat) => sum + cat.activities.length, 0)
+  , 0)
+
+  const thisWeekLogs = timeline.filter(t => new Date(t.syncedAt).getTime() > Date.now() - 7 * 24 * 60 * 60 * 1000).length
+  const errorLogs = timeline.filter(t => t.isError).length
+
+  // Date Grouping for Timeline
+  const groupedTimeline = useMemo(() => {
+    const groups: { [date: string]: TimelineLog[] } = {}
+    timeline.forEach(log => {
+      const d = new Date(log.syncedAt)
+      const isToday = new Date().toDateString() === d.toDateString()
+      const isYesterday = new Date(Date.now() - 86400000).toDateString() === d.toDateString()
+      let dateKey = `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, '0')}.${String(d.getDate()).padStart(2, '0')}`
+      if (isToday) dateKey = '오늘'
+      else if (isYesterday) dateKey = '어제'
+      
+      if (!groups[dateKey]) groups[dateKey] = []
+      groups[dateKey].push(log)
+    })
+    return groups
+  }, [timeline])
 
   return (
-    <div className="relative">
-    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
-      
-      {/* 📊 동기화 요약 대시보드 */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm">
-          <div className="text-slate-500 text-xs font-semibold mb-1">총 동기화 기록</div>
-          <div className="text-2xl font-bold text-slate-800">{stats.total}건</div>
-        </div>
-        <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm">
-          <div className="text-slate-500 text-xs font-semibold mb-1">이번 주 (7일)</div>
-          <div className="text-2xl font-bold text-indigo-600">+{stats.week}건</div>
-        </div>
-        <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm">
-          <div className="text-slate-500 text-xs font-semibold mb-1">실패/에러</div>
-          <div className={`text-2xl font-bold ${stats.failed > 0 ? 'text-red-600' : 'text-emerald-500'}`}>
-            {stats.failed}건
-          </div>
-        </div>
-        <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm">
-          <div className="text-slate-500 text-xs font-semibold mb-1">마지막 동기화</div>
-          <div className="text-sm font-bold text-slate-800 mt-1">
-            {stats.lastSync ? formatTime(stats.lastSync.toISOString()) : '-'}
-          </div>
-        </div>
-      </div>
-
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-slate-50 p-2 rounded-xl border border-slate-200 gap-2">
-        <div className="text-sm font-medium text-slate-600 px-2 flex items-center gap-2 w-full sm:w-auto">
-          <Clock className="w-4 h-4" /> 최근 동기화 활동 요약
-        </div>
-        <div className="flex items-center gap-2 w-full sm:w-auto">
-          <div className="relative flex-1 sm:w-48">
-            <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-            <Input 
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="일정 이름 검색..." 
-              className="h-8 pl-8 text-sm bg-white"
-            />
-          </div>
-          <Button variant="ghost" size="sm" onClick={fetchHistory} disabled={refreshing} className="h-8 shrink-0">
-            <RefreshCw className={`w-4 h-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
-            <span className="hidden sm:inline">새로고침</span>
-          </Button>
-          <Button variant="outline" size="sm" onClick={handleCleanup} className="h-8 text-slate-600 shrink-0">
-            <Trash2 className="w-4 h-4 mr-1 sm:mr-2" />
-            <span className="hidden sm:inline">기록 정리</span>
-          </Button>
-        </div>
-      </div>
-
-      {/* 🌲 그룹/카테고리 아코디언 */}
-      <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
-        <div className="p-3 bg-slate-50 border-b border-slate-200 flex justify-between items-center">
-          <div className="flex items-center gap-3">
-            <span className="text-sm font-semibold text-slate-700">동기화된 일정 목록</span>
-            {selectedItems.size > 0 && (
-              <span className="text-xs bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full font-medium">
-                {selectedItems.size}개 선택됨
+    <div className="flex flex-col h-[700px] md:h-[600px] bg-slate-50/50 relative rounded-b-2xl overflow-hidden border border-slate-200">
+      {/* Premium Header */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center p-4 md:p-6 border-b border-slate-200/60 bg-white/60 backdrop-blur-xl">
+        <div>
+          <h2 className="text-xl md:text-2xl font-extrabold text-slate-800 tracking-tight flex items-center gap-3">
+            <span className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-100 to-purple-100 flex items-center justify-center shadow-inner border border-white/50">
+              <RefreshCw className="w-5 h-5 text-indigo-600" />
+            </span>
+            구글 연동 히스토리 센터
+          </h2>
+          <div className="flex flex-wrap items-center gap-2 md:gap-4 mt-3 ml-1 text-xs md:text-sm font-medium">
+            <span className="text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-100 shadow-sm">
+              현재 연동: {totalSynced}건
+            </span>
+            <span className="text-blue-600 bg-blue-50 px-2.5 py-1 rounded-full border border-blue-100 shadow-sm">
+              금주 업데이트: {thisWeekLogs}건
+            </span>
+            {errorLogs > 0 && (
+              <span className="text-rose-600 bg-rose-50 px-2.5 py-1 rounded-full border border-rose-100 shadow-sm animate-pulse">
+                에러: {errorLogs}건
               </span>
             )}
           </div>
-          {selectedItems.size > 0 && (
-            <Button size="sm" variant="destructive" onClick={handleDeleteSelected} disabled={isDeleting} className="h-8 shadow-sm shadow-red-500/20">
-              {isDeleting ? <RefreshCw className="w-4 h-4 mr-2 animate-spin" /> : <Trash2 className="w-4 h-4 mr-2" />}
-              선택 항목 구글에서 삭제
-            </Button>
-          )}
         </div>
         
-        <div className="p-2 space-y-1">
-          {Object.entries(groups).length === 0 ? (
-            <div className="p-8 text-center text-slate-500">현재 동기화 유지 중인 일정이 없습니다.</div>
-          ) : (
-            Object.entries(groups).map(([calId, group]) => {
-              const isExpanded = expandedGroups.has(calId)
-              const totalInGroup = Object.values(group.categories).reduce((acc, cat) => acc + cat.items.length, 0)
-              
-              return (
-                <div key={calId} className="border border-slate-100 rounded-xl overflow-hidden">
-                  <div 
-                    className="flex items-center justify-between p-3 bg-slate-50/50 hover:bg-slate-100 cursor-pointer transition-colors"
-                    onClick={() => toggleGroup(calId)}
-                  >
-                    <div className="flex items-center gap-2">
-                      {isExpanded ? <ChevronDown className="w-4 h-4 text-slate-400" /> : <ChevronRight className="w-4 h-4 text-slate-400" />}
-                      <CalendarIcon className="w-4 h-4 text-indigo-500" />
-                      <span className="font-semibold text-slate-700">{group.name}</span>
-                    </div>
-                    <span className="text-xs font-medium text-slate-500 bg-white px-2 py-0.5 rounded-full border border-slate-200">
-                      {totalInGroup}건
-                    </span>
-                  </div>
-
-                  <AnimatePresence>
-                    {isExpanded && (
-                      <motion.div 
-                        initial={{ height: 0 }} 
-                        animate={{ height: 'auto' }} 
-                        exit={{ height: 0 }}
-                        className="overflow-hidden bg-white border-t border-slate-100"
-                      >
-                        <div className="p-2 space-y-2">
-                          {Object.entries(group.categories).map(([catId, cat]) => {
-                            const isCatExpanded = expandedCategories.has(catId)
-                            const allSelected = cat.items.length > 0 && cat.items.every(i => selectedItems.has(i.activity_id))
-                            const someSelected = cat.items.some(i => selectedItems.has(i.activity_id))
-                            
-                            return (
-                              <div key={catId} className="ml-4 border-l-2 border-slate-100 pl-3 py-1">
-                                <div className="flex items-center gap-2 py-1.5 hover:bg-slate-50 rounded-lg px-2 group">
-                                  <div onClick={(e) => e.stopPropagation()}>
-                                    <Checkbox 
-                                      checked={allSelected} 
-                                      onCheckedChange={() => toggleAllInCategory(catId, cat.items)}
-                                      className={someSelected && !allSelected ? "bg-indigo-100 border-indigo-300" : ""}
-                                    />
-                                  </div>
-                                  <div 
-                                    className="flex items-center gap-2 flex-1 cursor-pointer"
-                                    onClick={() => toggleCategory(catId)}
-                                  >
-                                    <FolderTree className="w-4 h-4 text-slate-400" />
-                                    <span className="font-medium text-sm text-slate-700">{cat.name}</span>
-                                    <span className="text-xs text-slate-400">({cat.items.length}건)</span>
-                                  </div>
-                                  <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100" onClick={() => toggleCategory(catId)}>
-                                    {isCatExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
-                                  </Button>
-                                </div>
-
-                                <AnimatePresence>
-                                  {isCatExpanded && (
-                                    <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
-                                      <div className="space-y-1 mt-1 pl-6">
-                                        {cat.items.filter(item => item.activity_title?.toLowerCase().includes(searchQuery.toLowerCase())).map((item) => (
-                                          <div 
-                                            key={item.id} 
-                                            className={`flex items-center gap-3 p-2 rounded-lg border cursor-pointer transition-colors ${selectedLogId === item.id ? 'bg-indigo-50 border-indigo-200' : 'bg-white border-slate-100 hover:border-slate-300'}`}
-                                            onClick={() => setSelectedLogId(item.id)}
-                                          >
-                                            <div onClick={(e) => e.stopPropagation()}>
-                                              <Checkbox 
-                                                checked={selectedItems.has(item.activity_id)}
-                                                onCheckedChange={() => toggleSelection(item.activity_id)}
-                                              />
-                                            </div>
-                                            <div className="flex-1 min-w-0">
-                                              <div className="text-sm font-medium text-slate-700 truncate">{item.activity_title || '이름 없는 일정'}</div>
-                                              <div className="text-xs text-slate-400">{formatTime(item.activity_start_time || item.synced_at)}</div>
-                                            </div>
-                                            <div className="shrink-0">
-                                              {item.status === 'FAILED' ? (
-                                                <span className="bg-red-50 text-red-600 px-1.5 py-0.5 rounded text-[10px] font-bold">실패</span>
-                                              ) : item.action === 'UPDATED' ? (
-                                                <span className="bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded text-[10px] font-bold">수정됨</span>
-                                              ) : (
-                                                <span className="bg-emerald-50 text-emerald-600 px-1.5 py-0.5 rounded text-[10px] font-bold">동기화됨</span>
-                                              )}
-                                            </div>
-                                          </div>
-                                        ))}
-                                      </div>
-                                    </motion.div>
-                                  )}
-                                </AnimatePresence>
-                              </div>
-                            )
-                          })}
-                        </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
-              )
-            })
-          )}
+        <div className="flex items-center gap-2 md:gap-3 mt-4 md:mt-0 self-end md:self-auto">
+          <Button variant="outline" size="sm" onClick={fetchData} disabled={refreshing} className="bg-white/80 backdrop-blur-sm shadow-sm border-slate-200 text-slate-600 h-9">
+            <RefreshCw className={`w-3.5 h-3.5 md:mr-2 ${refreshing ? 'animate-spin' : ''}`} />
+            <span className="hidden md:inline">새로고침</span>
+          </Button>
+          <Button variant="outline" size="sm" onClick={handleCleanupTimeline} disabled={isProcessing} className="bg-white/80 backdrop-blur-sm shadow-sm border-slate-200 text-rose-600 hover:text-rose-700 hover:bg-rose-50 h-9">
+            <Trash2 className="w-3.5 h-3.5 md:mr-2" />
+            <span className="hidden md:inline">오래된 로그 정리</span>
+          </Button>
         </div>
       </div>
-      {/* 🕐 동기화 타임라인 */}
-      <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm mt-6">
-        <div className="p-3 bg-slate-50 border-b border-slate-200">
-          <span className="text-sm font-semibold text-slate-700">최근 동기화 활동 (전체 로깅)</span>
+
+      {/* Mobile Tab Toggle */}
+      <div className="md:hidden flex p-3 bg-white/60 backdrop-blur-md border-b border-slate-200/60 sticky top-0 z-20">
+        <div className="flex bg-slate-100 p-1 rounded-xl w-full shadow-inner">
+          <button 
+            className={`flex-1 py-1.5 text-sm font-extrabold rounded-lg transition-all ${mobileTab === 'tree' ? 'bg-white text-indigo-600 shadow-sm border border-slate-200/50' : 'text-slate-500 hover:text-slate-700'}`}
+            onClick={() => setMobileTab('tree')}
+          >
+            🌲 연동된 일정
+          </button>
+          <button 
+            className={`flex-1 py-1.5 text-sm font-extrabold rounded-lg transition-all ${mobileTab === 'timeline' ? 'bg-white text-indigo-600 shadow-sm border border-slate-200/50' : 'text-slate-500 hover:text-slate-700'}`}
+            onClick={() => setMobileTab('timeline')}
+          >
+            ⚡ 최근 업데이트
+          </button>
         </div>
-        {loading ? (
-          <div className="p-8 text-center text-slate-500 animate-pulse">데이터를 불러오는 중...</div>
-        ) : history.length === 0 ? (
-          <div className="p-8 text-center text-slate-500">동기화 이력이 없습니다.</div>
-        ) : (
-          <div className="max-h-[300px] overflow-y-auto p-4 space-y-3">
-            <AnimatePresence>
-              {history.filter(item => item.activity_title?.toLowerCase().includes(searchQuery.toLowerCase())).slice(0, 100).map((item) => (
-                <motion.div 
-                  key={item.id} 
-                  initial={{ opacity: 0, x: -10 }} 
-                  animate={{ opacity: 1, x: 0 }} 
-                  className="flex items-start gap-3 p-3 rounded-xl hover:bg-slate-50 transition-colors border border-transparent hover:border-slate-100 cursor-pointer"
-                  onClick={() => setSelectedLogId(item.id)}
-                >
-                  <div className="mt-0.5 shrink-0">
-                    {item.action === 'CREATED' && <CheckCircle2 className="w-5 h-5 text-emerald-500" />}
-                    {item.action === 'UPDATED' && <RefreshCw className="w-5 h-5 text-indigo-500" />}
-                    {item.action === 'DELETED' && <Trash2 className="w-5 h-5 text-slate-400" />}
-                    {item.action === 'ERROR' && <AlertTriangle className="w-5 h-5 text-red-500" />}
-                    {item.action === 'MIGRATED' && <ArrowRightLeft className="w-5 h-5 text-blue-500" />}
-                    {item.action === 'BATCH_SYNC' && <CalendarIcon className="w-5 h-5 text-purple-500" />}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-baseline justify-between gap-2 mb-1">
-                      <span className="font-semibold text-sm text-slate-800 truncate">
-                        {item.activity_title || '이름 없는 활동'}
-                      </span>
-                      <span className="text-xs text-slate-400 shrink-0">
-                        {formatTime(item.synced_at)}
-                      </span>
-                    </div>
-                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500">
-                      <span className="bg-slate-100 px-2 py-0.5 rounded-md text-slate-600 font-medium">{item.action}</span>
-                      {item.calendar_name && (
-                        <span className="flex items-center gap-1">
-                          <CalendarIcon className="w-3 h-3" /> {item.calendar_name}
-                        </span>
-                      )}
-                      {item.error_message && (
-                        <span className="text-red-500 bg-red-50 px-2 py-0.5 rounded-md truncate max-w-[200px]" title={item.error_message}>
-                          {item.error_message}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                </motion.div>
-              ))}
-            </AnimatePresence>
-            {history.length > 100 && (
-              <div className="text-center text-xs text-slate-400 py-2">
-                최근 100건만 표시됩니다. (총 {history.length}건 보관 중)
+      </div>
+
+      {/* 2-Column Main Content */}
+      <div className="flex flex-1 overflow-hidden relative">
+        
+        {/* Left Panel: Active Sync Tree (60%) */}
+        <div className={`w-full md:w-[60%] flex flex-col border-r border-slate-200/60 bg-white/40 ${mobileTab === 'tree' ? 'flex' : 'hidden md:flex'}`}>
+          <div className="p-3 md:p-4 border-b border-slate-200/50 bg-white/60 backdrop-blur-md sticky top-0 z-10">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+              <Input 
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="일정 이름 또는 카테고리 검색..." 
+                className="pl-9 h-10 bg-white/80 shadow-sm border-slate-200/80 rounded-xl transition-all focus:ring-2 focus:ring-indigo-500/20 text-sm font-medium"
+              />
+            </div>
+          </div>
+          
+          <div className="flex-1 overflow-y-auto p-3 md:p-4 space-y-4 custom-scrollbar pb-24 md:pb-4">
+            {Object.keys(filteredTree).length === 0 ? (
+              <div className="flex flex-col items-center justify-center h-40 text-slate-400">
+                <FolderTree className="w-10 h-10 mb-2 opacity-30" />
+                <p className="text-sm font-bold">연동된 일정이 없습니다.</p>
               </div>
+            ) : (
+              Object.entries(filteredTree).map(([calId, calGroup]) => {
+                const isCalExpanded = expandedCals.has(calId)
+                const calActCount = Object.values(calGroup.categories).reduce((sum, c) => sum + c.activities.length, 0)
+                
+                return (
+                  <div key={calId} className="bg-white/80 backdrop-blur-sm border border-slate-200/80 rounded-2xl shadow-[0_2px_12px_-4px_rgba(0,0,0,0.05)] overflow-hidden transition-all hover:shadow-[0_4px_16px_-4px_rgba(0,0,0,0.1)]">
+                    <div 
+                      className="flex items-center justify-between p-4 cursor-pointer hover:bg-slate-50/80 transition-colors"
+                      onClick={() => handleToggleCal(calId)}
+                    >
+                      <div className="flex items-center gap-3">
+                        <ChevronRight className={`w-5 h-5 text-slate-400 transition-transform ${isCalExpanded ? 'rotate-90' : ''}`} />
+                        <div className="w-8 h-8 rounded-full bg-indigo-50 flex items-center justify-center border border-indigo-100">
+                          <CalendarIcon className="w-4 h-4 text-indigo-500" />
+                        </div>
+                        <h4 className="font-extrabold text-slate-800">{calGroup.calendarName}</h4>
+                      </div>
+                      <span className="text-xs font-bold bg-slate-100 text-slate-600 px-2.5 py-1 rounded-md border border-slate-200/60 shadow-inner">{calActCount}건</span>
+                    </div>
+                    
+                    <AnimatePresence>
+                      {isCalExpanded && (
+                        <motion.div 
+                          initial={{ height: 0, opacity: 0 }} 
+                          animate={{ height: 'auto', opacity: 1 }} 
+                          exit={{ height: 0, opacity: 0 }} 
+                          className="overflow-hidden border-t border-slate-100/80"
+                        >
+                          <div className="p-2 md:p-3 space-y-2 bg-slate-50/50">
+                            {Object.entries(calGroup.categories).map(([catId, catGroup]) => {
+                              const catKey = `${calId}_${catId}`
+                              const isCatExpanded = expandedCats.has(catKey)
+                              
+                              return (
+                                <div key={catKey} className="rounded-xl overflow-hidden bg-white/60 border border-slate-200/40">
+                                  <div 
+                                    className="flex items-center justify-between p-3 hover:bg-slate-100/80 rounded-lg cursor-pointer transition-colors"
+                                    onClick={() => handleToggleCat(catKey)}
+                                  >
+                                    <div className="flex items-center gap-2">
+                                      <ChevronRight className={`w-4 h-4 text-slate-400 transition-transform ${isCatExpanded ? 'rotate-90' : ''}`} />
+                                      <FolderTree className="w-4 h-4 text-emerald-500" />
+                                      <h5 className="font-bold text-sm text-slate-700">{catGroup.categoryName}</h5>
+                                    </div>
+                                    <span className="text-xs font-bold text-slate-400">{catGroup.activities.length}건</span>
+                                  </div>
+                                  
+                                  <AnimatePresence>
+                                    {isCatExpanded && (
+                                      <motion.div 
+                                        initial={{ height: 0, opacity: 0 }} 
+                                        animate={{ height: 'auto', opacity: 1 }} 
+                                        exit={{ height: 0, opacity: 0 }} 
+                                        className="overflow-hidden"
+                                      >
+                                        <div className="px-2 pb-2 space-y-1.5">
+                                          {catGroup.activities.map(act => (
+                                            <div 
+                                              key={act.id} 
+                                              className={`group flex items-center gap-3 p-3 rounded-xl border transition-all cursor-pointer min-h-[44px] ${
+                                                selectedActivities.has(act.id) 
+                                                  ? 'bg-indigo-50/80 border-indigo-200 shadow-[0_2px_10px_-4px_rgba(99,102,241,0.2)]' 
+                                                  : 'bg-white border-slate-100 hover:border-slate-300 hover:shadow-md'
+                                              }`}
+                                              onClick={() => setSelectedItem({ activity: act, calId, calName: calGroup.calendarName, catId, catName: catGroup.categoryName })}
+                                            >
+                                              <div 
+                                                onClick={(e) => { e.stopPropagation(); toggleSelection(act.id); }} 
+                                                className="p-2 -m-2 rounded-full hover:bg-slate-100 transition-colors shrink-0"
+                                              >
+                                                <Checkbox checked={selectedActivities.has(act.id)} className="data-[state=checked]:bg-indigo-600 rounded-sm w-4 h-4 md:w-5 md:h-5" />
+                                              </div>
+                                              <div className="flex-1 min-w-0 pr-2">
+                                                <p className="text-sm font-extrabold text-slate-800 truncate group-hover:text-indigo-700 transition-colors">{act.title}</p>
+                                                <div className="flex items-center gap-1.5 mt-1">
+                                                  <Clock className="w-3 h-3 text-slate-400" />
+                                                  <span className="text-xs text-slate-500 font-medium">
+                                                    {new Date(act.startTime).toLocaleString('ko-KR', { month: 'numeric', day: 'numeric', hour: 'numeric', minute: 'numeric' })}
+                                                  </span>
+                                                </div>
+                                              </div>
+                                              <div className="shrink-0 hidden md:block">
+                                                <span className="flex items-center text-[10px] bg-emerald-50 text-emerald-600 font-bold px-2 py-1.5 rounded-lg border border-emerald-100 shadow-sm uppercase tracking-wider">
+                                                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1.5 animate-pulse"></span>
+                                                  SYNCED
+                                                </span>
+                                              </div>
+                                            </div>
+                                          ))}
+                                        </div>
+                                      </motion.div>
+                                    )}
+                                  </AnimatePresence>
+                                </div>
+                              )
+                            })}
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                )
+              })
             )}
           </div>
-        )}
-      </div>
-      
-    </motion.div>
+        </div>
 
-    {/* Drawer (Slide Panel) */}
-    <AnimatePresence>
-      {selectedLog && (
-        <>
-          <motion.div 
-            initial={{ opacity: 0 }} 
-            animate={{ opacity: 1 }} 
-            exit={{ opacity: 0 }} 
-            className="absolute inset-0 bg-slate-900/20 z-[60] backdrop-blur-sm rounded-2xl"
-            onClick={() => setSelectedLogId(null)}
-          />
-          <motion.div 
-            initial={{ x: '100%', opacity: 0 }} 
-            animate={{ x: 0, opacity: 1 }} 
-            exit={{ x: '100%', opacity: 0 }}
-            transition={{ type: "spring", stiffness: 300, damping: 30 }}
-            className="absolute top-0 right-0 bottom-0 w-full sm:w-[380px] bg-white z-[70] rounded-r-2xl sm:rounded-2xl shadow-2xl border-l border-slate-200 overflow-y-auto flex flex-col"
-          >
-            <div className="sticky top-0 bg-white/80 backdrop-blur-md border-b border-slate-100 p-4 flex items-center justify-between z-10">
-              <h3 className="font-bold text-slate-800 flex items-center gap-2">
-                <Clock className="w-5 h-5 text-indigo-500" />
-                상세 정보
-              </h3>
-              <Button variant="ghost" size="icon" onClick={() => setSelectedLogId(null)} className="h-8 w-8 rounded-full hover:bg-slate-100">
-                <X className="w-5 h-5 text-slate-500" />
-              </Button>
-            </div>
-            
-            <div className="p-6 flex-1 space-y-6">
-              <div className="space-y-4">
-                <div>
-                  <div className="text-xs font-semibold text-slate-400 mb-1">일정 제목</div>
-                  <div className="text-base font-bold text-slate-800 break-words">{selectedLog.activity_title || '-'}</div>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <div className="text-xs font-semibold text-slate-400 mb-1">카테고리</div>
-                    <div className="text-sm font-medium text-slate-700">{selectedLog.category_name || '-'}</div>
+        {/* Right Panel: Live Sync Stream (40%) */}
+        <div className={`w-full md:w-[40%] flex flex-col bg-slate-50/30 ${mobileTab === 'timeline' ? 'flex' : 'hidden md:flex'}`}>
+          <div className="p-3 md:p-4 border-b border-slate-200/50 bg-white/60 backdrop-blur-md sticky top-0 z-10 flex items-center gap-2 h-auto md:h-[73px]">
+            <Clock className="w-5 h-5 text-slate-500" />
+            <h3 className="font-extrabold text-slate-800 text-sm md:text-base">라이브 타임라인</h3>
+          </div>
+          
+          <div className="flex-1 overflow-y-auto p-3 md:p-4 space-y-6 custom-scrollbar pb-24 md:pb-4">
+            {Object.keys(groupedTimeline).length === 0 ? (
+              <div className="text-center text-slate-400 mt-10 font-bold text-sm">최근 동기화 기록이 없습니다.</div>
+            ) : (
+              Object.entries(groupedTimeline).map(([date, logs]) => (
+                <div key={date}>
+                  <h4 className="text-[11px] md:text-xs font-extrabold text-slate-400 mb-3 px-2 flex items-center gap-2 uppercase tracking-wider">
+                    <span className="w-2 h-2 rounded-full bg-slate-300"></span>
+                    {date}
+                  </h4>
+                  <div className="space-y-3">
+                    {logs.map((log) => (
+                      <div 
+                        key={log.id} 
+                        className={`group flex gap-3 p-3.5 md:p-4 rounded-2xl border bg-white/80 backdrop-blur-sm shadow-sm transition-all hover:shadow-md hover:-translate-y-0.5 ${
+                          log.isError ? 'border-rose-200 bg-rose-50/50 hover:border-rose-300' : 'border-slate-100 hover:border-slate-200'
+                        }`}
+                      >
+                        <div className={`w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center shrink-0 shadow-inner border ${
+                          log.isError ? 'bg-rose-100 text-rose-600 border-rose-200' : 'bg-slate-100 text-slate-600 border-slate-200'
+                        }`}>
+                          <span className="text-base md:text-lg">{log.icon}</span>
+                        </div>
+                        <div className="flex-1 min-w-0 pt-0.5 md:pt-1">
+                          <h5 className={`text-sm md:text-sm font-extrabold truncate ${log.isError ? 'text-rose-800' : 'text-slate-800'}`}>
+                            {log.title}
+                          </h5>
+                          {log.message && (
+                            <p className="text-[11px] md:text-xs text-slate-500 mt-1 line-clamp-2 leading-relaxed font-medium break-words">
+                              {log.message}
+                            </p>
+                          )}
+                          <p className="text-[10px] text-slate-400 font-bold mt-2">
+                            {new Date(log.syncedAt).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                  <div>
-                    <div className="text-xs font-semibold text-slate-400 mb-1">대상 캘린더</div>
-                    <div className="text-sm font-medium text-slate-700">{selectedLog.calendar_name || '-'}</div>
-                  </div>
                 </div>
-                <div>
-                  <div className="text-xs font-semibold text-slate-400 mb-1">일정 시간 (스냅샷)</div>
-                  <div className="text-sm font-medium text-slate-700">{selectedLog.activity_start_time ? formatTime(selectedLog.activity_start_time) : '-'}</div>
+              ))
+            )}
+          </div>
+        </div>
+
+        {/* Floating Action Bar */}
+        <AnimatePresence>
+          {selectedActivities.size > 0 && (
+            <motion.div 
+              initial={{ y: 100, opacity: 0, scale: 0.95 }}
+              animate={{ y: 0, opacity: 1, scale: 1 }}
+              exit={{ y: 100, opacity: 0, scale: 0.95 }}
+              transition={{ type: 'spring', damping: 20, stiffness: 300 }}
+              className="absolute bottom-6 md:bottom-8 left-1/2 -translate-x-1/2 z-40 w-[90%] md:w-auto min-w-[320px]"
+            >
+              <div className="bg-slate-900/95 backdrop-blur-xl border border-slate-700/80 p-2.5 md:p-3 rounded-2xl md:rounded-[1.25rem] shadow-[0_20px_40px_rgba(0,0,0,0.3)] flex flex-col md:flex-row items-center justify-between gap-3 md:gap-4">
+                <div className="flex items-center gap-3 px-2 w-full md:w-auto justify-between md:justify-start">
+                  <div className="flex items-center gap-2">
+                    <span className="flex items-center justify-center w-6 h-6 md:w-7 md:h-7 rounded-full bg-gradient-to-br from-indigo-400 to-indigo-600 text-white text-xs md:text-sm font-extrabold shadow-inner border border-indigo-300/50">
+                      {selectedActivities.size}
+                    </span>
+                    <span className="text-sm font-extrabold text-slate-200">항목 선택됨</span>
+                  </div>
+                  <button onClick={() => setSelectedActivities(new Set())} className="md:hidden p-1 text-slate-400 hover:text-white rounded-full bg-slate-800 transition-colors">
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+                <div className="flex items-center gap-2 w-full md:w-auto">
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={handleBatchUnlink}
+                    disabled={isProcessing}
+                    className="flex-1 md:flex-none text-slate-300 hover:text-white hover:bg-slate-800 font-bold h-10 md:h-9"
+                  >
+                    <Link2Off className="w-4 h-4 mr-1.5 md:mr-2" />
+                    연동 해제
+                  </Button>
+                  <Button 
+                    variant="destructive" 
+                    size="sm" 
+                    onClick={handleBatchDeleteFromGoogle}
+                    disabled={isProcessing}
+                    className="flex-1 md:flex-none bg-rose-600 hover:bg-rose-700 shadow-md font-bold h-10 md:h-9"
+                  >
+                    <Trash2 className="w-4 h-4 mr-1.5 md:mr-2" />
+                    구글 캘린더에서 삭제
+                  </Button>
+                  <button onClick={() => setSelectedActivities(new Set())} className="hidden md:flex p-2 text-slate-400 hover:text-white rounded-full hover:bg-slate-800 transition-colors ml-1">
+                    <X className="w-5 h-5" />
+                  </button>
                 </div>
               </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
-              <div className="h-px bg-slate-100 my-4" />
+        {/* Detail Drawer (Bottom Sheet on Mobile, Right Panel on Desktop) */}
+        <AnimatePresence>
+          {selectedItem && (
+            <>
+              {/* Backdrop */}
+              <motion.div 
+                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm z-40"
+                onClick={() => setSelectedItem(null)}
+              />
+              {/* Drawer Container */}
+              <motion.div 
+                initial={{ opacity: 0, y: 50 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 50 }}
+                transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+                className="absolute bottom-0 md:bottom-auto md:top-0 md:right-0 w-full md:w-[420px] h-[85vh] md:h-full bg-white/95 backdrop-blur-2xl shadow-[-10px_0_40px_rgba(0,0,0,0.1)] z-50 flex flex-col rounded-t-[2rem] md:rounded-none border-t md:border-l border-slate-200/60 overflow-hidden"
+              >
+                {/* Mobile Handle */}
+                <div className="w-full flex justify-center pt-4 pb-2 md:hidden">
+                  <div className="w-12 h-1.5 bg-slate-200 rounded-full"></div>
+                </div>
 
-              <div className="space-y-4">
-                <h4 className="font-bold text-slate-800 flex items-center gap-2">
-                  <ArrowRightLeft className="w-4 h-4 text-slate-400" />
-                  연동 정보
-                </h4>
-                <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 space-y-3">
-                  <div className="flex justify-between items-center">
-                    <span className="text-xs font-medium text-slate-500">마지막 액션</span>
-                    <span className="text-xs font-bold text-slate-700 bg-white px-2 py-1 rounded-md border border-slate-200">{selectedLog.action}</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-xs font-medium text-slate-500">상태</span>
-                    <span className={`text-xs font-bold px-2 py-1 rounded-md ${selectedLog.status === 'FAILED' ? 'bg-red-100 text-red-700' : 'bg-emerald-100 text-emerald-700'}`}>
-                      {selectedLog.status}
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-xs font-medium text-slate-500">처리 일시</span>
-                    <span className="text-xs font-medium text-slate-700">{formatTime(selectedLog.synced_at)}</span>
-                  </div>
-                  {selectedLog.google_event_id && (
-                    <div className="pt-2 border-t border-slate-200/60 mt-2">
-                      <span className="text-[10px] font-mono text-slate-400 break-all bg-white px-2 py-1 rounded border border-slate-100 block">
-                        ID: {selectedLog.google_event_id}
+                <div className="p-5 md:p-6 flex items-center justify-between border-b border-slate-100/80 bg-white/50">
+                  <h3 className="font-extrabold text-lg text-slate-800 tracking-tight">일정 상세 연동 정보</h3>
+                  <button onClick={() => setSelectedItem(null)} className="p-2 -mr-2 rounded-full hover:bg-slate-100 text-slate-400 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center">
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+
+                <div className="flex-1 overflow-y-auto p-5 md:p-6 space-y-8 custom-scrollbar">
+                  {/* Title & Status */}
+                  <div className="bg-slate-50 p-5 rounded-2xl border border-slate-100/80 shadow-sm relative overflow-hidden">
+                    <div className="absolute top-0 left-0 w-1.5 h-full bg-emerald-500"></div>
+                    <h2 className="text-xl md:text-2xl font-extrabold text-slate-900 leading-snug break-words pr-2">
+                      {selectedItem.activity.title}
+                    </h2>
+                    <div className="flex items-center gap-2 mt-4">
+                      <span className="flex items-center text-xs bg-emerald-100/50 text-emerald-700 font-bold px-3 py-1.5 rounded-lg border border-emerald-200/60 shadow-sm uppercase tracking-wider">
+                        <span className="w-2 h-2 rounded-full bg-emerald-500 mr-2 shadow-[0_0_8px_rgba(16,185,129,0.8)] animate-pulse"></span>
+                        현재 정상 연동 중
                       </span>
                     </div>
-                  )}
-                </div>
-              </div>
+                  </div>
 
-              {selectedLog.error_message && (
-                <div className="bg-red-50 border border-red-200 p-4 rounded-xl">
-                  <h4 className="text-xs font-bold text-red-800 mb-1 flex items-center gap-1">
-                    <AlertTriangle className="w-4 h-4" /> 에러 메시지
-                  </h4>
-                  <p className="text-xs text-red-600 break-words">{selectedLog.error_message}</p>
-                </div>
-              )}
-            </div>
+                  {/* Breadcrumbs Path */}
+                  <div className="space-y-3">
+                    <h4 className="text-xs font-extrabold text-slate-400 uppercase tracking-wider pl-1">연동된 경로</h4>
+                    <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm space-y-4 relative">
+                      <div className="absolute left-7 top-9 bottom-9 w-0.5 bg-slate-100"></div>
+                      <div className="flex items-center gap-3 relative z-10">
+                        <div className="w-8 h-8 rounded-full bg-indigo-50 flex items-center justify-center border border-indigo-100 shrink-0">
+                          <CalendarIcon className="w-4 h-4 text-indigo-500" />
+                        </div>
+                        <span className="text-sm font-extrabold text-slate-800 truncate">{selectedItem.calName}</span>
+                      </div>
+                      <div className="flex items-center gap-3 relative z-10 pl-0">
+                        <div className="w-8 h-8 rounded-full bg-emerald-50 flex items-center justify-center border border-emerald-100 shrink-0">
+                          <FolderTree className="w-4 h-4 text-emerald-500" />
+                        </div>
+                        <span className="text-sm font-extrabold text-slate-700 truncate">{selectedItem.catName}</span>
+                      </div>
+                    </div>
+                  </div>
 
-            <div className="p-4 border-t border-slate-100 bg-slate-50/50 sticky bottom-0">
-              <Button 
-                variant="destructive" 
-                className="w-full shadow-sm"
-                onClick={async () => {
-                  if (confirm('이 기록을 히스토리에서 영구 삭제하시겠습니까? (구글 캘린더 일정 자체는 삭제되지 않습니다)')) {
-                    await clearSyncHistoryAction([selectedLog.id])
-                    setSelectedLogId(null)
-                    fetchHistory()
-                  }
-                }}
-              >
-                <Trash2 className="w-4 h-4 mr-2" />
-                이 로그 기록 삭제
-              </Button>
-            </div>
-          </motion.div>
-        </>
-      )}
-    </AnimatePresence>
+                  {/* Meta Details */}
+                  <div className="space-y-1 bg-white border border-slate-200/80 rounded-2xl overflow-hidden shadow-sm">
+                    <div className="flex justify-between items-center p-4 border-b border-slate-100">
+                      <span className="text-sm font-bold text-slate-500 flex items-center gap-2"><Clock className="w-4 h-4" /> 일정 시작 시각</span>
+                      <span className="text-sm font-extrabold text-slate-800">
+                        {new Date(selectedItem.activity.startTime).toLocaleString('ko-KR', { month: 'long', day: 'numeric', hour: 'numeric', minute: 'numeric' })}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center p-4">
+                      <span className="text-sm font-bold text-slate-500">Google Event ID</span>
+                      <span className="text-xs font-mono bg-slate-100 px-2 py-1 rounded-md text-slate-600 max-w-[150px] md:max-w-[180px] truncate" title={selectedItem.activity.googleEventId}>
+                        {selectedItem.activity.googleEventId}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="pt-2 space-y-3 pb-8 md:pb-4">
+                    <div className="flex flex-col md:flex-row gap-3">
+                      <Button 
+                        variant="outline" 
+                        className="flex-1 bg-white border-slate-300 hover:bg-slate-50 text-slate-700 font-bold h-12 md:h-10 text-base md:text-sm"
+                        disabled={isProcessing}
+                        onClick={async () => {
+                          if (!confirm('이 일정의 연동 고리를 끊습니다. (구글 캘린더에는 남습니다)')) return
+                          setIsProcessing(true)
+                          try {
+                            await unlinkGoogleEventAction(selectedItem.activity.id)
+                            setSelectedItem(null)
+                            await fetchData()
+                          } catch (e) {
+                            alert('해제 실패')
+                          } finally {
+                            setIsProcessing(false)
+                          }
+                        }}
+                      >
+                        <Link2Off className="w-5 h-5 md:w-4 md:h-4 mr-2" /> 연동 연결만 해제
+                      </Button>
+                      <Button 
+                        variant="destructive" 
+                        className="flex-1 shadow-md hover:shadow-lg font-bold h-12 md:h-10 text-base md:text-sm"
+                        disabled={isProcessing}
+                        onClick={async () => {
+                          if (!confirm('이 일정을 구글 캘린더에서 영구 삭제하시겠습니까?')) return
+                          setIsProcessing(true)
+                          try {
+                            await deleteGoogleEventAction(selectedItem.activity.id)
+                            setSelectedItem(null)
+                            await fetchData()
+                          } catch (e) {
+                            alert('삭제 실패')
+                          } finally {
+                            setIsProcessing(false)
+                          }
+                        }}
+                      >
+                        <Trash2 className="w-5 h-5 md:w-4 md:h-4 mr-2" /> 구글에서 완전히 삭제
+                      </Button>
+                    </div>
+                    <p className="text-xs text-slate-400 text-center font-bold mt-3 leading-relaxed bg-slate-50 p-3 rounded-xl border border-slate-100">
+                      <AlertCircle className="w-4 h-4 inline mr-1.5 -mt-0.5 text-slate-400" />
+                      위 작업은 <span className="text-slate-600">Calentask 앱 내부 데이터에는 영향을 주지 않으며</span>, 오직 연동 정보만 초기화합니다.
+                    </p>
+                  </div>
+                </div>
+              </motion.div>
+            </>
+          )}
+        </AnimatePresence>
+      </div>
     </div>
   )
 }

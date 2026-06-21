@@ -896,3 +896,169 @@ export async function deleteGoogleEventAction(activityId: string) {
   await deleteActivityFromGoogle(user.id, activityId)
   return { success: true }
 }
+
+export async function unlinkGoogleEventAction(activityId: string) {
+  const { createClient } = await import('@/lib/supabase/server')
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Unauthorized')
+
+  const { error } = await supabase
+    .from('activities')
+    .update({ google_event_id: null })
+    .eq('id', activityId)
+    .eq('user_id', user.id)
+
+  if (error) throw error
+  return { success: true }
+}
+
+export async function getSyncedActivitiesTreeAction() {
+  const { createClient } = await import('@/lib/supabase/server')
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Unauthorized')
+
+  // 1. Fetch user settings
+  const { data: userData } = await supabase
+    .from('users')
+    .select('google_sync_calendar_id, google_sync_calendar_name, google_sync_settings')
+    .eq('id', user.id)
+    .single()
+
+  if (!userData) throw new Error('User not found')
+
+  const defaultCalId = userData.google_sync_calendar_id || 'primary'
+  const defaultCalName = userData.google_sync_calendar_name || '기본 캘린더'
+  const settings = userData.google_sync_settings || {}
+  const groupMapping = settings.groupMapping || {}
+
+  // 2. Fetch categories
+  const { data: categoriesData } = await supabase
+    .from('categories')
+    .select('id, name, color')
+    .eq('user_id', user.id)
+
+  const categoryMap = new Map()
+  if (categoriesData) {
+    categoriesData.forEach(c => categoryMap.set(c.id, c))
+  }
+
+  // 3. Fetch activities with google_event_id NOT NULL and their category mappings
+  const { data: activitiesData, error } = await supabase
+    .from('activities')
+    .select(`
+      id, title, start_time, google_event_id,
+      activity_category_map ( category_id )
+    `)
+    .eq('user_id', user.id)
+    .not('google_event_id', 'is', null)
+    .is('deleted_at', null)
+
+  if (error) throw error
+
+  // 4. Build Tree
+  const tree: any = {}
+
+  for (const act of (activitiesData || [])) {
+    let catId = 'uncategorized'
+    if (act.activity_category_map && act.activity_category_map.length > 0) {
+      catId = act.activity_category_map[0].category_id
+    }
+
+    const calId = groupMapping[catId] || defaultCalId
+    
+    if (!tree[calId]) {
+      // Find calendar name if possible (we don't have full calendar list here, so we use placeholder or default)
+      // Ideally, we'd fetch calendar list, but for now we use default if it's the default cal.
+      const calName = calId === defaultCalId ? defaultCalName : (calId.split('@')[0] || calId)
+      tree[calId] = {
+        calendarName: calName,
+        calendarColor: 'bg-emerald-500', // Default color, can be mapped if stored
+        categories: {}
+      }
+    }
+
+    if (!tree[calId].categories[catId]) {
+      const catInfo = categoryMap.get(catId)
+      tree[calId].categories[catId] = {
+        categoryName: catInfo ? catInfo.name : '미분류',
+        activities: []
+      }
+    }
+
+    tree[calId].categories[catId].activities.push({
+      id: act.id,
+      title: act.title,
+      startTime: act.start_time,
+      googleEventId: act.google_event_id
+    })
+  }
+
+  return tree
+}
+
+export async function getCleanedSyncTimelineAction() {
+  const { createClient } = await import('@/lib/supabase/server')
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Unauthorized')
+
+  const { data, error } = await supabase
+    .from('sync_history')
+    .select('*')
+    .eq('user_id', user.id)
+    .order('synced_at', { ascending: false })
+    .limit(200)
+
+  if (error) throw error
+
+  // 정제 로직
+  return (data || []).map(log => {
+    let title = log.activity_title || '동기화 이벤트'
+    let icon = '🔄'
+    let type = 'UPDATE'
+    let isError = log.action === 'ERROR' || log.action === 'FAILED'
+    let message = log.error_message || ''
+
+    if (log.action === 'BATCH_SYNC') {
+      icon = '✨'
+      type = 'BATCH'
+      title = '일괄 동기화 완료'
+      const match = (log.activity_title || '').match(/(\d+)건 생성, (\d+)건 업데이트, (\d+)건 실패/)
+      if (match) {
+        const [_, created, updated, failed] = match
+        message = `총 ${parseInt(created) + parseInt(updated)}건 정상 처리됨`
+        if (parseInt(failed) > 0) {
+          message += ` (${failed}건 실패)`
+          isError = true
+        }
+      } else {
+        message = log.activity_title
+      }
+    } else if (log.action === 'CREATED') {
+      icon = '➕'
+      type = 'CREATE'
+      title = `새로운 연동: ${log.activity_title}`
+    } else if (log.action === 'DELETED') {
+      icon = '🗑️'
+      type = 'DELETE'
+      title = `연동 해제: ${log.activity_title}`
+    } else if (isError) {
+      icon = '❌'
+      title = `연동 실패: ${log.activity_title || '알 수 없는 오류'}`
+    }
+
+    return {
+      id: log.id,
+      syncedAt: log.synced_at,
+      icon,
+      type,
+      title,
+      message,
+      isError,
+      rawAction: log.action
+    }
+  })
+}
+
