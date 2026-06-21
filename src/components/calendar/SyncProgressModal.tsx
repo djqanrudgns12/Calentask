@@ -47,7 +47,7 @@ export function SyncProgressModal({ isOpen, onClose, onSuccess, initialOffset = 
     setRecentTitle(null)
 
     let currentOffset = startOffset
-    const limit = 10
+    const limit = 50
     let hasMore = true
     let accumSynced = 0
     let accumSkipped = 0

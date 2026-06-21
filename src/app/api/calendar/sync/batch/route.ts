@@ -13,7 +13,7 @@ export async function POST(request: Request) {
 
     const body = await request.json()
     const offset = parseInt(body.offset || '0', 10)
-    const limit = parseInt(body.limit || '10', 10)
+    const limit = parseInt(body.limit || '50', 10)
 
     // Fetch activities for the chunk
     const { data: activities, error, count } = await supabase

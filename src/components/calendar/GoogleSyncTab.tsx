@@ -515,6 +515,10 @@ export function GoogleSyncTab() {
       <AdvancedSyncSettingsModal 
         isOpen={isAdvancedModalOpen} 
         onClose={() => setIsAdvancedModalOpen(false)} 
+        onStartSync={() => {
+          setIsAdvancedModalOpen(false)
+          handleForceSyncNow()
+        }}
         calendarList={calendarList} 
         categories={categories} 
       />

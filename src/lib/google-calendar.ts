@@ -1,5 +1,6 @@
 import { google } from 'googleapis'
 import { createAdminClient } from '@/lib/supabase/server'
+import pLimit from 'p-limit'
 
 export interface GoogleSyncSettings {
   direction?: 'TWO_WAY' | 'EXPORT_ONLY' | 'IMPORT_ONLY'
@@ -7,6 +8,15 @@ export interface GoogleSyncSettings {
   colorMapping?: Record<string, string>
   groupMapping?: Record<string, string>
   privacyMapping?: Record<string, boolean>
+}
+
+/**
+ * UUID → Google Calendar Event ID 변환.
+ * Google Calendar의 커스텀 Event ID는 base32hex(a-v, 0-9)만 허용.
+ * UUID의 hex(0-9, a-f)는 모두 이 범위 안이므로 하이픈만 제거하면 됨.
+ */
+export function toGoogleEventId(uuid: string): string {
+  return uuid.replace(/-/g, '')
 }
 
 /**
@@ -168,7 +178,8 @@ function mapActivityToGoogleEvent(activity: any, categories: any[], settings?: G
 }
 
 /**
- * Creates or updates an event in Google Calendar
+ * Creates or updates an event in Google Calendar.
+ * Uses Custom Event ID for O(1) lookup instead of list API search.
  */
 export async function syncActivityToGoogle(userId: string, activity: any, categories: any[] = []) {
   try {
@@ -189,40 +200,80 @@ export async function syncActivityToGoogle(userId: string, activity: any, catego
     const eventBody = mapActivityToGoogleEvent(activity, categories, settings)
 
     if (activity.parent_activity_id) {
-      const parentSearchResult = await calendar.events.list({
-        calendarId,
-        privateExtendedProperty: [`calentask_id=${activity.parent_activity_id}`],
-      })
-      const existingParentEvent = parentSearchResult.data.items?.[0]
-      if (existingParentEvent?.id) {
-        (eventBody as any).recurringEventId = existingParentEvent.id
+      const parentEventId = toGoogleEventId(activity.parent_activity_id)
+      try {
+        await calendar.events.get({ calendarId, eventId: parentEventId })
+        ;(eventBody as any).recurringEventId = parentEventId
         if (activity.original_start_time) {
           const originalStart = activity.is_all_day 
             ? { date: activity.original_start_time.split('T')[0] }
             : { dateTime: activity.original_start_time }
           ;(eventBody as any).originalStartTime = originalStart
         }
+      } catch (parentErr: any) {
+        // Fallback: Custom ID로 부모를 못 찾으면 기존 extendedProperty 검색
+        if (parentErr.code === 404) {
+          const parentSearchResult = await calendar.events.list({
+            calendarId,
+            privateExtendedProperty: [`calentask_id=${activity.parent_activity_id}`],
+          })
+          const existingParentEvent = parentSearchResult.data.items?.[0]
+          if (existingParentEvent?.id) {
+            (eventBody as any).recurringEventId = existingParentEvent.id
+            if (activity.original_start_time) {
+              const originalStart = activity.is_all_day 
+                ? { date: activity.original_start_time.split('T')[0] }
+                : { dateTime: activity.original_start_time }
+              ;(eventBody as any).originalStartTime = originalStart
+            }
+          }
+        }
       }
     }
 
-    const searchResult = await calendar.events.list({
-      calendarId,
-      privateExtendedProperty: [`calentask_id=${activity.id}`],
-    })
+    const googleEventId = toGoogleEventId(activity.id)
 
-    const existingEvent = searchResult.data.items?.[0]
-
-    if (existingEvent?.id) {
+    // 전략: Custom ID로 update 시도 → 404면 Custom ID로 insert
+    try {
       await calendar.events.update({
         calendarId,
-        eventId: existingEvent.id,
+        eventId: googleEventId,
         requestBody: eventBody,
       })
-    } else {
-      await calendar.events.insert({
-        calendarId,
-        requestBody: eventBody,
-      })
+    } catch (updateErr: any) {
+      if (updateErr.code === 404) {
+        // Custom ID로 존재하지 않음 → 기존 extendedProperty로 검색 (마이그레이션)
+        try {
+          const searchResult = await calendar.events.list({
+            calendarId,
+            privateExtendedProperty: [`calentask_id=${activity.id}`],
+          })
+          const existingEvent = searchResult.data.items?.[0]
+
+          if (existingEvent?.id) {
+            // 기존 이벤트가 있으면 업데이트
+            await calendar.events.update({
+              calendarId,
+              eventId: existingEvent.id,
+              requestBody: eventBody,
+            })
+          } else {
+            // 완전히 새로운 이벤트 → Custom ID로 insert
+            await calendar.events.insert({
+              calendarId,
+              requestBody: { ...eventBody, id: googleEventId },
+            })
+          }
+        } catch (fallbackErr: any) {
+          // Fallback도 실패하면 그냥 insert 시도 (ID 없이)
+          await calendar.events.insert({
+            calendarId,
+            requestBody: eventBody,
+          })
+        }
+      } else {
+        throw updateErr
+      }
     }
   } catch (error) {
     console.error('Failed to sync activity to Google Calendar:', error)
@@ -230,7 +281,8 @@ export async function syncActivityToGoogle(userId: string, activity: any, catego
 }
 
 /**
- * Deletes an event from Google Calendar
+ * Deletes an event from Google Calendar.
+ * Uses Custom Event ID for direct deletion without search.
  */
 export async function deleteActivityFromGoogle(userId: string, activityId: string) {
   try {
@@ -249,8 +301,9 @@ export async function deleteActivityFromGoogle(userId: string, activityId: strin
     if (!auth) return
 
     const calendar = google.calendar({ version: 'v3', auth })
+    const googleEventId = toGoogleEventId(activityId)
 
-    // 그룹 매핑된 캘린더를 포함한 모든 캘린더에서 검색
+    // 그룹 매핑된 캘린더를 포함한 모든 캘린더에서 시도
     const calendarIdsToSearch = new Set<string>()
     if (user?.google_sync_calendar_id) calendarIdsToSearch.add(user.google_sync_calendar_id)
     if (settings.groupMapping) {
@@ -265,23 +318,35 @@ export async function deleteActivityFromGoogle(userId: string, activityId: strin
 
     for (const calId of calendarIdsToSearch) {
       try {
-        const searchResult = await calendar.events.list({
+        // Custom ID로 직접 삭제 시도 (검색 불필요)
+        await calendar.events.delete({
           calendarId: calId,
-          privateExtendedProperty: [`calentask_id=${activityId}`],
+          eventId: googleEventId,
         })
-
-        const existingEvent = searchResult.data.items?.[0]
-
-        if (existingEvent?.id) {
-          await calendar.events.delete({
-            calendarId: calId,
-            eventId: existingEvent.id,
-          })
-          return // 삭제 성공하면 더 이상 검색하지 않음
-        }
+        return // 삭제 성공하면 더 이상 검색하지 않음
       } catch (err: any) {
-        if (err.code !== 404 && err.code !== 410) {
-          console.warn(`Failed to search/delete from calendar ${calId}:`, err.message)
+        if (err.code === 404 || err.code === 410) {
+          // Custom ID로 없으면 기존 extendedProperty Fallback 검색
+          try {
+            const searchResult = await calendar.events.list({
+              calendarId: calId,
+              privateExtendedProperty: [`calentask_id=${activityId}`],
+            })
+            const existingEvent = searchResult.data.items?.[0]
+            if (existingEvent?.id) {
+              await calendar.events.delete({
+                calendarId: calId,
+                eventId: existingEvent.id,
+              })
+              return // 삭제 성공
+            }
+          } catch (fallbackErr: any) {
+            if (fallbackErr.code !== 404 && fallbackErr.code !== 410) {
+              console.warn(`Fallback search/delete failed for calendar ${calId}:`, fallbackErr.message)
+            }
+          }
+        } else {
+          console.warn(`Failed to delete from calendar ${calId}:`, err.message)
         }
       }
     }
@@ -291,7 +356,8 @@ export async function deleteActivityFromGoogle(userId: string, activityId: strin
 }
 
 /**
- * Bulk deletes all Calentask synced events from Google Calendar without unlinking
+ * Bulk deletes all Calentask synced events from Google Calendar without unlinking.
+ * 최적화: Calentask 전용 캘린더는 통째로 삭제 후 재생성하여 즉시 초기화.
  */
 export async function clearSyncedActivitiesFromGoogle(userId: string) {
   try {
@@ -311,13 +377,24 @@ export async function clearSyncedActivitiesFromGoogle(userId: string) {
 
     const calendar = google.calendar({ version: 'v3', auth })
     let deletedCount = 0
+    const limit = pLimit(5) // 병렬 삭제 동시성 제어
 
     for (const calId of calendarIdsToClear) {
       try {
+        // Calentask 전용 캘린더인지 확인
+        const calMeta = await calendar.calendars.get({ calendarId: calId })
+        const isCalentaskCalendar = calMeta.data.summary === 'Calentask' || calMeta.data.description?.includes('Created by Calentask') || calMeta.data.description?.includes('Sync calendar for Calentask')
+
+        if (isCalentaskCalendar) {
+          // 전용 캘린더: 통째로 삭제 (모든 이벤트 즉시 소멸)
+          await calendar.calendars.delete({ calendarId: calId })
+          deletedCount += 999 // 정확한 수를 알 수 없으므로 표시용
+          continue
+        }
+
+        // 개인 캘린더: 이벤트를 병렬로 삭제
         let pageToken: string | null | undefined = undefined
         do {
-          // Google Calendar API does not support filtering by key existence alone.
-          // We must fetch all events and filter client-side for calentask_id.
           const res: any = await calendar.events.list({
             calendarId: calId,
             maxResults: 250,
@@ -327,39 +404,35 @@ export async function clearSyncedActivitiesFromGoogle(userId: string) {
           })
           
           if (res.data.items) {
-            for (const event of res.data.items) {
-              if (event.extendedProperties?.private?.calentask_id) {
-                try {
+            const calentaskEvents = res.data.items.filter(
+              (event: any) => event.extendedProperties?.private?.calentask_id
+            )
+            
+            // p-limit 병렬 삭제 (setTimeout 200ms 제거)
+            const deleteResults = await Promise.allSettled(
+              calentaskEvents.map((event: any) =>
+                limit(async () => {
                   await calendar.events.delete({
                     calendarId: calId,
                     eventId: event.id as string,
                   })
                   deletedCount++
-                  // Rate limit to avoid Google API quota issues
-                  await new Promise(r => setTimeout(r, 200))
-                } catch (deleteErr: any) {
-                  // Skip already-deleted or not-found events
-                  if (deleteErr.code !== 404 && deleteErr.code !== 410) {
-                    console.warn(`Failed to delete event ${event.id}:`, deleteErr.message)
-                  }
+                })
+              )
+            )
+            
+            // 실패 로그
+            deleteResults.forEach((result, i) => {
+              if (result.status === 'rejected') {
+                const err = result.reason
+                if (err?.code !== 404 && err?.code !== 410) {
+                  console.warn(`Failed to delete event ${calentaskEvents[i]?.id}:`, err?.message)
                 }
               }
-            }
+            })
           }
           pageToken = res.data.nextPageToken
         } while (pageToken)
-
-        // 일정 삭제 완료 후, 캘린더 자체도 삭제 (Calentask 전용으로 만들어진 캘린더인 경우에만)
-        try {
-          const calMeta = await calendar.calendars.get({ calendarId: calId })
-          const isCalentaskCalendar = calMeta.data.summary === 'Calentask' || calMeta.data.description?.includes('Created by Calentask') || calMeta.data.description?.includes('Sync calendar for Calentask')
-          
-          if (isCalentaskCalendar) {
-            await calendar.calendars.delete({ calendarId: calId })
-          }
-        } catch (err: any) {
-          console.warn(`Failed to delete calendar group ${calId}:`, err.message)
-        }
 
       } catch (err: any) {
         console.warn(`Failed to clear calendar ${calId}:`, err.message)
@@ -426,6 +499,7 @@ export async function watchGoogleCalendar(userId: string) {
 
 /**
  * Handles delta sync with Google Calendar using syncToken.
+ * 최적화: Bulk SELECT + Map 조회 + 병렬 업데이트로 N+1 문제 해결.
  */
 export async function handleGoogleCalendarSync(userId: string, customSupabase?: any) {
   try {
@@ -486,16 +560,33 @@ export async function handleGoogleCalendarSync(userId: string, customSupabase?: 
     if (settings.direction !== 'EXPORT_ONLY') {
       const conflictStrategy = settings.conflictStrategy || 'LATEST_WINS'
 
+      // Bulk SELECT: 모든 calentask_id를 수집하여 1회 쿼리로 조회
+      const calentaskIds = items
+        .map(event => event.extendedProperties?.private?.calentask_id)
+        .filter(Boolean) as string[]
+
+      let activityMap = new Map<string, any>()
+      if (calentaskIds.length > 0) {
+        const { data: existingActivities } = await supabase
+          .from('activities')
+          .select('id, updated_at, deleted_at')
+          .in('id', calentaskIds)
+        
+        if (existingActivities) {
+          activityMap = new Map(existingActivities.map((a: any) => [a.id, a]))
+        }
+      }
+
+      // 업데이트/삽입 작업을 수집하여 병렬 처리
+      const updateTasks: Promise<any>[] = []
+      const insertTasks: Promise<any>[] = []
+
       for (const event of items) {
         const isCancelled = event.status === 'cancelled'
         const calentaskId = event.extendedProperties?.private?.calentask_id
 
         if (calentaskId) {
-          const { data: activity } = await supabase
-            .from('activities')
-            .select('id, updated_at, deleted_at')
-            .eq('id', calentaskId)
-            .single()
+          const activity = activityMap.get(calentaskId)
 
           if (activity) {
             const eventUpdated = new Date(event.updated as string).getTime()
@@ -512,10 +603,12 @@ export async function handleGoogleCalendarSync(userId: string, customSupabase?: 
 
             if (shouldUpdate) {
               if (isCancelled && !activity.deleted_at) {
-                await supabase
-                  .from('activities')
-                  .update({ deleted_at: new Date().toISOString() })
-                  .eq('id', calentaskId)
+                updateTasks.push(
+                  supabase
+                    .from('activities')
+                    .update({ deleted_at: new Date().toISOString() })
+                    .eq('id', calentaskId)
+                )
               } else if (!isCancelled) {
                 const start = event.start?.dateTime || event.start?.date
                 const end = event.end?.dateTime || event.end?.date
@@ -524,18 +617,20 @@ export async function handleGoogleCalendarSync(userId: string, customSupabase?: 
                   ? event.reminders.overrides.map((r: any) => ({ method: r.method, minutes: r.minutes }))
                   : []
                 
-                await supabase
-                  .from('activities')
-                  .update({
-                    title: event.summary || '제목 없음',
-                    memo: event.description || '',
-                    start_time: start,
-                    end_time: end,
-                    is_all_day: isAllDay,
-                    reminders,
-                    updated_at: new Date(event.updated as string).toISOString()
-                  })
-                  .eq('id', calentaskId)
+                updateTasks.push(
+                  supabase
+                    .from('activities')
+                    .update({
+                      title: event.summary || '제목 없음',
+                      memo: event.description || '',
+                      start_time: start,
+                      end_time: end,
+                      is_all_day: isAllDay,
+                      reminders,
+                      updated_at: new Date(event.updated as string).toISOString()
+                    })
+                    .eq('id', calentaskId)
+                )
               }
             }
           }
@@ -549,40 +644,49 @@ export async function handleGoogleCalendarSync(userId: string, customSupabase?: 
             const reminders = (event.reminders?.useDefault === false && event.reminders?.overrides)
               ? event.reminders.overrides.map((r: any) => ({ method: r.method, minutes: r.minutes }))
               : []
-            const newActivity = {
-              user_id: userId,
-              title: event.summary || '제목 없음',
-              memo: event.description || '',
-              start_time: start,
-              end_time: end,
-              is_all_day: isAllDay,
-              type: 'EVENT', // default type for imports
-              reminders,
-            }
-            
-            const { data: insertedActivity } = await supabase
-              .from('activities')
-              .insert(newActivity)
-              .select()
-              .single()
 
-            if (insertedActivity) {
-              await calendar.events.patch({
-                calendarId,
-                eventId: event.id as string,
-                requestBody: {
-                  extendedProperties: {
-                    private: {
-                      calentask_id: insertedActivity.id,
-                      type: 'EVENT'
-                    }
-                  }
+            // 삽입 + 구글 이벤트에 calentask_id 패치를 순차 처리해야 함 (의존성 있음)
+            insertTasks.push(
+              (async () => {
+                const newActivity = {
+                  user_id: userId,
+                  title: event.summary || '제목 없음',
+                  memo: event.description || '',
+                  start_time: start,
+                  end_time: end,
+                  is_all_day: isAllDay,
+                  type: 'EVENT', // default type for imports
+                  reminders,
                 }
-              })
-            }
+                
+                const { data: insertedActivity } = await supabase
+                  .from('activities')
+                  .insert(newActivity)
+                  .select()
+                  .single()
+
+                if (insertedActivity) {
+                  await calendar.events.patch({
+                    calendarId,
+                    eventId: event.id as string,
+                    requestBody: {
+                      extendedProperties: {
+                        private: {
+                          calentask_id: insertedActivity.id,
+                          type: 'EVENT'
+                        }
+                      }
+                    }
+                  })
+                }
+              })()
+            )
           }
         }
       }
+
+      // 병렬 실행
+      await Promise.allSettled([...updateTasks, ...insertTasks])
     }
 
     if (syncToken) {
@@ -646,6 +750,11 @@ export async function createGoogleCalendar(userId: string, name: string) {
   }
 }
 
+/**
+ * Batch syncs activities to Google Calendar.
+ * 최적화: p-limit(5) 병렬 처리, Auth/CalendarId 루프 외부 캐싱,
+ * Custom Event ID 사용, setTimeout(200) 제거.
+ */
 export async function syncBatchActivitiesToGoogle(userId: string, activities: any[]) {
   const result = {
     synced: 0,
@@ -666,69 +775,128 @@ export async function syncBatchActivitiesToGoogle(userId: string, activities: an
     const auth = await getGoogleAuthClient(userId, supabase)
     if (!auth) throw new Error('No auth client')
 
-    const calendarId = await getSyncCalendarId(userId, auth, supabase, [], settings)
-    if (!calendarId) throw new Error('No calendar ID')
+    // 기본 캘린더 ID를 루프 밖에서 1회만 조회
+    const defaultCalendarId = await getSyncCalendarId(userId, auth, supabase, [], settings)
+    if (!defaultCalendarId) throw new Error('No calendar ID')
 
     const calendar = google.calendar({ version: 'v3', auth })
 
-    for (const activity of activities) {
-      try {
-        if (activity.type === 'TASK') continue
-
-        let categories: any[] = []
-        if (activity.activity_category_map && Array.isArray(activity.activity_category_map)) {
-          categories = activity.activity_category_map.map((acm: any) => acm.categories).filter(Boolean)
-        }
-        
-        const targetCalendarId = await getSyncCalendarId(userId, auth, supabase, categories, settings) || calendarId
-
-        const eventBody = mapActivityToGoogleEvent(activity, categories, settings)
-
-        if (activity.parent_activity_id) {
-          const parentSearchResult = await calendar.events.list({
-            calendarId: targetCalendarId,
-            privateExtendedProperty: [`calentask_id=${activity.parent_activity_id}`],
-          })
-          const existingParentEvent = parentSearchResult.data.items?.[0]
-          if (existingParentEvent?.id) {
-            (eventBody as any).recurringEventId = existingParentEvent.id
-            if (activity.original_start_time) {
-              const originalStart = activity.is_all_day 
-                ? { date: activity.original_start_time.split('T')[0] }
-                : { dateTime: activity.original_start_time }
-              ;(eventBody as any).originalStartTime = originalStart
-            }
-          }
-        }
-
-        const searchResult = await calendar.events.list({
-          calendarId: targetCalendarId,
-          privateExtendedProperty: [`calentask_id=${activity.id}`],
-        })
-
-        const existingEvent = searchResult.data.items?.[0]
-
-        if (existingEvent?.id) {
-          await calendar.events.update({
-            calendarId: targetCalendarId,
-            eventId: existingEvent.id,
-            requestBody: eventBody,
-          })
-          result.skipped++
-        } else {
-          await calendar.events.insert({
-            calendarId: targetCalendarId,
-            requestBody: eventBody,
-          })
-          result.synced++
-        }
-        await new Promise(r => setTimeout(r, 200))
-      } catch (err: any) {
-        console.error(`Failed to sync activity ${activity.id}:`, err)
-        result.failed++
-        result.failedItems.push({ id: activity.id, title: activity.title, error: err.message })
+    // 그룹 매핑 사전 캐싱: categoryId → calendarId
+    const groupCalendarCache = new Map<string, string>()
+    if (settings.groupMapping) {
+      for (const [catId, calId] of Object.entries(settings.groupMapping)) {
+        groupCalendarCache.set(catId, calId)
       }
     }
+
+    const limit = pLimit(5) // 동시 5건 병렬 처리
+
+    const tasks = activities.map(activity =>
+      limit(async () => {
+        try {
+          if (activity.type === 'TASK') return // skip
+
+          let categories: any[] = []
+          if (activity.activity_category_map && Array.isArray(activity.activity_category_map)) {
+            categories = activity.activity_category_map.map((acm: any) => acm.categories).filter(Boolean)
+          }
+          
+          // 그룹 매핑에서 캘린더 ID를 O(1)로 결정 (DB 조회 제거)
+          let targetCalendarId = defaultCalendarId
+          for (const cat of categories) {
+            const mappedCalId = groupCalendarCache.get(cat.id)
+            if (mappedCalId) {
+              targetCalendarId = mappedCalId
+              break
+            }
+          }
+
+          const eventBody = mapActivityToGoogleEvent(activity, categories, settings)
+          const googleEventId = toGoogleEventId(activity.id)
+
+          if (activity.parent_activity_id) {
+            const parentEventId = toGoogleEventId(activity.parent_activity_id)
+            try {
+              await calendar.events.get({ calendarId: targetCalendarId, eventId: parentEventId })
+              ;(eventBody as any).recurringEventId = parentEventId
+              if (activity.original_start_time) {
+                const originalStart = activity.is_all_day 
+                  ? { date: activity.original_start_time.split('T')[0] }
+                  : { dateTime: activity.original_start_time }
+                ;(eventBody as any).originalStartTime = originalStart
+              }
+            } catch (parentErr: any) {
+              if (parentErr.code === 404) {
+                // Fallback: 기존 extendedProperty 검색
+                const parentSearchResult = await calendar.events.list({
+                  calendarId: targetCalendarId,
+                  privateExtendedProperty: [`calentask_id=${activity.parent_activity_id}`],
+                })
+                const existingParentEvent = parentSearchResult.data.items?.[0]
+                if (existingParentEvent?.id) {
+                  (eventBody as any).recurringEventId = existingParentEvent.id
+                  if (activity.original_start_time) {
+                    const originalStart = activity.is_all_day 
+                      ? { date: activity.original_start_time.split('T')[0] }
+                      : { dateTime: activity.original_start_time }
+                    ;(eventBody as any).originalStartTime = originalStart
+                  }
+                }
+              }
+            }
+          }
+
+          // Custom ID로 update 시도 → 404면 insert
+          try {
+            await calendar.events.update({
+              calendarId: targetCalendarId,
+              eventId: googleEventId,
+              requestBody: eventBody,
+            })
+            result.skipped++ // 이미 존재하여 업데이트
+          } catch (updateErr: any) {
+            if (updateErr.code === 404) {
+              // 기존 extendedProperty로 검색 (마이그레이션 Fallback)
+              try {
+                const searchResult = await calendar.events.list({
+                  calendarId: targetCalendarId,
+                  privateExtendedProperty: [`calentask_id=${activity.id}`],
+                })
+                const existingEvent = searchResult.data.items?.[0]
+                if (existingEvent?.id) {
+                  await calendar.events.update({
+                    calendarId: targetCalendarId,
+                    eventId: existingEvent.id,
+                    requestBody: eventBody,
+                  })
+                  result.skipped++
+                } else {
+                  await calendar.events.insert({
+                    calendarId: targetCalendarId,
+                    requestBody: { ...eventBody, id: googleEventId },
+                  })
+                  result.synced++
+                }
+              } catch {
+                await calendar.events.insert({
+                  calendarId: targetCalendarId,
+                  requestBody: eventBody,
+                })
+                result.synced++
+              }
+            } else {
+              throw updateErr
+            }
+          }
+        } catch (err: any) {
+          console.error(`Failed to sync activity ${activity.id}:`, err)
+          result.failed++
+          result.failedItems.push({ id: activity.id, title: activity.title, error: err.message })
+        }
+      })
+    )
+
+    await Promise.allSettled(tasks)
   } catch (error: any) {
     console.error('Failed to process batch sync:', error)
     throw error
@@ -782,6 +950,10 @@ export async function deleteGoogleCalendar(userId: string, calendarId: string) {
   }
 }
 
+/**
+ * Migrates events from one calendar to another.
+ * 최적화: p-limit(5) 병렬 이동, setTimeout(200) 제거.
+ */
 export async function migrateCategoryActivitiesToCalendar(userId: string, categoryId: string, oldCalendarId: string, newCalendarId: string) {
    try {
     const supabase = createAdminClient()
@@ -800,6 +972,8 @@ export async function migrateCategoryActivitiesToCalendar(userId: string, catego
 
     const calendar = google.calendar({ version: 'v3', auth })
     let movedCount = 0
+    const limit = pLimit(5) // 병렬 이동 동시성 제어
+
     let pageToken: string | null | undefined = undefined
     do {
       const res: any = await calendar.events.list({
@@ -811,22 +985,30 @@ export async function migrateCategoryActivitiesToCalendar(userId: string, catego
       })
       
       if (res.data.items) {
-        for (const event of res.data.items) {
+        const eventsToMove = res.data.items.filter((event: any) => {
           const calentaskId = event.extendedProperties?.private?.calentask_id
-          if (calentaskId && calentaskIdSet.has(calentaskId)) {
-            try {
+          return calentaskId && calentaskIdSet.has(calentaskId)
+        })
+
+        // p-limit 병렬 이동
+        const moveResults = await Promise.allSettled(
+          eventsToMove.map((event: any) =>
+            limit(async () => {
               await calendar.events.move({
                 calendarId: oldCalendarId,
                 eventId: event.id as string,
                 destination: newCalendarId,
               })
               movedCount++
-              await new Promise(r => setTimeout(r, 200)) // Rate limit protection
-            } catch (moveErr: any) {
-              console.warn(`Failed to move event ${event.id}:`, moveErr.message)
-            }
+            })
+          )
+        )
+
+        moveResults.forEach((result, i) => {
+          if (result.status === 'rejected') {
+            console.warn(`Failed to move event ${eventsToMove[i]?.id}:`, result.reason?.message)
           }
-        }
+        })
       }
       pageToken = res.data.nextPageToken
     } while (pageToken)

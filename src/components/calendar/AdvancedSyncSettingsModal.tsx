@@ -21,7 +21,7 @@ const GOOGLE_COLORS = [
   { id: '11', hex: '#d50000', name: 'Tomato' },
 ]
 
-export function AdvancedSyncSettingsModal({ isOpen, onClose, calendarList, categories }: { isOpen: boolean, onClose: () => void, calendarList: any[], categories: any[] }) {
+export function AdvancedSyncSettingsModal({ isOpen, onClose, onStartSync, calendarList, categories }: { isOpen: boolean, onClose: () => void, onStartSync?: () => void, calendarList: any[], categories: any[] }) {
   const [activeTab, setActiveTab] = useState<'core' | 'group' | 'danger'>('core')
   
   const [settings, setSettings] = useState<any>({
@@ -377,6 +377,27 @@ export function AdvancedSyncSettingsModal({ isOpen, onClose, calendarList, categ
             </div>
           </div>
 
+          {/* 하단 액션 바 (Sticky Footer) */}
+          <div className="flex flex-col sm:flex-row items-center justify-between px-6 py-4 border-t border-slate-200/60 bg-slate-50/80 backdrop-blur-md gap-4 sm:gap-0">
+            <div className="flex items-center gap-2 text-sm text-slate-500 font-medium">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+              모든 설정은 실시간으로 안전하게 자동 저장되고 있습니다.
+            </div>
+            <div className="flex items-center gap-3 w-full sm:w-auto">
+              <Button variant="outline" onClick={onClose} className="flex-1 sm:flex-none border-slate-200 text-slate-600 hover:bg-slate-100">
+                닫기
+              </Button>
+              {onStartSync && (
+                <Button 
+                  onClick={onStartSync} 
+                  className="flex-1 sm:flex-none bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-600/20 font-bold"
+                >
+                  🚀 이 설정으로 지금 동기화 시작하기
+                </Button>
+              )}
+            </div>
+          </div>
+
           <AnimatePresence>
             {migrationPrompt && (
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md">
@@ -431,8 +452,10 @@ function DroppableCalendarGroup({ calendar, categories, settings, onTogglePrivac
     setIsUpdating(true)
     try {
       await updateGoogleCalendarMetaAction(calendar.id, editSummary, colorHex)
-      onUpdateCalendarList((prev: any[]) => prev.map(c => c.id === calendar.id ? { ...c, summary: editSummary } : c))
+      onUpdateCalendarList((prev: any[]) => prev.map(c => c.id === calendar.id ? { ...c, summary: editSummary, backgroundColor: colorHex || c.backgroundColor } : c))
       if (!colorHex) setIsPopoverOpen(false)
+    } catch (e: any) {
+      alert(`설정 업데이트 실패: ${e.message}\n권한이 부족하거나 읽기 전용 캘린더일 수 있습니다.`)
     } finally {
       setIsUpdating(false)
     }
@@ -445,6 +468,8 @@ function DroppableCalendarGroup({ calendar, categories, settings, onTogglePrivac
       await deleteGoogleCalendarAction(calendar.id)
       onUpdateCalendarList((prev: any[]) => prev.filter(c => c.id !== calendar.id))
       onDeleteCalendarGroup?.(calendar.id)
+    } catch (error: any) {
+      alert(`캘린더 삭제 실패: ${error.message}\n기본 제공 캘린더(예: 휴일 캘린더)나 읽기 전용 캘린더는 삭제할 수 없습니다.`)
     } finally {
       setIsUpdating(false)
     }
@@ -454,8 +479,10 @@ function DroppableCalendarGroup({ calendar, categories, settings, onTogglePrivac
     <div ref={setNodeRef} className={`relative rounded-3xl border-2 transition-all duration-300 flex flex-col ${isOver ? 'border-indigo-500 bg-indigo-50/50' : 'border-slate-200/60 bg-slate-50/30'}`}>
       <div className="flex items-center justify-between px-4 py-3 sm:px-5 sm:py-4 border-b border-slate-200/50 bg-white/60 rounded-t-[1.3rem]">
         <div className="flex items-center gap-3 min-w-0 pr-2">
-          <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${isUnassigned ? 'bg-slate-100' : 'bg-indigo-100'}`}>
-            <FolderTree className="w-4 h-4" />
+          <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${isUnassigned ? 'bg-slate-100 text-slate-400' : 'bg-slate-100'}`}>
+            {isUnassigned ? <FolderTree className="w-4 h-4" /> : (
+              <div className="w-4 h-4 rounded-full shadow-sm" style={{ backgroundColor: calendar.backgroundColor || '#6366f1' }} />
+            )}
           </div>
           <span className={`font-extrabold text-sm sm:text-base truncate ${isUnassigned ? 'text-slate-500' : 'text-slate-800'}`}>{calendar.summary}</span>
         </div>
@@ -473,7 +500,14 @@ function DroppableCalendarGroup({ calendar, categories, settings, onTogglePrivac
                     </div>
                   </div>
                   <div className="flex flex-wrap gap-2">
-                    {GOOGLE_COLORS.map(c => <button key={c.id} className="w-6 h-6 rounded-full border border-black/10" style={{ backgroundColor: c.hex }} onClick={() => handleUpdateMeta(c.hex)} />)}
+                    {GOOGLE_COLORS.map(c => (
+                      <button 
+                        key={c.id} 
+                        className={`w-6 h-6 rounded-full border border-black/10 transition-all ${(calendar.backgroundColor === c.hex || (!calendar.backgroundColor && c.hex === '#6366f1')) ? 'ring-2 ring-offset-2 ring-indigo-500 scale-110' : 'hover:scale-110 opacity-70 hover:opacity-100'}`} 
+                        style={{ backgroundColor: c.hex }} 
+                        onClick={() => handleUpdateMeta(c.hex)} 
+                      />
+                    ))}
                   </div>
                   {!calendar.primary && <Button variant="ghost" className="w-full text-red-600 mt-2" onClick={handleDelete}><Trash2 className="w-4 h-4 mr-2" /> 삭제</Button>}
                 </motion.div>
