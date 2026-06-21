@@ -790,11 +790,32 @@ export async function syncBatchActivitiesToGoogle(userId: string, activities: an
       }
     }
 
-    const limit = pLimit(5) // 동시 5건 병렬 처리
+    const limit = pLimit(1) // 동시 1건 처리로 구글 Rate Limit 회피
+
+    const delay = (ms: number) => new Promise(res => setTimeout(res, ms));
+
+    const executeWithRetry = async <T>(operation: () => Promise<T>, maxRetries = 4): Promise<T> => {
+      let retries = 0;
+      while (true) {
+        try {
+          return await operation();
+        } catch (error: any) {
+          if ((error.code === 403 || error.code === 429 || error.code >= 500) && retries < maxRetries) {
+            retries++;
+            const backoffDelay = Math.pow(2, retries) * 500; // 1초, 2초, 4초, 8초 대기
+            console.warn(`Google API Rate limit or server error. Retrying in ${backoffDelay}ms... (Attempt ${retries})`);
+            await delay(backoffDelay);
+          } else {
+            throw error;
+          }
+        }
+      }
+    };
 
     const tasks = activities.map(activity =>
       limit(async () => {
         try {
+          await delay(500); // 각 항목마다 기본 500ms 딜레이를 주어 초당 요청 수 엄격히 제어
           if (activity.type === 'TASK') return // skip
 
           let categories: any[] = []
@@ -818,7 +839,7 @@ export async function syncBatchActivitiesToGoogle(userId: string, activities: an
           if (activity.parent_activity_id) {
             const parentEventId = toGoogleEventId(activity.parent_activity_id)
             try {
-              await calendar.events.get({ calendarId: targetCalendarId, eventId: parentEventId })
+              await executeWithRetry(() => calendar.events.get({ calendarId: targetCalendarId, eventId: parentEventId }))
               ;(eventBody as any).recurringEventId = parentEventId
               if (activity.original_start_time) {
                 const originalStart = activity.is_all_day 
@@ -829,10 +850,10 @@ export async function syncBatchActivitiesToGoogle(userId: string, activities: an
             } catch (parentErr: any) {
               if (parentErr.code === 404) {
                 // Fallback: 기존 extendedProperty 검색
-                const parentSearchResult = await calendar.events.list({
+                const parentSearchResult = await executeWithRetry(() => calendar.events.list({
                   calendarId: targetCalendarId,
                   privateExtendedProperty: [`calentask_id=${activity.parent_activity_id}`],
-                })
+                }))
                 const existingParentEvent = parentSearchResult.data.items?.[0]
                 if (existingParentEvent?.id) {
                   (eventBody as any).recurringEventId = existingParentEvent.id
@@ -849,40 +870,40 @@ export async function syncBatchActivitiesToGoogle(userId: string, activities: an
 
           // Custom ID로 update 시도 → 404면 insert
           try {
-            await calendar.events.update({
+            await executeWithRetry(() => calendar.events.update({
               calendarId: targetCalendarId,
               eventId: googleEventId,
               requestBody: eventBody,
-            })
+            }))
             result.skipped++ // 이미 존재하여 업데이트
           } catch (updateErr: any) {
             if (updateErr.code === 404) {
               // 기존 extendedProperty로 검색 (마이그레이션 Fallback)
               try {
-                const searchResult = await calendar.events.list({
+                const searchResult = await executeWithRetry(() => calendar.events.list({
                   calendarId: targetCalendarId,
                   privateExtendedProperty: [`calentask_id=${activity.id}`],
-                })
+                }))
                 const existingEvent = searchResult.data.items?.[0]
                 if (existingEvent?.id) {
-                  await calendar.events.update({
+                  await executeWithRetry(() => calendar.events.update({
                     calendarId: targetCalendarId,
                     eventId: existingEvent.id,
                     requestBody: eventBody,
-                  })
+                  }))
                   result.skipped++
                 } else {
-                  await calendar.events.insert({
+                  await executeWithRetry(() => calendar.events.insert({
                     calendarId: targetCalendarId,
                     requestBody: { ...eventBody, id: googleEventId },
-                  })
+                  }))
                   result.synced++
                 }
               } catch {
-                await calendar.events.insert({
+                await executeWithRetry(() => calendar.events.insert({
                   calendarId: targetCalendarId,
                   requestBody: eventBody,
-                })
+                }))
                 result.synced++
               }
             } else {

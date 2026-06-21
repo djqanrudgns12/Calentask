@@ -119,6 +119,52 @@ export function SyncProgressModal({ isOpen, onClose, onSuccess, initialOffset = 
     }
   }
 
+  const retryFailedItems = async () => {
+    if (isSyncingRef.current || failedItems.length === 0) return
+    isSyncingRef.current = true
+    setSyncState('syncing')
+    
+    setProgress({ synced: 0, skipped: 0, failed: 0, total: failedItems.length, current: 0 })
+    
+    const activityIds = failedItems.map(item => item.id)
+    setFailedItems([])
+    setRecentTitle('실패 항목 재시도 중...')
+
+    try {
+      const res = await fetch('/api/calendar/sync/retry', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ activityIds })
+      })
+
+      if (!res.ok) {
+        throw new Error('서버 응답 오류가 발생했습니다.')
+      }
+
+      const data = await res.json()
+      
+      setProgress({
+        synced: data.synced,
+        skipped: data.skipped,
+        failed: data.failed,
+        total: data.total,
+        current: data.total
+      })
+
+      if (data.failedItems?.length) {
+        setFailedItems(data.failedItems)
+        setSyncState('partial_error')
+      } else {
+        setSyncState('success')
+      }
+    } catch (error) {
+      console.error('Retry failed:', error)
+      setSyncState('fatal_error')
+    } finally {
+      isSyncingRef.current = false
+    }
+  }
+
   useEffect(() => {
     if (isOpen && syncState === 'idle') {
       startSync(initialOffset)
@@ -233,13 +279,35 @@ export function SyncProgressModal({ isOpen, onClose, onSuccess, initialOffset = 
             </AnimatePresence>
           </div>
 
+          {/* Failed Items List */}
+          {(syncState === 'partial_error' || syncState === 'fatal_error') && failedItems.length > 0 && (
+            <div className="mb-6 bg-red-50 border border-red-100 rounded-lg p-3 max-h-40 overflow-y-auto">
+              <h4 className="text-xs font-bold text-red-600 mb-2">실패 사유 ({failedItems.length}건)</h4>
+              <ul className="space-y-2">
+                {failedItems.map((item, idx) => (
+                  <li key={idx} className="text-xs text-slate-700 bg-white p-2 rounded shadow-sm border border-red-50">
+                    <span className="font-semibold">{item.title}</span>
+                    <p className="text-red-500 mt-0.5 line-clamp-2">{item.error || '알 수 없는 오류'}</p>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
           {/* Action Buttons for Errors */}
           {(syncState === 'partial_error' || syncState === 'fatal_error') && (
             <div className="mt-6 space-y-3">
-              <Button onClick={() => startSync(progress.current)} className="w-full bg-indigo-600 hover:bg-indigo-700">
-                <RefreshCw className="w-4 h-4 mr-2" />
-                실패한 지점부터 다시 시도
-              </Button>
+              {syncState === 'partial_error' ? (
+                <Button onClick={retryFailedItems} className="w-full bg-indigo-600 hover:bg-indigo-700">
+                  <RefreshCw className="w-4 h-4 mr-2" />
+                  실패한 항목만 다시 시도 ({failedItems.length}건)
+                </Button>
+              ) : (
+                <Button onClick={() => startSync(progress.current)} className="w-full bg-indigo-600 hover:bg-indigo-700">
+                  <RefreshCw className="w-4 h-4 mr-2" />
+                  실패한 지점부터 다시 시도
+                </Button>
+              )}
               <Button onClick={handleClose} variant="outline" className="w-full">
                 닫기
               </Button>
