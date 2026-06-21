@@ -195,13 +195,31 @@ export function GoogleSyncTab() {
 
   return (
     <div className="max-w-4xl mx-auto space-y-6 md:space-y-8 pb-10">
-      <div className="flex items-center gap-3 mb-6">
-        <div className="w-10 h-10 bg-emerald-100 text-emerald-600 rounded-xl flex items-center justify-center shrink-0">
-          <Globe2 className="w-5 h-5" />
-        </div>
-        <div>
-          <h2 className="text-xl md:text-2xl font-bold tracking-tight">구글 계정 / 캘린더 연동 센터</h2>
-          <p className="text-sm text-muted-foreground mt-1">구글 캘린더 연동 및 다양한 디바이스 위젯 사용 가이드라인</p>
+      <div className="flex flex-row items-center justify-between rounded-xl md:rounded-[2rem] px-4 py-3 md:px-6 md:py-4 gap-4 mb-8 bg-card/90 backdrop-blur-xl shadow-[0_10px_40px_-10px_rgba(16,185,129,0.15)] border border-emerald-100/80 relative overflow-hidden">
+        {/* Background Effects */}
+        <div className="absolute inset-0 bg-gradient-to-r from-emerald-50/50 via-teal-50/30 to-cyan-50/50 pointer-events-none" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-white/40 via-transparent to-transparent pointer-events-none" />
+        
+        <div className="flex items-center shrink-0 gap-4 py-1 relative z-10">
+          <div className="relative w-12 h-12 md:w-14 md:h-14 rounded-2xl bg-gradient-to-br from-emerald-100 to-teal-100 flex items-center justify-center shrink-0 shadow-inner border border-white/50">
+            <Globe2 className="w-6 h-6 md:w-7 md:h-7 text-emerald-600 relative z-10" />
+            <div className="absolute inset-0 bg-white/40 rounded-2xl animate-pulse" />
+          </div>
+          <div className="flex flex-col">
+            <h2 className="font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-emerald-700 to-teal-700 text-lg md:text-2xl tracking-tight">
+              구글 계정 / 캘린더 연동 센터
+            </h2>
+            <div className="flex items-center gap-2 mt-0.5 md:mt-1">
+              <span className="relative flex w-2 h-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-teal-500 opacity-75"></span>
+                <span className="relative inline-flex rounded-full w-2 h-2 bg-teal-500"></span>
+              </span>
+              <p className="text-[10px] md:text-xs text-emerald-600 font-mono tracking-wider font-bold">SYNC CENTER ONLINE</p>
+            </div>
+            <p className="text-xs md:text-sm text-slate-500 font-medium mt-1">
+              구글 캘린더 연동 및 다양한 디바이스 위젯 사용 가이드라인
+            </p>
+          </div>
         </div>
       </div>
 
@@ -437,7 +455,7 @@ export function GoogleSyncTab() {
 
       <div className="grid md:grid-cols-3 gap-6">
         {/* 데스크탑 위젯 가이드 */}
-        <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-sm flex flex-col">
+        <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-sm flex flex-col hover:-translate-y-1 hover:shadow-md hover:border-slate-300 transition-all">
           <div className="h-40 bg-slate-100 flex items-center justify-center border-b border-border relative">
             <Monitor className="w-12 h-12 text-slate-300 absolute" />
             <span className="text-slate-400 font-medium z-10 text-sm">Desktop Widget Placeholder</span>
@@ -457,7 +475,7 @@ export function GoogleSyncTab() {
         </div>
 
         {/* iOS 위젯 가이드 */}
-        <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-sm flex flex-col">
+        <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-sm flex flex-col hover:-translate-y-1 hover:shadow-md hover:border-blue-300 transition-all">
           <div className="h-40 bg-blue-50 flex items-center justify-center border-b border-border relative">
             <Smartphone className="w-12 h-12 text-blue-200 absolute" />
             <span className="text-blue-400 font-medium z-10 text-sm">iOS Widget Placeholder</span>
@@ -477,7 +495,7 @@ export function GoogleSyncTab() {
         </div>
 
         {/* Android 위젯 가이드 */}
-        <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-sm flex flex-col">
+        <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-sm flex flex-col hover:-translate-y-1 hover:shadow-md hover:border-emerald-300 transition-all">
           <div className="h-40 bg-emerald-50 flex items-center justify-center border-b border-border relative">
             <Smartphone className="w-12 h-12 text-emerald-200 absolute" />
             <span className="text-emerald-400 font-medium z-10 text-sm">Android Widget Placeholder</span>
