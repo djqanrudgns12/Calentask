@@ -61,21 +61,7 @@ export async function GET(request: Request) {
             console.log('[Auth Callback] Successfully updated user profile with google info')
           }
 
-          // Trigger initial sync in background if refresh token was saved
-          if (providerRefreshToken && googleIdentity) {
-            try {
-              const { watchGoogleCalendar } = await import('@/lib/google-calendar')
-              await watchGoogleCalendar(data.session.user.id)
-            } catch (err) {
-              console.error('[Auth Callback] watchGoogleCalendar failed:', err)
-            }
-            
-            if (next.includes('?')) {
-              next += '&trigger_sync=true'
-            } else {
-              next += '?trigger_sync=true'
-            }
-          }
+          // 완전 롤백: 자동 동기화 트리거 및 백그라운드 웹훅 등록 제거
         }
       }
 

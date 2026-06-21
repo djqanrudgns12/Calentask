@@ -74,16 +74,6 @@ export async function GET(request: Request) {
       return NextResponse.redirect(`${origin}/?tab=profile&error=db_update_failed`)
     }
 
-    // 완전 롤백: 자동 동기화 트리거(trigger_sync=true) 제거
-    if (tokens.refresh_token) {
-      try {
-        const { watchGoogleCalendar } = await import('@/lib/google-calendar')
-        await watchGoogleCalendar(user.id)
-      } catch (err) {
-        console.error('[Custom Google Callback] watchGoogleCalendar failed:', err)
-      }
-    }
-
     return NextResponse.redirect(`${origin}/?tab=profile&success=google_linked`)
   } catch (error) {
     console.error('Google Callback Processing Error:', error)
