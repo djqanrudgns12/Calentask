@@ -714,7 +714,8 @@ export async function fetchGoogleCalendars(userId: string) {
       id: item.id,
       summary: item.summary,
       description: item.description,
-      primary: item.primary
+      primary: item.primary,
+      backgroundColor: item.backgroundColor
     })) || []
   } catch (error) {
     console.error('Failed to fetch Google calendars:', error)
