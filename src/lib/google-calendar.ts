@@ -348,10 +348,30 @@ export async function clearSyncedActivitiesFromGoogle(userId: string) {
           }
           pageToken = res.data.nextPageToken
         } while (pageToken)
+
+        // 일정 삭제 완료 후, 캘린더 자체도 삭제 (Calentask 전용으로 만들어진 캘린더인 경우에만)
+        try {
+          const calMeta = await calendar.calendars.get({ calendarId: calId })
+          const isCalentaskCalendar = calMeta.data.summary === 'Calentask' || calMeta.data.description?.includes('Created by Calentask') || calMeta.data.description?.includes('Sync calendar for Calentask')
+          
+          if (isCalentaskCalendar) {
+            await calendar.calendars.delete({ calendarId: calId })
+          }
+        } catch (err: any) {
+          console.warn(`Failed to delete calendar group ${calId}:`, err.message)
+        }
+
       } catch (err: any) {
         console.warn(`Failed to clear calendar ${calId}:`, err.message)
       }
     }
+
+    // 캘린더 초기화 후 DB의 동기화 설정도 완벽히 초기화
+    await supabase.from('users').update({
+      google_sync_calendar_id: null,
+      google_sync_calendar_name: null,
+      google_sync_settings: {}
+    }).eq('id', userId)
 
     return { success: true, deletedCount }
   } catch (error: any) {
@@ -715,4 +735,105 @@ export async function syncBatchActivitiesToGoogle(userId: string, activities: an
   }
 
   return result
+}
+
+export async function updateGoogleCalendarMeta(userId: string, calendarId: string, summary?: string, backgroundColor?: string) {
+  try {
+    const supabase = createAdminClient()
+    const auth = await getGoogleAuthClient(userId, supabase)
+    if (!auth) return null
+
+    const calendar = google.calendar({ version: 'v3', auth })
+    
+    if (summary) {
+       await calendar.calendars.patch({
+         calendarId,
+         requestBody: { summary }
+       })
+    }
+    
+    if (backgroundColor) {
+       await calendar.calendarList.patch({
+         calendarId,
+         colorRgbFormat: true,
+         requestBody: { backgroundColor }
+       })
+    }
+
+    return true
+  } catch (error) {
+    console.error('Failed to update Google Calendar meta:', error)
+    throw error
+  }
+}
+
+export async function deleteGoogleCalendar(userId: string, calendarId: string) {
+  try {
+    const supabase = createAdminClient()
+    const auth = await getGoogleAuthClient(userId, supabase)
+    if (!auth) return false
+
+    const calendar = google.calendar({ version: 'v3', auth })
+    await calendar.calendars.delete({ calendarId })
+    return true
+  } catch (error) {
+    console.error('Failed to delete Google Calendar:', error)
+    throw error
+  }
+}
+
+export async function migrateCategoryActivitiesToCalendar(userId: string, categoryId: string, oldCalendarId: string, newCalendarId: string) {
+   try {
+    const supabase = createAdminClient()
+    
+    const { data: activityMaps } = await supabase
+      .from('activity_category_map')
+      .select('activity_id')
+      .eq('category_id', categoryId)
+      
+    if (!activityMaps || activityMaps.length === 0) return { success: true, movedCount: 0 }
+    
+    const calentaskIdSet = new Set(activityMaps.map(m => m.activity_id))
+    
+    const auth = await getGoogleAuthClient(userId, supabase)
+    if (!auth) return { success: false, reason: 'no_auth' }
+
+    const calendar = google.calendar({ version: 'v3', auth })
+    let movedCount = 0
+    let pageToken: string | null | undefined = undefined
+    do {
+      const res: any = await calendar.events.list({
+        calendarId: oldCalendarId,
+        maxResults: 250,
+        singleEvents: false,
+        showDeleted: false,
+        pageToken: pageToken || undefined,
+      })
+      
+      if (res.data.items) {
+        for (const event of res.data.items) {
+          const calentaskId = event.extendedProperties?.private?.calentask_id
+          if (calentaskId && calentaskIdSet.has(calentaskId)) {
+            try {
+              await calendar.events.move({
+                calendarId: oldCalendarId,
+                eventId: event.id as string,
+                destination: newCalendarId,
+              })
+              movedCount++
+              await new Promise(r => setTimeout(r, 200)) // Rate limit protection
+            } catch (moveErr: any) {
+              console.warn(`Failed to move event ${event.id}:`, moveErr.message)
+            }
+          }
+        }
+      }
+      pageToken = res.data.nextPageToken
+    } while (pageToken)
+    
+    return { success: true, movedCount }
+  } catch (error: any) {
+    console.error('Failed to migrate activities:', error)
+    throw error
+  }
 }

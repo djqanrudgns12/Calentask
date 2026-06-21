@@ -789,3 +789,42 @@ export async function createGoogleCalendarAction(name: string) {
   if (!result) throw new Error('Failed to create Google Calendar')
   return result
 }
+
+export async function updateGoogleCalendarMetaAction(calendarId: string, summary?: string, backgroundColor?: string) {
+  const { createClient } = await import('@/lib/supabase/server')
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Unauthorized')
+
+  const { updateGoogleCalendarMeta } = await import('@/lib/google-calendar')
+  const result = await updateGoogleCalendarMeta(user.id, calendarId, summary, backgroundColor)
+  
+  if (!result) throw new Error('Failed to update Google Calendar meta')
+  return { success: true }
+}
+
+export async function deleteGoogleCalendarAction(calendarId: string) {
+  const { createClient } = await import('@/lib/supabase/server')
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Unauthorized')
+
+  const { deleteGoogleCalendar } = await import('@/lib/google-calendar')
+  const result = await deleteGoogleCalendar(user.id, calendarId)
+  
+  if (!result) throw new Error('Failed to delete Google Calendar')
+  return { success: true }
+}
+
+export async function migrateActivitiesBetweenCalendarsAction(categoryId: string, oldCalendarId: string, newCalendarId: string) {
+  const { createClient } = await import('@/lib/supabase/server')
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Unauthorized')
+
+  const { migrateCategoryActivitiesToCalendar } = await import('@/lib/google-calendar')
+  const result = await migrateCategoryActivitiesToCalendar(user.id, categoryId, oldCalendarId, newCalendarId)
+  
+  if (!result?.success) throw new Error('Failed to migrate activities')
+  return result
+}

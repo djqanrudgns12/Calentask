@@ -1,10 +1,11 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, Save, AlertTriangle, CheckCircle2, RefreshCw, Palette, Filter, Shield, Settings2, FolderTree, ArrowRightLeft, ArrowDownToLine, ArrowUpFromLine, Trash2, Plus } from 'lucide-react'
-import { getGoogleSyncSettingsAction, updateGoogleSyncSettingsAction, clearGoogleSyncDataAction, createGoogleCalendarAction } from '@/app/actions/calendar'
+import { X, AlertTriangle, CheckCircle2, RefreshCw, Filter, Shield, Settings2, FolderTree, ArrowRightLeft, ArrowDownToLine, ArrowUpFromLine, Trash2, Plus, GripVertical, Lock, Unlock } from 'lucide-react'
+import { getGoogleSyncSettingsAction, updateGoogleSyncSettingsAction, clearGoogleSyncDataAction, createGoogleCalendarAction, updateGoogleCalendarMetaAction, deleteGoogleCalendarAction, migrateActivitiesBetweenCalendarsAction } from '@/app/actions/calendar'
 import { Button } from '@/components/ui/button'
+import { DndContext, DragOverlay, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, useDraggable, useDroppable } from '@dnd-kit/core'
 
 const GOOGLE_COLORS = [
   { id: '1', hex: '#7986cb', name: 'Lavender' },
@@ -21,12 +22,11 @@ const GOOGLE_COLORS = [
 ]
 
 export function AdvancedSyncSettingsModal({ isOpen, onClose, calendarList, categories }: { isOpen: boolean, onClose: () => void, calendarList: any[], categories: any[] }) {
-  const [activeTab, setActiveTab] = useState<'core' | 'color' | 'group' | 'danger'>('core')
+  const [activeTab, setActiveTab] = useState<'core' | 'group' | 'danger'>('core')
   
   const [settings, setSettings] = useState<any>({
     direction: 'TWO_WAY',
     conflictStrategy: 'LATEST_WINS',
-    colorMapping: {},
     groupMapping: {},
     privacyMapping: {}
   })
@@ -36,9 +36,17 @@ export function AdvancedSyncSettingsModal({ isOpen, onClose, calendarList, categ
   const [isClearing, setIsClearing] = useState(false)
   const [saveMessage, setSaveMessage] = useState('')
   const [localCalendarList, setLocalCalendarList] = useState<any[]>(calendarList)
-  const [creatingCalendarForCatId, setCreatingCalendarForCatId] = useState<string | null>(null)
-  const [newCalendarName, setNewCalendarName] = useState('')
+  
+  const [migrationPrompt, setMigrationPrompt] = useState<{categoryId: string, oldCalendarId: string, newCalendarId: string} | null>(null)
+  const [isMigrating, setIsMigrating] = useState(false)
+  const [activeDragItem, setActiveDragItem] = useState<any>(null)
+  
   const [isCreatingCalendar, setIsCreatingCalendar] = useState(false)
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor)
+  )
 
   useEffect(() => {
     if (isOpen) {
@@ -47,7 +55,6 @@ export function AdvancedSyncSettingsModal({ isOpen, onClose, calendarList, categ
         setSettings({
           direction: data.direction || 'TWO_WAY',
           conflictStrategy: data.conflictStrategy || 'LATEST_WINS',
-          colorMapping: data.colorMapping || {},
           groupMapping: data.groupMapping || {},
           privacyMapping: data.privacyMapping || {}
         })
@@ -60,7 +67,6 @@ export function AdvancedSyncSettingsModal({ isOpen, onClose, calendarList, categ
     setLocalCalendarList(calendarList)
   }, [calendarList])
 
-  // Debounced auto-save effect could go here, or we use explicit save
   const handleSave = async (newSettings: any = settings) => {
     setIsSaving(true)
     setSaveMessage('')
@@ -91,6 +97,80 @@ export function AdvancedSyncSettingsModal({ isOpen, onClose, calendarList, categ
     updateSetting(mappingKey, updatedMap)
   }
 
+  const handleDragStart = (event: any) => {
+    const { active } = event
+    const id = active.id.toString().replace('cat_', '')
+    const cat = categories.find(c => c.id === id)
+    setActiveDragItem(cat)
+  }
+
+  const handleDragEnd = (event: any) => {
+    const { active, over } = event
+    setActiveDragItem(null)
+    
+    if (!over) return
+    
+    // 드롭 대상이 캘린더 영역(cal_*)인지 검증 - 카테고리 위에 드롭한 경우 무시
+    const overId = over.id.toString()
+    if (!overId.startsWith('cal_')) return
+    
+    const categoryId = active.id.toString().replace('cat_', '')
+    const newCalendarId = overId.replace('cal_', '')
+    
+    // 이미 같은 캘린더에 속한 카테고리를 같은 곳에 드롭한 경우 무시
+    const currentCalendarId = settings.groupMapping?.[categoryId] || null
+    if (newCalendarId === 'unassigned' && !currentCalendarId) return
+    if (currentCalendarId === newCalendarId) return
+    
+    const primaryCal = localCalendarList.find(c => c.primary)?.id
+    const oldCalendarId = currentCalendarId || primaryCal
+    
+    if (newCalendarId === 'unassigned') {
+      updateMapping('groupMapping', categoryId, null)
+      return
+    }
+
+    if (oldCalendarId && oldCalendarId !== newCalendarId) {
+      setMigrationPrompt({ categoryId, oldCalendarId, newCalendarId })
+    } else {
+      updateMapping('groupMapping', categoryId, newCalendarId)
+    }
+  }
+
+  const confirmMigration = async (shouldMigrate: boolean) => {
+    if (!migrationPrompt) return
+    const { categoryId, oldCalendarId, newCalendarId } = migrationPrompt
+    
+    updateMapping('groupMapping', categoryId, newCalendarId)
+    
+    if (shouldMigrate) {
+      setIsMigrating(true)
+      try {
+        const res = await migrateActivitiesBetweenCalendarsAction(categoryId, oldCalendarId, newCalendarId)
+        alert(`총 ${res.movedCount}개의 일정이 성공적으로 이동되었습니다.`)
+      } catch (e: any) {
+        alert(`마이그레이션 실패: ${e.message}`)
+      } finally {
+        setIsMigrating(false)
+      }
+    }
+    setMigrationPrompt(null)
+  }
+
+  const handleCreateCalendar = async () => {
+    const name = prompt('새 캘린더 이름을 입력하세요')
+    if (!name?.trim()) return
+    setIsCreatingCalendar(true)
+    try {
+      const result = await createGoogleCalendarAction(name.trim())
+      setLocalCalendarList(prev => [...prev, { id: result.id, summary: result.summary, primary: false }])
+    } catch (e: any) {
+      alert(`생성 실패: ${e.message}`)
+    } finally {
+      setIsCreatingCalendar(false)
+    }
+  }
+
   const handleClearData = async () => {
     if (!confirm('경고: 구글 캘린더에 동기화된 모든 Calentask 일정이 삭제됩니다. 계속하시겠습니까?')) return
     setIsClearing(true)
@@ -104,32 +184,41 @@ export function AdvancedSyncSettingsModal({ isOpen, onClose, calendarList, categ
     }
   }
 
-  const handleCreateCalendar = async (catId: string) => {
-    if (!newCalendarName.trim()) return
-    setIsCreatingCalendar(true)
-    try {
-      const result = await createGoogleCalendarAction(newCalendarName.trim())
-      // 로컬 캘린더 목록에 추가
-      setLocalCalendarList(prev => [...prev, { id: result.id, summary: result.summary, primary: false }])
-      // 해당 카테고리에 매핑
-      updateMapping('groupMapping', catId, result.id)
-      setCreatingCalendarForCatId(null)
-      setNewCalendarName('')
-    } catch (e: any) {
-      alert(`캘린더 생성 실패: ${e.message}`)
-    } finally {
-      setIsCreatingCalendar(false)
+  const handleDeleteCalendarGroup = (calendarId: string) => {
+    // 삭제된 캘린더에 매핑된 카테고리들의 groupMapping을 일괄 정리
+    const updatedGroupMapping = { ...settings.groupMapping }
+    let changed = false
+    for (const catId of Object.keys(updatedGroupMapping)) {
+      if (updatedGroupMapping[catId] === calendarId) {
+        delete updatedGroupMapping[catId]
+        changed = true
+      }
+    }
+    if (changed) {
+      updateSetting('groupMapping', updatedGroupMapping)
     }
   }
 
   if (!isOpen) return null
+
+  const groupedCategories: Record<string, any[]> = { unassigned: [] }
+  localCalendarList.forEach(cal => { groupedCategories[cal.id] = [] })
+  
+  categories.forEach(cat => {
+    const calId = settings.groupMapping?.[cat.id]
+    if (calId && groupedCategories[calId]) {
+      groupedCategories[calId].push(cat)
+    } else {
+      groupedCategories['unassigned'].push(cat)
+    }
+  })
 
   return (
     <AnimatePresence>
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
         <motion.div 
           initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-          className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
+          className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
           onClick={onClose}
         />
         
@@ -137,59 +226,49 @@ export function AdvancedSyncSettingsModal({ isOpen, onClose, calendarList, categ
           initial={{ opacity: 0, scale: 0.95, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 20 }}
-          className="relative w-full max-w-3xl bg-white/90 backdrop-blur-xl border border-white/20 shadow-2xl rounded-3xl overflow-hidden flex flex-col max-h-[90vh]"
+          className="relative w-full max-w-4xl bg-white/95 backdrop-blur-2xl border border-white/20 shadow-2xl rounded-3xl overflow-hidden flex flex-col max-h-[90vh]"
         >
-          {/* Header */}
           <div className="flex items-center justify-between px-6 py-5 border-b border-slate-200/60 bg-white/50">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-indigo-100 text-indigo-600 rounded-xl flex items-center justify-center shadow-inner">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="w-10 h-10 shrink-0 bg-indigo-100 text-indigo-600 rounded-xl flex items-center justify-center shadow-inner">
                 <Settings2 className="w-5 h-5" />
               </div>
-              <div>
-                <h2 className="text-xl font-extrabold text-slate-800">전문가 고급 설정</h2>
-                <p className="text-sm text-slate-500 font-medium">동기화의 흐름과 형태를 완벽하게 통제하세요</p>
+              <div className="min-w-0">
+                <h2 className="text-xl font-extrabold text-slate-800 truncate">전문가 고급 설정</h2>
+                <p className="text-sm text-slate-500 font-medium truncate">동기화의 흐름과 형태를 완벽하게 통제하세요</p>
               </div>
             </div>
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-4 shrink-0 pl-4">
               <AnimatePresence>
                 {isSaving && (
-                  <motion.div initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0 }} className="flex items-center gap-2 text-sm text-indigo-600 font-medium bg-indigo-50 px-3 py-1.5 rounded-full">
-                    <RefreshCw className="w-4 h-4 animate-spin" /> 저장 중...
+                  <motion.div initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0 }} className="hidden sm:flex items-center gap-2 text-sm text-indigo-600 font-medium bg-indigo-50 px-3 py-1.5 rounded-full">
+                    <RefreshCw className="w-4 h-4 animate-spin" /> 저장 중
                   </motion.div>
                 )}
                 {saveMessage === '저장 완료' && (
-                  <motion.div initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0 }} className="flex items-center gap-2 text-sm text-emerald-600 font-medium bg-emerald-50 px-3 py-1.5 rounded-full">
+                  <motion.div initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0 }} className="hidden sm:flex items-center gap-2 text-sm text-emerald-600 font-medium bg-emerald-50 px-3 py-1.5 rounded-full">
                     <CheckCircle2 className="w-4 h-4" /> 저장됨
                   </motion.div>
                 )}
               </AnimatePresence>
               <button onClick={onClose} className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors">
-                <X className="w-5 h-5" />
+                <X className="w-6 h-6" />
               </button>
             </div>
           </div>
 
-          <div className="flex flex-1 overflow-hidden">
-            {/* Sidebar Tabs */}
-            <div className="w-48 sm:w-56 bg-slate-50/50 border-r border-slate-200/60 p-4 space-y-1 overflow-y-auto hidden sm:block">
-              <TabButton active={activeTab === 'core'} onClick={() => setActiveTab('core')} icon={<ArrowRightLeft />} label="핵심 동작 (Core)" />
-              <TabButton active={activeTab === 'color'} onClick={() => setActiveTab('color')} icon={<Palette />} label="색상 & 프라이버시" />
-              <TabButton active={activeTab === 'group'} onClick={() => setActiveTab('group')} icon={<FolderTree />} label="그룹 매핑 (Routing)" />
-              <div className="pt-4 mt-4 border-t border-slate-200/60">
-                <TabButton active={activeTab === 'danger'} onClick={() => setActiveTab('danger')} icon={<AlertTriangle />} label="위험 구역 (Danger)" variant="danger" />
+          <div className="flex flex-1 overflow-hidden flex-col sm:flex-row">
+            <div className="w-full sm:w-56 bg-slate-50/50 border-r border-slate-200/60 p-4 space-y-1 overflow-x-auto sm:overflow-y-auto flex sm:block flex-shrink-0 hide-scrollbar">
+              <div className="flex sm:flex-col gap-2 w-max sm:w-full">
+                <TabButton active={activeTab === 'core'} onClick={() => setActiveTab('core')} icon={<ArrowRightLeft className="w-4 h-4 sm:w-5 sm:h-5"/>} label="핵심 동작 (Core)" />
+                <TabButton active={activeTab === 'group'} onClick={() => setActiveTab('group')} icon={<FolderTree className="w-4 h-4 sm:w-5 sm:h-5"/>} label="그룹 및 라우팅" />
+                <div className="sm:pt-4 sm:mt-4 sm:border-t border-slate-200/60">
+                  <TabButton active={activeTab === 'danger'} onClick={() => setActiveTab('danger')} icon={<AlertTriangle className="w-4 h-4 sm:w-5 sm:h-5"/>} label="위험 구역" variant="danger" />
+                </div>
               </div>
             </div>
 
-            {/* Mobile Tabs */}
-            <div className="flex sm:hidden overflow-x-auto border-b border-slate-200/60 bg-slate-50 p-2 gap-2">
-              <button onClick={() => setActiveTab('core')} className={`px-3 py-1.5 rounded-full text-xs font-bold whitespace-nowrap ${activeTab === 'core' ? 'bg-indigo-600 text-white' : 'bg-slate-200 text-slate-600'}`}>동작</button>
-              <button onClick={() => setActiveTab('color')} className={`px-3 py-1.5 rounded-full text-xs font-bold whitespace-nowrap ${activeTab === 'color' ? 'bg-indigo-600 text-white' : 'bg-slate-200 text-slate-600'}`}>디자인</button>
-              <button onClick={() => setActiveTab('group')} className={`px-3 py-1.5 rounded-full text-xs font-bold whitespace-nowrap ${activeTab === 'group' ? 'bg-indigo-600 text-white' : 'bg-slate-200 text-slate-600'}`}>그룹</button>
-              <button onClick={() => setActiveTab('danger')} className={`px-3 py-1.5 rounded-full text-xs font-bold whitespace-nowrap ${activeTab === 'danger' ? 'bg-red-600 text-white' : 'bg-slate-200 text-slate-600'}`}>관리</button>
-            </div>
-
-            {/* Content Area */}
-            <div className="flex-1 overflow-y-auto p-6 bg-white/40">
+            <div className="flex-1 overflow-y-auto p-4 sm:p-6 bg-white/40">
               {isLoading ? (
                 <div className="flex items-center justify-center h-full">
                   <RefreshCw className="w-8 h-8 text-indigo-400 animate-spin" />
@@ -198,243 +277,95 @@ export function AdvancedSyncSettingsModal({ isOpen, onClose, calendarList, categ
                 <AnimatePresence mode="wait">
                   {activeTab === 'core' && (
                     <motion.div key="core" initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -10 }} className="space-y-8">
-                      {/* Direction */}
                       <section>
                         <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2 mb-4">
                           <Filter className="w-5 h-5 text-indigo-500" /> 동기화 방향 제어
                         </h3>
                         <div className="grid grid-cols-1 gap-3">
-                          <RadioOption 
-                            selected={settings.direction === 'TWO_WAY'} 
-                            onClick={() => updateSetting('direction', 'TWO_WAY')}
-                            icon={<ArrowRightLeft className="w-5 h-5" />}
-                            title="양방향 동기화 (기본)"
-                            desc="Calentask와 구글 캘린더 양쪽의 변경 사항을 실시간으로 상호 적용합니다."
-                          />
-                          <RadioOption 
-                            selected={settings.direction === 'EXPORT_ONLY'} 
-                            onClick={() => updateSetting('direction', 'EXPORT_ONLY')}
-                            icon={<ArrowUpFromLine className="w-5 h-5" />}
-                            title="내보내기 전용 (단방향)"
-                            desc="Calentask에서 작성한 일정만 구글 캘린더로 보냅니다. 구글의 수정 사항은 무시됩니다."
-                          />
-                          <RadioOption 
-                            selected={settings.direction === 'IMPORT_ONLY'} 
-                            onClick={() => updateSetting('direction', 'IMPORT_ONLY')}
-                            icon={<ArrowDownToLine className="w-5 h-5" />}
-                            title="가져오기 전용 (단방향)"
-                            desc="구글 캘린더의 일정만 Calentask로 가져옵니다. Calentask의 변경 사항은 구글에 반영되지 않습니다."
-                          />
+                          <RadioOption selected={settings.direction === 'TWO_WAY'} onClick={() => updateSetting('direction', 'TWO_WAY')} icon={<ArrowRightLeft className="w-5 h-5" />} title="양방향 동기화" desc="양쪽의 변경 사항을 실시간으로 상호 적용합니다." />
+                          <RadioOption selected={settings.direction === 'EXPORT_ONLY'} onClick={() => updateSetting('direction', 'EXPORT_ONLY')} icon={<ArrowUpFromLine className="w-5 h-5" />} title="내보내기 전용" desc="Calentask의 일정만 구글 캘린더로 전송합니다." />
+                          <RadioOption selected={settings.direction === 'IMPORT_ONLY'} onClick={() => updateSetting('direction', 'IMPORT_ONLY')} icon={<ArrowDownToLine className="w-5 h-5" />} title="가져오기 전용" desc="구글 캘린더의 일정만 Calentask로 가져옵니다." />
                         </div>
                       </section>
-
-                      {/* Conflict Strategy */}
                       <section>
                         <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2 mb-4">
                           <Shield className="w-5 h-5 text-indigo-500" /> 데이터 충돌 해결 전략
                         </h3>
-                        <div className="bg-amber-50 border border-amber-100 rounded-xl p-4 mb-4 text-sm text-amber-800">
-                          인터넷이 끊긴 상태에서 양쪽을 동시에 수정했을 때, 어떤 데이터를 우선할지 결정합니다.
-                        </div>
                         <div className="grid grid-cols-1 gap-3">
-                          <RadioOption 
-                            selected={settings.conflictStrategy === 'LATEST_WINS'} 
-                            onClick={() => updateSetting('conflictStrategy', 'LATEST_WINS')}
-                            title="가장 최근에 수정된 내용 우선 (기본)"
-                            desc="수정된 시간이 더 늦은 데이터를 최종본으로 간주하고 덮어씁니다."
-                          />
-                          <RadioOption 
-                            selected={settings.conflictStrategy === 'CALENTASK_WINS'} 
-                            onClick={() => updateSetting('conflictStrategy', 'CALENTASK_WINS')}
-                            title="항상 Calentask를 우선 (Master)"
-                            desc="항상 Calentask의 데이터를 유지하며 구글 캘린더의 변경 사항을 무시합니다."
-                          />
-                          <RadioOption 
-                            selected={settings.conflictStrategy === 'GOOGLE_WINS'} 
-                            onClick={() => updateSetting('conflictStrategy', 'GOOGLE_WINS')}
-                            title="항상 구글 캘린더 우선"
-                            desc="충돌이 감지되면 구글 캘린더의 데이터를 무조건 가져와 덮어씁니다."
-                          />
+                          <RadioOption selected={settings.conflictStrategy === 'LATEST_WINS'} onClick={() => updateSetting('conflictStrategy', 'LATEST_WINS')} title="최근 수정 내용 우선" desc="수정 시간이 더 늦은 데이터를 최종본으로 간주합니다." />
+                          <RadioOption selected={settings.conflictStrategy === 'CALENTASK_WINS'} onClick={() => updateSetting('conflictStrategy', 'CALENTASK_WINS')} title="항상 Calentask 우선" desc="구글 캘린더의 변경 사항을 무시합니다." />
                         </div>
                       </section>
-                    </motion.div>
-                  )}
-
-                  {activeTab === 'color' && (
-                    <motion.div key="color" initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -10 }} className="space-y-6">
-                      <div className="bg-indigo-50 border border-indigo-100 p-4 rounded-2xl flex items-start gap-3">
-                        <Palette className="w-5 h-5 text-indigo-500 shrink-0 mt-0.5" />
-                        <div>
-                          <h4 className="font-bold text-indigo-900">시각적 일관성 유지</h4>
-                          <p className="text-sm text-indigo-700/80 mt-1">Calentask의 카테고리 색상을 구글 캘린더의 어떤 색상으로 표시할지 1:1로 매핑하세요. 또한 특정 카테고리를 '바쁨'으로만 넘어가게 하여 프라이버시를 보호할 수 있습니다.</p>
-                        </div>
-                      </div>
-
-                      <div className="space-y-3">
-                        {categories.map(cat => (
-                          <div key={cat.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 bg-white border border-slate-200 rounded-2xl shadow-sm hover:shadow-md transition-shadow">
-                            <div className="flex items-center gap-3">
-                              <div className="w-4 h-4 rounded-full shadow-sm" style={{ backgroundColor: cat.hex_color }} />
-                              <span className="font-bold text-slate-700 whitespace-nowrap">{cat.name}</span>
-                            </div>
-                            
-                            <div className="flex items-center gap-4">
-                              <div className="flex items-center gap-2">
-                                <span className="text-xs text-slate-500 font-semibold whitespace-nowrap">구글 컬러 매핑:</span>
-                                <select 
-                                  className="text-sm border border-slate-200 rounded-lg p-1.5 focus:ring-2 focus:ring-indigo-100 outline-none w-32"
-                                  value={settings.colorMapping?.[cat.id] || ''}
-                                  onChange={(e) => updateMapping('colorMapping', cat.id, e.target.value)}
-                                >
-                                  <option value="">(자동 선택)</option>
-                                  {GOOGLE_COLORS.map(c => (
-                                    <option key={c.id} value={c.id}>
-                                      {c.name}
-                                    </option>
-                                  ))}
-                                </select>
-                                {settings.colorMapping?.[cat.id] && (
-                                  <div className="w-5 h-5 rounded-full shadow-sm border border-black/10" style={{ backgroundColor: GOOGLE_COLORS.find(c => c.id === settings.colorMapping[cat.id])?.hex }} />
-                                )}
-                              </div>
-                              
-                              <div className="h-8 w-px bg-slate-200 hidden sm:block"></div>
-
-                              <label className="flex items-center gap-2 cursor-pointer group">
-                                <div className="relative">
-                                  <input 
-                                    type="checkbox" 
-                                    className="sr-only"
-                                    checked={settings.privacyMapping?.[cat.id] || false}
-                                    onChange={(e) => updateMapping('privacyMapping', cat.id, e.target.checked ? true : null)}
-                                  />
-                                  <div className={`block w-10 h-6 rounded-full transition-colors ${settings.privacyMapping?.[cat.id] ? 'bg-emerald-500' : 'bg-slate-200'}`}></div>
-                                  <div className={`dot absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform ${settings.privacyMapping?.[cat.id] ? 'transform translate-x-4' : ''}`}></div>
-                                </div>
-                                <span className={`text-xs font-bold whitespace-nowrap ${settings.privacyMapping?.[cat.id] ? 'text-emerald-700' : 'text-slate-400 group-hover:text-slate-600'}`}>비공개 (바쁨)</span>
-                              </label>
-                            </div>
-                          </div>
-                        ))}
-                        {categories.length === 0 && (
-                          <div className="text-center py-10 text-slate-400 text-sm bg-slate-50 rounded-2xl border border-dashed border-slate-200">
-                            생성된 카테고리가 없습니다. 카테고리를 먼저 만들어주세요.
-                          </div>
-                        )}
-                      </div>
                     </motion.div>
                   )}
 
                   {activeTab === 'group' && (
                     <motion.div key="group" initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -10 }} className="space-y-6">
-                       <div className="bg-indigo-50 border border-indigo-100 p-4 rounded-2xl flex items-start gap-3">
-                        <FolderTree className="w-5 h-5 text-indigo-500 shrink-0 mt-0.5" />
+                       <div className="bg-indigo-50 border border-indigo-100 p-4 sm:p-5 rounded-2xl flex items-start gap-4">
+                        <FolderTree className="w-6 h-6 text-indigo-500 shrink-0 mt-0.5" />
                         <div>
-                          <h4 className="font-bold text-indigo-900">다중 캘린더 라우팅</h4>
-                          <p className="text-sm text-indigo-700/80 mt-1">Calentask의 카테고리별로 각기 다른 구글 캘린더(그룹)에 저장되도록 라우팅 규칙을 설정합니다. (예: '업무' 카테고리는 구글의 '회사 일정' 캘린더로 전송)</p>
+                          <h4 className="font-bold text-indigo-900 text-base sm:text-lg">그룹 및 라우팅 관리</h4>
+                          <p className="text-xs sm:text-sm text-indigo-700/80 mt-1 leading-relaxed">
+                            카테고리를 드래그 앤 드롭하여 목적지 구글 캘린더를 지정하세요. 캘린더 아이콘 우측의 톱니바퀴로 색상과 이름을 원격 제어할 수 있습니다.
+                          </p>
                         </div>
                       </div>
 
-                      <div className="space-y-3">
-                        {categories.map(cat => (
-                          <div key={cat.id} className="flex flex-col gap-3 p-4 bg-white border border-slate-200 rounded-2xl shadow-sm hover:border-indigo-200 transition-colors">
-                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                              <div className="flex items-center gap-3">
-                                <div className="w-4 h-4 rounded-full shadow-sm" style={{ backgroundColor: cat.hex_color }} />
-                                <span className="font-bold text-slate-700 whitespace-nowrap">{cat.name}</span>
-                              </div>
-                              
-                              <div className="flex items-center gap-2">
-                                <ArrowRightLeft className="w-4 h-4 text-slate-400" />
-                                <select 
-                                  className="text-sm border border-slate-200 rounded-lg p-2 focus:ring-2 focus:ring-indigo-100 outline-none w-48 bg-slate-50"
-                                  value={settings.groupMapping?.[cat.id] || ''}
-                                  onChange={(e) => {
-                                    if (e.target.value === '__CREATE_NEW__') {
-                                      setCreatingCalendarForCatId(cat.id)
-                                      setNewCalendarName('')
-                                    } else {
-                                      setCreatingCalendarForCatId(null)
-                                      updateMapping('groupMapping', cat.id, e.target.value)
-                                    }
-                                  }}
-                                >
-                                  <option value="">기본 Calentask 달력</option>
-                                  {localCalendarList.map(cal => (
-                                    <option key={cal.id} value={cal.id}>
-                                      {cal.summary} {cal.primary && '(기본)'}
-                                    </option>
-                                  ))}
-                                  <option value="__CREATE_NEW__">＋ 새 캘린더 만들기</option>
-                                </select>
-                              </div>
-                            </div>
-
-                            {creatingCalendarForCatId === cat.id && (
-                              <motion.div 
-                                initial={{ opacity: 0, height: 0 }} 
-                                animate={{ opacity: 1, height: 'auto' }} 
-                                className="flex items-center gap-2 pl-7"
-                              >
-                                <input
-                                  type="text"
-                                  placeholder="새 캘린더 이름 입력"
-                                  value={newCalendarName}
-                                  onChange={(e) => setNewCalendarName(e.target.value)}
-                                  onKeyDown={(e) => e.key === 'Enter' && handleCreateCalendar(cat.id)}
-                                  className="flex-1 text-sm border border-indigo-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-200 outline-none bg-indigo-50/50"
-                                  autoFocus
-                                  disabled={isCreatingCalendar}
-                                />
-                                <button
-                                  onClick={() => handleCreateCalendar(cat.id)}
-                                  disabled={isCreatingCalendar || !newCalendarName.trim()}
-                                  className="px-3 py-2 bg-indigo-600 text-white text-sm font-bold rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5 whitespace-nowrap transition-colors"
-                                >
-                                  {isCreatingCalendar ? (
-                                    <><RefreshCw className="w-3.5 h-3.5 animate-spin" /> 생성 중...</>
-                                  ) : (
-                                    <><Plus className="w-3.5 h-3.5" /> 만들기</>
-                                  )}
-                                </button>
-                                <button
-                                  onClick={() => setCreatingCalendarForCatId(null)}
-                                  className="p-2 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition-colors"
-                                >
-                                  <X className="w-4 h-4" />
-                                </button>
-                              </motion.div>
-                            )}
-                          </div>
-                        ))}
+                      <div className="flex justify-end">
+                        <Button size="sm" className="bg-indigo-600 hover:bg-indigo-700 text-white shadow-md rounded-xl px-4 flex items-center gap-2 font-semibold" onClick={handleCreateCalendar} disabled={isCreatingCalendar}>
+                          {isCreatingCalendar ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+                          새 캘린더 그룹 생성
+                        </Button>
                       </div>
+
+                      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
+                        <div className="grid grid-cols-1 gap-6 pb-20">
+                          {localCalendarList.map(cal => (
+                            <DroppableCalendarGroup 
+                              key={cal.id} 
+                              calendar={cal} 
+                              categories={groupedCategories[cal.id]} 
+                              settings={settings}
+                              onTogglePrivacy={(catId: string, val: boolean) => updateMapping('privacyMapping', catId, val ? true : null)}
+                              onUpdateCalendarList={setLocalCalendarList}
+                              onDeleteCalendarGroup={handleDeleteCalendarGroup}
+                            />
+                          ))}
+                          <DroppableCalendarGroup 
+                            calendar={{ id: 'unassigned', summary: '🚫 미배정 카테고리 (라우팅 대기)', primary: false }} 
+                            categories={groupedCategories['unassigned']} 
+                            settings={settings}
+                            onTogglePrivacy={(catId: string, val: boolean) => updateMapping('privacyMapping', catId, val ? true : null)}
+                            onUpdateCalendarList={setLocalCalendarList}
+                          />
+                        </div>
+                        <DragOverlay dropAnimation={null}>
+                          {activeDragItem ? (
+                            <div className="bg-white border-2 border-indigo-500 shadow-2xl rounded-xl p-3 flex items-center gap-3 w-64 opacity-90 scale-105 rotate-2 cursor-grabbing">
+                              <GripVertical className="w-4 h-4 text-indigo-400" />
+                              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: activeDragItem.hex_color }} />
+                              <span className="font-bold text-slate-800 text-sm truncate">{activeDragItem.name}</span>
+                            </div>
+                          ) : null}
+                        </DragOverlay>
+                      </DndContext>
                     </motion.div>
                   )}
 
                   {activeTab === 'danger' && (
                     <motion.div key="danger" initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -10 }} className="space-y-6">
                       <div className="bg-red-50 border border-red-200 p-6 rounded-3xl">
-                        <div className="flex items-start gap-4">
+                        <div className="flex flex-col sm:flex-row sm:items-start gap-4">
                           <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center shrink-0">
                             <Trash2 className="w-6 h-6 text-red-600" />
                           </div>
                           <div>
                             <h3 className="text-lg font-bold text-red-900 mb-2">동기화 데이터 일괄 초기화</h3>
                             <p className="text-sm text-red-800 mb-4 leading-relaxed">
-                              구글 계정 연동은 그대로 유지한 상태에서, <strong>Calentask를 통해 구글 캘린더로 넘어간 모든 일정 데이터만 깨끗하게 일괄 삭제</strong>합니다.<br/>
-                              구글 캘린더에 원래 있던 사용자 개인 일정은 완벽히 보호되며 삭제되지 않습니다. 동기화가 너무 꼬였거나 초기화하고 싶을 때 사용하세요.
+                              구글 계정 연동은 그대로 유지한 상태에서, Calentask를 통해 구글 캘린더로 넘어간 모든 일정 데이터만 깨끗하게 일괄 삭제합니다.
                             </p>
-                            
-                            <Button 
-                              onClick={handleClearData} 
-                              disabled={isClearing}
-                              className="bg-red-600 hover:bg-red-700 text-white shadow-lg shadow-red-600/20"
-                            >
-                              {isClearing ? (
-                                <><RefreshCw className="w-4 h-4 mr-2 animate-spin" /> 구글에서 일정 삭제 중...</>
-                              ) : (
-                                <><Trash2 className="w-4 h-4 mr-2" /> 동기화된 모든 일정 초기화 (Clean-up)</>
-                              )}
+                            <Button onClick={handleClearData} disabled={isClearing} className="bg-red-600 hover:bg-red-700 text-white shadow-lg shadow-red-600/20 w-full sm:w-auto">
+                              {isClearing ? <><RefreshCw className="w-4 h-4 mr-2 animate-spin" /> 초기화 중...</> : <><Trash2 className="w-4 h-4 mr-2" /> 모든 일정 초기화</>}
                             </Button>
                           </div>
                         </div>
@@ -445,29 +376,147 @@ export function AdvancedSyncSettingsModal({ isOpen, onClose, calendarList, categ
               )}
             </div>
           </div>
+
+          <AnimatePresence>
+            {migrationPrompt && (
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md">
+                <motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }} className="bg-white rounded-3xl shadow-2xl p-6 sm:p-8 max-w-md w-full border border-indigo-100">
+                  <div className="w-14 h-14 bg-indigo-100 rounded-2xl flex items-center justify-center mb-6 mx-auto text-indigo-600 shadow-inner">
+                    <ArrowRightLeft className="w-7 h-7" />
+                  </div>
+                  <h3 className="text-xl font-extrabold text-center text-slate-800 mb-2">과거 일정 마이그레이션</h3>
+                  <p className="text-sm text-slate-600 text-center mb-8 leading-relaxed">
+                    카테고리의 라우팅이 변경되었습니다. 과거에 동기화된 기존 일정들도 새로운 구글 캘린더로 모두 함께 이동시킬까요?
+                  </p>
+                  <div className="flex flex-col gap-3">
+                    <Button onClick={() => confirmMigration(true)} className="w-full bg-indigo-600 hover:bg-indigo-700 text-white h-12 rounded-xl text-base font-bold shadow-lg" disabled={isMigrating}>
+                      {isMigrating ? (<><RefreshCw className="w-5 h-5 animate-spin mr-2" /> 이동 중...</>) : '네, 기존 일정도 이동합니다.'}
+                    </Button>
+                    <Button onClick={() => confirmMigration(false)} variant="outline" className="w-full h-12 rounded-xl text-base font-semibold border-slate-200 hover:bg-slate-50 text-slate-600">
+                      아니오, 앞으로 추가될 일정만 보냅니다.
+                    </Button>
+                  </div>
+                </motion.div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </motion.div>
       </div>
     </AnimatePresence>
   )
 }
 
-function TabButton({ active, onClick, icon, label, variant = 'default' }: { active: boolean, onClick: () => void, icon: any, label: string, variant?: 'default' | 'danger' }) {
-  const activeClasses = variant === 'danger' 
-    ? 'bg-red-100 text-red-700 shadow-sm border-red-200' 
-    : 'bg-white text-indigo-700 shadow-sm border-slate-200 font-bold'
-  const inactiveClasses = variant === 'danger'
-    ? 'text-red-600 hover:bg-red-50 hover:text-red-700 border-transparent'
-    : 'text-slate-500 hover:bg-slate-100 hover:text-slate-800 border-transparent'
+function DroppableCalendarGroup({ calendar, categories, settings, onTogglePrivacy, onUpdateCalendarList, onDeleteCalendarGroup }: any) {
+  const { setNodeRef, isOver } = useDroppable({ id: `cal_${calendar.id}` })
+  const [isPopoverOpen, setIsPopoverOpen] = useState(false)
+  const [isUpdating, setIsUpdating] = useState(false)
+  const [editSummary, setEditSummary] = useState(calendar.summary)
+  const isUnassigned = calendar.id === 'unassigned'
+  const popoverRef = useRef<HTMLDivElement>(null)
+
+  // 팝오버 외부 클릭 시 닫기
+  useEffect(() => {
+    if (!isPopoverOpen) return
+    const handleClickOutside = (e: MouseEvent) => {
+      if (popoverRef.current && !popoverRef.current.contains(e.target as Node)) {
+        setIsPopoverOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [isPopoverOpen])
+
+  const handleUpdateMeta = async (colorHex?: string) => {
+    if (isUnassigned) return
+    setIsUpdating(true)
+    try {
+      await updateGoogleCalendarMetaAction(calendar.id, editSummary, colorHex)
+      onUpdateCalendarList((prev: any[]) => prev.map(c => c.id === calendar.id ? { ...c, summary: editSummary } : c))
+      if (!colorHex) setIsPopoverOpen(false)
+    } finally {
+      setIsUpdating(false)
+    }
+  }
+
+  const handleDelete = async () => {
+    if (calendar.primary || isUnassigned || !confirm(`'${calendar.summary}' 캘린더를 구글에서 영구 삭제하시겠습니까?\n이 캘린더에 배정된 카테고리들은 미배정 상태로 전환됩니다.`)) return
+    setIsUpdating(true)
+    try {
+      await deleteGoogleCalendarAction(calendar.id)
+      onUpdateCalendarList((prev: any[]) => prev.filter(c => c.id !== calendar.id))
+      onDeleteCalendarGroup?.(calendar.id)
+    } finally {
+      setIsUpdating(false)
+    }
+  }
 
   return (
-    <button
-      onClick={onClick}
-      className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all border text-sm ${active ? activeClasses : inactiveClasses}`}
-    >
-      <div className={`${active && variant !== 'danger' ? 'text-indigo-600' : ''}`}>
-        {icon}
+    <div ref={setNodeRef} className={`relative rounded-3xl border-2 transition-all duration-300 flex flex-col ${isOver ? 'border-indigo-500 bg-indigo-50/50' : 'border-slate-200/60 bg-slate-50/30'}`}>
+      <div className="flex items-center justify-between px-4 py-3 sm:px-5 sm:py-4 border-b border-slate-200/50 bg-white/60 rounded-t-[1.3rem]">
+        <div className="flex items-center gap-3 min-w-0 pr-2">
+          <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${isUnassigned ? 'bg-slate-100' : 'bg-indigo-100'}`}>
+            <FolderTree className="w-4 h-4" />
+          </div>
+          <span className={`font-extrabold text-sm sm:text-base truncate ${isUnassigned ? 'text-slate-500' : 'text-slate-800'}`}>{calendar.summary}</span>
+        </div>
+        {!isUnassigned && (
+          <div className="relative shrink-0" ref={popoverRef}>
+            <button onClick={() => setIsPopoverOpen(!isPopoverOpen)} className="p-2 rounded-xl text-slate-400 hover:text-slate-600"><Settings2 className="w-5 h-5" /></button>
+            <AnimatePresence>
+              {isPopoverOpen && (
+                <motion.div className="absolute right-0 top-full mt-2 w-64 bg-white rounded-2xl shadow-xl border border-slate-200 p-4 z-20">
+                  <div className="flex flex-col gap-2 mb-4">
+                    <label className="text-xs font-bold text-slate-500">이름</label>
+                    <div className="flex gap-2">
+                      <input value={editSummary} onChange={e => setEditSummary(e.target.value)} className="flex-1 text-sm border border-slate-200 rounded-lg px-2 py-1" />
+                      <Button size="sm" onClick={() => handleUpdateMeta()}>저장</Button>
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {GOOGLE_COLORS.map(c => <button key={c.id} className="w-6 h-6 rounded-full border border-black/10" style={{ backgroundColor: c.hex }} onClick={() => handleUpdateMeta(c.hex)} />)}
+                  </div>
+                  {!calendar.primary && <Button variant="ghost" className="w-full text-red-600 mt-2" onClick={handleDelete}><Trash2 className="w-4 h-4 mr-2" /> 삭제</Button>}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        )}
       </div>
-      <span className={active ? 'font-bold' : 'font-medium'}>{label}</span>
+      <div className="p-2 sm:p-4 min-h-[80px] flex flex-col gap-2">
+        {categories.length === 0 ? <div className="text-center text-slate-400 text-sm py-8 border-2 border-dashed border-slate-200 rounded-2xl">드롭하여 배치</div> : categories.map((cat: any) => <DraggableCategory key={cat.id} category={cat} isPrivate={settings.privacyMapping?.[cat.id]} onTogglePrivacy={(val: boolean) => onTogglePrivacy(cat.id, val)} />)}
+      </div>
+    </div>
+  )
+}
+
+function DraggableCategory({ category, isPrivate, onTogglePrivacy }: any) {
+  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({ id: `cat_${category.id}` })
+  const style = transform ? { transform: `translate3d(${transform.x}px, ${transform.y}px, 0)` } : undefined
+  return (
+    <div ref={setNodeRef} style={style} className={`flex items-center justify-between p-3 bg-white border rounded-xl min-w-0 ${isDragging ? 'opacity-0' : 'shadow-sm hover:border-indigo-200 hover:shadow-md transition-all'}`}>
+      <div className="flex items-center gap-3 min-w-0 flex-1 pr-2">
+        <div {...listeners} {...attributes} className="cursor-grab active:cursor-grabbing text-slate-300 hover:text-indigo-400 transition-colors touch-none shrink-0"><GripVertical className="w-5 h-5" /></div>
+        <div className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: category.hex_color }} />
+        <span className="font-bold text-sm text-slate-700 truncate">{category.name}</span>
+      </div>
+      <button onClick={() => onTogglePrivacy(!isPrivate)} className={`px-2 py-1 rounded-lg text-xs font-bold ${isPrivate ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'}`}>
+        {isPrivate ? <Lock className="w-3 h-3" /> : <Unlock className="w-3 h-3" />}
+      </button>
+    </div>
+  )
+}
+
+function TabButton({ active, onClick, icon, label, variant = 'default' }: { active: boolean, onClick: () => void, icon: any, label: string, variant?: 'default' | 'danger' }) {
+  const activeClasses = variant === 'danger' 
+    ? 'bg-red-100 text-red-700 border-red-200 shadow-sm' 
+    : 'bg-white text-indigo-700 font-bold border-slate-200 shadow-sm'
+  const inactiveClasses = variant === 'danger'
+    ? 'text-red-500 hover:bg-red-50 border-transparent'
+    : 'text-slate-500 hover:bg-slate-100 border-transparent'
+  return (
+    <button onClick={onClick} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl border transition-all text-sm whitespace-nowrap ${active ? activeClasses : inactiveClasses}`}>
+      <span className="shrink-0">{icon}</span>
+      <span className={`truncate ${active ? 'font-bold' : 'font-medium'}`}>{label}</span>
     </button>
   )
 }
