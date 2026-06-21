@@ -235,29 +235,55 @@ export async function syncActivityToGoogle(userId: string, activity: any, catego
 export async function deleteActivityFromGoogle(userId: string, activityId: string) {
   try {
     const supabase = createAdminClient()
+    const { data: user } = await supabase
+      .from('users')
+      .select('google_sync_settings, google_sync_calendar_id')
+      .eq('id', userId)
+      .single()
+    const settings: GoogleSyncSettings = user?.google_sync_settings || {}
+
+    // IMPORT_ONLY 방향이면 구글에서 삭제하지 않음
+    if (settings.direction === 'IMPORT_ONLY') return
+
     const auth = await getGoogleAuthClient(userId, supabase)
     if (!auth) return
 
-    // Note: If using group mapping, it might be in a different calendar. We try default first, 
-    // or search across all mapped calendars. For simplicity, we just use the default or we could pass categories.
-    // Ideally we should list from all calendars, but let's check the default for now.
-    const calendarId = await getSyncCalendarId(userId, auth, supabase)
-    if (!calendarId) return
-
     const calendar = google.calendar({ version: 'v3', auth })
-    
-    const searchResult = await calendar.events.list({
-      calendarId,
-      privateExtendedProperty: [`calentask_id=${activityId}`],
-    })
 
-    const existingEvent = searchResult.data.items?.[0]
+    // 그룹 매핑된 캘린더를 포함한 모든 캘린더에서 검색
+    const calendarIdsToSearch = new Set<string>()
+    if (user?.google_sync_calendar_id) calendarIdsToSearch.add(user.google_sync_calendar_id)
+    if (settings.groupMapping) {
+      Object.values(settings.groupMapping).forEach(id => calendarIdsToSearch.add(id))
+    }
 
-    if (existingEvent?.id) {
-      await calendar.events.delete({
-        calendarId,
-        eventId: existingEvent.id,
-      })
+    // 기본 캘린더가 없으면 getSyncCalendarId로 찾기
+    if (calendarIdsToSearch.size === 0) {
+      const defaultCalId = await getSyncCalendarId(userId, auth, supabase)
+      if (defaultCalId) calendarIdsToSearch.add(defaultCalId)
+    }
+
+    for (const calId of calendarIdsToSearch) {
+      try {
+        const searchResult = await calendar.events.list({
+          calendarId: calId,
+          privateExtendedProperty: [`calentask_id=${activityId}`],
+        })
+
+        const existingEvent = searchResult.data.items?.[0]
+
+        if (existingEvent?.id) {
+          await calendar.events.delete({
+            calendarId: calId,
+            eventId: existingEvent.id,
+          })
+          return // 삭제 성공하면 더 이상 검색하지 않음
+        }
+      } catch (err: any) {
+        if (err.code !== 404 && err.code !== 410) {
+          console.warn(`Failed to search/delete from calendar ${calId}:`, err.message)
+        }
+      }
     }
   } catch (error) {
     console.error('Failed to delete activity from Google Calendar:', error)
@@ -569,6 +595,34 @@ export async function fetchGoogleCalendars(userId: string) {
   } catch (error) {
     console.error('Failed to fetch Google calendars:', error)
     return []
+  }
+}
+
+/**
+ * Creates a new Google Calendar with the given name.
+ * Returns { id, summary }.
+ */
+export async function createGoogleCalendar(userId: string, name: string) {
+  try {
+    const supabase = createAdminClient()
+    const auth = await getGoogleAuthClient(userId, supabase)
+    if (!auth) return null
+
+    const calendar = google.calendar({ version: 'v3', auth })
+    const newCalendar = await calendar.calendars.insert({
+      requestBody: {
+        summary: name,
+        description: `Created by Calentask for group mapping`,
+      },
+    })
+
+    if (newCalendar.data.id) {
+      return { id: newCalendar.data.id, summary: newCalendar.data.summary || name }
+    }
+    return null
+  } catch (error) {
+    console.error('Failed to create Google Calendar:', error)
+    return null
   }
 }
 

@@ -74,17 +74,14 @@ export async function GET(request: Request) {
       return NextResponse.redirect(`${origin}/?tab=profile&error=db_update_failed`)
     }
 
-    // 백그라운드 초기 동기화 대신 클라이언트 기반 청크 동기화 트리거 파라미터 추가
+    // 완전 롤백: 자동 동기화 트리거(trigger_sync=true) 제거
     if (tokens.refresh_token) {
-      // watchGoogleCalendar는 구글 캘린더에서 Calentask 서버로 변경사항을 쏴주기 위한 웹훅 설정이므로
-      // 이 작업은 서버에서 동기적으로 처리해도 오래 걸리지 않습니다.
       try {
         const { watchGoogleCalendar } = await import('@/lib/google-calendar')
         await watchGoogleCalendar(user.id)
       } catch (err) {
         console.error('[Custom Google Callback] watchGoogleCalendar failed:', err)
       }
-      return NextResponse.redirect(`${origin}/?tab=profile&success=google_linked&trigger_sync=true`)
     }
 
     return NextResponse.redirect(`${origin}/?tab=profile&success=google_linked`)

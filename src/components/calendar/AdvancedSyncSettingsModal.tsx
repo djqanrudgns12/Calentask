@@ -2,8 +2,8 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, Save, AlertTriangle, CheckCircle2, RefreshCw, Palette, Filter, Shield, Settings2, FolderTree, ArrowRightLeft, ArrowDownToLine, ArrowUpFromLine, Trash2 } from 'lucide-react'
-import { getGoogleSyncSettingsAction, updateGoogleSyncSettingsAction, clearGoogleSyncDataAction } from '@/app/actions/calendar'
+import { X, Save, AlertTriangle, CheckCircle2, RefreshCw, Palette, Filter, Shield, Settings2, FolderTree, ArrowRightLeft, ArrowDownToLine, ArrowUpFromLine, Trash2, Plus } from 'lucide-react'
+import { getGoogleSyncSettingsAction, updateGoogleSyncSettingsAction, clearGoogleSyncDataAction, createGoogleCalendarAction } from '@/app/actions/calendar'
 import { Button } from '@/components/ui/button'
 
 const GOOGLE_COLORS = [
@@ -35,6 +35,10 @@ export function AdvancedSyncSettingsModal({ isOpen, onClose, calendarList, categ
   const [isSaving, setIsSaving] = useState(false)
   const [isClearing, setIsClearing] = useState(false)
   const [saveMessage, setSaveMessage] = useState('')
+  const [localCalendarList, setLocalCalendarList] = useState<any[]>(calendarList)
+  const [creatingCalendarForCatId, setCreatingCalendarForCatId] = useState<string | null>(null)
+  const [newCalendarName, setNewCalendarName] = useState('')
+  const [isCreatingCalendar, setIsCreatingCalendar] = useState(false)
 
   useEffect(() => {
     if (isOpen) {
@@ -51,6 +55,10 @@ export function AdvancedSyncSettingsModal({ isOpen, onClose, calendarList, categ
       })
     }
   }, [isOpen])
+
+  useEffect(() => {
+    setLocalCalendarList(calendarList)
+  }, [calendarList])
 
   // Debounced auto-save effect could go here, or we use explicit save
   const handleSave = async (newSettings: any = settings) => {
@@ -93,6 +101,24 @@ export function AdvancedSyncSettingsModal({ isOpen, onClose, calendarList, categ
       alert(`오류 발생: ${e.message}`)
     } finally {
       setIsClearing(false)
+    }
+  }
+
+  const handleCreateCalendar = async (catId: string) => {
+    if (!newCalendarName.trim()) return
+    setIsCreatingCalendar(true)
+    try {
+      const result = await createGoogleCalendarAction(newCalendarName.trim())
+      // 로컬 캘린더 목록에 추가
+      setLocalCalendarList(prev => [...prev, { id: result.id, summary: result.summary, primary: false }])
+      // 해당 카테고리에 매핑
+      updateMapping('groupMapping', catId, result.id)
+      setCreatingCalendarForCatId(null)
+      setNewCalendarName('')
+    } catch (e: any) {
+      alert(`캘린더 생성 실패: ${e.message}`)
+    } finally {
+      setIsCreatingCalendar(false)
     }
   }
 
@@ -311,27 +337,74 @@ export function AdvancedSyncSettingsModal({ isOpen, onClose, calendarList, categ
 
                       <div className="space-y-3">
                         {categories.map(cat => (
-                          <div key={cat.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 bg-white border border-slate-200 rounded-2xl shadow-sm hover:border-indigo-200 transition-colors">
-                            <div className="flex items-center gap-3">
-                              <div className="w-4 h-4 rounded-full shadow-sm" style={{ backgroundColor: cat.hex_color }} />
-                              <span className="font-bold text-slate-700 whitespace-nowrap">{cat.name}</span>
+                          <div key={cat.id} className="flex flex-col gap-3 p-4 bg-white border border-slate-200 rounded-2xl shadow-sm hover:border-indigo-200 transition-colors">
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                              <div className="flex items-center gap-3">
+                                <div className="w-4 h-4 rounded-full shadow-sm" style={{ backgroundColor: cat.hex_color }} />
+                                <span className="font-bold text-slate-700 whitespace-nowrap">{cat.name}</span>
+                              </div>
+                              
+                              <div className="flex items-center gap-2">
+                                <ArrowRightLeft className="w-4 h-4 text-slate-400" />
+                                <select 
+                                  className="text-sm border border-slate-200 rounded-lg p-2 focus:ring-2 focus:ring-indigo-100 outline-none w-48 bg-slate-50"
+                                  value={settings.groupMapping?.[cat.id] || ''}
+                                  onChange={(e) => {
+                                    if (e.target.value === '__CREATE_NEW__') {
+                                      setCreatingCalendarForCatId(cat.id)
+                                      setNewCalendarName('')
+                                    } else {
+                                      setCreatingCalendarForCatId(null)
+                                      updateMapping('groupMapping', cat.id, e.target.value)
+                                    }
+                                  }}
+                                >
+                                  <option value="">기본 Calentask 달력</option>
+                                  {localCalendarList.map(cal => (
+                                    <option key={cal.id} value={cal.id}>
+                                      {cal.summary} {cal.primary && '(기본)'}
+                                    </option>
+                                  ))}
+                                  <option value="__CREATE_NEW__">＋ 새 캘린더 만들기</option>
+                                </select>
+                              </div>
                             </div>
-                            
-                            <div className="flex items-center gap-2">
-                              <ArrowRightLeft className="w-4 h-4 text-slate-400" />
-                              <select 
-                                className="text-sm border border-slate-200 rounded-lg p-2 focus:ring-2 focus:ring-indigo-100 outline-none w-48 bg-slate-50"
-                                value={settings.groupMapping?.[cat.id] || ''}
-                                onChange={(e) => updateMapping('groupMapping', cat.id, e.target.value)}
+
+                            {creatingCalendarForCatId === cat.id && (
+                              <motion.div 
+                                initial={{ opacity: 0, height: 0 }} 
+                                animate={{ opacity: 1, height: 'auto' }} 
+                                className="flex items-center gap-2 pl-7"
                               >
-                                <option value="">기본 Calentask 달력</option>
-                                {calendarList.map(cal => (
-                                  <option key={cal.id} value={cal.id}>
-                                    {cal.summary} {cal.primary && '(기본)'}
-                                  </option>
-                                ))}
-                              </select>
-                            </div>
+                                <input
+                                  type="text"
+                                  placeholder="새 캘린더 이름 입력"
+                                  value={newCalendarName}
+                                  onChange={(e) => setNewCalendarName(e.target.value)}
+                                  onKeyDown={(e) => e.key === 'Enter' && handleCreateCalendar(cat.id)}
+                                  className="flex-1 text-sm border border-indigo-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-200 outline-none bg-indigo-50/50"
+                                  autoFocus
+                                  disabled={isCreatingCalendar}
+                                />
+                                <button
+                                  onClick={() => handleCreateCalendar(cat.id)}
+                                  disabled={isCreatingCalendar || !newCalendarName.trim()}
+                                  className="px-3 py-2 bg-indigo-600 text-white text-sm font-bold rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5 whitespace-nowrap transition-colors"
+                                >
+                                  {isCreatingCalendar ? (
+                                    <><RefreshCw className="w-3.5 h-3.5 animate-spin" /> 생성 중...</>
+                                  ) : (
+                                    <><Plus className="w-3.5 h-3.5" /> 만들기</>
+                                  )}
+                                </button>
+                                <button
+                                  onClick={() => setCreatingCalendarForCatId(null)}
+                                  className="p-2 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition-colors"
+                                >
+                                  <X className="w-4 h-4" />
+                                </button>
+                              </motion.div>
+                            )}
                           </div>
                         ))}
                       </div>

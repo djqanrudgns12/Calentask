@@ -272,7 +272,16 @@ export async function createActivity(
 
   // Google Calendar 동기화 (에러 발생 시에도 메인 흐름 중단 안 함)
   try {
-    await syncActivityToGoogle(userData.user.id, activity, categoryIds)
+    // 카테고리 객체 배열을 조회하여 전달 (색상/프라이버시/그룹 매핑에 필요)
+    let categoryObjects: any[] = []
+    if (categoryIds.length > 0) {
+      const { data: cats } = await supabase
+        .from('categories')
+        .select('id, name, hex_color')
+        .in('id', categoryIds)
+      categoryObjects = cats || []
+    }
+    await syncActivityToGoogle(userData.user.id, activity, categoryObjects)
   } catch (e) {
     console.error('Google Sync Error (Create):', e)
   }
@@ -325,7 +334,16 @@ export async function updateActivity(
 
   // Google Calendar 동기화
   try {
-    await syncActivityToGoogle(userData.user.id, activity, categoryIds)
+    // 카테고리 객체 배열을 조회하여 전달 (색상/프라이버시/그룹 매핑에 필요)
+    let categoryObjects: any[] = []
+    if (categoryIds.length > 0) {
+      const { data: cats } = await supabase
+        .from('categories')
+        .select('id, name, hex_color')
+        .in('id', categoryIds)
+      categoryObjects = cats || []
+    }
+    await syncActivityToGoogle(userData.user.id, activity, categoryObjects)
   } catch (e) {
     console.error('Google Sync Error (Update):', e)
   }
@@ -387,10 +405,15 @@ export async function restoreActivity(id: string) {
 
   if (error) throw new Error(error.message)
 
-  // 휴지통 복구 시 구글 캘린더에 재성성 (정책 반영)
+  // 휴지통 복구 시 구글 캘린더에 재생성 (정책 반영)
   try {
-    // 카테고리는 단순 복구 시에는 매핑 쿼리를 생략하거나 빈 배열 전달 (여기선 단방향 복구)
-    await syncActivityToGoogle(userData.user.id, activity, [])
+    // 해당 일정의 카테고리를 조회하여 전달 (색상/프라이버시/그룹 매핑에 필요)
+    const { data: catMaps } = await supabase
+      .from('activity_category_map')
+      .select('categories(id, name, hex_color)')
+      .eq('activity_id', id)
+    const categoryObjects = catMaps?.map((m: any) => m.categories).filter(Boolean) || []
+    await syncActivityToGoogle(userData.user.id, activity, categoryObjects)
   } catch (e) {
     console.error('Google Sync Error (Restore):', e)
   }
@@ -751,5 +774,18 @@ export async function clearGoogleSyncDataAction() {
     throw new Error(result?.error || 'Failed to clear sync data')
   }
   
+  return result
+}
+
+export async function createGoogleCalendarAction(name: string) {
+  const { createClient } = await import('@/lib/supabase/server')
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Unauthorized')
+
+  const { createGoogleCalendar } = await import('@/lib/google-calendar')
+  const result = await createGoogleCalendar(user.id, name)
+
+  if (!result) throw new Error('Failed to create Google Calendar')
   return result
 }

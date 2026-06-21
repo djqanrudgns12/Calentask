@@ -44,20 +44,6 @@ export function GoogleSyncTab() {
     // OAuth 리다이렉트 후 돌아왔을 때 즉시 최신 프로필을 가져옴
     queryClient.invalidateQueries({ queryKey: ['userProfile'] })
     refetchProfile()
-
-    // 자동 동기화 트리거 감지
-    const params = new URLSearchParams(window.location.search)
-    if (params.get('trigger_sync') === 'true') {
-      // 파라미터 지우기
-      const url = new URL(window.location.href)
-      url.searchParams.delete('trigger_sync')
-      window.history.replaceState({}, '', url.toString())
-      
-      // 약간의 지연 후 모달 열기 (프로필 refetch 완료 대기)
-      setTimeout(() => {
-        setIsSyncModalOpen(true)
-      }, 500)
-    }
   }, [])
 
   const isGooglePrimary = authUser?.app_metadata?.provider === 'google'
