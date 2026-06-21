@@ -813,12 +813,19 @@ export async function createGoogleCalendar(userId: string, name: string) {
   }
 }
 
+export interface SyncProgressEvent {
+  title: string
+  status: 'synced' | 'skipped' | 'failed' | 'task_skipped'
+  current: number
+  error?: string
+}
+
 /**
  * Batch syncs activities to Google Calendar.
- * 최적화: p-limit(5) 병렬 처리, Auth/CalendarId 루프 외부 캐싱,
- * Custom Event ID 사용, setTimeout(200) 제거.
+ * 최적화: p-limit(1) 안정 처리, Auth/CalendarId 루프 외부 캐싱,
+ * Custom Event ID 사용, onProgress 콜백으로 실시간 진행 상태 전송.
  */
-export async function syncBatchActivitiesToGoogle(userId: string, activities: any[]) {
+export async function syncBatchActivitiesToGoogle(userId: string, activities: any[], onProgress?: (event: SyncProgressEvent) => void) {
   const result = {
     synced: 0,
     skipped: 0,
@@ -874,11 +881,17 @@ export async function syncBatchActivitiesToGoogle(userId: string, activities: an
       }
     };
 
+    let processedCount = 0
+
     const tasks = activities.map(activity =>
       limit(async () => {
         try {
           await delay(500); // 각 항목마다 기본 500ms 딜레이를 주어 초당 요청 수 엄격히 제어
-          if (activity.type === 'TASK') return // skip
+          if (activity.type === 'TASK') {
+            processedCount++
+            onProgress?.({ title: activity.title || '(할 일)', status: 'task_skipped', current: processedCount })
+            return
+          }
 
           let categories: any[] = []
           if (activity.activity_category_map && Array.isArray(activity.activity_category_map)) {
@@ -938,6 +951,8 @@ export async function syncBatchActivitiesToGoogle(userId: string, activities: an
               requestBody: eventBody,
             }))
             result.skipped++ // 이미 존재하여 업데이트
+            processedCount++
+            onProgress?.({ title: activity.title, status: 'skipped', current: processedCount })
           } catch (updateErr: any) {
             if (updateErr.code === 404) {
               // 기존 extendedProperty로 검색 (마이그레이션 Fallback)
@@ -954,12 +969,16 @@ export async function syncBatchActivitiesToGoogle(userId: string, activities: an
                     requestBody: eventBody,
                   }))
                   result.skipped++
+                  processedCount++
+                  onProgress?.({ title: activity.title, status: 'skipped', current: processedCount })
                 } else {
                   await executeWithRetry(() => calendar.events.insert({
                     calendarId: targetCalendarId,
                     requestBody: { ...eventBody, id: googleEventId },
                   }))
                   result.synced++
+                  processedCount++
+                  onProgress?.({ title: activity.title, status: 'synced', current: processedCount })
                 }
               } catch {
                 await executeWithRetry(() => calendar.events.insert({
@@ -967,6 +986,8 @@ export async function syncBatchActivitiesToGoogle(userId: string, activities: an
                   requestBody: eventBody,
                 }))
                 result.synced++
+                processedCount++
+                onProgress?.({ title: activity.title, status: 'synced', current: processedCount })
               }
             } else {
               throw updateErr
@@ -976,6 +997,8 @@ export async function syncBatchActivitiesToGoogle(userId: string, activities: an
           console.error(`Failed to sync activity ${activity.id}:`, err)
           result.failed++
           result.failedItems.push({ id: activity.id, title: activity.title, error: err.message })
+          processedCount++
+          onProgress?.({ title: activity.title, status: 'failed', current: processedCount, error: err.message })
         }
       })
     )
