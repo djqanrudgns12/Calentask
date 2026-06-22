@@ -276,6 +276,7 @@ export async function syncActivityToGoogle(userId: string, activity: any, catego
     const googleEventId = toGoogleEventId(activity.id)
 
     // 전략: Custom ID로 update 시도 → 404면 Custom ID로 insert
+    let finalGoogleEventId = googleEventId
     try {
       await calendar.events.update({
         calendarId,
@@ -300,6 +301,7 @@ export async function syncActivityToGoogle(userId: string, activity: any, catego
               eventId: existingEvent.id,
               requestBody: eventBody,
             })
+            finalGoogleEventId = existingEvent.id
             await logSyncHistory(supabase, { userId, activityId: activity.id, googleEventId: existingEvent.id, calendarId, action: 'UPDATED', activityTitle: activity.title, activityStartTime: activity.start_time })
           } else {
             // 완전히 새로운 이벤트 → Custom ID로 insert
@@ -315,12 +317,20 @@ export async function syncActivityToGoogle(userId: string, activity: any, catego
             calendarId,
             requestBody: eventBody,
           })
-          await logSyncHistory(supabase, { userId, activityId: activity.id, googleEventId: inserted.data.id || googleEventId, calendarId, action: 'CREATED', activityTitle: activity.title, activityStartTime: activity.start_time })
+          finalGoogleEventId = inserted.data.id || googleEventId
+          await logSyncHistory(supabase, { userId, activityId: activity.id, googleEventId: finalGoogleEventId, calendarId, action: 'CREATED', activityTitle: activity.title, activityStartTime: activity.start_time })
         }
       } else {
         await logSyncHistory(supabase, { userId, activityId: activity.id, googleEventId, calendarId, action: 'ERROR', status: 'FAILED', errorMessage: updateErr.message, activityTitle: activity.title, activityStartTime: activity.start_time })
         throw updateErr
       }
+    }
+
+    // activities 테이블에 google_event_id 저장 (히스토리 센터 연동용)
+    try {
+      await supabase.from('activities').update({ google_event_id: finalGoogleEventId }).eq('id', activity.id)
+    } catch (dbErr) {
+      console.error('Failed to save google_event_id:', dbErr)
     }
   } catch (error: any) {
     console.error('Failed to sync activity to Google Calendar:', error)
@@ -518,35 +528,88 @@ export async function watchGoogleCalendar(userId: string) {
     const auth = await getGoogleAuthClient(userId, supabase)
     if (!auth) return
 
-    const calendarId = await getSyncCalendarId(userId, auth, supabase)
-    if (!calendarId) return
+    const { data: userData } = await supabase
+      .from('users')
+      .select('google_sync_settings, google_channel_id, google_resource_id, google_channel_expiration')
+      .eq('id', userId)
+      .single()
+
+    const settings: GoogleSyncSettings = userData?.google_sync_settings || {}
+
+    // 기존 채널이 아직 유효하면 재등록 불필요
+    if (userData?.google_channel_id && userData?.google_channel_expiration) {
+      const expiration = new Date(userData.google_channel_expiration)
+      if (expiration.getTime() > Date.now() + 60 * 60 * 1000) { // 만료 1시간 이상 남음
+        return { channelId: userData.google_channel_id, alreadyActive: true }
+      }
+      // 만료 임박 또는 만료됨 → 기존 채널 정리 시도
+      try {
+        const calendar = google.calendar({ version: 'v3', auth })
+        await calendar.channels.stop({
+          requestBody: {
+            id: userData.google_channel_id,
+            resourceId: userData.google_resource_id,
+          }
+        })
+      } catch {
+        // 이미 만료된 채널 정리 실패는 무시
+      }
+    }
+
+    // Watch할 캘린더 목록 수집 (기본 캘린더 + 그룹 매핑 캘린더)
+    const calendarIdsToWatch = new Set<string>()
+    const defaultCalId = await getSyncCalendarId(userId, auth, supabase, [], settings)
+    if (defaultCalId) calendarIdsToWatch.add(defaultCalId)
+    if (settings.groupMapping) {
+      Object.values(settings.groupMapping).forEach(id => calendarIdsToWatch.add(id))
+    }
+
+    if (calendarIdsToWatch.size === 0) return
 
     const calendar = google.calendar({ version: 'v3', auth })
-    const channelId = `calentask-sync-${userId}-${Date.now()}`
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://calentask-orcin.vercel.app'
     const webhookUrl = `${siteUrl}/api/webhooks/google`
 
-    const response = await calendar.events.watch({
-      calendarId,
-      requestBody: {
-        id: channelId,
-        type: 'web_hook',
-        address: webhookUrl,
-      }
-    })
-    
-    await supabase
-      .from('users')
-      .update({
-        google_channel_id: channelId,
-        google_resource_id: response.data.resourceId,
-        google_channel_expiration: response.data.expiration ? new Date(parseInt(response.data.expiration)).toISOString() : null,
-      })
-      .eq('id', userId)
+    // 첫 번째(기본) 캘린더의 채널 정보를 DB에 저장
+    let primaryChannelId = ''
+    let primaryResponse: any = null
 
+    for (const calId of calendarIdsToWatch) {
+      const channelId = `calentask-sync-${userId}-${Date.now()}-${calId.substring(0, 8)}`
+      try {
+        const response = await calendar.events.watch({
+          calendarId: calId,
+          requestBody: {
+            id: channelId,
+            type: 'web_hook',
+            address: webhookUrl,
+          }
+        })
+
+        if (!primaryChannelId) {
+          primaryChannelId = channelId
+          primaryResponse = response
+        }
+      } catch (watchErr: any) {
+        console.warn(`Failed to watch calendar ${calId}:`, watchErr.message)
+      }
+    }
+
+    if (primaryChannelId && primaryResponse) {
+      await supabase
+        .from('users')
+        .update({
+          google_channel_id: primaryChannelId,
+          google_resource_id: primaryResponse.data.resourceId,
+          google_channel_expiration: primaryResponse.data.expiration ? new Date(parseInt(primaryResponse.data.expiration)).toISOString() : null,
+        })
+        .eq('id', userId)
+    }
+
+    // 초기 동기화 수행
     await handleGoogleCalendarSync(userId, supabase)
 
-    return response.data
+    return primaryResponse?.data
   } catch (error) {
     console.error('Failed to watch Google Calendar:', error)
   }
@@ -583,7 +646,10 @@ export async function handleGoogleCalendarSync(userId: string, customSupabase?: 
     if (syncToken) {
       requestParams.syncToken = syncToken
     } else {
-      requestParams.timeMin = new Date().toISOString()
+      // syncToken이 없으면 1년 전부터 전체 이벤트를 조회하여 과거 변경 감지
+      const oneYearAgo = new Date()
+      oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1)
+      requestParams.timeMin = oneYearAgo.toISOString()
     }
 
     let items: any[] = []
@@ -662,7 +728,7 @@ export async function handleGoogleCalendarSync(userId: string, customSupabase?: 
                   (async () => {
                     await supabase
                       .from('activities')
-                      .update({ deleted_at: new Date().toISOString() })
+                      .update({ deleted_at: new Date().toISOString(), google_event_id: null })
                       .eq('id', calentaskId)
                     await logSyncHistory(supabase, { userId, activityId: calentaskId, googleEventId: event.id as string, calendarId, action: 'DELETED', activityTitle: event.summary || '제목 없음' })
                   })()
@@ -686,6 +752,7 @@ export async function handleGoogleCalendarSync(userId: string, customSupabase?: 
                         end_time: end,
                         is_all_day: isAllDay,
                         reminders,
+                        google_event_id: event.id as string,
                         updated_at: new Date(event.updated as string).toISOString()
                       })
                       .eq('id', calentaskId)
@@ -718,6 +785,7 @@ export async function handleGoogleCalendarSync(userId: string, customSupabase?: 
                   is_all_day: isAllDay,
                   type: 'EVENT', // default type for imports
                   reminders,
+                  google_event_id: event.id as string,
                 }
                 
                 const { data: insertedActivity } = await supabase
@@ -944,15 +1012,16 @@ export async function syncBatchActivitiesToGoogle(userId: string, activities: an
           }
 
           // Custom ID로 update 시도 → 404면 insert
+          let batchFinalEventId = googleEventId
           try {
             await executeWithRetry(() => calendar.events.update({
               calendarId: targetCalendarId,
               eventId: googleEventId,
               requestBody: eventBody,
             }))
-            result.skipped++ // 이미 존재하여 업데이트
+            result.synced++ // 업데이트 성공도 동기화 완료로 분류
             processedCount++
-            onProgress?.({ title: activity.title, status: 'skipped', current: processedCount })
+            onProgress?.({ title: activity.title, status: 'synced', current: processedCount })
           } catch (updateErr: any) {
             if (updateErr.code === 404) {
               // 기존 extendedProperty로 검색 (마이그레이션 Fallback)
@@ -968,9 +1037,10 @@ export async function syncBatchActivitiesToGoogle(userId: string, activities: an
                     eventId: existingEvent.id as string,
                     requestBody: eventBody,
                   }))
-                  result.skipped++
+                  batchFinalEventId = existingEvent.id as string
+                  result.synced++
                   processedCount++
-                  onProgress?.({ title: activity.title, status: 'skipped', current: processedCount })
+                  onProgress?.({ title: activity.title, status: 'synced', current: processedCount })
                 } else {
                   await executeWithRetry(() => calendar.events.insert({
                     calendarId: targetCalendarId,
@@ -981,10 +1051,11 @@ export async function syncBatchActivitiesToGoogle(userId: string, activities: an
                   onProgress?.({ title: activity.title, status: 'synced', current: processedCount })
                 }
               } catch {
-                await executeWithRetry(() => calendar.events.insert({
+                const insertedBatch = await executeWithRetry(() => calendar.events.insert({
                   calendarId: targetCalendarId,
                   requestBody: eventBody,
                 }))
+                batchFinalEventId = insertedBatch.data.id || googleEventId
                 result.synced++
                 processedCount++
                 onProgress?.({ title: activity.title, status: 'synced', current: processedCount })
@@ -992,6 +1063,13 @@ export async function syncBatchActivitiesToGoogle(userId: string, activities: an
             } else {
               throw updateErr
             }
+          }
+
+          // activities 테이블에 google_event_id 저장
+          try {
+            await supabase.from('activities').update({ google_event_id: batchFinalEventId }).eq('id', activity.id)
+          } catch (dbErr) {
+            console.error('Failed to save google_event_id (batch):', dbErr)
           }
         } catch (err: any) {
           console.error(`Failed to sync activity ${activity.id}:`, err)

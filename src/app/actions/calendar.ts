@@ -665,7 +665,14 @@ export async function startGoogleSyncAction(calendarId?: string, calendarName?: 
     }).eq('id', userData.user.id)
   }
 
-  // 기존 백그라운드 동기화 로직 제거 (클라이언트 청크 동기화로 대체됨)
+  // Watch API 활성화: 구글 캘린더 변경사항 실시간 수신 설정
+  try {
+    const { watchGoogleCalendar } = await import('@/lib/google-calendar')
+    await watchGoogleCalendar(userData.user.id)
+  } catch (watchError) {
+    console.error('Failed to set up Google Calendar watch:', watchError)
+    // Watch 실패해도 동기화 자체는 계속 진행
+  }
 
   revalidatePath('/')
   return { success: true }
@@ -676,11 +683,31 @@ export async function forceSyncNowAction() {
   const { data: userData } = await supabase.auth.getUser()
   if (!userData.user) throw new Error('Not authenticated')
 
-  // Pull (구글 변경점 가져오기) 작업만 서버 액션으로 수행
+  // Pull (구글 변경점 가져오기) 작업
   try {
     const { createAdminClient } = await import('@/lib/supabase/server')
-    const { handleGoogleCalendarSync } = await import('@/lib/google-calendar')
+    const { handleGoogleCalendarSync, watchGoogleCalendar } = await import('@/lib/google-calendar')
     const adminClient = createAdminClient()
+
+    // Watch 채널 만료 확인 및 재등록
+    const { data: userRow } = await adminClient
+      .from('users')
+      .select('google_channel_id, google_channel_expiration')
+      .eq('id', userData.user.id)
+      .single()
+
+    const channelExpired = !userRow?.google_channel_id || 
+      !userRow?.google_channel_expiration ||
+      new Date(userRow.google_channel_expiration).getTime() < Date.now() + 60 * 60 * 1000 // 1시간 이내 만료
+
+    if (channelExpired) {
+      try {
+        await watchGoogleCalendar(userData.user.id)
+      } catch (watchErr) {
+        console.error('Failed to re-register watch channel:', watchErr)
+      }
+    }
+
     await handleGoogleCalendarSync(userData.user.id, adminClient)
   } catch (error) {
     console.error('Failed to handle google calendar pull sync:', error)
