@@ -84,7 +84,7 @@ export function EditAgendaTaskDialog({
           </div>
 
           {/* Properties */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
             <div>
               <Label className="block text-[13px] font-bold text-muted-foreground mb-2 flex items-center gap-1.5"><Tag className="w-3.5 h-3.5"/> 카테고리</Label>
               <select 
@@ -96,16 +96,16 @@ export function EditAgendaTaskDialog({
                 {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
               </select>
             </div>
-            <div className="overflow-hidden">
+            <div>
               <Label className="block text-[13px] font-bold text-muted-foreground mb-2 flex items-center gap-1.5"><Clock className="w-3.5 h-3.5"/> 데드라인</Label>
               <DateTimePickerPopover 
                 date={editForm.deadline ? new Date(editForm.deadline) : null} 
                 setDate={(d: Date | null) => setEditForm({ ...editForm, deadline: d ? d.toISOString() : null })}
                 align="start"
               >
-                <div className="flex items-center gap-2 px-3 h-10 bg-card/60 hover:bg-card rounded-xl border border-border hover:border-indigo-300 hover:shadow-sm transition-all w-full cursor-pointer overflow-hidden">
+                <div className="flex items-center gap-2 px-2.5 min-h-[40px] h-auto py-1.5 bg-card/60 hover:bg-card rounded-xl border border-border hover:border-indigo-300 hover:shadow-sm transition-all w-full cursor-pointer">
                   <span className={cn(
-                    "flex-1 text-[13px] font-bold text-left whitespace-nowrap overflow-hidden text-ellipsis",
+                    "flex-1 text-xs sm:text-[13px] font-bold text-left leading-snug break-keep tracking-tight",
                     editForm.deadline ? "text-foreground" : "text-muted-foreground"
                   )}>
                     {editForm.deadline ? format(new Date(editForm.deadline), 'yy.M.d a h:mm', { locale: ko }) : '마감일 설정'}

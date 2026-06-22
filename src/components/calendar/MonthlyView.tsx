@@ -78,7 +78,7 @@ export const MonthlyView = React.memo(function MonthlyView({ currentDate, events
       {/* Day Headers */}
       <div className="grid grid-cols-7 gap-[1px] md:gap-3 mb-1 md:mb-2 bg-muted md:bg-transparent border-t border-l border-border md:border-none">
         {weekdayHeaders.map((day) => (
-          <div key={day} className={`text-center ${fontClasses.weekdayHeader.mobile} md:${fontClasses.weekdayHeader.desktop} font-bold uppercase tracking-wider bg-background py-1 md:py-2 border-r border-b border-border md:border-none ${
+          <div key={day} className={`text-center ${fontClasses.weekdayHeader} font-bold uppercase tracking-wider bg-background py-1 md:py-2 border-r border-b border-border md:border-none ${
             day === '일' ? 'text-red-500' : (day === '토' && showSaturdayBlue) ? 'text-blue-500' : 'text-muted-foreground'
           }`}>
             {day}
@@ -120,16 +120,16 @@ export const MonthlyView = React.memo(function MonthlyView({ currentDate, events
             >
               <div className="flex justify-between items-start mb-0.5 md:mb-3">
                 <div className="flex flex-col gap-0 max-w-[70%]">
-                  <span className={`${fontClasses.holidayName.mobile} md:${fontClasses.holidayName.desktop} font-semibold text-red-400 truncate leading-[1.1] md:leading-normal mt-[1px] md:mt-0`}>
+                  <span className={`${fontClasses.holidayName} font-semibold text-red-400 truncate leading-[1.1] md:leading-normal mt-[1px] md:mt-0`}>
                     {holidayName && !showHolidaysAsTags && holidayName}
                   </span>
                   {otherTerms && (
-                    <span className={`${fontClasses.otherTerms.mobile} md:${fontClasses.otherTerms.desktop} font-medium text-muted-foreground truncate leading-[1.1] md:leading-tight`}>
+                    <span className={`${fontClasses.otherTerms} font-medium text-muted-foreground truncate leading-[1.1] md:leading-tight`}>
                       {otherTerms}
                     </span>
                   )}
                 </div>
-                <span className={`${fontClasses.dateNumber.mobile} md:${fontClasses.dateNumber.desktop} font-bold w-3.5 h-3.5 md:w-8 md:h-8 flex items-center justify-center rounded-full shrink-0 ${isToday ? 'bg-[#312E81] text-white shadow-sm md:shadow-lg shadow-[#4338CA]/40' : isHolidayDay || day.getDay() === 0 ? 'text-red-500' : (showSaturdayBlue && day.getDay() === 6) ? 'text-blue-500' : 'text-foreground'
+                <span className={`${fontClasses.dateNumber} font-bold w-3.5 h-3.5 md:w-8 md:h-8 flex items-center justify-center rounded-full shrink-0 ${isToday ? 'bg-[#312E81] text-white shadow-sm md:shadow-lg shadow-[#4338CA]/40' : isHolidayDay || day.getDay() === 0 ? 'text-red-500' : (showSaturdayBlue && day.getDay() === 6) ? 'text-blue-500' : 'text-foreground'
                   }`}>
                   {format(day, 'd')}
                 </span>
@@ -137,7 +137,7 @@ export const MonthlyView = React.memo(function MonthlyView({ currentDate, events
 
               <div className="space-y-1.5 flex-1 overflow-hidden">
                 {holidayName && showHolidaysAsTags && (
-                  <div className="group relative flex items-stretch rounded-sm md:rounded-r-lg text-[9px] md:text-xs transition-all overflow-hidden bg-red-50 text-red-600">
+                  <div className={`group relative flex items-stretch rounded-sm md:rounded-r-lg ${fontClasses.holidayTag} transition-all overflow-hidden bg-red-50 text-red-600`}>
                     <div className="hidden md:block w-[3px] shrink-0 rounded-l-lg bg-red-500" />
                     <div className="flex-1 flex flex-col px-[2px] py-[1px] md:px-2.5 md:py-1.5 min-w-0">
                       <span className="font-semibold truncate pr-0.5 tracking-tighter md:tracking-normal leading-tight md:leading-normal">{holidayName}</span>
@@ -150,7 +150,7 @@ export const MonthlyView = React.memo(function MonthlyView({ currentDate, events
                       <div
                         onClick={(e) => { e.stopPropagation(); openEventDetail(event); }}
                       onDoubleClick={(e) => { e.stopPropagation(); openEditEvent(event); }}
-                      className={`group relative flex items-stretch rounded-sm md:rounded-r-lg ${fontClasses.eventTitle.mobile} md:${fontClasses.eventTitle.desktop} transition-all md:hover:scale-[1.02] overflow-hidden cursor-pointer`}
+                      className={`group relative flex items-stretch rounded-sm md:rounded-r-lg ${fontClasses.eventTitle} transition-all md:hover:scale-[1.02] overflow-hidden cursor-pointer`}
                       style={{ backgroundColor: getEventBgColor(event) }}
                     >
                       {/* 좌측 accent bar: 멀티 카테고리일 경우 그라데이션으로 표시 */}
@@ -187,7 +187,7 @@ export const MonthlyView = React.memo(function MonthlyView({ currentDate, events
                 {dayEvents.length > ((holidayName && showHolidaysAsTags) ? 2 : 3) && (
                   <button
                     onClick={(e) => { e.stopPropagation(); openDaySummary(day); }}
-                    className={`w-full mt-0 md:mt-1.5 text-center px-1 py-[2px] md:px-2 md:py-1 ${fontClasses.moreButton.mobile} md:${fontClasses.moreButton.desktop} font-bold text-muted-foreground bg-muted/80 hover:bg-muted rounded-sm md:rounded-md transition-colors min-h-[18px]`}
+                    className={`w-full mt-0 md:mt-1.5 text-center px-1 py-[2px] md:px-2 md:py-1 ${fontClasses.moreButton} font-bold text-muted-foreground bg-muted/80 hover:bg-muted rounded-sm md:rounded-md transition-colors min-h-[18px]`}
                   >
                     + {dayEvents.length - ((holidayName && showHolidaysAsTags) ? 2 : 3)}
                   </button>

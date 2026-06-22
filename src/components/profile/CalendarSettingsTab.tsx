@@ -93,6 +93,7 @@ export function CalendarSettingsTab() {
               <option value="small">작게</option>
               <option value="normal">보통</option>
               <option value="large">크게</option>
+              <option value="x-large">매우 크게</option>
             </select>
           </div>
 

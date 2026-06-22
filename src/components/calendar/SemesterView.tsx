@@ -7,7 +7,7 @@ import { getEventBarGradient, getEventBgColor } from '@/lib/eventColor'
 import { Pencil, Trash2 } from 'lucide-react'
 import { useCalendarStore } from '@/store/useCalendarStore'
 import { useSpecialDays } from '@/hooks/useSpecialDays'
-import { getWeekdayHeaders } from '@/lib/calendarFontSize'
+import { getCalendarFontClasses, getWeekdayHeaders } from '@/lib/calendarFontSize'
 
 import React from 'react'
 
@@ -21,10 +21,11 @@ export const SemesterView = React.memo(function SemesterView({ events }: Semeste
     semesterYear, semesterTerm, openDaySummary, openEventDetail, openEditEvent, openDeleteConfirm, 
     showHolidays, showHolidaysAsTags,
     showNationalDays, showAnniversaries, showTraditionalTerms,
-    weekStartsOn, showSaturdayBlue
+    calendarFontSize, weekStartsOn, showSaturdayBlue
   } = useCalendarStore()
   
   const weekdayHeaders = getWeekdayHeaders(weekStartsOn)
+  const fontClasses = getCalendarFontClasses(calendarFontSize)
   
   const { data: specialDaysMap = {} } = useSpecialDays(semesterYear)
 
@@ -61,7 +62,7 @@ export const SemesterView = React.memo(function SemesterView({ events }: Semeste
                 {/* Day Headers */}
                 <div className="grid grid-cols-7 border-b border-border bg-background">
                   {weekdayHeaders.map((day, idx) => (
-                    <div key={idx} className={`text-center text-[9px] font-bold uppercase py-2.5 tracking-widest ${
+                    <div key={idx} className={`text-center ${fontClasses.weekdayHeader} font-bold uppercase py-2.5 tracking-widest ${
                       day === '일' ? 'text-red-500' : (day === '토' && showSaturdayBlue) ? 'text-blue-500' : 'text-muted-foreground'
                     }`}>
                       {day}
@@ -102,16 +103,16 @@ export const SemesterView = React.memo(function SemesterView({ events }: Semeste
                       >
                         <div className="flex justify-between items-start mb-2">
                           <div className="flex flex-col gap-0.5 max-w-[70%]">
-                            <span className="text-[8px] font-bold text-red-400 truncate">
+                            <span className={`${fontClasses.holidayName} font-bold text-red-400 truncate`}>
                               {holidayName && !showHolidaysAsTags && holidayName}
                             </span>
                             {otherTerms && (
-                              <span className="text-[7.5px] font-medium text-muted-foreground truncate leading-tight">
+                              <span className={`${fontClasses.otherTerms} font-medium text-muted-foreground truncate leading-tight`}>
                                 {otherTerms}
                               </span>
                             )}
                           </div>
-                          <span className={`text-[11px] font-bold w-6 h-6 flex items-center justify-center rounded-full shrink-0 ${isToday ? 'bg-[#312E81] text-white shadow-md shadow-[#4338CA]/40' : isHolidayDay || day.getDay() === 0 ? 'text-red-500' : (showSaturdayBlue && day.getDay() === 6) ? 'text-blue-500' : 'text-foreground'
+                          <span className={`${fontClasses.dateNumber} font-bold w-6 h-6 flex items-center justify-center rounded-full shrink-0 ${isToday ? 'bg-[#312E81] text-white shadow-md shadow-[#4338CA]/40' : isHolidayDay || day.getDay() === 0 ? 'text-red-500' : (showSaturdayBlue && day.getDay() === 6) ? 'text-blue-500' : 'text-foreground'
                             }`}>
                             {format(day, 'd')}
                           </span>
@@ -120,7 +121,7 @@ export const SemesterView = React.memo(function SemesterView({ events }: Semeste
                         <div className="flex-1 flex flex-col justify-between overflow-hidden">
                           <div className="space-y-1.5">
                             {holidayName && showHolidaysAsTags && (
-                              <div className="group relative flex items-stretch rounded-r-md text-[10px] transition-transform overflow-hidden bg-red-50 text-red-600">
+                              <div className={`group relative flex items-stretch rounded-r-md ${fontClasses.holidayTag} transition-transform overflow-hidden bg-red-50 text-red-600`}>
                                 <div className="w-[3px] shrink-0 bg-red-500" />
                                 <div className="flex-1 flex flex-col px-1.5 py-1 min-w-0">
                                   <span className="font-semibold truncate leading-tight pr-1">{holidayName}</span>
@@ -133,7 +134,7 @@ export const SemesterView = React.memo(function SemesterView({ events }: Semeste
                                   key={event.id}
                                   onClick={(e) => { e.stopPropagation(); openEventDetail(event); }}
                                   onDoubleClick={(e) => { e.stopPropagation(); openEditEvent(event); }}
-                                  className="group relative flex items-stretch rounded-r-md text-[10px] transition-transform hover:scale-[1.02] overflow-hidden cursor-pointer"
+                                  className={`group relative flex items-stretch rounded-r-md ${fontClasses.eventTitle} transition-transform hover:scale-[1.02] overflow-hidden cursor-pointer`}
                                   style={{ backgroundColor: getEventBgColor(event) }}
                                 >
                                   {/* 좌측 accent bar: 멀티 카테고리일 경우 그라데이션으로 표시 */}
@@ -171,7 +172,7 @@ export const SemesterView = React.memo(function SemesterView({ events }: Semeste
                             <div className="flex justify-end mt-1">
                               <button
                                 onClick={(e) => { e.stopPropagation(); openDaySummary(day); }}
-                                className="px-1.5 py-0.5 rounded-full bg-slate-200/60 hover:bg-slate-300 text-[9px] font-bold text-foreground transition-colors"
+                                className={`px-1.5 py-0.5 rounded-full bg-slate-200/60 hover:bg-slate-300 ${fontClasses.moreButton} font-bold text-foreground transition-colors`}
                               >
                                 +{dayEvents.length - ((holidayName && showHolidaysAsTags) ? 1 : 2)}
                               </button>

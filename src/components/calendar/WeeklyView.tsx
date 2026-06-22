@@ -7,6 +7,7 @@ import { getEventPrimaryColor, getEventBarGradient, getEventBgColor } from '@/li
 import { Pencil, Trash2 } from 'lucide-react'
 import { useCalendarStore } from '@/store/useCalendarStore'
 import { useSpecialDays } from '@/hooks/useSpecialDays'
+import { getCalendarFontClasses } from '@/lib/calendarFontSize'
 import { useEffect, useRef, useState } from 'react'
 import { useDroppable, useDraggable } from '@dnd-kit/core'
 
@@ -55,8 +56,10 @@ export const WeeklyView = React.memo(function WeeklyView({ currentDate, events }
     openDaySummary, openEventDetail, openEditEvent, openDeleteConfirm, 
     showHolidays, showHolidaysAsTags,
     showNationalDays, showAnniversaries, showTraditionalTerms,
-    weekStartsOn, showSaturdayBlue
+    calendarFontSize, weekStartsOn, showSaturdayBlue
   } = useCalendarStore()
+  
+  const fontClasses = getCalendarFontClasses(calendarFontSize)
   
   const year = currentDate.getFullYear()
   const { data: specialDaysMap = {} } = useSpecialDays(year)
@@ -119,30 +122,30 @@ export const WeeklyView = React.memo(function WeeklyView({ currentDate, events }
 
             return (
               <div key={idx} className="flex flex-col items-center py-3 border-r border-border last:border-r-0 relative">
-                <span className={`text-[11px] font-semibold uppercase tracking-wider mb-1 ${
+                <span className={`${fontClasses.weekdayHeader} font-semibold uppercase tracking-wider mb-1 ${
                   day.getDay() === 0 ? 'text-red-500' : (showSaturdayBlue && day.getDay() === 6) ? 'text-blue-500' : 'text-muted-foreground'
                 }`}>
                   {['일', '월', '화', '수', '목', '금', '토'][day.getDay()]}
                 </span>
-                <div className={`w-8 h-8 flex items-center justify-center rounded-full text-sm font-bold ${isToday ? 'bg-[#312E81] text-white shadow-md shadow-[#4338CA]/40' : isHolidayDay || day.getDay() === 0 ? 'text-red-500' : (showSaturdayBlue && day.getDay() === 6) ? 'text-blue-500' : 'text-foreground'
+                <div className={`w-8 h-8 flex items-center justify-center rounded-full ${fontClasses.dateNumber} font-bold ${isToday ? 'bg-[#312E81] text-white shadow-md shadow-[#4338CA]/40' : isHolidayDay || day.getDay() === 0 ? 'text-red-500' : (showSaturdayBlue && day.getDay() === 6) ? 'text-blue-500' : 'text-foreground'
                   }`}>
                   {format(day, 'd')}
                 </div>
                 {holidayName && !showHolidaysAsTags && (
-                  <span className="mt-1 text-[10px] font-medium text-red-400 truncate px-1 text-center w-full">
+                  <span className={`mt-1 ${fontClasses.holidayName} font-medium text-red-400 truncate px-1 text-center w-full`}>
                     {holidayName}
                   </span>
                 )}
                 {otherTerms && (
-                  <span className="mt-0.5 text-[9px] font-medium text-muted-foreground truncate px-1 text-center w-full leading-tight">
+                  <span className={`mt-0.5 ${fontClasses.otherTerms} font-medium text-muted-foreground truncate px-1 text-center w-full leading-tight`}>
                     {otherTerms}
                   </span>
                 )}
                 {/* All day events */}
                 <div className="w-full px-1 mt-1 space-y-1">
                    {holidayName && showHolidaysAsTags && (
-                       <div 
-                         className="text-[10px] font-semibold truncate px-1.5 py-0.5 rounded" 
+                        <div 
+                          className={`${fontClasses.holidayTag} font-semibold truncate px-1.5 py-0.5 rounded`} 
                          style={{ backgroundColor: `#ef444420`, color: '#ef4444' }}
                        >
                           {holidayName}
@@ -155,7 +158,7 @@ export const WeeklyView = React.memo(function WeeklyView({ currentDate, events }
                         key={event.id}
                         onClick={(e) => { e.stopPropagation(); openEventDetail(event); }}
                         onDoubleClick={(e) => { e.stopPropagation(); openEditEvent(event); }}
-                        className="text-[10px] font-semibold truncate px-1.5 py-0.5 rounded cursor-pointer transition-transform hover:scale-[1.02]"
+                        className={`${fontClasses.eventTitle} font-semibold truncate px-1.5 py-0.5 rounded cursor-pointer transition-transform hover:scale-[1.02]`}
                         style={{ backgroundColor: `${primaryColor}20`, color: primaryColor }}
                       >
                         {event.title}

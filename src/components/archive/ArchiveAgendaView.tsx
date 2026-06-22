@@ -247,9 +247,9 @@ export function ArchiveAgendaView() {
           )}
         >
           {/* Main Input Line */}
-          <div className="relative flex flex-col sm:flex-row sm:items-center min-h-[4rem] p-3 sm:px-5 sm:py-0 gap-3 group">
+          <div className="relative flex flex-col sm:flex-row sm:items-center min-h-[3rem] p-2.5 sm:px-4 sm:py-0 gap-2.5 group">
             <div className="flex items-center flex-1 w-full gap-2">
-              <Plus className="w-5 h-5 sm:w-6 sm:h-6 text-muted-foreground group-focus-within:text-indigo-600 transition-colors shrink-0" />
+              <Plus className="w-4 h-4 sm:w-5 sm:h-5 text-muted-foreground group-focus-within:text-indigo-600 transition-colors shrink-0" />
               <input 
                 ref={inputRef}
                 type="text"
@@ -257,15 +257,15 @@ export function ArchiveAgendaView() {
                 onChange={handleInputChange}
                 onKeyDown={handleMainInputKeyDown}
                 placeholder="예: '내일 오후 3시 팀 미팅 준비'"
-                className="flex-1 h-10 sm:h-full bg-transparent px-2 sm:px-4 outline-none text-foreground font-bold text-base sm:text-xl placeholder:text-muted-foreground placeholder:font-medium"
+                className="flex-1 h-10 sm:h-full bg-transparent px-2 sm:px-3 outline-none text-foreground font-bold text-sm sm:text-lg placeholder:text-muted-foreground placeholder:font-medium"
               />
             </div>
             
             <div className="flex items-center justify-end gap-2 shrink-0 w-full sm:w-auto">
               {parsedData.date && !isQuickAddExpanded && (
-                <div className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 text-indigo-600 rounded-full border border-indigo-100">
-                  <Clock className="w-3.5 h-3.5" />
-                  <span className="text-xs font-bold uppercase tracking-wide truncate max-w-[120px] sm:max-w-none">
+                <div className="flex items-center gap-1.5 px-2.5 py-1 bg-indigo-50 text-indigo-600 rounded-full border border-indigo-100">
+                  <Clock className="w-3 h-3" />
+                  <span className="text-[11px] font-bold uppercase tracking-wide truncate max-w-[120px] sm:max-w-none">
                     {format(parsedData.date, 'MMM d, h:mm a', { locale: ko })}
                   </span>
                 </div>
@@ -274,7 +274,7 @@ export function ArchiveAgendaView() {
                 type="button"
                 onClick={() => setIsQuickAddExpanded(!isQuickAddExpanded)}
                 className={cn(
-                  "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-bold transition-all border",
+                  "flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[13px] font-bold transition-all border",
                   isQuickAddExpanded 
                     ? "bg-muted text-foreground border-border"
                     : "bg-card text-muted-foreground border-border shadow-sm hover:border-indigo-300 hover:text-indigo-600"
@@ -488,19 +488,19 @@ export function ArchiveAgendaView() {
               return (
                 <div key={task.id} className="flex flex-col gap-1.5 group">
                   <div 
-                    className="relative flex items-center gap-4 p-4 md:p-5 bg-card/70 backdrop-blur-xl hover:bg-card border border-transparent/60 rounded-3xl shadow-sm hover:shadow-lg transition-all duration-300 cursor-pointer"
+                    className="relative flex items-center gap-3.5 p-3 md:p-4 bg-card/70 backdrop-blur-xl hover:bg-card border border-transparent/60 rounded-2xl shadow-sm hover:shadow-lg transition-all duration-300 cursor-pointer"
                     onClick={() => openDetail(task)}
                   >
                   {/* Status Toggle Button */}
                   {activeTab === 'trash' ? (
                     <button 
                       className={cn(
-                        "flex-shrink-0 w-6 h-6 rounded-md border-2 flex items-center justify-center transition-colors",
+                        "flex-shrink-0 w-5 h-5 rounded-md border-2 flex items-center justify-center transition-colors",
                         selectedTaskIds.has(task.id) ? "bg-indigo-500 border-indigo-500" : "border-slate-300 hover:border-indigo-400"
                       )}
                       onClick={(e) => toggleTaskSelection(task.id, e)}
                     >
-                      {selectedTaskIds.has(task.id) && <Check className="w-4 h-4 text-white" />}
+                      {selectedTaskIds.has(task.id) && <Check className="w-3.5 h-3.5 text-white" />}
                     </button>
                   ) : (
                     <button 
@@ -511,29 +511,29 @@ export function ArchiveAgendaView() {
                       }}
                     >
                       {task.status === 'done' ? (
-                        <CheckCircle2 className="w-7 h-7 text-indigo-500" />
+                        <CheckCircle2 className="w-6 h-6 text-indigo-500" />
                       ) : (
-                        <Circle className="w-7 h-7" />
+                        <Circle className="w-6 h-6" />
                       )}
                     </button>
                   )}
 
                   {/* Task Content */}
                   <div className="flex-1 min-w-0 pr-8 md:pr-0">
-                    <div className="flex items-start md:items-center gap-2 mb-1">
+                    <div className="flex flex-row items-center gap-1.5 mb-1">
                       <button 
                         onClick={(e) => { e.stopPropagation(); updateTask(task.id, { is_important: !task.is_important }); }}
-                        className={cn("p-1 -ml-1 mt-0.5 md:mt-0 rounded-full transition-colors flex-shrink-0", task.is_important ? "text-amber-400 hover:bg-amber-50" : "text-muted-foreground/50 hover:text-amber-400 hover:bg-muted")}
+                        className={cn("p-1 -ml-1 rounded-full transition-colors flex-shrink-0 flex items-center justify-center", task.is_important ? "text-amber-400 hover:bg-amber-50" : "text-muted-foreground/50 hover:text-amber-400 hover:bg-muted")}
                       >
-                        <Star className={cn("w-5 h-5", task.is_important ? "fill-current" : "")} />
+                        <Star className={cn("w-4 h-4", task.is_important ? "fill-current" : "")} />
                       </button>
-                      <h3 className={cn("text-[15px] md:text-[17px] leading-snug md:leading-normal font-extrabold break-words transition-all", task.status === 'done' ? "text-muted-foreground line-through" : "text-foreground")}>
+                      <h3 className={cn("text-[14px] md:text-[16px] leading-tight font-extrabold break-words transition-all mt-[1px]", task.status === 'done' ? "text-muted-foreground line-through" : "text-foreground")}>
                         {task.title}
                       </h3>
                     </div>
                     
                     {/* Metadata Badges */}
-                    <div className="flex flex-wrap items-center gap-2 mt-2.5">
+                    <div className="flex flex-wrap items-center gap-1.5 mt-2">
                       {category && (
                         <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-card border border-border shadow-sm hover:border-slate-300 transition-colors">
                           <div className="w-2.5 h-2.5 rounded-full shadow-sm" style={{ backgroundColor: category.hex_color }} />

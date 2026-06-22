@@ -337,8 +337,8 @@ export function AdvancedSyncSettingsModal({ isOpen, onClose, onStartSync, calend
           </div>
 
           <div className="flex flex-1 overflow-hidden flex-col sm:flex-row">
-            <div className="w-full sm:w-56 bg-slate-50/50 border-r border-slate-200/60 p-4 space-y-1 overflow-x-auto sm:overflow-y-auto flex sm:block flex-shrink-0 hide-scrollbar">
-              <div className="flex sm:flex-col gap-2 w-max sm:w-full">
+            <div className="w-full sm:w-56 bg-slate-50/50 border-b sm:border-b-0 sm:border-r border-slate-200/60 p-3 sm:p-4 shrink-0">
+              <div className="grid grid-cols-2 sm:flex sm:flex-col gap-2 w-full">
                 <TabButton active={activeTab === 'core'} onClick={() => setActiveTab('core')} icon={<ArrowRightLeft className="w-4 h-4 sm:w-5 sm:h-5"/>} label="핵심 동작 (Core)" />
                 <TabButton active={activeTab === 'group'} onClick={() => setActiveTab('group')} icon={<FolderTree className="w-4 h-4 sm:w-5 sm:h-5"/>} label="그룹 및 라우팅" />
                 <TabButton active={activeTab === 'history'} onClick={() => setActiveTab('history')} icon={<Clock className="w-4 h-4 sm:w-5 sm:h-5"/>} label="히스토리 관리" />
@@ -467,10 +467,10 @@ export function AdvancedSyncSettingsModal({ isOpen, onClose, onStartSync, calend
           </div>
 
           {/* 하단 액션 바 (Sticky Footer) */}
-          <div className="flex flex-col sm:flex-row items-center justify-between px-6 py-4 border-t border-slate-200/60 bg-slate-50/80 backdrop-blur-md gap-4 sm:gap-0">
-            <div className="flex items-center gap-2 text-sm text-slate-500 font-medium">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-              모든 설정은 실시간으로 안전하게 자동 저장되고 있습니다.
+          <div className="flex flex-col sm:flex-row items-center justify-between px-4 sm:px-6 py-4 border-t border-slate-200/60 bg-slate-50/80 backdrop-blur-md gap-4 sm:gap-0">
+            <div className="flex items-center justify-center sm:justify-start gap-1.5 sm:gap-2 text-[11px] sm:text-sm tracking-tighter sm:tracking-normal whitespace-nowrap text-slate-500 font-medium w-full sm:w-auto overflow-hidden">
+              <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-emerald-400 animate-pulse shrink-0"></span>
+              <span className="truncate">모든 설정은 실시간으로 안전하게 자동 저장되고 있습니다.</span>
             </div>
             <div className="flex items-center gap-3 w-full sm:w-auto">
               <Button variant="outline" onClick={onClose} className="flex-1 sm:flex-none border-slate-200 text-slate-600 hover:bg-slate-100">
@@ -675,9 +675,9 @@ function TabButton({ active, onClick, icon, label, variant = 'default' }: { acti
     ? 'text-red-500 hover:bg-red-50 border-transparent'
     : 'text-slate-500 hover:bg-slate-100 border-transparent'
   return (
-    <button onClick={onClick} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl border transition-all text-sm whitespace-nowrap ${active ? activeClasses : inactiveClasses}`}>
+    <button onClick={onClick} className={`w-full flex items-center justify-center sm:justify-start gap-1.5 sm:gap-3 px-2 py-2.5 sm:px-4 sm:py-3 rounded-xl border transition-all text-[11px] sm:text-sm whitespace-nowrap ${active ? activeClasses : inactiveClasses}`}>
       <span className="shrink-0">{icon}</span>
-      <span className={`truncate ${active ? 'font-bold' : 'font-medium'}`}>{label}</span>
+      <span className={`truncate tracking-tight sm:tracking-normal ${active ? 'font-bold' : 'font-medium'}`}>{label}</span>
     </button>
   )
 }

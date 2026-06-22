@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, LayoutList, Image as ImageIcon, LayoutGrid, Table, Columns, Clock, Check, Network, Calendar } from 'lucide-react';
 import { useArchiveStore } from '@/store/useArchiveStore';
@@ -37,10 +38,16 @@ export function AddNoteDialog({ isOpen, onClose }: { isOpen: boolean; onClose: (
     setSelectedType('list');
   };
 
-  return (
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const modalContent = (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-start pt-12 md:pt-0 md:items-center justify-center p-4">
+        <div className="fixed inset-0 z-[100] flex items-start pt-12 md:pt-0 md:items-center justify-center p-4">
           {/* 왜: 모바일에서 키보드가 올라왔을 때 모달이 가려지지 않도록 상단 정렬로 변경 (데스크탑은 중앙 정렬 유지) */}
           <motion.div 
             initial={{ opacity: 0 }}
@@ -63,7 +70,7 @@ export function AddNoteDialog({ isOpen, onClose }: { isOpen: boolean; onClose: (
                 <p className="text-muted-foreground text-xs md:text-sm font-medium mt-1">어떤 형태의 캔버스가 필요하신가요?</p>
               </div>
               <button onClick={onClose} className="p-2 hover:bg-slate-200/50 rounded-full transition-colors text-muted-foreground hover:text-foreground">
-                <X className="w-5 h-5 md:w-6 h-6" />
+                <X className="w-5 h-5 md:w-6 md:h-6" />
               </button>
             </div>
 
@@ -140,6 +147,7 @@ export function AddNoteDialog({ isOpen, onClose }: { isOpen: boolean; onClose: (
       )}
     </AnimatePresence>
   );
-}
 
-// Trigger recompile
+  if (!mounted) return null;
+  return createPortal(modalContent, document.body);
+}

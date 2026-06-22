@@ -416,9 +416,9 @@ export function GoogleSyncTab() {
                     <CalendarDays className="w-6 h-6 text-emerald-600" />
                   </div>
                   <div>
-                    <div className="text-base font-extrabold text-emerald-950 flex items-center gap-2">
+                    <div className="text-sm sm:text-base font-extrabold text-emerald-950 flex items-center gap-1.5 sm:gap-2 whitespace-nowrap">
                       실시간 자동 동기화 작동 중
-                      <span className="flex items-center text-[10px] bg-emerald-500 text-white font-bold px-2 py-0.5 rounded-md shadow-sm animate-pulse uppercase tracking-wider">
+                      <span className="flex shrink-0 items-center text-[9px] sm:text-[10px] bg-emerald-500 text-white font-bold px-1.5 sm:px-2 py-0.5 rounded-md shadow-sm animate-pulse uppercase tracking-wider">
                         Active
                       </span>
                     </div>
