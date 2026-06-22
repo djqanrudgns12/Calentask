@@ -54,14 +54,15 @@ export const WeeklyView = React.memo(function WeeklyView({ currentDate, events }
   const { 
     openDaySummary, openEventDetail, openEditEvent, openDeleteConfirm, 
     showHolidays, showHolidaysAsTags,
-    showNationalDays, showAnniversaries, showTraditionalTerms
+    showNationalDays, showAnniversaries, showTraditionalTerms,
+    weekStartsOn, showSaturdayBlue
   } = useCalendarStore()
   
   const year = currentDate.getFullYear()
   const { data: specialDaysMap = {} } = useSpecialDays(year)
   
-  const startDate = startOfWeek(currentDate)
-  const endDate = endOfWeek(currentDate)
+  const startDate = startOfWeek(currentDate, { weekStartsOn })
+  const endDate = endOfWeek(currentDate, { weekStartsOn })
   const days = eachDayOfInterval({ start: startDate, end: endDate })
 
   const [now, setNow] = useState(new Date())
@@ -118,10 +119,12 @@ export const WeeklyView = React.memo(function WeeklyView({ currentDate, events }
 
             return (
               <div key={idx} className="flex flex-col items-center py-3 border-r border-border last:border-r-0 relative">
-                <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">
+                <span className={`text-[11px] font-semibold uppercase tracking-wider mb-1 ${
+                  day.getDay() === 0 ? 'text-red-500' : (showSaturdayBlue && day.getDay() === 6) ? 'text-blue-500' : 'text-muted-foreground'
+                }`}>
                   {['일', '월', '화', '수', '목', '금', '토'][day.getDay()]}
                 </span>
-                <div className={`w-8 h-8 flex items-center justify-center rounded-full text-sm font-bold ${isToday ? 'bg-[#312E81] text-white shadow-md shadow-[#4338CA]/40' : isHolidayDay || day.getDay() === 0 ? 'text-red-500' : 'text-foreground'
+                <div className={`w-8 h-8 flex items-center justify-center rounded-full text-sm font-bold ${isToday ? 'bg-[#312E81] text-white shadow-md shadow-[#4338CA]/40' : isHolidayDay || day.getDay() === 0 ? 'text-red-500' : (showSaturdayBlue && day.getDay() === 6) ? 'text-blue-500' : 'text-foreground'
                   }`}>
                   {format(day, 'd')}
                 </div>

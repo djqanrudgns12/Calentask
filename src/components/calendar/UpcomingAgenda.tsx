@@ -3,6 +3,7 @@
 import React, { useState } from 'react'
 import { isToday, isThisWeek, parseISO, format, isValid, addDays, startOfWeek } from 'date-fns'
 import { Clock, Inbox } from 'lucide-react'
+import { useCalendarStore } from '@/store/useCalendarStore'
 
 interface Category {
   id: string
@@ -26,6 +27,7 @@ interface UpcomingAgendaProps {
 
 export const UpcomingAgenda = React.memo(function UpcomingAgenda({ events }: UpcomingAgendaProps) {
   const [activeTab, setActiveTab] = useState<'today' | 'week' | 'nextWeek'>('today')
+  const { weekStartsOn } = useCalendarStore()
 
   // 이벤트 필터링 및 정렬
   const filteredEvents = events.filter((event) => {
@@ -37,10 +39,10 @@ export const UpcomingAgenda = React.memo(function UpcomingAgenda({ events }: Upc
       return isToday(eventDate)
     } else if (activeTab === 'week') {
       // 이번 주 필터링 (weekStartsOn: 0 (일요일) 기준)
-      return isThisWeek(eventDate, { weekStartsOn: 0 })
+      return isThisWeek(eventDate, { weekStartsOn })
     } else if (activeTab === 'nextWeek') {
       // 다음 주 필터링
-      const nextWeekStart = addDays(startOfWeek(new Date(), { weekStartsOn: 0 }), 7)
+      const nextWeekStart = addDays(startOfWeek(new Date(), { weekStartsOn }), 7)
       const nextWeekEnd = addDays(nextWeekStart, 7)
       return eventDate >= nextWeekStart && eventDate < nextWeekEnd
     }

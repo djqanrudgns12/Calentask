@@ -6,6 +6,7 @@ import { isEventOnDay } from '@/lib/calendarUtils'
 import { getEventBarGradient, getEventBgColor } from '@/lib/eventColor'
 import { useCalendarStore } from '@/store/useCalendarStore'
 import { useSpecialDays } from '@/hooks/useSpecialDays'
+import { getCalendarFontClasses, getWeekdayHeaders } from '@/lib/calendarFontSize'
 import { Pencil, Trash2 } from 'lucide-react'
 import { useDroppable, useDraggable } from '@dnd-kit/core'
 
@@ -55,16 +56,20 @@ export const MonthlyView = React.memo(function MonthlyView({ currentDate, events
   const { 
     openDaySummary, openEventDetail, openEditEvent, openDeleteConfirm, 
     showHolidays, showHolidaysAsTags,
-    showNationalDays, showAnniversaries, showTraditionalTerms
+    showNationalDays, showAnniversaries, showTraditionalTerms,
+    calendarFontSize, weekStartsOn, showSaturdayBlue
   } = useCalendarStore()
+  
+  const fontClasses = getCalendarFontClasses(calendarFontSize)
+  const weekdayHeaders = getWeekdayHeaders(weekStartsOn)
   
   const year = currentDate.getFullYear()
   const { data: specialDaysMap = {} } = useSpecialDays(year)
 
   const monthStart = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1)
   const monthEnd = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0)
-  const startDate = startOfWeek(monthStart)
-  const endDate = endOfWeek(monthEnd)
+  const startDate = startOfWeek(monthStart, { weekStartsOn })
+  const endDate = endOfWeek(monthEnd, { weekStartsOn })
 
   const days = eachDayOfInterval({ start: startDate, end: endDate })
 
@@ -72,8 +77,10 @@ export const MonthlyView = React.memo(function MonthlyView({ currentDate, events
     <div className="flex-1 flex flex-col min-h-0 h-full">
       {/* Day Headers */}
       <div className="grid grid-cols-7 gap-[1px] md:gap-3 mb-1 md:mb-2 bg-muted md:bg-transparent border-t border-l border-border md:border-none">
-        {['일', '월', '화', '수', '목', '금', '토'].map((day) => (
-          <div key={day} className="text-center text-[10px] md:text-xs font-bold text-muted-foreground uppercase tracking-wider bg-background py-1 md:py-2 border-r border-b border-border md:border-none">
+        {weekdayHeaders.map((day) => (
+          <div key={day} className={`text-center ${fontClasses.weekdayHeader.mobile} md:${fontClasses.weekdayHeader.desktop} font-bold uppercase tracking-wider bg-background py-1 md:py-2 border-r border-b border-border md:border-none ${
+            day === '일' ? 'text-red-500' : (day === '토' && showSaturdayBlue) ? 'text-blue-500' : 'text-muted-foreground'
+          }`}>
             {day}
           </div>
         ))}
@@ -113,16 +120,16 @@ export const MonthlyView = React.memo(function MonthlyView({ currentDate, events
             >
               <div className="flex justify-between items-start mb-0.5 md:mb-3">
                 <div className="flex flex-col gap-0 max-w-[70%]">
-                  <span className="text-[8px] md:text-xs font-semibold text-red-400 truncate leading-[1.1] md:leading-normal mt-[1px] md:mt-0">
+                  <span className={`${fontClasses.holidayName.mobile} md:${fontClasses.holidayName.desktop} font-semibold text-red-400 truncate leading-[1.1] md:leading-normal mt-[1px] md:mt-0`}>
                     {holidayName && !showHolidaysAsTags && holidayName}
                   </span>
                   {otherTerms && (
-                    <span className="text-[7px] md:text-[10px] font-medium text-muted-foreground truncate leading-[1.1] md:leading-tight">
+                    <span className={`${fontClasses.otherTerms.mobile} md:${fontClasses.otherTerms.desktop} font-medium text-muted-foreground truncate leading-[1.1] md:leading-tight`}>
                       {otherTerms}
                     </span>
                   )}
                 </div>
-                <span className={`text-[9px] md:text-sm font-bold w-3.5 h-3.5 md:w-8 md:h-8 flex items-center justify-center rounded-full shrink-0 ${isToday ? 'bg-[#312E81] text-white shadow-sm md:shadow-lg shadow-[#4338CA]/40' : isHolidayDay || day.getDay() === 0 ? 'text-red-500' : 'text-foreground'
+                <span className={`${fontClasses.dateNumber.mobile} md:${fontClasses.dateNumber.desktop} font-bold w-3.5 h-3.5 md:w-8 md:h-8 flex items-center justify-center rounded-full shrink-0 ${isToday ? 'bg-[#312E81] text-white shadow-sm md:shadow-lg shadow-[#4338CA]/40' : isHolidayDay || day.getDay() === 0 ? 'text-red-500' : (showSaturdayBlue && day.getDay() === 6) ? 'text-blue-500' : 'text-foreground'
                   }`}>
                   {format(day, 'd')}
                 </span>
@@ -143,7 +150,7 @@ export const MonthlyView = React.memo(function MonthlyView({ currentDate, events
                       <div
                         onClick={(e) => { e.stopPropagation(); openEventDetail(event); }}
                       onDoubleClick={(e) => { e.stopPropagation(); openEditEvent(event); }}
-                      className="group relative flex items-stretch rounded-sm md:rounded-r-lg text-[10px] md:text-xs transition-all md:hover:scale-[1.02] overflow-hidden cursor-pointer"
+                      className={`group relative flex items-stretch rounded-sm md:rounded-r-lg ${fontClasses.eventTitle.mobile} md:${fontClasses.eventTitle.desktop} transition-all md:hover:scale-[1.02] overflow-hidden cursor-pointer`}
                       style={{ backgroundColor: getEventBgColor(event) }}
                     >
                       {/* 좌측 accent bar: 멀티 카테고리일 경우 그라데이션으로 표시 */}
@@ -180,7 +187,7 @@ export const MonthlyView = React.memo(function MonthlyView({ currentDate, events
                 {dayEvents.length > ((holidayName && showHolidaysAsTags) ? 2 : 3) && (
                   <button
                     onClick={(e) => { e.stopPropagation(); openDaySummary(day); }}
-                    className="w-full mt-0 md:mt-1.5 text-center px-1 py-[2px] md:px-2 md:py-1 text-[9px] md:text-xs font-bold text-muted-foreground bg-muted/80 hover:bg-muted rounded-sm md:rounded-md transition-colors min-h-[18px]"
+                    className={`w-full mt-0 md:mt-1.5 text-center px-1 py-[2px] md:px-2 md:py-1 ${fontClasses.moreButton.mobile} md:${fontClasses.moreButton.desktop} font-bold text-muted-foreground bg-muted/80 hover:bg-muted rounded-sm md:rounded-md transition-colors min-h-[18px]`}
                   >
                     + {dayEvents.length - ((holidayName && showHolidaysAsTags) ? 2 : 3)}
                   </button>

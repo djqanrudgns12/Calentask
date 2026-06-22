@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from 'react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
-import { X, User, MonitorPlay } from 'lucide-react'
+import { X, User, MonitorPlay, CalendarDays } from 'lucide-react'
 import { ProfileTab } from './ProfileTab'
+import { CalendarSettingsTab } from './CalendarSettingsTab'
 import { DisplayTab } from './DisplayTab'
 import { PinPadOverlay } from '@/components/archive/PinPadOverlay'
 
@@ -13,7 +14,7 @@ interface SettingsModalProps {
   initialTab?: TabKey
 }
 
-type TabKey = 'profile' | 'display'
+type TabKey = 'profile' | 'calendar' | 'display'
 
 export function SettingsModal({ open, onOpenChange, initialTab = 'profile' }: SettingsModalProps) {
   const [activeTab, setActiveTab] = useState<TabKey>(initialTab)
@@ -29,6 +30,7 @@ export function SettingsModal({ open, onOpenChange, initialTab = 'profile' }: Se
 
   const TABS = [
     { id: 'profile', label: '프로필', icon: User },
+    { id: 'calendar', label: '캘린더 설정', icon: CalendarDays },
     { id: 'display', label: '디스플레이 및 테마', icon: MonitorPlay },
   ] as const
 
@@ -72,6 +74,7 @@ export function SettingsModal({ open, onOpenChange, initialTab = 'profile' }: Se
               <div className="h-full overflow-y-auto p-3 sm:p-6 md:p-8 absolute inset-0">
                 <div className="max-w-3xl mx-auto">
                   {activeTab === 'profile' && <ProfileTab />}
+                  {activeTab === 'calendar' && <CalendarSettingsTab />}
                   {activeTab === 'display' && <DisplayTab />}
                 </div>
               </div>

@@ -59,13 +59,14 @@ export default function CalendarPage() {
   const [mounted, setMounted] = useState(false)
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false)
-  const [settingsTab, setSettingsTab] = useState<'profile' | 'display'>('profile')
+  const [settingsTab, setSettingsTab] = useState<'profile' | 'calendar' | 'display'>('profile')
   const queryClient = useQueryClient()
   const router = useRouter()
   
   const { 
     currentDate, viewMode, setViewMode,
-    semesterYear, semesterTerm, activeCategories, resetStore 
+    semesterYear, semesterTerm, activeCategories, resetStore,
+    weekStartsOn
   } = useCalendarStore()
 
   const isHome = viewMode === 'home'
@@ -83,14 +84,14 @@ export default function CalendarPage() {
   // 현재 달 기준 날짜 계산 (전체 일정 패치를 위해)
   const monthStart = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1)
   const monthEnd = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0)
-  const startDate = startOfWeek(monthStart)
+  const startDate = startOfWeek(monthStart, { weekStartsOn })
   
   // 학기 뷰일 경우 해당 학기 분량의 데이터를 패치 (1학기: 3.1~8.31, 2학기: 9.1~익년 2.28)
   const semesterStartDate = new Date(semesterYear, semesterTerm === 1 ? 2 : 8, 1) // 3월 또는 9월
   const semesterEndDate = new Date(semesterTerm === 1 ? semesterYear : semesterYear + 1, semesterTerm === 1 ? 7 : 1, semesterTerm === 1 ? 31 : 28)
   
-  const queryStartDate = viewMode === 'semester' ? startOfWeek(semesterStartDate) : startDate
-  const queryEndDate = viewMode === 'semester' ? endOfWeek(semesterEndDate) : endOfWeek(monthEnd)
+  const queryStartDate = viewMode === 'semester' ? startOfWeek(semesterStartDate, { weekStartsOn }) : startDate
+  const queryEndDate = viewMode === 'semester' ? endOfWeek(semesterEndDate, { weekStartsOn }) : endOfWeek(monthEnd, { weekStartsOn })
   
   // React Query Fetching
   const { data: activitiesData } = useActivities(queryStartDate.toISOString(), queryEndDate.toISOString())

@@ -9,6 +9,7 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { ChevronLeft, ChevronRight, Clock, Check, Zap } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useCalendarStore } from '@/store/useCalendarStore';
 
 interface DateTimePickerPopoverProps {
   date: Date | null;
@@ -40,11 +41,13 @@ export function DateTimePickerPopover({ date, setDate, children, align = "center
     }
   }, [open, date]);
 
+  const { weekStartsOn, showSaturdayBlue } = useCalendarStore();
+
   // Generate calendar days
   const monthStart = startOfMonth(currentMonth);
   const monthEnd = endOfMonth(monthStart);
-  const startDate = startOfWeek(monthStart);
-  const endDate = endOfWeek(monthEnd);
+  const startDate = startOfWeek(monthStart, { weekStartsOn });
+  const endDate = endOfWeek(monthEnd, { weekStartsOn });
   
   const dateFormat = "yyyy년 M월";
   
@@ -132,8 +135,10 @@ export function DateTimePickerPopover({ date, setDate, children, align = "center
 
             {/* Calendar Grid */}
             <div className="grid grid-cols-7 gap-1 mb-2 text-center">
-              {['일', '월', '화', '수', '목', '금', '토'].map(d => (
-                <div key={d} className="text-[10px] font-bold text-muted-foreground mb-2">{d}</div>
+              {(weekStartsOn === 1 ? ['월', '화', '수', '목', '금', '토', '일'] : ['일', '월', '화', '수', '목', '금', '토']).map(d => (
+                <div key={d} className={`text-[10px] font-bold mb-2 ${
+                  d === '일' ? 'text-red-500' : (d === '토' && showSaturdayBlue) ? 'text-blue-500' : 'text-muted-foreground'
+                }`}>{d}</div>
               ))}
               {days.map((d, i) => {
                 const isSelected = selectedDate && isSameDay(d, selectedDate);

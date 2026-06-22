@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { Activity, Category } from '@/app/actions/calendar'
+import type { CalendarFontSize } from '@/lib/calendarFontSize'
 
 export type ViewMode = 'home' | 'monthly' | 'weekly' | 'list' | 'semester' | 'nice_import' | 'anniversary' | 'google_sync' | 'insights' | 'archive_notes' | 'archive_agenda' | 'link_lounge' | 'tags' | 'trash' | 'template_center'
 
@@ -26,6 +27,9 @@ interface CalendarState {
   showNationalDays: boolean
   showAnniversaries: boolean
   showTraditionalTerms: boolean
+  calendarFontSize: CalendarFontSize
+  weekStartsOn: 0 | 1
+  showSaturdayBlue: boolean
   selectedDaySummary: Date | null
   selectedEventDetail: Activity | null
   isCategoryBarExpanded: boolean  // 모바일 카테고리 바 접힘/펼침 상태
@@ -48,6 +52,9 @@ interface CalendarState {
   setShowNationalDays: (show: boolean) => void
   setShowAnniversaries: (show: boolean) => void
   setShowTraditionalTerms: (show: boolean) => void
+  setCalendarFontSize: (size: CalendarFontSize) => void
+  setWeekStartsOn: (day: 0 | 1) => void
+  setShowSaturdayBlue: (show: boolean) => void
   openDaySummary: (date: Date) => void
   closeDaySummary: () => void
   openEventDetail: (event: Activity) => void
@@ -80,6 +87,9 @@ export const useCalendarStore = create<CalendarState>()(
       showNationalDays: true,
       showAnniversaries: false,
       showTraditionalTerms: false,
+      calendarFontSize: 'normal' as CalendarFontSize,
+      weekStartsOn: 0 as 0 | 1,
+      showSaturdayBlue: true,
       selectedDaySummary: null,
       selectedEventDetail: null,
       isCategoryBarExpanded: false,  // 기본 접힘
@@ -102,6 +112,9 @@ export const useCalendarStore = create<CalendarState>()(
       setShowNationalDays: (show) => set({ showNationalDays: show }),
       setShowAnniversaries: (show) => set({ showAnniversaries: show }),
       setShowTraditionalTerms: (show) => set({ showTraditionalTerms: show }),
+      setCalendarFontSize: (size) => set({ calendarFontSize: size }),
+      setWeekStartsOn: (day) => set({ weekStartsOn: day }),
+      setShowSaturdayBlue: (show) => set({ showSaturdayBlue: show }),
       openDaySummary: (date) => set({ selectedDaySummary: date, selectedEventDetail: null, isAddEventOpen: false }),
       closeDaySummary: () => set({ selectedDaySummary: null }),
       openEventDetail: (event) => set({ selectedEventDetail: event, selectedDaySummary: null, isAddEventOpen: false }),
@@ -135,6 +148,9 @@ export const useCalendarStore = create<CalendarState>()(
         showNationalDays: state.showNationalDays,
         showAnniversaries: state.showAnniversaries,
         showTraditionalTerms: state.showTraditionalTerms,
+        calendarFontSize: state.calendarFontSize,
+        weekStartsOn: state.weekStartsOn,
+        showSaturdayBlue: state.showSaturdayBlue,
         isCategoryBarExpanded: state.isCategoryBarExpanded,
         
         // 초기화할 임시 상태들 (모달, 팝업 등)
@@ -163,6 +179,9 @@ export const useCalendarStore = create<CalendarState>()(
         showNationalDays: state.showNationalDays,
         showAnniversaries: state.showAnniversaries,
         showTraditionalTerms: state.showTraditionalTerms,
+        calendarFontSize: state.calendarFontSize,
+        weekStartsOn: state.weekStartsOn,
+        showSaturdayBlue: state.showSaturdayBlue,
         isCategoryBarExpanded: state.isCategoryBarExpanded,
       }),
       merge: (persistedState: unknown, currentState) => {

@@ -20,7 +20,8 @@ export function CalendarHeader({ onOpenSettings, onOpenMobileSidebar }: Calendar
   const { 
     currentDate, viewMode, setViewMode,
     semesterYear, semesterTerm,
-    setCurrentDate, setSemesterYear, setSemesterTerm
+    setCurrentDate, setSemesterYear, setSemesterTerm,
+    weekStartsOn
   } = useCalendarStore()
 
   const [isSearchOpen, setIsSearchOpen] = useState(false)
@@ -78,8 +79,8 @@ export function CalendarHeader({ onOpenSettings, onOpenMobileSidebar }: Calendar
   }
 
   const getWeeklyTitle = (date: Date) => {
-    const start = startOfWeek(date)
-    const end = endOfWeek(date)
+    const start = startOfWeek(date, { weekStartsOn })
+    const end = endOfWeek(date, { weekStartsOn })
     
     if (!isSameYear(start, end)) {
       return `${format(start, 'yyyy. M.d')} ~ ${format(end, 'yyyy. M.d')}`

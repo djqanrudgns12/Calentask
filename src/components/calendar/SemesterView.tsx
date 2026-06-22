@@ -7,6 +7,7 @@ import { getEventBarGradient, getEventBgColor } from '@/lib/eventColor'
 import { Pencil, Trash2 } from 'lucide-react'
 import { useCalendarStore } from '@/store/useCalendarStore'
 import { useSpecialDays } from '@/hooks/useSpecialDays'
+import { getWeekdayHeaders } from '@/lib/calendarFontSize'
 
 import React from 'react'
 
@@ -19,8 +20,11 @@ export const SemesterView = React.memo(function SemesterView({ events }: Semeste
   const { 
     semesterYear, semesterTerm, openDaySummary, openEventDetail, openEditEvent, openDeleteConfirm, 
     showHolidays, showHolidaysAsTags,
-    showNationalDays, showAnniversaries, showTraditionalTerms
+    showNationalDays, showAnniversaries, showTraditionalTerms,
+    weekStartsOn, showSaturdayBlue
   } = useCalendarStore()
+  
+  const weekdayHeaders = getWeekdayHeaders(weekStartsOn)
   
   const { data: specialDaysMap = {} } = useSpecialDays(semesterYear)
 
@@ -38,8 +42,8 @@ export const SemesterView = React.memo(function SemesterView({ events }: Semeste
           {months.map((monthDate, monthIdx) => {
             const mStart = startOfMonth(monthDate)
             const mEnd = endOfMonth(monthDate)
-            const gridStart = startOfWeek(mStart)
-            const gridEnd = endOfWeek(mEnd)
+            const gridStart = startOfWeek(mStart, { weekStartsOn })
+            const gridEnd = endOfWeek(mEnd, { weekStartsOn })
             const days = eachDayOfInterval({ start: gridStart, end: gridEnd })
 
             return (
@@ -56,8 +60,10 @@ export const SemesterView = React.memo(function SemesterView({ events }: Semeste
 
                 {/* Day Headers */}
                 <div className="grid grid-cols-7 border-b border-border bg-background">
-                  {['일', '월', '화', '수', '목', '금', '토'].map((day, idx) => (
-                    <div key={idx} className="text-center text-[9px] font-bold text-muted-foreground uppercase py-2.5 tracking-widest">
+                  {weekdayHeaders.map((day, idx) => (
+                    <div key={idx} className={`text-center text-[9px] font-bold uppercase py-2.5 tracking-widest ${
+                      day === '일' ? 'text-red-500' : (day === '토' && showSaturdayBlue) ? 'text-blue-500' : 'text-muted-foreground'
+                    }`}>
                       {day}
                     </div>
                   ))}
@@ -105,7 +111,7 @@ export const SemesterView = React.memo(function SemesterView({ events }: Semeste
                               </span>
                             )}
                           </div>
-                          <span className={`text-[11px] font-bold w-6 h-6 flex items-center justify-center rounded-full shrink-0 ${isToday ? 'bg-[#312E81] text-white shadow-md shadow-[#4338CA]/40' : isHolidayDay || day.getDay() === 0 ? 'text-red-500' : 'text-foreground'
+                          <span className={`text-[11px] font-bold w-6 h-6 flex items-center justify-center rounded-full shrink-0 ${isToday ? 'bg-[#312E81] text-white shadow-md shadow-[#4338CA]/40' : isHolidayDay || day.getDay() === 0 ? 'text-red-500' : (showSaturdayBlue && day.getDay() === 6) ? 'text-blue-500' : 'text-foreground'
                             }`}>
                             {format(day, 'd')}
                           </span>
