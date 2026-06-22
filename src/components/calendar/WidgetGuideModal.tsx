@@ -20,7 +20,7 @@ interface Props {
 const GUIDE_DATA = {
   ios: {
     icon: Smartphone,
-    title: '네이버 캘린더 × iOS 위젯 가이드',
+    title: 'iOS 위젯 연동 가이드',
     color: 'from-blue-600 to-indigo-600',
     steps: [
       {
@@ -62,7 +62,7 @@ const GUIDE_DATA = {
   },
   android: {
     icon: Smartphone,
-    title: '네이버 캘린더 × Android 위젯 가이드',
+    title: 'Android 위젯 연동 가이드',
     color: 'from-emerald-500 to-teal-600',
     steps: [
       {
@@ -104,7 +104,7 @@ const GUIDE_DATA = {
   },
   desktop: {
     icon: Monitor,
-    title: '네이버 캘린더 × 데스크톱 가이드',
+    title: '데스크톱 연동 가이드',
     color: 'from-slate-700 to-slate-900',
     steps: [
       {
