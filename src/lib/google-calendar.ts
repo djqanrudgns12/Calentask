@@ -416,8 +416,33 @@ export async function deleteActivityFromGoogle(userId: string, activityId: strin
 }
 
 /**
- * Bulk deletes all Calentask synced events from Google Calendar without unlinking.
- * 최적화: Calentask 전용 캘린더는 통째로 삭제 후 재생성하여 즉시 초기화.
+ * 구글 캘린더에 동기화된 Calentask 이벤트를 일괄 삭제합니다.
+ * Calentask 앱의 원본 일정은 절대 영향받지 않습니다.
+ * 
+ * ★ 5단계 안전장치 (Calentask 원본 일정 보호) ★
+ * ─────────────────────────────────────────────
+ * 구글 캘린더에서 이벤트를 삭제하면, 구글이 실시간 웹훅을 통해
+ * "이벤트가 삭제됐다"고 Calentask 서버에 알림을 보냅니다.
+ * 이때 양방향 동기화 로직(handleGoogleCalendarSync)이
+ * "구글에서 삭제됐으니 Calentask 원본도 삭제해야지"라고 판단하여
+ * 원본 일정을 연쇄 삭제(soft-delete)하는 치명적 리스크가 존재합니다.
+ * 
+ * 이를 방지하기 위해, 구글에 삭제 명령을 보내기 **전에**
+ * 아래 5단계의 안전장치를 순서대로 실행합니다:
+ * 
+ * [1단계] DB google_channel_id NULL 처리
+ *    → 웹훅 핸들러(route.ts)가 유저를 찾지 못하게 하여 즉시 차단
+ * [2단계] Google channels.stop API 호출
+ *    → 구글 측에서 더 이상 웹훅 알림을 보내지 않도록 구독 해제
+ * [3단계] 나머지 동기화 설정 전체 초기화
+ *    → syncToken, calendarId 등을 비워 혹시 모를 동기화 로직 실행 방지
+ * [4단계] activities.google_event_id 일괄 NULL 처리
+ *    → Calentask ↔ Google 이벤트 간의 연결 고리를 완전히 절단
+ * [5단계] 구글 캘린더 이벤트 삭제 실행
+ *    → 이 시점에서 모든 역류(backflow) 경로가 차단된 상태로 안전 삭제
+ * 
+ * 추후 다시 동기화하고 싶으면 사용자가 동기화를 재시작하면
+ * 모든 Calentask 일정이 구글 캘린더에 새로 내보내집니다.
  */
 export async function clearSyncedActivitiesFromGoogle(userId: string) {
   try {
@@ -425,8 +450,8 @@ export async function clearSyncedActivitiesFromGoogle(userId: string) {
     const auth = await getGoogleAuthClient(userId, supabase)
     if (!auth) return { success: false, reason: 'no_auth' }
 
-    // We fetch all mapped calendars from settings to clear them all
-    const { data: user } = await supabase.from('users').select('google_sync_settings, google_sync_calendar_id').eq('id', userId).single()
+    // 삭제 대상 캘린더 ID 목록을 먼저 수집 (설정 초기화 전에 읽어야 함)
+    const { data: user } = await supabase.from('users').select('google_sync_settings, google_sync_calendar_id, google_channel_id, google_resource_id').eq('id', userId).single()
     const settings: GoogleSyncSettings = user?.google_sync_settings || {}
     
     const calendarIdsToClear = new Set<string>()
@@ -436,8 +461,73 @@ export async function clearSyncedActivitiesFromGoogle(userId: string) {
     }
 
     const calendar = google.calendar({ version: 'v3', auth })
+
+    // ═══════════════════════════════════════════════════
+    // [1단계] DB google_channel_id NULL → 웹훅 핸들러 즉시 차단
+    // ═══════════════════════════════════════════════════
+    // 웹훅 라우트(route.ts)는 google_channel_id로 유저를 찾습니다.
+    // 이 값을 가장 먼저 null로 만들면, 이후 도착하는 모든 웹훅은
+    // 유저를 찾지 못해 handleGoogleCalendarSync가 호출되지 않습니다.
+    // 이것이 가장 중요한 1차 방어선입니다.
+    await supabase.from('users').update({
+      google_channel_id: null,
+      google_resource_id: null,
+    }).eq('id', userId)
+
+    // ═══════════════════════════════════════════════════
+    // [2단계] Google channels.stop → 웹훅 구독 해제
+    // ═══════════════════════════════════════════════════
+    // 구글 측에 "더 이상 알림 보내지 마" 요청을 보냅니다.
+    // 1단계에서 이미 DB를 차단했으므로, 이 호출이 실패해도 안전합니다.
+    if (user?.google_channel_id && user?.google_resource_id) {
+      try {
+        await calendar.channels.stop({
+          requestBody: {
+            id: user.google_channel_id,
+            resourceId: user.google_resource_id
+          }
+        })
+      } catch (e: any) {
+        // 채널이 이미 만료되었거나 존재하지 않을 수 있음 → 무시해도 안전
+        console.warn('Failed to stop google calendar watch channel during clear:', e.message)
+      }
+    }
+
+    // ═══════════════════════════════════════════════════
+    // [3단계] 나머지 동기화 설정 전체 초기화
+    // ═══════════════════════════════════════════════════
+    // syncToken, calendarId, settings를 비워서 혹시 모를 
+    // 동기화 로직(handleGoogleCalendarSync)이 실행되더라도
+    // calendarId를 찾지 못해 조기 종료하도록 합니다.
+    // ※ google_refresh_token은 보존 → OAuth 연동은 유지됨
+    await supabase.from('users').update({
+      google_sync_calendar_id: null,
+      google_sync_calendar_name: null,
+      google_sync_settings: {},
+      google_sync_token: null,
+      google_channel_expiration: null,
+    }).eq('id', userId)
+
+    // ═══════════════════════════════════════════════════
+    // [4단계] activities.google_event_id 일괄 NULL
+    // ═══════════════════════════════════════════════════
+    // Calentask 일정 ↔ 구글 이벤트 간의 연결 고리를 완전히 절단합니다.
+    // 이렇게 하면:
+    // - Calentask 원본 일정 데이터는 100% 보존됨 (삭제 아님!)
+    // - 추후 동기화를 다시 시작하면 모든 일정이 새로 내보내짐
+    await supabase
+      .from('activities')
+      .update({ google_event_id: null })
+      .eq('user_id', userId)
+      .not('google_event_id', 'is', null)
+
+    // ═══════════════════════════════════════════════════
+    // [5단계] 구글 캘린더 이벤트 안전 삭제
+    // ═══════════════════════════════════════════════════
+    // 이 시점에서는 모든 역류(backflow) 경로가 차단되었으므로,
+    // 구글 측 이벤트를 삭제해도 Calentask 원본에 영향이 없습니다.
     let deletedCount = 0
-    const limit = pLimit(5) // 병렬 삭제 동시성 제어
+    const limit = pLimit(5)
 
     for (const calId of calendarIdsToClear) {
       try {
@@ -452,7 +542,7 @@ export async function clearSyncedActivitiesFromGoogle(userId: string) {
           continue
         }
 
-        // 개인 캘린더: 이벤트를 병렬로 삭제
+        // 개인 캘린더: calentask_id 태그가 있는 이벤트만 선별 삭제
         let pageToken: string | null | undefined = undefined
         do {
           const res: any = await calendar.events.list({
@@ -468,7 +558,6 @@ export async function clearSyncedActivitiesFromGoogle(userId: string) {
               (event: any) => event.extendedProperties?.private?.calentask_id
             )
             
-            // p-limit 병렬 삭제 (setTimeout 200ms 제거)
             const deleteResults = await Promise.allSettled(
               calentaskEvents.map((event: any) =>
                 limit(async () => {
@@ -481,7 +570,6 @@ export async function clearSyncedActivitiesFromGoogle(userId: string) {
               )
             )
             
-            // 실패 로그
             deleteResults.forEach((result, i) => {
               if (result.status === 'rejected') {
                 const err = result.reason
@@ -498,13 +586,6 @@ export async function clearSyncedActivitiesFromGoogle(userId: string) {
         console.warn(`Failed to clear calendar ${calId}:`, err.message)
       }
     }
-
-    // 캘린더 초기화 후 DB의 동기화 설정도 완벽히 초기화
-    await supabase.from('users').update({
-      google_sync_calendar_id: null,
-      google_sync_calendar_name: null,
-      google_sync_settings: {}
-    }).eq('id', userId)
 
     if (deletedCount > 0) {
       await logSyncHistory(supabase, { userId, calendarId: 'ALL', action: 'DELETED', activityTitle: `배치 삭제 (${deletedCount}건)` })
@@ -622,6 +703,33 @@ export async function watchGoogleCalendar(userId: string) {
 export async function handleGoogleCalendarSync(userId: string, customSupabase?: any) {
   try {
     const supabase = customSupabase || createAdminClient()
+
+    // ★ 안전장치: 초기화 진행 중(google_channel_id가 null)이면 조기 종료 ★
+    // 이 함수가 웹훅에 의해 호출될 때, clearSyncedActivitiesFromGoogle이
+    // 이미 1단계(channel_id NULL)를 실행한 상태라면 동기화를 수행해서는 안 됩니다.
+    // getSyncCalendarId가 캘린더를 자동으로 재발견/재생성하여
+    // 초기화 작업을 무효화하는 위험을 차단합니다.
+    const { data: channelCheck } = await supabase
+      .from('users')
+      .select('google_channel_id')
+      .eq('id', userId)
+      .single()
+    
+    if (!channelCheck?.google_channel_id) {
+      // 웹훅 채널이 비활성 상태 → 초기화 중이거나 동기화 미설정
+      // 단, watchGoogleCalendar 내부의 초기 동기화 호출은 정상 진행되어야 하므로,
+      // 이 시점에서 google_sync_calendar_id도 없으면 완전히 미설정 상태로 판단
+      const { data: syncCheck } = await supabase
+        .from('users')
+        .select('google_sync_calendar_id')
+        .eq('id', userId)
+        .single()
+      
+      if (!syncCheck?.google_sync_calendar_id) {
+        return // 동기화 미설정 또는 초기화 진행 중 → 안전하게 종료
+      }
+    }
+
     const auth = await getGoogleAuthClient(userId, supabase)
     if (!auth) return
 

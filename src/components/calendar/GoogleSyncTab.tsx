@@ -447,12 +447,15 @@ export function GoogleSyncTab() {
         </div>
       </div>
 
-      {/* 2. 디바이스 위젯 가이드 섹션 - Glass & Gradient Cards */}
+      {/* 2. 네이버 캘린더 위젯 가이드 섹션 - Glass & Gradient Cards */}
       <div className="pt-4">
-        <h3 className="text-xl font-extrabold text-slate-800 mb-6 flex items-center gap-2 px-1">
+        <h3 className="text-xl font-extrabold text-slate-800 mb-2 flex items-center gap-2 px-1">
           <Monitor className="w-6 h-6 text-slate-400" />
-          디바이스 위젯 설정
+          네이버 캘린더 위젯 설정
         </h3>
+        <p className="text-sm text-slate-500 font-medium mb-6 px-1">
+          네이버 캘린더와 연동하여 모든 디바이스에서 위젯으로 일정을 확인하세요.
+        </p>
         <div className="grid md:grid-cols-3 gap-6">
           {/* 데스크탑 위젯 가이드 */}
           <motion.div 
@@ -462,17 +465,17 @@ export function GoogleSyncTab() {
           >
             <div className="h-44 bg-gradient-to-br from-slate-100 to-slate-50 flex items-center justify-center border-b border-white/50 relative overflow-hidden group-hover:from-slate-200 group-hover:to-slate-100 transition-colors">
               <Monitor className="w-16 h-16 text-slate-300 absolute group-hover:scale-110 group-hover:text-slate-400 transition-all duration-500" />
-              <span className="text-slate-500 font-bold z-10 text-sm tracking-wide bg-white/50 backdrop-blur-md px-4 py-2 rounded-full shadow-sm">Desktop Widget</span>
+              <span className="text-slate-500 font-bold z-10 text-sm tracking-wide bg-white/50 backdrop-blur-md px-4 py-2 rounded-full shadow-sm">macOS · Windows</span>
             </div>
             <div className="p-6 flex-1 flex flex-col bg-white/40">
               <h4 className="font-extrabold text-lg mb-2 flex items-center gap-2 text-slate-800">
-                데스크탑 위젯
+                데스크톱 연동
               </h4>
               <p className="text-sm text-slate-500 flex-1 leading-relaxed font-medium">
-                데스크탑 바탕화면에서 바로 일정을 확인하고 추가하세요. 맥북과 윈도우를 모두 지원합니다.
+                브라우저에서 네이버 캘린더를 앱으로 설치하여 macOS와 Windows 바탕화면에서 일정을 관리하세요.
               </p>
               <div className="mt-5 flex items-center justify-between text-sm font-bold text-slate-600 group-hover:text-slate-900 transition-colors">
-                설치 방법 보기
+                연동 가이드 보기
                 <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center group-hover:bg-slate-200 group-hover:translate-x-1 transition-all">
                   <ChevronRight className="w-4 h-4" />
                 </div>
@@ -488,17 +491,17 @@ export function GoogleSyncTab() {
           >
             <div className="h-44 bg-gradient-to-br from-blue-50 to-indigo-50 flex items-center justify-center border-b border-white/50 relative overflow-hidden group-hover:from-blue-100 group-hover:to-indigo-100 transition-colors">
               <Smartphone className="w-16 h-16 text-blue-200 absolute group-hover:scale-110 group-hover:text-blue-300 transition-all duration-500" />
-              <span className="text-blue-600 font-bold z-10 text-sm tracking-wide bg-white/50 backdrop-blur-md px-4 py-2 rounded-full shadow-sm">iOS Widget</span>
+              <span className="text-blue-600 font-bold z-10 text-sm tracking-wide bg-white/50 backdrop-blur-md px-4 py-2 rounded-full shadow-sm">iPhone · iPad</span>
             </div>
             <div className="p-6 flex-1 flex flex-col bg-white/40">
               <h4 className="font-extrabold text-lg mb-2 flex items-center gap-2 text-slate-800">
-                iOS 위젯
+                iOS 연동
               </h4>
               <p className="text-sm text-slate-500 flex-1 leading-relaxed font-medium">
-                아이폰 홈 화면에서 Calentask 위젯을 추가하여 일정을 한눈에 파악하세요. PWA 설치가 필요합니다.
+                아이폰 홈 화면에 네이버 캘린더 위젯을 추가하여 깔끔한 달력 위젯으로 일정을 확인하세요.
               </p>
               <div className="mt-5 flex items-center justify-between text-sm font-bold text-blue-600 group-hover:text-blue-700 transition-colors">
-                설치 방법 보기
+                연동 가이드 보기
                 <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center group-hover:bg-blue-100 group-hover:translate-x-1 transition-all">
                   <ChevronRight className="w-4 h-4" />
                 </div>
@@ -514,17 +517,17 @@ export function GoogleSyncTab() {
           >
             <div className="h-44 bg-gradient-to-br from-emerald-50 to-teal-50 flex items-center justify-center border-b border-white/50 relative overflow-hidden group-hover:from-emerald-100 group-hover:to-teal-100 transition-colors">
               <Smartphone className="w-16 h-16 text-emerald-200 absolute group-hover:scale-110 group-hover:text-emerald-300 transition-all duration-500" />
-              <span className="text-emerald-600 font-bold z-10 text-sm tracking-wide bg-white/50 backdrop-blur-md px-4 py-2 rounded-full shadow-sm">Android Widget</span>
+              <span className="text-emerald-600 font-bold z-10 text-sm tracking-wide bg-white/50 backdrop-blur-md px-4 py-2 rounded-full shadow-sm">Galaxy · Android</span>
             </div>
             <div className="p-6 flex-1 flex flex-col bg-white/40">
               <h4 className="font-extrabold text-lg mb-2 flex items-center gap-2 text-slate-800">
-                Android 위젯
+                Android 연동
               </h4>
               <p className="text-sm text-slate-500 flex-1 leading-relaxed font-medium">
-                안드로이드 기기에서 빠르고 간편하게 캘린더에 접근하세요. 홈 화면 위젯을 지원합니다.
+                안드로이드 홈 화면에 네이버 캘린더 위젯을 배치하고, 스타일과 투명도를 자유롭게 조절하세요.
               </p>
               <div className="mt-5 flex items-center justify-between text-sm font-bold text-emerald-600 group-hover:text-emerald-700 transition-colors">
-                설치 방법 보기
+                연동 가이드 보기
                 <div className="w-8 h-8 rounded-full bg-emerald-50 flex items-center justify-center group-hover:bg-emerald-100 group-hover:translate-x-1 transition-all">
                   <ChevronRight className="w-4 h-4" />
                 </div>
