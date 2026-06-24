@@ -33,7 +33,7 @@ export function MealDietCard({ currentDate, setCurrentDate, meals, isLoading }: 
         </Button>
         
         <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
-          <PopoverTrigger asChild>
+          <PopoverTrigger render={
             <Button 
               variant="outline" 
               className={cn(
@@ -44,7 +44,7 @@ export function MealDietCard({ currentDate, setCurrentDate, meals, isLoading }: 
               <CalendarLucide className="w-5 h-5 mr-3 text-orange-500" />
               {format(currentDate, 'yyyy년 M월 d일 (EEE)', { locale: ko })}
             </Button>
-          </PopoverTrigger>
+          } />
           <PopoverContent className="w-auto p-0 rounded-2xl border-orange-100 shadow-xl" align="center">
             <Calendar
               mode="single"
@@ -55,7 +55,7 @@ export function MealDietCard({ currentDate, setCurrentDate, meals, isLoading }: 
                   setIsCalendarOpen(false)
                 }
               }}
-              initialFocus
+              autoFocus
               locale={ko}
               className="p-3"
             />

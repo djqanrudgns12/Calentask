@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import { Utensils, CalendarDays, Settings2, Loader2 } from 'lucide-react'
 import { useQueryClient } from '@tanstack/react-query'
 import { useUserProfile } from '@/hooks/useCalendarQueries'
