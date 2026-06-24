@@ -15,7 +15,7 @@ import { SchoolSearchCard } from '../school-meals/SchoolSearchCard'
 import { AcademicEventDetailPopover } from './AcademicEventDetailPopover'
 
 export function SchoolScheduleClient() {
-  const { profile } = useUserProfile()
+  const { data: profile } = useUserProfile()
   const { calendarFontSize, weekStartsOn } = useCalendarStore()
   
   const [currentDate, setCurrentDate] = useState(new Date())
@@ -109,7 +109,7 @@ export function SchoolScheduleClient() {
     return (
       <div className="flex-1 flex items-center justify-center p-4">
         <div className="w-full max-w-md">
-          <SchoolSearchCard onSelect={(school) => {
+          <SchoolSearchCard onSelectSchool={(school) => {
             // SchoolMealsClient 쪽의 SchoolSearchCard가 알아서 프로필을 업데이트해줌
             window.location.reload()
           }} />

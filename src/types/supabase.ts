@@ -535,6 +535,12 @@ export type Database = {
           google_sync_calendar_id: string | null
           google_sync_calendar_name: string | null
           google_sync_settings: Json | null
+          neis_office_code: string | null
+          neis_school_code: string | null
+          neis_school_name: string | null
+          neis_sync_category_id: string | null
+          neis_sync_enabled: boolean | null
+          neis_schools_config: Json | null
         }
         Insert: {
           created_at?: string
@@ -550,6 +556,12 @@ export type Database = {
           google_sync_calendar_id?: string | null
           google_sync_calendar_name?: string | null
           google_sync_settings?: Json | null
+          neis_office_code?: string | null
+          neis_school_code?: string | null
+          neis_school_name?: string | null
+          neis_sync_category_id?: string | null
+          neis_sync_enabled?: boolean | null
+          neis_schools_config?: Json | null
         }
         Update: {
           created_at?: string
@@ -565,6 +577,12 @@ export type Database = {
           google_sync_calendar_id?: string | null
           google_sync_calendar_name?: string | null
           google_sync_settings?: Json | null
+          neis_office_code?: string | null
+          neis_school_code?: string | null
+          neis_school_name?: string | null
+          neis_sync_category_id?: string | null
+          neis_sync_enabled?: boolean | null
+          neis_schools_config?: Json | null
         }
         Relationships: []
       }

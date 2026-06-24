@@ -470,12 +470,12 @@ export function DocumentBoard() {
               <div className="flex items-center gap-2 pr-3 md:pr-4 border-r border-border shrink-0">
                 {/* Font Family Dropdown */}
                 <Popover open={showFontFamily} onOpenChange={setShowFontFamily}>
-                  <PopoverTrigger asChild>
+                  <PopoverTrigger render={
                     <button className="flex items-center justify-between w-28 px-2 py-1.5 text-xs font-semibold bg-muted border border-border rounded hover:bg-muted">
                       <span className="truncate">{FONT_FAMILIES.find(f => editor.isActive('textStyle', { fontFamily: f.value }))?.name || '글꼴'}</span>
                       <ChevronDown className="w-3 h-3 ml-1 text-muted-foreground" />
                     </button>
-                  </PopoverTrigger>
+                  } />
                   <PopoverContent align="start" className="w-36 p-1 max-h-64 overflow-y-auto z-50">
                     {FONT_FAMILIES.map(f => (
                       <button key={f.name} onClick={() => { (editor as any).chain().focus().setFontFamily(f.value).run(); setShowFontFamily(false); }} className="w-full text-left px-3 py-1.5 text-xs hover:bg-muted flex justify-between items-center rounded-sm">
@@ -488,12 +488,12 @@ export function DocumentBoard() {
 
                 {/* Font Size Dropdown */}
                 <Popover open={showFontSize} onOpenChange={setShowFontSize}>
-                  <PopoverTrigger asChild>
+                  <PopoverTrigger render={
                     <button className="flex items-center justify-between w-16 px-2 py-1.5 text-xs font-semibold bg-muted border border-border rounded hover:bg-muted">
                       <span>{editor.getAttributes('textStyle').fontSize || '크기'}</span>
                       <ChevronDown className="w-3 h-3 ml-1 text-muted-foreground" />
                     </button>
-                  </PopoverTrigger>
+                  } />
                   <PopoverContent align="start" className="w-16 p-1 max-h-48 overflow-y-auto z-50">
                     {FONT_SIZES.map(s => (
                       <button key={s} onClick={() => { (editor as any).chain().focus().setFontSize(s).run(); setShowFontSize(false); }} className="w-full text-left px-3 py-1.5 text-xs hover:bg-muted flex justify-between items-center rounded-sm">
@@ -515,7 +515,7 @@ export function DocumentBoard() {
                 {/* Text Color */}
                 <div className="ml-1 flex items-center">
                   <Popover open={showTextColor} onOpenChange={setShowTextColor}>
-                    <Tooltip><TooltipTrigger asChild><PopoverTrigger asChild><button className="p-1.5 rounded hover:bg-muted text-foreground flex items-center gap-0.5"><Palette className="w-4 h-4" /><ChevronDown className="w-2 h-2" /></button></PopoverTrigger></TooltipTrigger><TooltipContent className="text-xs font-bold text-white bg-slate-800 border-none">글자 색상</TooltipContent></Tooltip>
+                    <Tooltip><TooltipTrigger asChild><PopoverTrigger render={<button className="p-1.5 rounded hover:bg-muted text-foreground flex items-center gap-0.5"><Palette className="w-4 h-4" /><ChevronDown className="w-2 h-2" /></button>} /></TooltipTrigger><TooltipContent className="text-xs font-bold text-white bg-slate-800 border-none">글자 색상</TooltipContent></Tooltip>
                     <PopoverContent align="start" className="w-32 p-2 grid grid-cols-4 gap-1 z-50">
                       {COLORS.map(c => (
                         <button key={c} onClick={() => { editor.chain().focus().setColor(c).run(); setShowTextColor(false); }} className="w-6 h-6 rounded border border-border hover:scale-110 transition-transform" style={{ backgroundColor: c }} />
@@ -527,7 +527,7 @@ export function DocumentBoard() {
                 {/* Highlight Color */}
                 <div className="flex items-center">
                   <Popover open={showHighlightColor} onOpenChange={setShowHighlightColor}>
-                    <Tooltip><TooltipTrigger asChild><PopoverTrigger asChild><button className="p-1.5 rounded hover:bg-muted text-foreground flex items-center gap-0.5"><Highlighter className="w-4 h-4" /><ChevronDown className="w-2 h-2" /></button></PopoverTrigger></TooltipTrigger><TooltipContent className="text-xs font-bold text-white bg-slate-800 border-none">배경 색상</TooltipContent></Tooltip>
+                    <Tooltip><TooltipTrigger asChild><PopoverTrigger render={<button className="p-1.5 rounded hover:bg-muted text-foreground flex items-center gap-0.5"><Highlighter className="w-4 h-4" /><ChevronDown className="w-2 h-2" /></button>} /></TooltipTrigger><TooltipContent className="text-xs font-bold text-white bg-slate-800 border-none">배경 색상</TooltipContent></Tooltip>
                     <PopoverContent align="start" className="w-32 p-2 grid grid-cols-4 gap-1 z-50">
                       <button onClick={() => { editor.chain().focus().unsetHighlight().run(); setShowHighlightColor(false); }} className="col-span-4 text-xs py-1 border border-border rounded hover:bg-muted mb-1 text-foreground">색상 없음</button>
                       {COLORS.map(c => (
@@ -576,11 +576,11 @@ export function DocumentBoard() {
                   <LinkIcon className="w-4 h-4 text-blue-500" /> 링크
                 </button>
                 <Popover open={showEmojiPicker} onOpenChange={setShowEmojiPicker}>
-                  <PopoverTrigger asChild>
+                  <PopoverTrigger render={
                     <button className="flex items-center gap-1.5 px-2 py-1.5 rounded hover:bg-muted text-sm font-semibold text-foreground">
                       <Smile className="w-4 h-4 text-yellow-500" /> 이모지
                     </button>
-                  </PopoverTrigger>
+                  } />
                   <PopoverContent align="start" className="w-auto p-0 border-none z-50 bg-transparent shadow-none">
                     <EmojiPicker onEmojiClick={onEmojiClick} />
                   </PopoverContent>
@@ -596,11 +596,11 @@ export function DocumentBoard() {
                   <Minus className="w-4 h-4 text-muted-foreground" /> 구분선
                 </button>
                 <Popover open={showInsertMenu} onOpenChange={setShowInsertMenu}>
-                  <PopoverTrigger asChild>
+                  <PopoverTrigger render={
                     <button className="flex items-center gap-1.5 px-2 py-1.5 rounded hover:bg-muted text-sm font-semibold text-foreground">
                       <Plus className="w-4 h-4 text-foreground" /> 더보기 <ChevronDown className="w-3 h-3" />
                     </button>
-                  </PopoverTrigger>
+                  } />
                   <PopoverContent align="start" className="w-48 p-1 z-50">
                     <button onClick={() => { (editor as any).chain().focus().setCallout().run(); setShowInsertMenu(false); }} className="w-full text-left px-3 py-2 text-sm hover:bg-muted flex items-center gap-2 rounded-sm"><Lightbulb className="w-4 h-4 text-amber-500"/> 콜아웃</button>
                     <button onClick={() => { (editor as any).chain().focus().setToggle().run(); setShowInsertMenu(false); }} className="w-full text-left px-3 py-2 text-sm hover:bg-muted flex items-center gap-2 rounded-sm"><ChevronRight className="w-4 h-4 text-muted-foreground"/> 토글 목록</button>
