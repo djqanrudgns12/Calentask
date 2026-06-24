@@ -20,8 +20,16 @@ export function LinkLoungeCard() {
 
   // 추출된 모든 고유 카테고리들 (폴더 개념)
   const allCategories = useMemo(() => {
-    return ['전체', ...serverCategories]
-  }, [serverCategories])
+    const bookmarkCats = new Set(bookmarks.filter(b => b.category).map(b => b.category as string));
+    const merged = [...serverCategories];
+    bookmarkCats.forEach(cat => {
+      if (cat && cat !== '기타' && !merged.includes(cat)) {
+        merged.push(cat);
+      }
+    });
+    if (!merged.includes('기타')) merged.push('기타');
+    return ['전체', ...merged];
+  }, [serverCategories, bookmarks])
 
   // 필터링 및 정렬된 북마크
   const displayedBookmarks = useMemo(() => {
