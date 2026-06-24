@@ -125,7 +125,7 @@ export function SyncProgressModal({ isOpen, onClose, onSuccess, initialOffset = 
             else if (data.status === 'skipped') accumSkipped++
             else if (data.status === 'failed') {
               accumFailed++
-              accumFailedItems.push({ title: data.title, error: data.error })
+              accumFailedItems.push({ id: data.id, title: data.title, error: data.error })
             }
 
             const globalCurrent = currentOffset + data.current

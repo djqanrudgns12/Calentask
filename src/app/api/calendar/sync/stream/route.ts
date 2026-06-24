@@ -47,6 +47,7 @@ export async function POST(request: Request) {
               try {
                 controller.enqueue(encoder.encode(JSON.stringify({
                   type: 'progress',
+                  id: event.id,
                   title: event.title,
                   status: event.status,
                   current: event.current,

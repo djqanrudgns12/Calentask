@@ -1159,6 +1159,7 @@ export async function createGoogleCalendar(userId: string, name: string) {
 }
 
 export interface SyncProgressEvent {
+  id?: string
   title: string
   status: 'synced' | 'skipped' | 'failed' | 'task_skipped'
   current: number
@@ -1253,8 +1254,29 @@ export async function syncBatchActivitiesToGoogle(userId: string, activities: an
             }
           }
 
+          // [핵심 로직] 외부에서 가져온 일정(google_event_id 보유)이라면, 
+          // 카테고리와 무관하게 원래 저장되어 있던 달력으로 타겟 캘린더를 덮어씁니다.
+          if (activity.google_event_id) {
+            try {
+              const { data: historyData } = await executeWithRetry<any>(async () => await supabase
+                .from('sync_history')
+                .select('calendar_id')
+                .eq('google_event_id', activity.google_event_id)
+                .not('calendar_id', 'is', null)
+                .order('created_at', { ascending: false })
+                .limit(1)
+                .single()
+              )
+              if (historyData?.calendar_id) {
+                targetCalendarId = historyData.calendar_id
+              }
+            } catch (historyErr) {
+              // 내역이 없거나 에러인 경우 기존 targetCalendarId(카테고리 기반) 유지
+            }
+          }
+
           const eventBody = mapActivityToGoogleEvent(activity, categories, settings)
-          const googleEventId = toGoogleEventId(activity.id)
+          const googleEventId = activity.google_event_id || toGoogleEventId(activity.id)
 
           if (activity.parent_activity_id) {
             const parentEventId = toGoogleEventId(activity.parent_activity_id)
@@ -1298,7 +1320,7 @@ export async function syncBatchActivitiesToGoogle(userId: string, activities: an
             }))
             result.synced++ // 업데이트 성공도 동기화 완료로 분류
             processedCount++
-            onProgress?.({ title: activity.title, status: 'synced', current: processedCount })
+            onProgress?.({ id: activity.id, title: activity.title, status: 'synced', current: processedCount })
           } catch (updateErr: any) {
             if (updateErr.code === 404) {
               // 기존 extendedProperty로 검색 (마이그레이션 Fallback)
@@ -1317,7 +1339,7 @@ export async function syncBatchActivitiesToGoogle(userId: string, activities: an
                   batchFinalEventId = existingEvent.id as string
                   result.synced++
                   processedCount++
-                  onProgress?.({ title: activity.title, status: 'synced', current: processedCount })
+                  onProgress?.({ id: activity.id, title: activity.title, status: 'synced', current: processedCount })
                 } else {
                   await executeWithRetry(() => calendar.events.insert({
                     calendarId: targetCalendarId,
@@ -1325,7 +1347,7 @@ export async function syncBatchActivitiesToGoogle(userId: string, activities: an
                   }))
                   result.synced++
                   processedCount++
-                  onProgress?.({ title: activity.title, status: 'synced', current: processedCount })
+                  onProgress?.({ id: activity.id, title: activity.title, status: 'synced', current: processedCount })
                 }
               } catch {
                 const insertedBatch = await executeWithRetry(() => calendar.events.insert({
@@ -1335,7 +1357,7 @@ export async function syncBatchActivitiesToGoogle(userId: string, activities: an
                 batchFinalEventId = insertedBatch.data.id || googleEventId
                 result.synced++
                 processedCount++
-                onProgress?.({ title: activity.title, status: 'synced', current: processedCount })
+                onProgress?.({ id: activity.id, title: activity.title, status: 'synced', current: processedCount })
               }
             } else {
               throw updateErr
@@ -1353,7 +1375,7 @@ export async function syncBatchActivitiesToGoogle(userId: string, activities: an
           result.failed++
           result.failedItems.push({ id: activity.id, title: activity.title, error: err.message })
           processedCount++
-          onProgress?.({ title: activity.title, status: 'failed', current: processedCount, error: err.message })
+          onProgress?.({ id: activity.id, title: activity.title, status: 'failed', current: processedCount, error: err.message })
         }
       })
     )
