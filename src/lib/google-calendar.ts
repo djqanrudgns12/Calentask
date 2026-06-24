@@ -828,11 +828,11 @@ export async function handleGoogleCalendarSync(userId: string, customSupabase?: 
         const candidateGoogleIds = orphanEvents.map(e => e.id as string)
 
         if (candidateActivityIds.length > 0) {
-          const { data: acts1 } = await supabase.from('activities').select('id, google_event_id, deleted_at, updated_at').eq('user_id', userId).in('id', candidateActivityIds)
+          const { data: acts1 } = await supabase.from('activities').select('id, title, start_time, google_event_id, deleted_at, updated_at').eq('user_id', userId).in('id', candidateActivityIds)
           acts1?.forEach((a: any) => orphanActivityMap.set(a.id, a))
         }
         if (candidateGoogleIds.length > 0) {
-          const { data: acts2 } = await supabase.from('activities').select('id, google_event_id, deleted_at, updated_at').eq('user_id', userId).in('google_event_id', candidateGoogleIds)
+          const { data: acts2 } = await supabase.from('activities').select('id, title, start_time, google_event_id, deleted_at, updated_at').eq('user_id', userId).in('google_event_id', candidateGoogleIds)
           acts2?.forEach((a: any) => orphanActivityMap.set(a.google_event_id, a))
         }
       }
@@ -861,24 +861,23 @@ export async function handleGoogleCalendarSync(userId: string, customSupabase?: 
                 shouldUpdate = false
             }
 
-            if (shouldUpdate) {
-              if (isCancelled && !activity.deleted_at) {
-                updateTasks.push(
-                  (async () => {
-                    await supabase
-                      .from('activities')
-                      .update({ deleted_at: new Date().toISOString(), google_event_id: null })
-                      .eq('id', calentaskId)
-                    await logSyncHistory(supabase, { userId, activityId: calentaskId, googleEventId: event.id as string, calendarId, action: 'DELETED', activityTitle: event.summary || '제목 없음' })
-                  })()
-                )
-              } else if (!isCancelled) {
-                const start = event.start?.dateTime || event.start?.date
-                const end = event.end?.dateTime || event.end?.date
-                const isAllDay = !!event.start?.date
-                const reminders = (event.reminders?.useDefault === false && event.reminders?.overrides)
-                  ? event.reminders.overrides.map((r: any) => ({ method: r.method, minutes: r.minutes }))
-                  : []
+            if (isCancelled && !activity.deleted_at) {
+              updateTasks.push(
+                (async () => {
+                  await supabase
+                    .from('activities')
+                    .update({ deleted_at: new Date().toISOString(), google_event_id: null })
+                    .eq('id', calentaskId)
+                  await logSyncHistory(supabase, { userId, activityId: calentaskId, googleEventId: event.id as string, calendarId, action: 'DELETED', activityTitle: event.summary || '제목 없음' })
+                })()
+              )
+            } else if (!isCancelled && shouldUpdate) {
+              const start = event.start?.dateTime || event.start?.date
+              const end = event.end?.dateTime || event.end?.date
+              const isAllDay = !!event.start?.date
+              const reminders = (event.reminders?.useDefault === false && event.reminders?.overrides)
+                ? event.reminders.overrides.map((r: any) => ({ method: r.method, minutes: r.minutes }))
+                : []
                 
                 updateTasks.push(
                   (async () => {
@@ -925,29 +924,28 @@ export async function handleGoogleCalendarSync(userId: string, customSupabase?: 
                 shouldUpdate = false
             }
 
-            if (shouldUpdate) {
-              if (isCancelled) {
-                updateTasks.push(
-                  (async () => {
-                    const { error } = await supabase
-                      .from('activities')
-                      .update({ deleted_at: new Date().toISOString(), google_event_id: null })
-                      .eq('id', matchedActivity.id)
-                      
-                    if (error) {
-                      console.error(`[handleGoogleCalendarSync] Failed to soft-delete matched activity ${matchedActivity.id}:`, error)
-                    } else {
-                      await logSyncHistory(supabase, { userId, activityId: matchedActivity.id, googleEventId: event.id as string, calendarId, action: 'DELETED', activityTitle: event.summary || '제목 없음' })
-                    }
-                  })()
-                )
-              } else {
-                const start = event.start?.dateTime || event.start?.date
-                const end = event.end?.dateTime || event.end?.date
-                const isAllDay = !!event.start?.date
-                const reminders = (event.reminders?.useDefault === false && event.reminders?.overrides)
-                  ? event.reminders.overrides.map((r: any) => ({ method: r.method, minutes: r.minutes }))
-                  : []
+            if (isCancelled) {
+              updateTasks.push(
+                (async () => {
+                  const { error } = await supabase
+                    .from('activities')
+                    .update({ deleted_at: new Date().toISOString(), google_event_id: null })
+                    .eq('id', matchedActivity.id)
+                    
+                  if (error) {
+                    console.error(`[handleGoogleCalendarSync] Failed to soft-delete matched activity ${matchedActivity.id}:`, error)
+                  } else {
+                    await logSyncHistory(supabase, { userId, activityId: matchedActivity.id, googleEventId: event.id as string, calendarId, action: 'DELETED', activityTitle: event.summary || matchedActivity.title || '제목 없음' })
+                  }
+                })()
+              )
+            } else if (!isCancelled && shouldUpdate) {
+              const start = event.start?.dateTime || event.start?.date
+              const end = event.end?.dateTime || event.end?.date
+              const isAllDay = !!event.start?.date
+              const reminders = (event.reminders?.useDefault === false && event.reminders?.overrides)
+                ? event.reminders.overrides.map((r: any) => ({ method: r.method, minutes: r.minutes }))
+                : []
                 
                 updateTasks.push(
                   (async () => {
@@ -1020,18 +1018,22 @@ export async function handleGoogleCalendarSync(userId: string, customSupabase?: 
                   .single()
 
                 if (insertedActivity) {
-                  await calendar.events.patch({
-                    calendarId,
-                    eventId: event.id as string,
-                    requestBody: {
-                      extendedProperties: {
-                        private: {
-                          calentask_id: insertedActivity.id,
-                          type: 'EVENT'
+                  try {
+                    await calendar.events.patch({
+                      calendarId,
+                      eventId: event.id as string,
+                      requestBody: {
+                        extendedProperties: {
+                          private: {
+                            calentask_id: insertedActivity.id,
+                            type: 'EVENT'
+                          }
                         }
                       }
-                    }
-                  })
+                    })
+                  } catch (patchErr) {
+                    console.warn(`[handleGoogleCalendarSync] Failed to patch calentask_id for inserted activity ${insertedActivity.id}:`, patchErr)
+                  }
                   await logSyncHistory(supabase, { userId, activityId: insertedActivity.id, googleEventId: event.id as string, calendarId, action: 'CREATED', activityTitle: event.summary || '제목 없음', activityStartTime: start })
                 }
               })()
