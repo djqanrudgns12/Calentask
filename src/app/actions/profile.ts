@@ -22,7 +22,7 @@ export async function getUserProfile() {
   return profile
 }
 
-export async function updateUserProfile(payload: { full_name?: string; username?: string; avatar_url?: string; recovery_email?: string }) {
+export async function updateUserProfile(payload: { full_name?: string; username?: string; avatar_url?: string; recovery_email?: string; neis_office_code?: string; neis_school_code?: string; neis_school_name?: string }) {
   const supabase = await createClient()
   const { data: userData } = await supabase.auth.getUser()
   if (!userData.user) throw new Error('Not logged in')

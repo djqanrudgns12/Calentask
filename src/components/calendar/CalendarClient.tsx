@@ -8,7 +8,7 @@ import { useCalendarStore } from '@/store/useCalendarStore'
 import { useArchiveStore } from '@/store/useArchiveStore'
 import { useAgendaStore } from '@/store/useAgendaStore'
 import { Button } from '@/components/ui/button'
-import { Plus, Tags, Database, LogOut, Calendar as CalendarIcon, DownloadCloud, Gift, Sparkles, ChevronDown, Archive, NotebookPen, Bookmark, Trash2, Settings, Home, Puzzle, Globe2 } from 'lucide-react'
+import { Plus, Tags, Database, LogOut, Calendar as CalendarIcon, DownloadCloud, Gift, Sparkles, ChevronDown, Archive, NotebookPen, Bookmark, Trash2, Settings, Home, Puzzle, Globe2, Utensils } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 
 import { startOfWeek, endOfWeek } from 'date-fns'
@@ -51,6 +51,7 @@ import { BottomNavigation } from '@/components/ui/BottomNavigation'
 import { CommandPalette } from '@/components/ui/CommandPalette'
 import { MobileCategoryBar } from '@/components/calendar/MobileCategoryBar'
 import { MobileSidebar } from '@/components/ui/MobileSidebar'
+import { SchoolMealsClient } from '@/components/school-meals/SchoolMealsClient'
 import dynamic from 'next/dynamic'
 
 const TemplateCenterTab = dynamic(() => import('@/components/insights/TemplateCenterTab'), { ssr: false })
@@ -70,6 +71,7 @@ export function CalendarClient() {
   } = useCalendarStore()
 
   const isHome = viewMode === 'home'
+  const isSchoolMeals = viewMode === 'school_meals'
   const isCalendarMenuOpen = ['monthly', 'weekly', 'list', 'semester', 'archive_agenda', 'anniversary', 'google_sync'].includes(viewMode)
   const isMyCalendarActive = ['monthly', 'weekly', 'list', 'semester'].includes(viewMode)
   const isArchiveMenuOpen = ['archive_notes', 'link_lounge'].includes(viewMode)
@@ -233,6 +235,22 @@ export function CalendarClient() {
                 )}
                 <Home className={`w-4 h-4 transition-transform ${isHome ? 'text-violet-600' : 'text-muted-foreground group-hover:scale-105 group-hover:text-violet-500'}`} />
                 <span>홈</span>
+              </button>
+
+              {/* 학교 급식 정보 버튼 */}
+              <button 
+                onClick={() => setViewMode('school_meals')}
+                className={`group relative w-full text-left px-3.5 py-2.5 h-[42px] rounded-xl text-[14px] transition-all duration-300 ease-out flex items-center gap-3 ${
+                  isSchoolMeals 
+                  ? 'bg-orange-50/70 text-orange-700 font-bold' 
+                  : 'bg-transparent text-muted-foreground hover:bg-accent hover:text-foreground'
+                }`}
+              >
+                {isSchoolMeals && (
+                  <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-5 bg-orange-500 rounded-r-full" />
+                )}
+                <Utensils className={`w-4 h-4 transition-transform ${isSchoolMeals ? 'text-orange-600' : 'text-muted-foreground group-hover:scale-105 group-hover:text-orange-500'}`} />
+                <span>학교 급식 정보</span>
               </button>
             </div>
           </div>
@@ -530,6 +548,11 @@ export function CalendarClient() {
                 {viewMode === 'insights' && (
                   <div className="min-h-full bg-background rounded-xl md:rounded-3xl p-2 md:p-6 overflow-x-hidden">
                     <InsightsClient />
+                  </div>
+                )}
+                {viewMode === 'school_meals' && (
+                  <div className="min-h-full bg-background rounded-xl md:rounded-3xl p-2 md:p-6 overflow-x-hidden border border-border shadow-sm">
+                    <SchoolMealsClient />
                   </div>
                 )}
                 {viewMode === 'template_center' && (

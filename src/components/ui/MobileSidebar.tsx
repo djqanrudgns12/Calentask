@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
   Home, Calendar as CalendarIcon, Sparkles, Gift, Archive, NotebookPen,
   Bookmark, Database, DownloadCloud, Tags, Trash2, Settings, LogOut,
-  ChevronDown, Puzzle, Globe2
+  ChevronDown, Puzzle, Globe2, Utensils
 } from 'lucide-react'
 import { useCalendarStore, ViewMode } from '@/store/useCalendarStore'
 import { UpcomingAnniversaryWidget } from '@/components/anniversary/UpcomingAnniversaryWidget'
@@ -242,6 +242,14 @@ export function MobileSidebar({ open, onOpenChange, onOpenSettings }: MobileSide
                 iconColor="text-violet-600"
                 activeBg="bg-violet-50/70 text-violet-700"
                 onClick={() => navigate('home')}
+              />
+              <MenuItem
+                icon={Utensils}
+                label="학교 급식 정보"
+                isActive={viewMode === 'school_meals'}
+                iconColor="text-orange-500"
+                activeBg="bg-orange-50/70 text-orange-700"
+                onClick={() => navigate('school_meals')}
               />
             </div>
           </div>

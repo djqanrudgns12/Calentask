@@ -1092,18 +1092,26 @@ export function WidgetGuideModal({ type, isOpen, onClose }: Props) {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
               transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-              className="relative w-full max-w-4xl bg-white backdrop-blur-3xl rounded-[2.5rem] shadow-2xl border border-white/20 overflow-hidden flex flex-col md:flex-row min-h-[520px] max-h-[calc(100vh-2rem)] md:max-h-none overflow-y-auto md:overflow-y-visible"
+              className="relative w-full max-w-4xl bg-white backdrop-blur-3xl rounded-[2.5rem] shadow-2xl border border-white/20 overflow-hidden flex flex-col md:flex-row min-h-[520px] max-h-[calc(100dvh-2rem)] md:max-h-none"
             >
+              {/* 닫기 버튼 (모달 최상단 배치) */}
+              <button
+                onClick={onClose}
+                className="absolute top-4 right-4 md:top-6 md:right-6 p-2.5 bg-black/20 hover:bg-black/30 text-white md:bg-slate-100/50 md:hover:bg-slate-200 md:text-slate-500 rounded-full transition-colors z-[60] backdrop-blur-md md:backdrop-blur-none"
+              >
+                <X className="w-5 h-5" />
+              </button>
+
               {/* 좌측: 기기 목업 비주얼 영역 */}
               <div
-                className={`relative w-full md:w-[45%] flex items-center justify-center p-6 md:p-8 bg-gradient-to-br ${data!.color} overflow-hidden shrink-0`}
+                className={`relative w-full md:w-[45%] h-[35dvh] min-h-[260px] md:h-auto md:min-h-[500px] flex items-center justify-center p-6 md:p-8 bg-gradient-to-br ${data!.color} overflow-hidden shrink-0`}
               >
                 {/* 빛번짐 배경 장식 */}
                 <div className="absolute top-0 left-0 w-full h-full bg-white/10" />
                 <div className="absolute -top-32 -left-32 w-64 h-64 bg-white/20 blur-3xl rounded-full mix-blend-overlay" />
                 <div className="absolute -bottom-32 -right-32 w-64 h-64 bg-black/20 blur-3xl rounded-full mix-blend-overlay" />
 
-                <div className="relative z-10 w-full flex items-center justify-center h-[280px] md:h-full md:min-h-[300px]">
+                <div className="relative z-10 w-full h-full flex items-center justify-center md:min-h-[300px]">
                   <div className="transform scale-[0.55] sm:scale-[0.65] md:scale-100 origin-center">
                     {renderMockup()}
                   </div>
@@ -1111,14 +1119,7 @@ export function WidgetGuideModal({ type, isOpen, onClose }: Props) {
               </div>
 
               {/* 우측: 텍스트 및 컨트롤러 영역 */}
-              <div className="relative w-full md:w-[55%] p-6 sm:p-8 md:p-12 flex flex-col shrink-0">
-                <button
-                  onClick={onClose}
-                  className="absolute top-4 right-4 md:top-6 md:right-6 p-2.5 bg-slate-100/50 hover:bg-slate-200 text-slate-500 rounded-full transition-colors z-20"
-                >
-              <X className="w-5 h-5" />
-            </button>
-
+              <div className="relative w-full md:w-[55%] p-6 sm:p-8 md:p-12 flex flex-col shrink-0 overflow-y-auto">
             {/* 헤더 */}
             <div className="flex items-center gap-3 mb-10">
               <div

@@ -83,7 +83,7 @@ function DesktopInstallGuideModal({
             animate={{ scale: 1, opacity: 1, y: 0 }}
             exit={{ scale: 0.95, opacity: 0, y: 10 }}
             transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-            className="bg-card rounded-3xl w-full max-w-[420px] overflow-hidden shadow-2xl relative"
+            className="bg-card rounded-3xl w-full max-w-[420px] max-h-[85vh] overflow-y-auto shadow-2xl relative"
           >
             <button 
               onClick={onClose}
@@ -846,7 +846,7 @@ export function ProfileTab() {
             initial={{ scale: 0.95, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.95, opacity: 0 }}
-            className="bg-card rounded-2xl w-full max-w-md overflow-hidden shadow-2xl relative p-6 border border-red-100"
+            className="bg-card rounded-2xl w-full max-w-md max-h-[85vh] overflow-y-auto shadow-2xl relative p-6 border border-red-100"
           >
             <button 
               onClick={() => { setShowDeleteModal(false); setDeleteConfirmText('') }}
@@ -910,7 +910,7 @@ export function ProfileTab() {
             initial={{ y: 100, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: 100, opacity: 0 }}
-            className="bg-card rounded-3xl w-full max-w-sm overflow-hidden shadow-2xl relative"
+            className="bg-card rounded-3xl w-full max-w-sm max-h-[85vh] overflow-y-auto shadow-2xl relative"
           >
             <button 
               onClick={() => setShowIosGuide(false)}
