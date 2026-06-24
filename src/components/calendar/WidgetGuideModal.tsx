@@ -1033,6 +1033,39 @@ export function WidgetGuideModal({ type, isOpen, onClose }: Props) {
     if (currentStep > 0) setCurrentStep((s) => s - 1)
   }
 
+  // 스와이프 기능
+  const [touchStart, setTouchStart] = useState<{ x: number, y: number } | null>(null)
+  const [touchEnd, setTouchEnd] = useState<{ x: number, y: number } | null>(null)
+
+  const minSwipeDistance = 50
+
+  const onTouchStart = (e: React.TouchEvent) => {
+    setTouchEnd(null)
+    setTouchStart({ x: e.targetTouches[0].clientX, y: e.targetTouches[0].clientY })
+  }
+
+  const onTouchMove = (e: React.TouchEvent) => {
+    setTouchEnd({ x: e.targetTouches[0].clientX, y: e.targetTouches[0].clientY })
+  }
+
+  const onTouchEnd = () => {
+    if (!touchStart || !touchEnd) return
+    const distanceX = touchStart.x - touchEnd.x
+    const distanceY = Math.abs(touchStart.y - touchEnd.y)
+
+    // 수직 스크롤 비중이 높으면 스와이프로 판단하지 않음
+    if (distanceY > Math.abs(distanceX)) return
+
+    const isLeftSwipe = distanceX > minSwipeDistance
+    const isRightSwipe = distanceX < -minSwipeDistance
+
+    if (isLeftSwipe) {
+      handleNext()
+    } else if (isRightSwipe) {
+      handlePrev()
+    }
+  }
+
   // 마크다운 스타일 텍스트 렌더링 (**굵게**, *이탤릭*)
   const renderContent = (text: string) => {
     const parts = text.split(/(\*\*.*?\*\*|\*.*?\*)/g)
@@ -1093,6 +1126,9 @@ export function WidgetGuideModal({ type, isOpen, onClose }: Props) {
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
               transition={{ type: 'spring', damping: 25, stiffness: 300 }}
               className="relative w-full max-w-4xl bg-white backdrop-blur-3xl rounded-[2.5rem] shadow-2xl border border-white/20 overflow-hidden flex flex-col md:flex-row min-h-[520px] max-h-[calc(100dvh-2rem)] md:max-h-none"
+              onTouchStart={onTouchStart}
+              onTouchMove={onTouchMove}
+              onTouchEnd={onTouchEnd}
             >
               {/* 닫기 버튼 (모달 최상단 배치) */}
               <button
@@ -1118,85 +1154,90 @@ export function WidgetGuideModal({ type, isOpen, onClose }: Props) {
                 </div>
               </div>
 
-              {/* 우측: 텍스트 및 컨트롤러 영역 */}
-              <div className="relative w-full md:w-[55%] p-6 sm:p-8 md:p-12 flex flex-col shrink-0 overflow-y-auto">
-            {/* 헤더 */}
-            <div className="flex items-center gap-3 mb-10">
-              <div
-                className={`w-10 h-10 rounded-2xl flex items-center justify-center bg-gradient-to-br ${data!.color} text-white shadow-lg`}
-              >
-                <Icon className="w-5 h-5" />
-              </div>
-              <h3 className="font-extrabold text-2xl tracking-tight text-slate-900">{data!.title}</h3>
-            </div>
-
-            {/* 스텝 텍스트 영역 */}
-            <div className="flex-1 flex flex-col justify-center min-h-[200px]">
-              <AnimatePresence mode="wait">
-                <motion.div
-                  key={currentStep}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  transition={{ duration: 0.3 }}
-                  className="w-full"
-                >
-                  <div className="text-sm font-bold text-indigo-500 mb-3 tracking-widest uppercase">
-                    Step {currentStep + 1} of {totalSteps}
+              {/* 우측: 텍스트 및 컨트롤러 영역 (푸터 하단 고정) */}
+              <div className="relative w-full md:w-[55%] flex flex-col shrink-0 h-[65dvh] min-h-[300px] md:h-auto md:min-h-0 overflow-hidden">
+                <div className="flex-1 p-6 sm:p-8 md:px-12 md:pt-12 md:pb-6 overflow-y-auto">
+                  {/* 헤더 */}
+                  <div className="flex items-center gap-3 mb-8 md:mb-10">
+                    <div
+                      className={`w-10 h-10 rounded-2xl flex items-center justify-center bg-gradient-to-br ${data!.color} text-white shadow-lg shrink-0`}
+                    >
+                      <Icon className="w-5 h-5" />
+                    </div>
+                    <h3 className="font-extrabold text-2xl tracking-tight text-slate-900">{data!.title}</h3>
                   </div>
-                  <h4 className="text-2xl md:text-3xl font-extrabold text-slate-900 mb-5 leading-tight tracking-tight">
-                    {data!.steps[currentStep]?.title}
-                  </h4>
-                  <div className="text-base md:text-lg text-slate-600 leading-relaxed whitespace-pre-line font-medium">
-                    {renderContent(data!.steps[currentStep]?.content || '')}
+
+                  {/* 스텝 텍스트 영역 */}
+                  <div className="flex-1 flex flex-col justify-center min-h-[200px]">
+                    <AnimatePresence mode="wait">
+                      <motion.div
+                        key={currentStep}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -10 }}
+                        transition={{ duration: 0.3 }}
+                        className="w-full"
+                      >
+                        <div className="text-sm font-bold text-indigo-500 mb-3 tracking-widest uppercase">
+                          Step {currentStep + 1} of {totalSteps}
+                        </div>
+                        <h4 className="text-2xl md:text-3xl font-extrabold text-slate-900 mb-5 leading-tight tracking-tight">
+                          {data!.steps[currentStep]?.title}
+                        </h4>
+                        <div className="text-base md:text-lg text-slate-600 leading-relaxed whitespace-pre-line font-medium">
+                          {renderContent(data!.steps[currentStep]?.content || '')}
+                        </div>
+                      </motion.div>
+                    </AnimatePresence>
                   </div>
-                </motion.div>
-              </AnimatePresence>
-            </div>
+                </div>
 
-            {/* 푸터 및 컨트롤 */}
-            <div className="mt-10 pt-8 border-t border-slate-200/50 flex items-center justify-between">
-              {/* 프로그레스 인디케이터 — 7개 dot */}
-              <div className="flex items-center gap-1.5">
-                {data!.steps.map((_, i) => (
-                  <div
-                    key={i}
-                    className={`h-1.5 rounded-full transition-all duration-500 ${
-                      i === currentStep
-                        ? 'w-8 bg-indigo-600 shadow-[0_0_10px_rgba(79,70,229,0.5)]'
-                        : i < currentStep
-                          ? 'w-3 bg-indigo-300'
-                          : 'w-3 bg-slate-200'
-                    }`}
-                  />
-                ))}
-              </div>
+                {/* 푸터 및 컨트롤 (하단 고정) */}
+                <div className="shrink-0 p-6 sm:p-8 md:px-12 md:py-8 border-t border-slate-200/50 flex items-center justify-between bg-white z-10 shadow-[0_-10px_20px_-10px_rgba(0,0,0,0.05)]">
+                  {/* 프로그레스 인디케이터 — 7개 dot */}
+                  <div className="flex items-center gap-1.5 hidden sm:flex">
+                    {data!.steps.map((_, i) => (
+                      <div
+                        key={i}
+                        className={`h-1.5 rounded-full transition-all duration-500 ${
+                          i === currentStep
+                            ? 'w-8 bg-indigo-600 shadow-[0_0_10px_rgba(79,70,229,0.5)]'
+                            : i < currentStep
+                              ? 'w-3 bg-indigo-300'
+                              : 'w-3 bg-slate-200'
+                        }`}
+                      />
+                    ))}
+                  </div>
+                  <div className="sm:hidden text-xs font-bold text-slate-400">
+                    {currentStep + 1} / {totalSteps}
+                  </div>
 
-              {/* 내비게이션 버튼 */}
-              <div className="flex gap-3">
-                <Button
-                  variant="outline"
-                  onClick={handlePrev}
-                  disabled={currentStep === 0}
-                  className={`w-12 h-12 rounded-2xl border-slate-200 hover:bg-slate-50 transition-all ${currentStep === 0 ? 'opacity-50' : ''}`}
-                >
-                  <ChevronLeft className="w-5 h-5 text-slate-600" />
-                </Button>
-                <Button
-                  onClick={handleNext}
-                  className={`h-12 px-8 rounded-2xl font-bold text-base transition-all shadow-lg hover:shadow-xl ${
-                    isLast
-                      ? 'bg-slate-900 hover:bg-black text-white'
-                      : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-indigo-500/25'
-                  }`}
-                >
-                  {isLast ? '설정 완료' : '다음 단계'}
-                  {!isLast && <ChevronRight className="w-5 h-5 ml-1 -mr-1" />}
-                </Button>
+                  {/* 내비게이션 버튼 */}
+                  <div className="flex gap-2 sm:gap-3 ml-auto">
+                    <Button
+                      variant="outline"
+                      onClick={handlePrev}
+                      disabled={currentStep === 0}
+                      className={`w-10 h-10 sm:w-12 sm:h-12 rounded-2xl border-slate-200 hover:bg-slate-50 transition-all ${currentStep === 0 ? 'opacity-50' : ''}`}
+                    >
+                      <ChevronLeft className="w-5 h-5 text-slate-600" />
+                    </Button>
+                    <Button
+                      onClick={handleNext}
+                      className={`h-10 sm:h-12 px-5 sm:px-8 rounded-2xl font-bold text-sm sm:text-base transition-all shadow-lg hover:shadow-xl ${
+                        isLast
+                          ? 'bg-slate-900 hover:bg-black text-white'
+                          : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-indigo-500/25'
+                      }`}
+                    >
+                      {isLast ? '설정 완료' : '다음 단계'}
+                      {!isLast && <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5 ml-1 -mr-1 sm:-mr-2" />}
+                    </Button>
+                  </div>
+                </div>
               </div>
-            </div>
-            </div>
-          </motion.div>
+            </motion.div>
           </div>
         </div>
       )}
