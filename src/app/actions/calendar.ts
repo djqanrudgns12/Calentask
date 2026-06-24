@@ -220,9 +220,11 @@ export async function getActivities(startDate: string, endDate: string) {
   const { data, error } = await supabase
     .from('activities')
     .select(`
-      *,
+      id, title, start_time, end_time, is_all_day, memo, type, hex_color,
+      template_id, deleted_at, recurrence_rule, parent_activity_id,
+      original_start_time, google_event_id, attachments, reminders,
       activity_category_map(
-        categories(*)
+        categories(id, name, hex_color, is_default, user_id)
       )
     `)
     .or(`and(start_time.lte.${endDate},end_time.gte.${startDate},deleted_at.is.null),and(recurrence_rule.not.is.null,deleted_at.is.null),and(parent_activity_id.not.is.null,deleted_at.is.null)`)
