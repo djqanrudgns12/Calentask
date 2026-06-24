@@ -3,7 +3,7 @@ import { cookies } from 'next/headers'
 
 export async function createClient() {
   const cookieStore = await cookies()
-  const keepLoggedIn = cookieStore.get('sb-keep-logged-in')?.value !== 'false'
+  const keepLoggedIn = cookieStore.get('sb-keep-logged-in')?.value === 'true'
 
   return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
