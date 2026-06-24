@@ -6,10 +6,12 @@ import { useAgendaStore } from '@/store/useAgendaStore'
 import { useState } from 'react'
 import { forceSyncActivityAction } from '@/app/actions/calendar'
 import { toast } from 'sonner'
+import { useQueryClient } from '@tanstack/react-query'
 
 export function EventDetailPopover() {
   const { selectedEventDetail, closeEventDetail, openEditEvent, openDeleteConfirm } = useCalendarStore()
   const openAddDialog = useAgendaStore(state => state.openAddDialog)
+  const queryClient = useQueryClient()
 
   const event = selectedEventDetail
   const primaryColor = event ? getEventPrimaryColor(event) : '#ffffff'
@@ -50,7 +52,8 @@ export function EventDetailPopover() {
       const res = await forceSyncActivityAction(event.id)
       if (res.success) {
         toast.success('구글 캘린더에 성공적으로 연동되었습니다!', { id: toastId })
-        // 간단한 로컬 상태 업데이트 (모달 닫고 다시 열거나 무시)
+        // 캐시 즉시 업데이트 후 팝오버 닫기
+        await queryClient.invalidateQueries({ queryKey: ['activities'] })
         closeEventDetail()
       } else {
         toast.error(`연동 실패: ${res.error}`, { id: toastId })

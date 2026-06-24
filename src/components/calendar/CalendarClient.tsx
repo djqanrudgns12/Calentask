@@ -8,7 +8,7 @@ import { useCalendarStore } from '@/store/useCalendarStore'
 import { useArchiveStore } from '@/store/useArchiveStore'
 import { useAgendaStore } from '@/store/useAgendaStore'
 import { Button } from '@/components/ui/button'
-import { Plus, Tags, Database, LogOut, Calendar as CalendarIcon, DownloadCloud, Gift, Sparkles, ChevronDown, Archive, NotebookPen, Bookmark, Trash2, Settings, Home, Puzzle, Globe2, Utensils } from 'lucide-react'
+import { Plus, Tags, Database, LogOut, Calendar as CalendarIcon, DownloadCloud, Gift, Sparkles, ChevronDown, Archive, NotebookPen, Bookmark, Trash2, Settings, Home, Puzzle, Globe2, Utensils, GraduationCap } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 
 import { startOfWeek, endOfWeek } from 'date-fns'
@@ -52,6 +52,7 @@ import { CommandPalette } from '@/components/ui/CommandPalette'
 import { MobileCategoryBar } from '@/components/calendar/MobileCategoryBar'
 import { MobileSidebar } from '@/components/ui/MobileSidebar'
 import { SchoolMealsClient } from '@/components/school-meals/SchoolMealsClient'
+import { SchoolScheduleClient } from '@/components/school-schedule/SchoolScheduleClient'
 import dynamic from 'next/dynamic'
 
 const TemplateCenterTab = dynamic(() => import('@/components/insights/TemplateCenterTab'), { ssr: false })
@@ -72,7 +73,7 @@ export function CalendarClient() {
 
   const isHome = viewMode === 'home'
   const isSchoolMeals = viewMode === 'school_meals'
-  const isCalendarMenuOpen = ['monthly', 'weekly', 'list', 'semester', 'archive_agenda', 'anniversary', 'google_sync'].includes(viewMode)
+  const isCalendarMenuOpen = ['monthly', 'weekly', 'list', 'semester', 'archive_agenda', 'anniversary', 'google_sync', 'school_schedule'].includes(viewMode)
   const isMyCalendarActive = ['monthly', 'weekly', 'list', 'semester'].includes(viewMode)
   const isArchiveMenuOpen = ['archive_notes', 'link_lounge'].includes(viewMode)
   const isDataCenterMenuOpen = ['insights', 'nice_import', 'tags', 'trash', 'template_center'].includes(viewMode)
@@ -292,14 +293,22 @@ export function CalendarClient() {
                     <div className="flex flex-col space-y-1 mt-1 pb-1 ml-5 pl-2 border-l-2 border-border">
                       <button 
                         onClick={() => setViewMode('monthly')}
-                        className={`w-full text-left px-3 py-2 rounded-lg text-[13px] font-medium transition-all duration-300 flex items-center gap-2.5 ${
-                          isMyCalendarActive
-                          ? 'bg-blue-50/70 text-blue-700 shadow-sm' 
-                          : 'bg-transparent text-muted-foreground hover:bg-accent hover:text-foreground'
+                        className={`w-full text-left px-3 py-2 rounded-lg text-[13px] font-medium transition-colors flex items-center gap-2.5 ${
+                          isMyCalendarActive ? 'bg-blue-50/70 text-blue-700 shadow-sm font-semibold' : 'text-muted-foreground hover:bg-accent hover:text-foreground'
                         }`}
                       >
                         <CalendarIcon className={`w-3.5 h-3.5 ${isMyCalendarActive ? 'text-blue-600' : 'text-muted-foreground/50'}`} />
-                        나의 캘린더
+                        <span>나의 캘린더</span>
+                      </button>
+
+                      <button 
+                        onClick={() => setViewMode('school_schedule')}
+                        className={`w-full text-left px-3 py-2 rounded-lg text-[13px] font-medium transition-colors flex items-center gap-2.5 ${
+                          viewMode === 'school_schedule' ? 'bg-sky-50/70 text-sky-700 shadow-sm font-semibold' : 'text-muted-foreground hover:bg-accent hover:text-foreground'
+                        }`}
+                      >
+                        <GraduationCap className={`w-3.5 h-3.5 ${viewMode === 'school_schedule' ? 'text-sky-600' : 'text-muted-foreground/50'}`} />
+                        <span>학사일정</span>
                       </button>
 
                       <button 
@@ -553,6 +562,11 @@ export function CalendarClient() {
                 {viewMode === 'school_meals' && (
                   <div className="min-h-full bg-background rounded-xl md:rounded-3xl p-2 md:p-6 overflow-x-hidden border border-border shadow-sm">
                     <SchoolMealsClient />
+                  </div>
+                )}
+                {viewMode === 'school_schedule' && (
+                  <div className="min-h-full flex flex-col bg-background rounded-xl md:rounded-3xl overflow-x-hidden border border-border shadow-sm">
+                    <SchoolScheduleClient />
                   </div>
                 )}
                 {viewMode === 'template_center' && (

@@ -20,6 +20,17 @@ export function toGoogleEventId(uuid: string): string {
 }
 
 /**
+ * Google Calendar Event ID → Calentask Activity UUID 역변환.
+ * toGoogleEventId의 역함수. 하이픈 없는 hex 32자리를
+ * 8-4-4-4-12 형식의 UUID로 복원합니다.
+ * 유효한 UUID 형식이 아니면 null을 반환합니다.
+ */
+export function fromGoogleEventId(googleEventId: string): string | null {
+  if (!/^[0-9a-f]{32}$/.test(googleEventId)) return null
+  return `${googleEventId.slice(0,8)}-${googleEventId.slice(8,12)}-${googleEventId.slice(12,16)}-${googleEventId.slice(16,20)}-${googleEventId.slice(20)}`
+}
+
+/**
  * Helper to log sync history to the database
  */
 export async function logSyncHistory(
@@ -805,6 +816,26 @@ export async function handleGoogleCalendarSync(userId: string, customSupabase?: 
         }
       }
 
+      // [신규 로직] calentask_id가 없는 cancelled 이벤트를 위한 Bulk 조회 (역매핑용)
+      const orphanCancelledEvents = items.filter(
+        event => event.status === 'cancelled' && !event.extendedProperties?.private?.calentask_id
+      )
+      
+      let orphanActivityMap = new Map<string, any>()
+      if (orphanCancelledEvents.length > 0) {
+        const candidateActivityIds = orphanCancelledEvents.map(e => fromGoogleEventId(e.id as string)).filter(Boolean) as string[]
+        const candidateGoogleIds = orphanCancelledEvents.map(e => e.id as string)
+
+        if (candidateActivityIds.length > 0) {
+          const { data: acts1 } = await supabase.from('activities').select('id, google_event_id, deleted_at').eq('user_id', userId).in('id', candidateActivityIds)
+          acts1?.forEach((a: any) => orphanActivityMap.set(a.id, a))
+        }
+        if (candidateGoogleIds.length > 0) {
+          const { data: acts2 } = await supabase.from('activities').select('id, google_event_id, deleted_at').eq('user_id', userId).in('google_event_id', candidateGoogleIds)
+          acts2?.forEach((a: any) => orphanActivityMap.set(a.google_event_id, a))
+        }
+      }
+
       // 업데이트/삽입 작업을 수집하여 병렬 처리
       const updateTasks: Promise<any>[] = []
       const insertTasks: Promise<any>[] = []
@@ -870,8 +901,37 @@ export async function handleGoogleCalendarSync(userId: string, customSupabase?: 
             }
           }
         } else {
-          // This is a new event created in Google Calendar!
-          if (!isCancelled && conflictStrategy !== 'CALENTASK_WINS') {
+          if (isCancelled) {
+            // ★ 삭제된 이벤트: 3단계 역매핑으로 Calentask 일정 탐색 ★
+            if (conflictStrategy !== 'CALENTASK_WINS') {
+              const possibleActivityId = fromGoogleEventId(event.id as string)
+              let matchedActivity = null
+
+              if (possibleActivityId && orphanActivityMap.has(possibleActivityId)) {
+                matchedActivity = orphanActivityMap.get(possibleActivityId)
+              } else if (orphanActivityMap.has(event.id as string)) {
+                matchedActivity = orphanActivityMap.get(event.id as string)
+              }
+
+              if (matchedActivity && !matchedActivity.deleted_at) {
+                updateTasks.push(
+                  (async () => {
+                    const { error } = await supabase
+                      .from('activities')
+                      .update({ deleted_at: new Date().toISOString(), google_event_id: null })
+                      .eq('id', matchedActivity.id)
+                      
+                    if (error) {
+                      console.error(`[handleGoogleCalendarSync] Failed to soft-delete matched activity ${matchedActivity.id}:`, error)
+                    } else {
+                      await logSyncHistory(supabase, { userId, activityId: matchedActivity.id, googleEventId: event.id as string, calendarId, action: 'DELETED', activityTitle: event.summary || '제목 없음' })
+                    }
+                  })()
+                )
+              }
+            }
+          } else if (conflictStrategy !== 'CALENTASK_WINS') {
+            // This is a new event created in Google Calendar!
             const start = event.start?.dateTime || event.start?.date
             const end = event.end?.dateTime || event.end?.date
             const isAllDay = !!event.start?.date

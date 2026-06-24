@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
   Home, Calendar as CalendarIcon, Sparkles, Gift, Archive, NotebookPen,
   Bookmark, Database, DownloadCloud, Tags, Trash2, Settings, LogOut,
-  ChevronDown, Puzzle, Globe2, Utensils
+  ChevronDown, Puzzle, Globe2, Utensils, GraduationCap
 } from 'lucide-react'
 import { useCalendarStore, ViewMode } from '@/store/useCalendarStore'
 import { UpcomingAnniversaryWidget } from '@/components/anniversary/UpcomingAnniversaryWidget'
@@ -279,6 +279,14 @@ export function MobileSidebar({ open, onOpenChange, onOpenSettings }: MobileSide
                   iconColor="text-blue-600"
                   activeBg="bg-blue-50/70 text-blue-700"
                   onClick={() => navigate('monthly')}
+                />
+                <SubMenuItem
+                  icon={GraduationCap}
+                  label="학사일정"
+                  isActive={viewMode === 'school_schedule'}
+                  iconColor="text-sky-600"
+                  activeBg="bg-sky-50/70 text-sky-700"
+                  onClick={() => navigate('school_schedule')}
                 />
                 <SubMenuItem
                   icon={Sparkles}
