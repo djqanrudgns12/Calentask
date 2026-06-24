@@ -8,25 +8,26 @@ export function EventDetailPopover() {
   const { selectedEventDetail, closeEventDetail, openEditEvent, openDeleteConfirm } = useCalendarStore()
   const openAddDialog = useAgendaStore(state => state.openAddDialog)
 
-  if (!selectedEventDetail) return null
-
   const event = selectedEventDetail
-  const primaryColor = getEventPrimaryColor(event)
+  const primaryColor = event ? getEventPrimaryColor(event) : '#ffffff'
 
   // 편집 버튼: 팝오버를 먼저 닫고, 편집 모달을 띄움 (모달 겹침 방지)
   const handleEdit = () => {
+    if (!event) return
     closeEventDetail()
     openEditEvent(event)
   }
 
   // 삭제 버튼: 팝오버를 먼저 닫고, 삭제 확인 다이얼로그를 띄움
   const handleDelete = () => {
+    if (!event) return
     closeEventDetail()
     openDeleteConfirm(event.id, event)
   }
 
   // 아젠다로 보내기
   const handleSendToAgenda = () => {
+    if (!event) return
     closeEventDetail()
     openAddDialog({
       title: event.title,
@@ -35,6 +36,8 @@ export function EventDetailPopover() {
       category_id: event.categories?.[0]?.id || null,
     })
   }
+
+  if (!event) return null
 
   return (
     <>
