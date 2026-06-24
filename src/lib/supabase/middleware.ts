@@ -6,7 +6,7 @@ export async function updateSession(request: NextRequest) {
     request,
   })
 
-  const keepLoggedIn = request.cookies.get('sb-keep-logged-in')?.value !== 'false'
+  const keepLoggedIn = request.cookies.get('sb-keep-logged-in')?.value === 'true'
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,

@@ -1,5 +1,5 @@
 import { login } from '@/app/actions/auth'
-import { Button } from '@/components/ui/button'
+import { AuthSubmitButton } from '@/components/auth/AuthSubmitButton'
 /* eslint-disable @next/next/no-img-element */
 import Link from 'next/link'
 
@@ -57,7 +57,7 @@ export default async function LoginPage(
                 id="keepLoggedIn"
                 name="keepLoggedIn"
                 type="checkbox"
-                defaultChecked={true}
+                defaultChecked={false}
                 className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
               />
               <label htmlFor="keepLoggedIn" className="text-sm font-medium text-foreground">
@@ -77,12 +77,7 @@ export default async function LoginPage(
           )}
 
           <div className="pt-2 space-y-3">
-            <Button 
-              type="submit" 
-              className="w-full rounded-full bg-blue-600 py-6 text-[15px] font-semibold text-white hover:bg-blue-700 hover:scale-[1.02] active:scale-[0.98] transition-all shadow-md"
-            >
-              로그인
-            </Button>
+            <AuthSubmitButton label="로그인" loadingLabel="로그인 중..." />
           </div>
         </form>
 

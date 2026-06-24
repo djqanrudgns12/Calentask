@@ -9,14 +9,19 @@ export async function login(formData: FormData) {
   const keepLoggedIn = formData.get('keepLoggedIn') === 'on'
   
   const cookieStore = await cookies()
-  if (!keepLoggedIn) {
+  if (keepLoggedIn) {
+    cookieStore.set('sb-keep-logged-in', 'true', { 
+      httpOnly: true, 
+      sameSite: 'lax', 
+      path: '/',
+      maxAge: 60 * 60 * 24 * 365
+    })
+  } else {
     cookieStore.set('sb-keep-logged-in', 'false', { 
-      httpOnly: false, 
+      httpOnly: true, 
       sameSite: 'lax', 
       path: '/' 
     })
-  } else {
-    cookieStore.delete('sb-keep-logged-in')
   }
 
   const supabase = await createClient()

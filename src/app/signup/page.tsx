@@ -1,5 +1,5 @@
 import { signup } from '@/app/actions/auth'
-import { Button } from '@/components/ui/button'
+import { AuthSubmitButton } from '@/components/auth/AuthSubmitButton'
 /* eslint-disable @next/next/no-img-element */
 import Link from 'next/link'
 
@@ -105,12 +105,7 @@ export default async function SignupPage(
           )}
 
           <div className="pt-2">
-            <Button 
-              type="submit" 
-              className="w-full rounded-full bg-blue-600 py-6 text-[15px] font-semibold text-white hover:bg-blue-700 hover:scale-[1.02] active:scale-[0.98] transition-all shadow-md"
-            >
-              회원가입 완료
-            </Button>
+            <AuthSubmitButton label="회원가입 완료" loadingLabel="가입 처리 중..." />
           </div>
           
           <div className="text-center pt-6">
