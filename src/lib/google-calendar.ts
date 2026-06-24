@@ -165,6 +165,27 @@ export async function getSyncCalendarId(userId: string, auth: any, customSupabas
 }
 
 /**
+ * Converts a UTC ISO string to an offset-less local ISO string for a specific timezone
+ * This prevents Google Calendar from treating the event's native timezone as UTC.
+ */
+function getLocalIsoString(utcString: string, timeZone: string = 'Asia/Seoul') {
+  const d = new Date(utcString)
+  if (isNaN(d.getTime())) return utcString
+  const formatter = new Intl.DateTimeFormat('en-US', {
+    timeZone,
+    year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit', second: '2-digit',
+    hour12: false
+  })
+  const parts = formatter.formatToParts(d)
+  const map: Record<string, string> = {}
+  parts.forEach(p => { map[p.type] = p.value })
+  // Handles 24:00:00 edge case from some implementations
+  const hour = map.hour === '24' ? '00' : map.hour
+  return `${map.year}-${map.month}-${map.day}T${hour}:${map.minute}:${map.second}`
+}
+
+/**
  * Maps a Calentask Activity to a Google Event payload
  */
 function mapActivityToGoogleEvent(activity: any, categories: any[], settings?: GoogleSyncSettings) {
@@ -192,11 +213,11 @@ function mapActivityToGoogleEvent(activity: any, categories: any[], settings?: G
 
   const start = activity.is_all_day 
     ? { date: activity.start_time.split('T')[0] }
-    : { dateTime: activity.start_time, timeZone: 'Asia/Seoul' }
+    : { dateTime: getLocalIsoString(activity.start_time), timeZone: 'Asia/Seoul' }
   
   const end = activity.is_all_day
     ? { date: activity.end_time.split('T')[0] }
-    : { dateTime: activity.end_time, timeZone: 'Asia/Seoul' }
+    : { dateTime: getLocalIsoString(activity.end_time), timeZone: 'Asia/Seoul' }
 
   let reminders: any = { useDefault: true }
   if (activity.reminders && Array.isArray(activity.reminders) && activity.reminders.length > 0) {
@@ -755,45 +776,81 @@ export async function handleGoogleCalendarSync(userId: string, customSupabase?: 
       .single()
       
     const settings: GoogleSyncSettings = user?.google_sync_settings || {}
-    let syncToken = user?.google_sync_token
+    let rawSyncToken = user?.google_sync_token
 
-    let requestParams: any = {
-      calendarId,
+    // 다중 캘린더 목록 수집
+    const calendarIdsToSync = new Set<string>()
+    calendarIdsToSync.add(calendarId)
+    if (settings.groupMapping) {
+      Object.values(settings.groupMapping).forEach(id => calendarIdsToSync.add(id))
     }
 
-    if (syncToken) {
-      requestParams.syncToken = syncToken
-    } else {
-      // syncToken이 없으면 1년 전부터 전체 이벤트를 조회하여 과거 변경 감지
-      const oneYearAgo = new Date()
-      oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1)
-      requestParams.timeMin = oneYearAgo.toISOString()
+    // JSON 토큰 파싱
+    let syncTokensMap: Record<string, string> = {}
+    if (rawSyncToken) {
+      if (rawSyncToken.startsWith('{')) {
+        try {
+          syncTokensMap = JSON.parse(rawSyncToken)
+        } catch {
+          syncTokensMap = {}
+        }
+      } else {
+        // 기존 단일 토큰 마이그레이션
+        syncTokensMap[calendarId] = rawSyncToken
+      }
     }
 
     let items: any[] = []
-    let pageToken = undefined
+    let has410Error = false
 
-    try {
-      do {
-        requestParams.pageToken = pageToken
-        const response = await calendar.events.list(requestParams)
-        
-        if (response.data.items) {
-          items = items.concat(response.data.items)
-        }
-        
-        pageToken = response.data.nextPageToken
-        if (response.data.nextSyncToken) {
-          syncToken = response.data.nextSyncToken
-        }
-      } while (pageToken)
-    } catch (err: any) {
-      if (err.code === 410) {
-        console.warn('Sync token invalid, doing full sync')
-        await supabase.from('users').update({ google_sync_token: null }).eq('id', userId)
-        return handleGoogleCalendarSync(userId, supabase) // retry
+    for (const calId of calendarIdsToSync) {
+      let requestParams: any = { calendarId: calId }
+      let currentSyncToken = syncTokensMap[calId]
+
+      if (currentSyncToken) {
+        requestParams.syncToken = currentSyncToken
+      } else {
+        const oneYearAgo = new Date()
+        oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1)
+        requestParams.timeMin = oneYearAgo.toISOString()
       }
-      throw err
+
+      let pageToken = undefined
+
+      try {
+        do {
+          requestParams.pageToken = pageToken
+          const response = await calendar.events.list(requestParams)
+          
+          if (response.data.items) {
+            // 어느 캘린더에서 왔는지 추적하기 위해 __calendarId 추가
+            items = items.concat(response.data.items.map(item => ({ ...item, __calendarId: calId })))
+          }
+          
+          pageToken = response.data.nextPageToken
+          if (response.data.nextSyncToken) {
+            currentSyncToken = response.data.nextSyncToken
+          }
+        } while (pageToken)
+        
+        syncTokensMap[calId] = currentSyncToken
+      } catch (err: any) {
+        if (err.code === 410) {
+          console.warn(`Sync token invalid for ${calId}, will retry on next sync`)
+          delete syncTokensMap[calId]
+          has410Error = true
+        } else {
+          console.warn(`Failed to sync calendar ${calId}:`, err.message, err.response?.data || err.errors)
+        }
+      }
+    }
+
+    // 변경된 토큰 상태 저장
+    const newRawSyncToken = Object.keys(syncTokensMap).length > 0 ? JSON.stringify(syncTokensMap) : null
+    await supabase.from('users').update({ google_sync_token: newRawSyncToken }).eq('id', userId)
+
+    if (has410Error) {
+      return handleGoogleCalendarSync(userId, supabase)
     }
 
     if (settings.direction !== 'EXPORT_ONLY') {
@@ -868,7 +925,7 @@ export async function handleGoogleCalendarSync(userId: string, customSupabase?: 
                     .from('activities')
                     .update({ deleted_at: new Date().toISOString(), google_event_id: null })
                     .eq('id', calentaskId)
-                  await logSyncHistory(supabase, { userId, activityId: calentaskId, googleEventId: event.id as string, calendarId, action: 'DELETED', activityTitle: event.summary || '제목 없음' })
+                  await logSyncHistory(supabase, { userId, activityId: calentaskId, googleEventId: event.id as string, calendarId: event.__calendarId || calendarId, action: 'DELETED', activityTitle: event.summary || '제목 없음' })
                 })()
               )
             } else if (!isCancelled && shouldUpdate) {
@@ -894,7 +951,7 @@ export async function handleGoogleCalendarSync(userId: string, customSupabase?: 
                         updated_at: new Date(event.updated as string).toISOString()
                       })
                       .eq('id', calentaskId)
-                    await logSyncHistory(supabase, { userId, activityId: calentaskId, googleEventId: event.id as string, calendarId, action: 'UPDATED', activityTitle: event.summary || '제목 없음', activityStartTime: start })
+                    await logSyncHistory(supabase, { userId, activityId: calentaskId, googleEventId: event.id as string, calendarId: event.__calendarId || calendarId, action: 'UPDATED', activityTitle: event.summary || '제목 없음', activityStartTime: start })
                   })()
                 )
               }
@@ -934,7 +991,7 @@ export async function handleGoogleCalendarSync(userId: string, customSupabase?: 
                   if (error) {
                     console.error(`[handleGoogleCalendarSync] Failed to soft-delete matched activity ${matchedActivity.id}:`, error)
                   } else {
-                    await logSyncHistory(supabase, { userId, activityId: matchedActivity.id, googleEventId: event.id as string, calendarId, action: 'DELETED', activityTitle: event.summary || matchedActivity.title || '제목 없음' })
+                    await logSyncHistory(supabase, { userId, activityId: matchedActivity.id, googleEventId: event.id as string, calendarId: event.__calendarId || calendarId, action: 'DELETED', activityTitle: event.summary || matchedActivity.title || '제목 없음' })
                   }
                 })()
               )
@@ -965,7 +1022,7 @@ export async function handleGoogleCalendarSync(userId: string, customSupabase?: 
                     // 서드파티가 지운 calentask_id 복구
                     try {
                       await calendar.events.patch({
-                        calendarId,
+                        calendarId: event.__calendarId || calendarId,
                         eventId: event.id as string,
                         requestBody: {
                           extendedProperties: {
@@ -980,7 +1037,7 @@ export async function handleGoogleCalendarSync(userId: string, customSupabase?: 
                       console.warn(`Failed to restore calentask_id for ${event.id}:`, patchErr)
                     }
 
-                    await logSyncHistory(supabase, { userId, activityId: matchedActivity.id, googleEventId: event.id as string, calendarId, action: 'UPDATED', activityTitle: event.summary || '제목 없음', activityStartTime: start })
+                    await logSyncHistory(supabase, { userId, activityId: matchedActivity.id, googleEventId: event.id as string, calendarId: event.__calendarId || calendarId, action: 'UPDATED', activityTitle: event.summary || '제목 없음', activityStartTime: start })
                   })()
                 )
             }
@@ -1018,7 +1075,7 @@ export async function handleGoogleCalendarSync(userId: string, customSupabase?: 
                 if (insertedActivity) {
                   try {
                     await calendar.events.patch({
-                      calendarId,
+                      calendarId: event.__calendarId || calendarId,
                       eventId: event.id as string,
                       requestBody: {
                         extendedProperties: {
@@ -1032,7 +1089,7 @@ export async function handleGoogleCalendarSync(userId: string, customSupabase?: 
                   } catch (patchErr) {
                     console.warn(`[handleGoogleCalendarSync] Failed to patch calentask_id for inserted activity ${insertedActivity.id}:`, patchErr)
                   }
-                  await logSyncHistory(supabase, { userId, activityId: insertedActivity.id, googleEventId: event.id as string, calendarId, action: 'CREATED', activityTitle: event.summary || '제목 없음', activityStartTime: start })
+                  await logSyncHistory(supabase, { userId, activityId: insertedActivity.id, googleEventId: event.id as string, calendarId: event.__calendarId || calendarId, action: 'CREATED', activityTitle: event.summary || '제목 없음', activityStartTime: start })
                 }
               })()
             )
@@ -1044,12 +1101,7 @@ export async function handleGoogleCalendarSync(userId: string, customSupabase?: 
       await Promise.allSettled([...updateTasks, ...insertTasks])
     }
 
-    if (syncToken) {
-      await supabase
-        .from('users')
-        .update({ google_sync_token: syncToken })
-        .eq('id', userId)
-    }
+
 
   } catch (error) {
     console.error('Error in handleGoogleCalendarSync:', error)
