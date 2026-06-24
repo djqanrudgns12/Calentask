@@ -1019,9 +1019,9 @@ export function WidgetGuideModal({ type, isOpen, onClose }: Props) {
     }
   }, [isOpen])
 
-  const data = GUIDE_DATA[type]
-  const Icon = data.icon
-  const totalSteps = data.steps.length
+  const data = type ? GUIDE_DATA[type] : null
+  const Icon = data?.icon || Monitor
+  const totalSteps = data?.steps.length || 0
   const isLast = currentStep === totalSteps - 1
 
   const handleNext = () => {
@@ -1074,7 +1074,7 @@ export function WidgetGuideModal({ type, isOpen, onClose }: Props) {
 
   return (
     <AnimatePresence>
-      {isOpen && type && (
+      {isOpen && type && data && (
         <div className="fixed inset-0 z-[100] overflow-y-auto overflow-x-hidden">
           <div className="flex min-h-full items-center justify-center p-4 sm:p-6">
             {/* 딤 배경 */}
@@ -1096,7 +1096,7 @@ export function WidgetGuideModal({ type, isOpen, onClose }: Props) {
             >
               {/* 좌측: 기기 목업 비주얼 영역 */}
               <div
-                className={`relative w-full md:w-[45%] flex items-center justify-center p-6 md:p-8 bg-gradient-to-br ${data.color} overflow-hidden shrink-0`}
+                className={`relative w-full md:w-[45%] flex items-center justify-center p-6 md:p-8 bg-gradient-to-br ${data!.color} overflow-hidden shrink-0`}
               >
                 {/* 빛번짐 배경 장식 */}
                 <div className="absolute top-0 left-0 w-full h-full bg-white/10" />
@@ -1122,11 +1122,11 @@ export function WidgetGuideModal({ type, isOpen, onClose }: Props) {
             {/* 헤더 */}
             <div className="flex items-center gap-3 mb-10">
               <div
-                className={`w-10 h-10 rounded-2xl flex items-center justify-center bg-gradient-to-br ${data.color} text-white shadow-lg`}
+                className={`w-10 h-10 rounded-2xl flex items-center justify-center bg-gradient-to-br ${data!.color} text-white shadow-lg`}
               >
                 <Icon className="w-5 h-5" />
               </div>
-              <h3 className="font-extrabold text-2xl tracking-tight text-slate-900">{data.title}</h3>
+              <h3 className="font-extrabold text-2xl tracking-tight text-slate-900">{data!.title}</h3>
             </div>
 
             {/* 스텝 텍스트 영역 */}
@@ -1144,10 +1144,10 @@ export function WidgetGuideModal({ type, isOpen, onClose }: Props) {
                     Step {currentStep + 1} of {totalSteps}
                   </div>
                   <h4 className="text-2xl md:text-3xl font-extrabold text-slate-900 mb-5 leading-tight tracking-tight">
-                    {data.steps[currentStep].title}
+                    {data!.steps[currentStep]?.title}
                   </h4>
                   <div className="text-base md:text-lg text-slate-600 leading-relaxed whitespace-pre-line font-medium">
-                    {renderContent(data.steps[currentStep].content)}
+                    {renderContent(data!.steps[currentStep]?.content || '')}
                   </div>
                 </motion.div>
               </AnimatePresence>
@@ -1157,7 +1157,7 @@ export function WidgetGuideModal({ type, isOpen, onClose }: Props) {
             <div className="mt-10 pt-8 border-t border-slate-200/50 flex items-center justify-between">
               {/* 프로그레스 인디케이터 — 7개 dot */}
               <div className="flex items-center gap-1.5">
-                {data.steps.map((_, i) => (
+                {data!.steps.map((_, i) => (
                   <div
                     key={i}
                     className={`h-1.5 rounded-full transition-all duration-500 ${
