@@ -181,11 +181,11 @@ function mapActivityToGoogleEvent(activity: any, categories: any[], settings?: G
 
   const start = activity.is_all_day 
     ? { date: activity.start_time.split('T')[0] }
-    : { dateTime: activity.start_time }
+    : { dateTime: activity.start_time, timeZone: 'Asia/Seoul' }
   
   const end = activity.is_all_day
     ? { date: activity.end_time.split('T')[0] }
-    : { dateTime: activity.end_time }
+    : { dateTime: activity.end_time, timeZone: 'Asia/Seoul' }
 
   let reminders: any = { useDefault: true }
   if (activity.reminders && Array.isArray(activity.reminders) && activity.reminders.length > 0) {
@@ -248,7 +248,7 @@ export async function syncActivityToGoogle(userId: string, activity: any, catego
         if (activity.original_start_time) {
           const originalStart = activity.is_all_day 
             ? { date: activity.original_start_time.split('T')[0] }
-            : { dateTime: activity.original_start_time }
+            : { dateTime: activity.original_start_time, timeZone: 'Asia/Seoul' }
           ;(eventBody as any).originalStartTime = originalStart
         }
       } catch (parentErr: any) {
@@ -264,7 +264,7 @@ export async function syncActivityToGoogle(userId: string, activity: any, catego
             if (activity.original_start_time) {
               const originalStart = activity.is_all_day 
                 ? { date: activity.original_start_time.split('T')[0] }
-                : { dateTime: activity.original_start_time }
+                : { dateTime: activity.original_start_time, timeZone: 'Asia/Seoul' }
               ;(eventBody as any).originalStartTime = originalStart
             }
           }
