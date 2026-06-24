@@ -88,55 +88,74 @@ export function MealDietCard({ currentDate, setCurrentDate, meals, isLoading }: 
         </motion.div>
       ) : (
         /* 식단 카드 리스트 */
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {meals.map((meal, index) => (
-            <motion.div
-              key={`${meal.mealType}-${index}`}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.1 }}
-              className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-2xl rounded-3xl overflow-hidden shadow-[0_8px_30px_rgb(0,0,0,0.06)] border border-orange-100 dark:border-slate-800 flex flex-col group hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
-            >
-              {/* 헤더 */}
-              <div className="bg-gradient-to-r from-orange-50 to-red-50 dark:from-orange-950/30 dark:to-red-950/30 p-5 flex items-center justify-between border-b border-orange-100/50 dark:border-slate-800">
-                <h4 className="text-xl font-extrabold text-orange-800 dark:text-orange-400 flex items-center gap-2">
-                  <Utensils className="w-5 h-5" />
-                  {meal.mealType}
-                </h4>
-                {meal.calories && (
-                  <span className="flex items-center gap-1.5 text-xs font-bold text-red-600 bg-red-100/80 px-2.5 py-1 rounded-full">
-                    <Flame className="w-3.5 h-3.5" />
-                    {meal.calories.replace('Kcal', 'kcal')}
-                  </span>
-                )}
-              </div>
+        <div className={cn(
+          "grid gap-6",
+          meals.length === 1 && "max-w-md mx-auto grid-cols-1",
+          meals.length === 2 && "max-w-3xl mx-auto md:grid-cols-2",
+          meals.length >= 3 && "md:grid-cols-2 lg:grid-cols-3"
+        )}>
+          {meals.map((meal, index) => {
+            const parseAllergens = (text: string) => {
+              const items = text.split(/\d+\.\s*/).filter(Boolean).map(s => s.trim())
+              if (items.length <= 1 && text.includes(',')) {
+                return text.split(',').map(s => s.trim()).filter(Boolean)
+              }
+              return items.length > 0 ? items : [text]
+            }
+            
+            return (
+              <motion.div
+                key={`${meal.mealType}-${index}`}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.1 }}
+                className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-2xl rounded-3xl overflow-hidden shadow-[0_8px_30px_rgb(0,0,0,0.06)] border border-orange-100 dark:border-slate-800 flex flex-col group hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
+              >
+                {/* 헤더 */}
+                <div className="bg-gradient-to-r from-orange-50 to-red-50 dark:from-orange-950/30 dark:to-red-950/30 p-5 flex items-center justify-between border-b border-orange-100/50 dark:border-slate-800">
+                  <h4 className="text-xl font-extrabold text-orange-800 dark:text-orange-400 flex items-center gap-2">
+                    <Utensils className="w-5 h-5" />
+                    {meal.mealType}
+                  </h4>
+                  {meal.calories && (
+                    <span className="flex items-center gap-1.5 text-xs font-bold text-red-600 bg-red-100/80 px-2.5 py-1 rounded-full">
+                      <Flame className="w-3.5 h-3.5" />
+                      {meal.calories.replace('Kcal', 'kcal')}
+                    </span>
+                  )}
+                </div>
 
-              {/* 메뉴 리스트 (1줄 출력 원칙) */}
-              <div className="p-5 flex-1">
-                <ul className="space-y-3">
-                  {meal.menuItems.map((item, i) => (
-                    <li key={i} className="flex items-center gap-3 text-slate-700 dark:text-slate-300 font-semibold group-hover:text-orange-900 dark:group-hover:text-orange-300 transition-colors">
-                      <div className="w-1.5 h-1.5 rounded-full bg-orange-400 shrink-0" />
-                      <span className="truncate">{item}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
+                {/* 메뉴 리스트 (1줄 출력 원칙) */}
+                <div className="p-5 flex-1">
+                  <ul className="space-y-3">
+                    {meal.menuItems.map((item, i) => (
+                      <li key={i} className="flex items-center gap-3 text-slate-700 dark:text-slate-300 font-semibold group-hover:text-orange-900 dark:group-hover:text-orange-300 transition-colors">
+                        <div className="w-1.5 h-1.5 rounded-full bg-orange-400 shrink-0" />
+                        <span className="truncate">{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
 
-              {/* 알레르기 정보 */}
-              {meal.allergies && (
-                <div className="bg-slate-50 dark:bg-slate-800/50 p-4 border-t border-slate-100 dark:border-slate-700 mt-auto">
-                  <div className="flex items-start gap-2">
-                    <AlertCircle className="w-4 h-4 text-slate-400 mt-0.5 shrink-0" />
-                    <div className="text-xs text-slate-500 font-medium leading-relaxed">
-                      <span className="font-bold text-slate-600 dark:text-slate-400 block mb-1">알레르기 유발 물질</span>
-                      {meal.allergies}
+                {/* 알레르기 정보 */}
+                {meal.allergies && (
+                  <div className="bg-slate-50 dark:bg-slate-800/50 p-4 border-t border-slate-100 dark:border-slate-700 mt-auto">
+                    <div className="flex items-start gap-2 mb-2">
+                      <AlertCircle className="w-4 h-4 text-orange-400 mt-0.5 shrink-0" />
+                      <span className="text-xs font-bold text-slate-600 dark:text-slate-400">알레르기 유발 물질</span>
+                    </div>
+                    <div className="flex flex-wrap gap-1.5 pl-6">
+                      {parseAllergens(meal.allergies).map((allergen, idx) => (
+                        <span key={idx} className="px-2 py-1 bg-orange-100/70 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 rounded-md text-[11px] font-bold tracking-tight">
+                          {allergen}
+                        </span>
+                      ))}
                     </div>
                   </div>
-                </div>
-              )}
-            </motion.div>
-          ))}
+                )}
+              </motion.div>
+            )
+          })}
         </div>
       )}
     </div>

@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { format, subMonths, addMonths, subWeeks, addWeeks, startOfWeek, endOfWeek, isSameMonth, isSameYear } from 'date-fns'
-import { Menu, ChevronLeft, ChevronRight, Search, Sparkles, Bell, CalendarHeart, Activity, BrainCircuit, Home, Bookmark, NotebookPen, Tag, Trash2, PanelLeftOpen, Globe2 } from 'lucide-react'
+import { Menu, ChevronLeft, ChevronRight, Search, Sparkles, Bell, CalendarHeart, Activity, BrainCircuit, Home, Bookmark, NotebookPen, Tag, Trash2, PanelLeftOpen, Globe2, Utensils } from 'lucide-react'
 import { useCalendarStore } from '@/store/useCalendarStore'
 import { GlobalCategoryFilter } from '@/components/calendar/GlobalCategoryFilter'
 import { CategoryPresetMenu } from '@/components/calendar/CategoryPresetMenu'
@@ -117,6 +117,8 @@ export function CalendarHeader({ onOpenSettings, onOpenMobileSidebar }: Calendar
   const isTrash = viewMode === 'trash'
   const isTemplateCenter = viewMode === 'template_center'
   const isGoogleSync = viewMode === 'google_sync'
+  const isSchoolMeals = viewMode === 'school_meals'
+  const isSchoolSchedule = viewMode === 'school_schedule'
 
   let wrapperClassName = "flex-1 flex flex-row items-center justify-between rounded-xl md:rounded-[2rem] px-2 py-1.5 md:px-4 md:py-2.5 gap-2 md:gap-4 transition-all duration-500 overflow-hidden relative "
 
@@ -144,6 +146,10 @@ export function CalendarHeader({ onOpenSettings, onOpenMobileSidebar }: Calendar
     wrapperClassName += "bg-card/90 backdrop-blur-xl shadow-[0_10px_40px_-10px_rgba(236,72,153,0.2)] border border-pink-100/80"
   } else if (isGoogleSync) {
     wrapperClassName += "bg-card/90 backdrop-blur-xl shadow-[0_10px_40px_-10px_rgba(16,185,129,0.2)] border border-emerald-100/80"
+  } else if (isSchoolMeals) {
+    wrapperClassName += "bg-card/90 backdrop-blur-xl shadow-[0_10px_40px_-10px_rgba(249,115,22,0.2)] border border-orange-100/80"
+  } else if (isSchoolSchedule) {
+    wrapperClassName += "bg-card/90 backdrop-blur-xl shadow-[0_10px_40px_-10px_rgba(234,179,8,0.2)] border border-yellow-100/80"
   }
 
   // --- Slots ---
@@ -413,6 +419,58 @@ export function CalendarHeader({ onOpenSettings, onOpenMobileSidebar }: Calendar
                 <span className="relative inline-flex rounded-full w-2 h-2 bg-teal-500"></span>
               </span>
               <p className="text-xs text-emerald-500 font-mono tracking-wider font-bold">SYNC COMMAND CENTER</p>
+            </div>
+          </div>
+        </motion.div>
+      )
+    }
+    if (isSchoolMeals) {
+      return (
+        <motion.div 
+          key="school-meals-left"
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={{ opacity: 0, x: -20 }}
+          className="flex items-center shrink-0 gap-4 py-1"
+        >
+          <div className="relative w-10 h-10 md:w-12 md:h-12 rounded-xl bg-gradient-to-br from-orange-100 to-amber-100 flex items-center justify-center shrink-0 shadow-inner border border-transparent">
+            <Utensils className="w-5 h-5 md:w-6 md:h-6 text-orange-600 relative z-10" />
+            <div className="absolute inset-0 bg-card/50 rounded-xl animate-pulse" />
+          </div>
+          <div className="flex flex-col">
+            <h2 className="font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-orange-700 to-amber-700 text-base md:text-xl tracking-tight">학교 급식 대시보드</h2>
+            <div className="hidden md:flex items-center gap-2 mt-0.5">
+              <span className="relative flex w-2 h-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-500 opacity-75"></span>
+                <span className="relative inline-flex rounded-full w-2 h-2 bg-orange-500"></span>
+              </span>
+              <p className="text-xs text-orange-500 font-mono tracking-wider font-bold">SCHOOL MEAL CENTER</p>
+            </div>
+          </div>
+        </motion.div>
+      )
+    }
+    if (isSchoolSchedule) {
+      return (
+        <motion.div 
+          key="school-schedule-left"
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={{ opacity: 0, x: -20 }}
+          className="flex items-center shrink-0 gap-4 py-1"
+        >
+          <div className="relative w-10 h-10 md:w-12 md:h-12 rounded-xl bg-gradient-to-br from-yellow-100 to-amber-100 flex items-center justify-center shrink-0 shadow-inner border border-transparent">
+            <CalendarHeart className="w-5 h-5 md:w-6 md:h-6 text-yellow-600 relative z-10" />
+            <div className="absolute inset-0 bg-card/50 rounded-xl animate-pulse" />
+          </div>
+          <div className="flex flex-col">
+            <h2 className="font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-yellow-700 to-amber-700 text-base md:text-xl tracking-tight">학사 일정 대시보드</h2>
+            <div className="hidden md:flex items-center gap-2 mt-0.5">
+              <span className="relative flex w-2 h-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-yellow-500 opacity-75"></span>
+                <span className="relative inline-flex rounded-full w-2 h-2 bg-yellow-500"></span>
+              </span>
+              <p className="text-xs text-yellow-500 font-mono tracking-wider font-bold">SCHOOL SCHEDULE CENTER</p>
             </div>
           </div>
         </motion.div>
