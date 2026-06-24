@@ -899,7 +899,6 @@ export async function handleGoogleCalendarSync(userId: string, customSupabase?: 
                 )
               }
             }
-          }
         } else {
           // ★ 먼저 역매핑으로 기존 activity를 찾아봄 (서드파티가 extendedProperties를 지운 경우 대비) ★
           const possibleActivityId = fromGoogleEventId(event.id as string)
@@ -984,7 +983,6 @@ export async function handleGoogleCalendarSync(userId: string, customSupabase?: 
                     await logSyncHistory(supabase, { userId, activityId: matchedActivity.id, googleEventId: event.id as string, calendarId, action: 'UPDATED', activityTitle: event.summary || '제목 없음', activityStartTime: start })
                   })()
                 )
-              }
             }
           } else if (!isCancelled && conflictStrategy !== 'CALENTASK_WINS') {
             // This is a new event created in Google Calendar!
