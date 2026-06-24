@@ -23,6 +23,7 @@ export type Activity = {
   recurrence_rule: string | null
   parent_activity_id: string | null
   original_start_time: string | null
+  google_event_id?: string | null
 }
 
 export type Category = {
@@ -281,8 +282,7 @@ export async function createActivity(
         .in('id', categoryIds)
       categoryObjects = cats || []
     }
-    syncActivityToGoogle(userData.user.id, activity, categoryObjects)
-      .catch(e => console.error('Google Sync Error (Create):', e))
+    await syncActivityToGoogle(userData.user.id, activity, categoryObjects)
   } catch (e) {
     console.error('Google Sync Error (Create):', e)
   }
@@ -344,8 +344,7 @@ export async function updateActivity(
         .in('id', categoryIds)
       categoryObjects = cats || []
     }
-    syncActivityToGoogle(userData.user.id, activity, categoryObjects)
-      .catch(e => console.error('Google Sync Error (Update):', e))
+    await syncActivityToGoogle(userData.user.id, activity, categoryObjects)
   } catch (e) {
     console.error('Google Sync Error (Update):', e)
   }
@@ -369,8 +368,7 @@ export async function deleteActivity(id: string) {
 
   // 휴지통으로 이동 시 구글 캘린더에서는 완전 삭제 (정책 반영)
   try {
-    deleteActivityFromGoogle(userData.user.id, id)
-      .catch(e => console.error('Google Sync Error (Soft Delete):', e))
+    await deleteActivityFromGoogle(userData.user.id, id)
   } catch (e) {
     console.error('Google Sync Error (Soft Delete):', e)
   }
@@ -416,8 +414,7 @@ export async function restoreActivity(id: string) {
       .select('categories(id, name, hex_color)')
       .eq('activity_id', id)
     const categoryObjects = catMaps?.map((m: any) => m.categories).filter(Boolean) || []
-    syncActivityToGoogle(userData.user.id, activity, categoryObjects)
-      .catch(e => console.error('Google Sync Error (Restore):', e))
+    await syncActivityToGoogle(userData.user.id, activity, categoryObjects)
   } catch (e) {
     console.error('Google Sync Error (Restore):', e)
   }
@@ -441,8 +438,7 @@ export async function hardDeleteActivity(id: string) {
 
   // 영구 삭제 시 구글 캘린더에서도 삭제 확인 사살
   try {
-    deleteActivityFromGoogle(userData.user.id, id)
-      .catch(e => console.error('Google Sync Error (Hard Delete):', e))
+    await deleteActivityFromGoogle(userData.user.id, id)
   } catch (e) {
     console.error('Google Sync Error (Hard Delete):', e)
   }
@@ -758,7 +754,42 @@ export async function verifyGoogleTokenAction() {
       return { valid: false, reason: 'revoked' }
     }
     
-    return { valid: false, reason: 'api_error' }
+    return { success: false, error: 'Unknown error' }
+  }
+}
+
+export async function forceSyncActivityAction(activityId: string) {
+  const supabase = await createClient()
+  const { data: userData } = await supabase.auth.getUser()
+  if (!userData.user) throw new Error('Not authenticated')
+
+  // 활동 상세 정보 조회
+  const { data: activity, error } = await supabase
+    .from('activities')
+    .select(`
+      *,
+      activity_category_map(
+        categories(id, name, hex_color)
+      )
+    `)
+    .eq('id', activityId)
+    .eq('user_id', userData.user.id)
+    .single()
+
+  if (error || !activity) throw new Error('Activity not found')
+
+  const categories = activity.activity_category_map
+    ?.map((m: any) => m.categories)
+    .filter(Boolean) || []
+
+  try {
+    const { syncActivityToGoogle } = await import('@/lib/google-calendar')
+    await syncActivityToGoogle(userData.user.id, activity, categories)
+    revalidatePath('/')
+    return { success: true }
+  } catch (e: any) {
+    console.error('Manual Sync Error:', e)
+    return { success: false, error: e.message }
   }
 }
 

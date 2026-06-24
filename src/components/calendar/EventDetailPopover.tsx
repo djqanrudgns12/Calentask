@@ -3,6 +3,9 @@ import { format } from 'date-fns'
 import { X, Pencil, Trash2, Clock, AlignLeft, Sparkles } from 'lucide-react'
 import { getEventPrimaryColor } from '@/lib/eventColor'
 import { useAgendaStore } from '@/store/useAgendaStore'
+import { useState } from 'react'
+import { forceSyncActivityAction } from '@/app/actions/calendar'
+import { toast } from 'sonner'
 
 export function EventDetailPopover() {
   const { selectedEventDetail, closeEventDetail, openEditEvent, openDeleteConfirm } = useCalendarStore()
@@ -12,6 +15,7 @@ export function EventDetailPopover() {
 
   const event = selectedEventDetail
   const primaryColor = getEventPrimaryColor(event)
+  const [isSyncing, setIsSyncing] = useState(false)
 
   // 편집 버튼: 팝오버를 먼저 닫고, 편집 모달을 띄움 (모달 겹침 방지)
   const handleEdit = () => {
@@ -34,6 +38,25 @@ export function EventDetailPopover() {
       deadline: event.start_time,
       category_id: event.categories?.[0]?.id || null,
     })
+  }
+
+  const handleRetrySync = async () => {
+    setIsSyncing(true)
+    const toastId = toast.loading('구글 캘린더 연동 중...')
+    try {
+      const res = await forceSyncActivityAction(event.id)
+      if (res.success) {
+        toast.success('구글 캘린더에 성공적으로 연동되었습니다!', { id: toastId })
+        // 간단한 로컬 상태 업데이트 (모달 닫고 다시 열거나 무시)
+        closeEventDetail()
+      } else {
+        toast.error(`연동 실패: ${res.error}`, { id: toastId })
+      }
+    } catch (e: any) {
+      toast.error('연동 요청 중 오류가 발생했습니다.', { id: toastId })
+    } finally {
+      setIsSyncing(false)
+    }
   }
 
   return (
@@ -114,6 +137,38 @@ export function EventDetailPopover() {
                 </div>
               </div>
             )}
+
+            {/* Sync Status */}
+            <div className="flex items-center gap-3">
+              <div className="w-5 h-5 flex items-center justify-center shrink-0">
+                <svg viewBox="0 0 48 48" className="w-4 h-4 opacity-70">
+                  <path fill="#4285F4" d="M45.12 24.5c0-1.56-.14-3.06-.4-4.5H24v8.51h11.84c-.51 2.75-2.06 5.08-4.39 6.64v5.52h7.11c4.16-3.83 6.56-9.47 6.56-16.17z"/>
+                  <path fill="#34A853" d="M24 46c5.94 0 10.92-1.97 14.56-5.33l-7.11-5.52c-1.97 1.32-4.49 2.1-7.45 2.1-5.73 0-10.58-3.87-12.31-9.07H4.34v5.7C7.96 41.07 15.4 46 24 46z"/>
+                  <path fill="#FBBC05" d="M11.69 28.18C11.25 26.86 11 25.45 11 24s.25-2.86.69-4.18v-5.7H4.34C2.85 17.09 2 20.45 2 24c0 3.55.85 6.91 2.34 9.88l7.35-5.7z"/>
+                  <path fill="#EA4335" d="M24 10.75c3.23 0 6.13 1.11 8.41 3.29l6.31-6.31C34.91 4.18 29.93 2 24 2 15.4 2 7.96 6.93 4.34 14.12l7.35 5.7c1.73-5.2 6.58-9.07 12.31-9.07z"/>
+                </svg>
+              </div>
+              <div className="flex-1 flex items-center justify-between">
+                {event.google_event_id ? (
+                  <span className="text-sm font-medium text-emerald-600 flex items-center gap-1.5">
+                    구글 캘린더 연동됨
+                  </span>
+                ) : (
+                  <>
+                    <span className="text-sm font-medium text-amber-600 flex items-center gap-1.5">
+                      구글 캘린더 미연동
+                    </span>
+                    <button
+                      onClick={handleRetrySync}
+                      disabled={isSyncing}
+                      className="px-3 py-1.5 text-xs font-bold text-white bg-amber-500 hover:bg-amber-600 rounded-md transition-colors shadow-sm disabled:opacity-50"
+                    >
+                      {isSyncing ? '요청 중...' : '연동 재시도'}
+                    </button>
+                  </>
+                )}
+              </div>
+            </div>
           </div>
 
           {/* Action Footer */}

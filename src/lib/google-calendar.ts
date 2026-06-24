@@ -230,7 +230,6 @@ export async function syncActivityToGoogle(userId: string, activity: any, catego
     const settings: GoogleSyncSettings = user?.google_sync_settings || {}
 
     if (settings.direction === 'IMPORT_ONLY') return
-    if (activity.type === 'TASK') return // Selective sync: do not sync un-timed tasks
 
     const auth = await getGoogleAuthClient(userId, supabase)
     if (!auth) return
