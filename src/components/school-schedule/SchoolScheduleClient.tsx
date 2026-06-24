@@ -129,9 +129,25 @@ export function SchoolScheduleClient() {
             <GraduationCap className="w-5 h-5" />
           </div>
           <div>
-            <h1 className="text-lg md:text-xl font-bold flex items-center gap-2">
-              {profile.neis_school_name} 학사일정
-            </h1>
+            <div className="flex items-center gap-2">
+              <h1 className="text-lg md:text-xl font-bold flex items-center gap-2">
+                {profile.neis_school_name} 학사일정
+              </h1>
+              <button
+                onClick={() => {
+                  // 임시로 상태 변경 로직. 실제로는 Profile을 비우거나 상태를 변경하여 검색 화면으로 전환
+                  if (confirm('다른 학교를 검색하시겠습니까?')) {
+                    import('@/app/actions/profile').then(({ updateUserProfile }) => {
+                      updateUserProfile({ neis_office_code: null as any, neis_school_code: null as any, neis_school_name: null as any })
+                        .then(() => window.location.reload())
+                    })
+                  }
+                }}
+                className="px-2 py-1 text-xs bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-md transition-colors border border-slate-200"
+              >
+                학교 변경
+              </button>
+            </div>
             <p className="text-xs md:text-sm text-muted-foreground flex items-center gap-1.5 mt-0.5">
               <School className="w-3.5 h-3.5" />
               학교 공식 학사일정을 동기화하세요

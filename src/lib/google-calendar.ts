@@ -816,22 +816,23 @@ export async function handleGoogleCalendarSync(userId: string, customSupabase?: 
         }
       }
 
-      // [신규 로직] calentask_id가 없는 cancelled 이벤트를 위한 Bulk 조회 (역매핑용)
-      const orphanCancelledEvents = items.filter(
-        event => event.status === 'cancelled' && !event.extendedProperties?.private?.calentask_id
+      // [강화] calentask_id가 없는 모든 이벤트를 위한 Bulk 조회 (역매핑용)
+      // 네이버 캘린더 등 서드파티 앱이 extendedProperties를 제거했을 때 대비
+      const orphanEvents = items.filter(
+        event => !event.extendedProperties?.private?.calentask_id
       )
       
       let orphanActivityMap = new Map<string, any>()
-      if (orphanCancelledEvents.length > 0) {
-        const candidateActivityIds = orphanCancelledEvents.map(e => fromGoogleEventId(e.id as string)).filter(Boolean) as string[]
-        const candidateGoogleIds = orphanCancelledEvents.map(e => e.id as string)
+      if (orphanEvents.length > 0) {
+        const candidateActivityIds = orphanEvents.map(e => fromGoogleEventId(e.id as string)).filter(Boolean) as string[]
+        const candidateGoogleIds = orphanEvents.map(e => e.id as string)
 
         if (candidateActivityIds.length > 0) {
-          const { data: acts1 } = await supabase.from('activities').select('id, google_event_id, deleted_at').eq('user_id', userId).in('id', candidateActivityIds)
+          const { data: acts1 } = await supabase.from('activities').select('id, google_event_id, deleted_at, updated_at').eq('user_id', userId).in('id', candidateActivityIds)
           acts1?.forEach((a: any) => orphanActivityMap.set(a.id, a))
         }
         if (candidateGoogleIds.length > 0) {
-          const { data: acts2 } = await supabase.from('activities').select('id, google_event_id, deleted_at').eq('user_id', userId).in('google_event_id', candidateGoogleIds)
+          const { data: acts2 } = await supabase.from('activities').select('id, google_event_id, deleted_at, updated_at').eq('user_id', userId).in('google_event_id', candidateGoogleIds)
           acts2?.forEach((a: any) => orphanActivityMap.set(a.google_event_id, a))
         }
       }
@@ -901,19 +902,31 @@ export async function handleGoogleCalendarSync(userId: string, customSupabase?: 
             }
           }
         } else {
-          if (isCancelled) {
-            // ★ 삭제된 이벤트: 3단계 역매핑으로 Calentask 일정 탐색 ★
-            if (conflictStrategy !== 'CALENTASK_WINS') {
-              const possibleActivityId = fromGoogleEventId(event.id as string)
-              let matchedActivity = null
+          // ★ 먼저 역매핑으로 기존 activity를 찾아봄 (서드파티가 extendedProperties를 지운 경우 대비) ★
+          const possibleActivityId = fromGoogleEventId(event.id as string)
+          let matchedActivity = null
 
-              if (possibleActivityId && orphanActivityMap.has(possibleActivityId)) {
-                matchedActivity = orphanActivityMap.get(possibleActivityId)
-              } else if (orphanActivityMap.has(event.id as string)) {
-                matchedActivity = orphanActivityMap.get(event.id as string)
-              }
+          if (possibleActivityId && orphanActivityMap.has(possibleActivityId)) {
+            matchedActivity = orphanActivityMap.get(possibleActivityId)
+          } else if (orphanActivityMap.has(event.id as string)) {
+            matchedActivity = orphanActivityMap.get(event.id as string)
+          }
 
-              if (matchedActivity && !matchedActivity.deleted_at) {
+          if (matchedActivity && !matchedActivity.deleted_at) {
+            const eventUpdated = new Date(event.updated as string).getTime()
+            const activityUpdated = new Date(matchedActivity.updated_at).getTime()
+            
+            let shouldUpdate = false
+            if (conflictStrategy === 'LATEST_WINS') {
+                shouldUpdate = eventUpdated > activityUpdated + 2000
+            } else if (conflictStrategy === 'GOOGLE_WINS') {
+                shouldUpdate = true
+            } else if (conflictStrategy === 'CALENTASK_WINS') {
+                shouldUpdate = false
+            }
+
+            if (shouldUpdate) {
+              if (isCancelled) {
                 updateTasks.push(
                   (async () => {
                     const { error } = await supabase
@@ -928,9 +941,54 @@ export async function handleGoogleCalendarSync(userId: string, customSupabase?: 
                     }
                   })()
                 )
+              } else {
+                const start = event.start?.dateTime || event.start?.date
+                const end = event.end?.dateTime || event.end?.date
+                const isAllDay = !!event.start?.date
+                const reminders = (event.reminders?.useDefault === false && event.reminders?.overrides)
+                  ? event.reminders.overrides.map((r: any) => ({ method: r.method, minutes: r.minutes }))
+                  : []
+                
+                updateTasks.push(
+                  (async () => {
+                    await supabase
+                      .from('activities')
+                      .update({
+                        title: event.summary || '제목 없음',
+                        memo: event.description || '',
+                        start_time: start,
+                        end_time: end,
+                        is_all_day: isAllDay,
+                        reminders,
+                        google_event_id: event.id as string,
+                        updated_at: new Date(event.updated as string).toISOString()
+                      })
+                      .eq('id', matchedActivity.id)
+                    
+                    // 서드파티가 지운 calentask_id 복구
+                    try {
+                      await calendar.events.patch({
+                        calendarId,
+                        eventId: event.id as string,
+                        requestBody: {
+                          extendedProperties: {
+                            private: {
+                              calentask_id: matchedActivity.id,
+                              type: 'EVENT'
+                            }
+                          }
+                        }
+                      })
+                    } catch (patchErr) {
+                      console.warn(`Failed to restore calentask_id for ${event.id}:`, patchErr)
+                    }
+
+                    await logSyncHistory(supabase, { userId, activityId: matchedActivity.id, googleEventId: event.id as string, calendarId, action: 'UPDATED', activityTitle: event.summary || '제목 없음', activityStartTime: start })
+                  })()
+                )
               }
             }
-          } else if (conflictStrategy !== 'CALENTASK_WINS') {
+          } else if (!isCancelled && conflictStrategy !== 'CALENTASK_WINS') {
             // This is a new event created in Google Calendar!
             const start = event.start?.dateTime || event.start?.date
             const end = event.end?.dateTime || event.end?.date

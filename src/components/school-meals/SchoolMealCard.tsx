@@ -16,6 +16,7 @@ export interface SchoolConfig {
   schoolCode: string
   schoolName: string
   themeColor: string
+  hmpgAdres?: string
 }
 
 interface Props {
@@ -68,13 +69,17 @@ export function SchoolMealCard({ config, currentDate, onChangeSchool, onChangeCo
             {config.schoolName}
           </h3>
           <a 
-            href={`https://search.naver.com/search.naver?query=${encodeURIComponent(config.schoolName + ' 홈페이지')}`}
+            href={
+              config.hmpgAdres
+                ? (config.hmpgAdres.startsWith('http') ? config.hmpgAdres : `http://${config.hmpgAdres}`)
+                : `https://search.naver.com/search.naver?query=${encodeURIComponent(config.schoolName + ' 홈페이지')}`
+            }
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-1.5 text-sm font-medium opacity-70 hover:opacity-100 transition-opacity"
           >
             <LinkIcon className="w-3.5 h-3.5" />
-            홈페이지 검색
+            홈페이지 바로가기
           </a>
         </div>
         

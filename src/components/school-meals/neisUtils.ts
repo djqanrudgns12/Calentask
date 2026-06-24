@@ -5,6 +5,7 @@ export interface SchoolInfo {
   schoolCode: string
   schoolName: string
   address: string
+  hmpgAdres?: string
 }
 
 export interface MealInfo {
@@ -32,7 +33,8 @@ export async function searchSchools(keyword: string): Promise<SchoolInfo[]> {
     officeCode: row.ATPT_OFCDC_SC_CODE,
     schoolCode: row.SD_SCHUL_CODE,
     schoolName: row.SCHUL_NM,
-    address: row.ORG_RDNMA
+    address: row.ORG_RDNMA,
+    hmpgAdres: row.HMPG_ADRES
   }))
 }
 

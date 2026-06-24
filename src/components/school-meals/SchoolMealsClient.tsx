@@ -94,7 +94,7 @@ export function SchoolMealsClient() {
       // 교체
       newConfigs = newConfigs.map(c => 
         c.id === changingSchoolId 
-          ? { ...c, officeCode: school.officeCode, schoolCode: school.schoolCode, schoolName: school.schoolName }
+          ? { ...c, officeCode: school.officeCode, schoolCode: school.schoolCode, schoolName: school.schoolName, hmpgAdres: school.hmpgAdres }
           : c
       )
     } else {
@@ -107,7 +107,8 @@ export function SchoolMealsClient() {
         officeCode: school.officeCode,
         schoolCode: school.schoolCode,
         schoolName: school.schoolName,
-        themeColor: newColor
+        themeColor: newColor,
+        hmpgAdres: school.hmpgAdres
       })
     }
 
