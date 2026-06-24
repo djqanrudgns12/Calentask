@@ -1,4 +1,4 @@
-import { NEIS_API_KEY } from './neisUtils'
+import { NEIS_API_KEY } from '../school-meals/neisUtils'
 import { Activity, Category } from '@/app/actions/calendar'
 import { format, parseISO } from 'date-fns'
 
