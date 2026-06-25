@@ -318,37 +318,16 @@ export async function syncActivityToGoogle(userId: string, activity: any, catego
     } catch (updateErr: any) {
       const isNotFound = updateErr.code === 404 || updateErr.status === 404 || updateErr.message?.includes('Not Found')
       if (isNotFound) {
-        // Custom ID로 존재하지 않음 → 기존 extendedProperty로 검색 (마이그레이션)
+        let searchResult
         try {
-          const searchResult = await calendar.events.list({
+          searchResult = await calendar.events.list({
             calendarId,
             privateExtendedProperty: [`calentask_id=${activity.id}`],
           })
-          const existingEvent = searchResult.data.items?.[0]
-
-          if (existingEvent?.id) {
-            // 기존 이벤트가 있으면 업데이트
-            await calendar.events.update({
-              calendarId,
-              eventId: existingEvent.id,
-              requestBody: eventBody,
-            })
-            finalGoogleEventId = existingEvent.id
-            await logSyncHistory(supabase, { userId, activityId: activity.id, googleEventId: existingEvent.id, calendarId, action: 'UPDATED', activityTitle: activity.title, activityStartTime: activity.start_time })
-          } else {
-            // 완전히 새로운 이벤트 → Custom ID로 insert
-            await calendar.events.insert({
-              calendarId,
-              requestBody: { ...eventBody, id: googleEventId },
-            })
-            await logSyncHistory(supabase, { userId, activityId: activity.id, googleEventId, calendarId, action: 'CREATED', activityTitle: activity.title, activityStartTime: activity.start_time })
-          }
-        } catch (fallbackErr: any) {
-          const isFallbackNotFound = fallbackErr.code === 404 || fallbackErr.status === 404 || fallbackErr.message?.includes('Not Found')
-          
-          if (isFallbackNotFound) {
-            console.log(`Calendar ${calendarId} not found. Auto-recovering...`)
-            // 캘린더가 구글에서 삭제된 경우 DB 정리 후 복구
+        } catch (listErr: any) {
+          const isCalendarNotFound = listErr.code === 404 || listErr.status === 404 || listErr.message?.includes('Not Found')
+          if (isCalendarNotFound) {
+            // events.list에서 404가 발생했다면 캘린더가 삭제된 것이 확실함
             let updatedSettings = { ...settings }
             let needsSettingsUpdate = false
             
@@ -366,13 +345,11 @@ export async function syncActivityToGoogle(userId: string, activity: any, catego
               }
             }
             
-            // 만약 기본 캘린더였다면 초기화
             const { data: u } = await supabase.from('users').select('google_sync_calendar_id').eq('id', userId).single()
             if (u?.google_sync_calendar_id === calendarId) {
               await supabase.from('users').update({ google_sync_calendar_id: null, google_sync_calendar_name: null }).eq('id', userId)
             }
             
-            // 새 캘린더를 얻어와서 재시도
             try {
               const newCalendarId = await getSyncCalendarId(userId, auth, supabase, categories, updatedSettings)
               if (newCalendarId) {
@@ -384,18 +361,66 @@ export async function syncActivityToGoogle(userId: string, activity: any, catego
                 await logSyncHistory(supabase, { userId, activityId: activity.id, googleEventId: finalGoogleEventId, calendarId: newCalendarId, action: 'CREATED', activityTitle: activity.title, activityStartTime: activity.start_time, errorMessage: '기존 캘린더가 존재하지 않아 새 캘린더로 자동 복구되었습니다.' })
                 return
               }
-            } catch (retryErr) {
-              console.error('Failed to auto-recover calendar:', retryErr)
+            } catch (retryErr: any) {
+              await logSyncHistory(supabase, { userId, activityId: activity.id, googleEventId, calendarId: 'unknown', action: 'ERROR', status: 'FAILED', errorMessage: retryErr.message, activityTitle: activity.title, activityStartTime: activity.start_time })
+              throw retryErr
             }
           }
-          
-          // 위에서 복구되지 않은 다른 에러면 일반 insert 시도
-          const inserted = await calendar.events.insert({
-            calendarId,
-            requestBody: eventBody,
-          })
-          finalGoogleEventId = inserted.data.id || googleEventId
-          await logSyncHistory(supabase, { userId, activityId: activity.id, googleEventId: finalGoogleEventId, calendarId, action: 'CREATED', activityTitle: activity.title, activityStartTime: activity.start_time })
+          throw listErr
+        }
+
+        const existingEvent = searchResult.data.items?.[0]
+        if (existingEvent?.id) {
+          try {
+            await calendar.events.update({
+              calendarId,
+              eventId: existingEvent.id,
+              requestBody: eventBody,
+            })
+            finalGoogleEventId = existingEvent.id
+            await logSyncHistory(supabase, { userId, activityId: activity.id, googleEventId: existingEvent.id, calendarId, action: 'UPDATED', activityTitle: activity.title, activityStartTime: activity.start_time })
+          } catch (fallbackUpdateErr: any) {
+            await logSyncHistory(supabase, { userId, activityId: activity.id, googleEventId: existingEvent.id, calendarId, action: 'ERROR', status: 'FAILED', errorMessage: fallbackUpdateErr.message, activityTitle: activity.title, activityStartTime: activity.start_time })
+            throw fallbackUpdateErr
+          }
+        } else {
+          try {
+            await calendar.events.insert({
+              calendarId,
+              requestBody: { ...eventBody, id: googleEventId },
+            })
+            await logSyncHistory(supabase, { userId, activityId: activity.id, googleEventId, calendarId, action: 'CREATED', activityTitle: activity.title, activityStartTime: activity.start_time })
+          } catch (insertErr: any) {
+            const isInsertNotFound = insertErr.code === 404 || insertErr.status === 404 || insertErr.message?.includes('Not Found')
+            if (isInsertNotFound && (eventBody as any).recurringEventId) {
+              // 부모 일정(recurringEventId)이 구글 캘린더에 존재하지 않아 발생하는 404 에러 복구
+              delete (eventBody as any).recurringEventId
+              try {
+                const retryInsert = await calendar.events.insert({
+                  calendarId,
+                  requestBody: { ...eventBody, id: googleEventId }
+                })
+                finalGoogleEventId = retryInsert.data.id || googleEventId
+                await logSyncHistory(supabase, { userId, activityId: activity.id, googleEventId: finalGoogleEventId, calendarId, action: 'CREATED', activityTitle: activity.title, activityStartTime: activity.start_time, errorMessage: '부모 일정을 찾을 수 없어 독립된 일정으로 동기화되었습니다.' })
+                return
+              } catch (retryInsertErr) {
+                // fall through to generic fallback
+              }
+            }
+
+            // 최후의 수단: ID 없이 일반 insert 시도
+            try {
+              const fallbackInserted = await calendar.events.insert({
+                calendarId,
+                requestBody: eventBody,
+              })
+              finalGoogleEventId = fallbackInserted.data.id || googleEventId
+              await logSyncHistory(supabase, { userId, activityId: activity.id, googleEventId: finalGoogleEventId, calendarId, action: 'CREATED', activityTitle: activity.title, activityStartTime: activity.start_time })
+            } catch (finalErr: any) {
+              await logSyncHistory(supabase, { userId, activityId: activity.id, googleEventId, calendarId, action: 'ERROR', status: 'FAILED', errorMessage: finalErr.message, activityTitle: activity.title, activityStartTime: activity.start_time })
+              throw finalErr
+            }
+          }
         }
       } else {
         await logSyncHistory(supabase, { userId, activityId: activity.id, googleEventId, calendarId, action: 'ERROR', status: 'FAILED', errorMessage: updateErr.message, activityTitle: activity.title, activityStartTime: activity.start_time })
