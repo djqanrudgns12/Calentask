@@ -167,7 +167,34 @@ export function CalendarClient() {
     setMounted(true)
     // 아카이브 노트 렌더링 체감 속도를 0초로 만들기 위한 백그라운드 선탑재(Prefetching) 실행
     useArchiveStore.getState().prefetchArchive()
-  }, [])
+
+    // 실시간 DB 변경 감지 (구글 웹훅 자동 반영을 위한 WebSocket 연동)
+    const initRealtime = async () => {
+      const { createClient } = await import('@/lib/supabase/client')
+      const supabase = createClient()
+      
+      const channel = supabase.channel('activities_realtime')
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'activities' },
+          () => {
+            queryClient.invalidateQueries({ queryKey: ['activities'] })
+          }
+        )
+        .subscribe()
+
+      return () => {
+        supabase.removeChannel(channel)
+      }
+    }
+    
+    let cleanupFunc: (() => void) | undefined
+    initRealtime().then(cleanup => { cleanupFunc = cleanup })
+
+    return () => {
+      if (cleanupFunc) cleanupFunc()
+    }
+  }, [queryClient])
 
   // 인접 월(이전/다음 달) 프리패치 로직 (전략 4)
   useEffect(() => {

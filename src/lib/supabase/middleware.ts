@@ -40,7 +40,10 @@ export async function updateSession(request: NextRequest) {
     request.nextUrl.pathname.startsWith('/login') || 
     request.nextUrl.pathname.startsWith('/signup') ||
     request.nextUrl.pathname.startsWith('/auth')
-  if (!user && !isAuthPage) {
+    
+  const isPublicApi = request.nextUrl.pathname.startsWith('/api/webhooks')
+  
+  if (!user && !isAuthPage && !isPublicApi) {
     const url = request.nextUrl.clone()
     url.pathname = '/login'
     const redirectResponse = NextResponse.redirect(url)
