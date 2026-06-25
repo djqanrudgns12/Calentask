@@ -6,7 +6,7 @@ import { X, AlertTriangle, CheckCircle2, RefreshCw, Filter, Shield, Settings2, F
 import { getGoogleSyncSettingsAction, updateGoogleSyncSettingsAction, clearGoogleSyncDataAction, createGoogleCalendarAction, updateGoogleCalendarMetaAction, deleteGoogleCalendarAction, migrateActivitiesBetweenCalendarsAction } from '@/app/actions/calendar'
 import { SyncHistoryTab } from './SyncHistoryTab'
 import { Button } from '@/components/ui/button'
-import { DndContext, DragOverlay, closestCorners, KeyboardSensor, PointerSensor, useSensor, useSensors, useDroppable, defaultDropAnimationSideEffects } from '@dnd-kit/core'
+import { DndContext, DragOverlay, closestCorners, closestCenter, pointerWithin, KeyboardSensor, PointerSensor, useSensor, useSensors, useDroppable, defaultDropAnimationSideEffects } from '@dnd-kit/core'
 import { SortableContext, useSortable, verticalListSortingStrategy, arrayMove } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 const GOOGLE_COLORS = [
@@ -46,6 +46,7 @@ export function AdvancedSyncSettingsModal({ isOpen, onClose, onStartSync, calend
   
   const [isCreatingCalendar, setIsCreatingCalendar] = useState(false)
 
+  // Memoize sensors to avoid re-initialization on render
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
     useSensor(KeyboardSensor)
@@ -167,7 +168,10 @@ export function AdvancedSyncSettingsModal({ isOpen, onClose, onStartSync, calend
       let overIndex = overItems.findIndex(c => `cat_${c.id}` === overId)
       
       const isBelowOverItem =
-        over && active.rect.current.translated && active.rect.current.translated.top > over.rect.top + over.rect.height
+        over &&
+        over.rect &&
+        active.rect?.current?.translated &&
+        active.rect.current.translated.top > over.rect.top + over.rect.height
       const modifier = isBelowOverItem ? 1 : 0
       const newIndex = overIndex >= 0 ? overIndex + modifier : overItems.length + 1
       
@@ -398,7 +402,7 @@ export function AdvancedSyncSettingsModal({ isOpen, onClose, onStartSync, calend
                         </Button>
                       </div>
 
-                      <DndContext sensors={sensors} collisionDetection={closestCorners} onDragStart={handleDragStart} onDragOver={handleDragOver} onDragEnd={handleDragEnd}>
+                      <DndContext sensors={sensors} collisionDetection={pointerWithin} onDragStart={handleDragStart} onDragOver={handleDragOver} onDragEnd={handleDragEnd}>
                         <div className="grid grid-cols-1 gap-6 pb-20">
                           {localCalendarList.map(cal => (
                             <DroppableCalendarGroup 
