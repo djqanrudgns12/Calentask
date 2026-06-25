@@ -104,6 +104,21 @@ export async function getGoogleAuthClient(userId: string, customSupabase?: any) 
 }
 
 /**
+ * 주어진 캘린더 ID가 Google 측에 실제로 존재하는지 가볍게 확인합니다.
+ * 404/410(없음/삭제됨)이면 false, 일시적 오류(403/429/5xx 등)는
+ * 불필요한 재생성을 막기 위해 "존재함(true)"으로 간주합니다.
+ */
+async function calendarExists(calendar: any, calendarId: string): Promise<boolean> {
+  try {
+    await calendar.calendars.get({ calendarId })
+    return true
+  } catch (err: any) {
+    if (isGoogleError(err, 404) || isGoogleError(err, 410)) return false
+    return true
+  }
+}
+
+/**
  * Ensures a dedicated "Calentask" calendar exists or uses the user's custom mapped calendar.
  * Returns the calendar ID.
  */
@@ -127,12 +142,17 @@ export async function getSyncCalendarId(userId: string, auth: any, customSupabas
 
   const { data: user } = await supabase.from('users').select('google_sync_calendar_id').eq('id', userId).single()
 
+  const calendar = google.calendar({ version: 'v3', auth })
+
   if (user?.google_sync_calendar_id) {
-    return user.google_sync_calendar_id
+    // 저장된 캘린더가 실제로 살아있을 때만 신뢰. 연동 해제 후 잔존한 죽은 ID면
+    // stale 값을 비우고 아래 재탐색/생성 경로로 진행한다.
+    if (await calendarExists(calendar, user.google_sync_calendar_id)) {
+      return user.google_sync_calendar_id
+    }
+    await supabase.from('users').update({ google_sync_calendar_id: null, google_sync_calendar_name: null }).eq('id', userId)
   }
 
-  const calendar = google.calendar({ version: 'v3', auth })
-  
   try {
     // Check if Calentask calendar already exists
     const calendarList = await calendar.calendarList.list()
@@ -1386,6 +1406,19 @@ export async function syncBatchActivitiesToGoogle(userId: string, activities: an
 
     const calendar = google.calendar({ version: 'v3', auth })
 
+    // 현재 살아있는 캘린더 ID 집합을 1회만 수집해 캐시한다.
+    // 연동 해제 후 잔존한 sync_history의 죽은 calendar_id가 타겟을 덮어쓰는 것을 막는 데 사용.
+    const validCalendarIds = new Set<string>()
+    validCalendarIds.add(defaultCalendarId)
+    try {
+      const calendarList = await calendar.calendarList.list()
+      for (const item of calendarList.data.items || []) {
+        if (item.id && !item.deleted) validCalendarIds.add(item.id)
+      }
+    } catch (listErr) {
+      console.warn('Failed to list calendars for validation; falling back to default only:', listErr)
+    }
+
     // 그룹 매핑 사전 캐싱: categoryId → calendarId
     const groupCalendarCache = new Map<string, string>()
     if (settings.groupMapping) {
@@ -1456,7 +1489,9 @@ export async function syncBatchActivitiesToGoogle(userId: string, activities: an
                 .limit(1)
                 .single()
               )
-              if (historyData?.calendar_id) {
+              // 살아있는 캘린더일 때만 덮어쓴다. 연동 해제 후 잔존한 죽은 calendar_id가
+              // 좀비처럼 부활해 404를 유발하던 문제(RC-3)를 차단한다.
+              if (historyData?.calendar_id && validCalendarIds.has(historyData.calendar_id)) {
                 targetCalendarId = historyData.calendar_id
               }
             } catch (historyErr) {
@@ -1465,7 +1500,10 @@ export async function syncBatchActivitiesToGoogle(userId: string, activities: an
           }
 
           const eventBody = mapActivityToGoogleEvent(activity, categories, settings)
-          const googleEventId = activity.google_event_id || toGoogleEventId(activity.id)
+          // 최초 update 시도용 ID: 기존에 살아있는 연결을 깨지 않도록 저장값을 우선 사용.
+          const updateEventId = activity.google_event_id || toGoogleEventId(activity.id)
+          // 복구(신규 생성)용 정규 커스텀 ID: stale 값에 의존하지 않는 활동 UUID 기반.
+          const customEventId = toGoogleEventId(activity.id)
 
           if (activity.parent_activity_id) {
             const parentEventId = toGoogleEventId(activity.parent_activity_id)
@@ -1499,109 +1537,110 @@ export async function syncBatchActivitiesToGoogle(userId: string, activities: an
             }
           }
 
-          // Custom ID로 update 시도 → 404면 insert
-          let batchFinalEventId = googleEventId
+          // 1차: 기존 연결(저장된 ID) 기준 update 시도. 살아있으면 그대로 성공.
+          let batchFinalEventId = updateEventId
+          const markSynced = (finalId: string) => {
+            batchFinalEventId = finalId
+            result.synced++
+            processedCount++
+            onProgress?.({ id: activity.id, title: activity.title, status: 'synced', current: processedCount })
+          }
+
+          // 정규 커스텀 ID로 신규 생성하되, 부모 의존성(404)/tombstone(409)/속성 유효성(400)을
+          // 단계적으로 복구한 뒤, 최후에는 Google 자동 할당 ID로라도 안전하게 이송한다.
+          const insertWithRecovery = async (calId: string): Promise<string> => {
+            try {
+              const inserted = await executeWithRetry(() => calendar.events.insert({
+                calendarId: calId,
+                requestBody: { ...eventBody, id: customEventId },
+              }))
+              return inserted.data.id || customEventId
+            } catch (insertErr: any) {
+              // 404 + 부모(반복 일정) 의존성 → 독립 일정으로 강등 후 재시도
+              if (isGoogleError(insertErr, 404) && (eventBody as any).recurringEventId) {
+                delete (eventBody as any).recurringEventId
+                try {
+                  const retry = await executeWithRetry(() => calendar.events.insert({
+                    calendarId: calId,
+                    requestBody: { ...eventBody, id: customEventId },
+                  }))
+                  return retry.data.id || customEventId
+                } catch { /* 다음 단계로 진행 */ }
+              }
+              // 409: 삭제된(tombstone) ID와 충돌 → update로 부활
+              if (isGoogleError(insertErr, 409)) {
+                try {
+                  (eventBody as any).status = 'confirmed'
+                  const revived = await executeWithRetry(() => calendar.events.update({
+                    calendarId: calId,
+                    eventId: customEventId,
+                    requestBody: eventBody,
+                  }))
+                  return revived.data.id || customEventId
+                } catch { /* 다음 단계로 진행 */ }
+              }
+              // 400: 색상/리마인더 등 속성 유효성 → 부가 속성 제거 후 재시도
+              if (isGoogleError(insertErr, 400)) {
+                delete (eventBody as any).colorId
+                if ((eventBody as any).reminders) delete (eventBody as any).reminders
+                try {
+                  const retry = await executeWithRetry(() => calendar.events.insert({
+                    calendarId: calId,
+                    requestBody: { ...eventBody, id: customEventId },
+                  }))
+                  return retry.data.id || customEventId
+                } catch { /* 다음 단계로 진행 */ }
+              }
+              // 최후의 수단: 커스텀 ID를 버리고 Google 자동 할당 ID로 생성
+              delete (eventBody as any).recurringEventId
+              delete (eventBody as any).colorId
+              if ((eventBody as any).reminders) delete (eventBody as any).reminders
+              const fallback = await executeWithRetry(() => calendar.events.insert({
+                calendarId: calId,
+                requestBody: eventBody,
+              }))
+              return fallback.data.id || customEventId
+            }
+          }
+
           try {
             await executeWithRetry(() => calendar.events.update({
               calendarId: targetCalendarId,
-              eventId: googleEventId,
+              eventId: updateEventId,
               requestBody: eventBody,
             }))
-            result.synced++ // 업데이트 성공도 동기화 완료로 분류
-            processedCount++
-            onProgress?.({ id: activity.id, title: activity.title, status: 'synced', current: processedCount })
+            markSynced(updateEventId)
           } catch (updateErr: any) {
-            const isNotFound = updateErr.code === 404 || updateErr.status === 404 || updateErr.message?.includes('Not Found')
-            if (isNotFound) {
-              let searchResult
-              try {
-                searchResult = await executeWithRetry(() => calendar.events.list({
-                  calendarId: targetCalendarId,
-                  privateExtendedProperty: [`calentask_id=${activity.id}`],
-                }))
-              } catch (listErr: any) {
-                const isCalendarNotFound = listErr.code === 404 || listErr.status === 404 || listErr.message?.includes('Not Found')
-                if (isCalendarNotFound) {
-                  if (defaultCalendarId && defaultCalendarId !== targetCalendarId) {
-                    try {
-                      const insertedBatch = await executeWithRetry(() => calendar.events.insert({
-                        calendarId: defaultCalendarId,
-                        requestBody: { ...eventBody, id: googleEventId },
-                      }))
-                      batchFinalEventId = insertedBatch.data.id || googleEventId
-                      result.synced++
-                      processedCount++
-                      onProgress?.({ id: activity.id, title: activity.title, status: 'synced', current: processedCount })
-                      return // Arrow function success return
-                    } catch (retryErr: any) {
-                      throw retryErr
-                    }
-                  } else {
-                    throw listErr
-                  }
-                }
-                throw listErr
-              }
+            if (!isGoogleError(updateErr, 404)) throw updateErr
 
-              const existingEvent = searchResult.data.items?.[0]
-              if (existingEvent?.id) {
-                try {
-                  await executeWithRetry(() => calendar.events.update({
-                    calendarId: targetCalendarId,
-                    eventId: existingEvent.id as string,
-                    requestBody: eventBody,
-                  }))
-                  batchFinalEventId = existingEvent.id as string
-                  result.synced++
-                  processedCount++
-                  onProgress?.({ id: activity.id, title: activity.title, status: 'synced', current: processedCount })
-                } catch (fallbackUpdateErr) {
-                  throw fallbackUpdateErr
-                }
-              } else {
-                try {
-                  await executeWithRetry(() => calendar.events.insert({
-                    calendarId: targetCalendarId,
-                    requestBody: { ...eventBody, id: googleEventId },
-                  }))
-                  result.synced++
-                  processedCount++
-                  onProgress?.({ id: activity.id, title: activity.title, status: 'synced', current: processedCount })
-                } catch (insertErr: any) {
-                  const isInsertNotFound = insertErr.code === 404 || insertErr.status === 404 || insertErr.message?.includes('Not Found')
-                  if (isInsertNotFound && (eventBody as any).recurringEventId) {
-                    delete (eventBody as any).recurringEventId
-                    try {
-                      const retryInsert = await executeWithRetry(() => calendar.events.insert({
-                        calendarId: targetCalendarId,
-                        requestBody: { ...eventBody, id: googleEventId }
-                      }))
-                      batchFinalEventId = retryInsert.data.id || googleEventId
-                      result.synced++
-                      processedCount++
-                      onProgress?.({ id: activity.id, title: activity.title, status: 'synced', current: processedCount })
-                      return // Arrow function success return
-                    } catch (retryInsertErr) {
-                      // fall through to final fallback
-                    }
-                  }
+            // 404: 이벤트 또는 캘린더가 사라짐 → 실존 여부 확인 후 스마트 복구
+            let effectiveCalendarId = targetCalendarId
+            let searchResult: any
+            try {
+              searchResult = await executeWithRetry(() => calendar.events.list({
+                calendarId: effectiveCalendarId,
+                privateExtendedProperty: [`calentask_id=${activity.id}`],
+              }))
+            } catch (listErr: any) {
+              if (!isGoogleError(listErr, 404)) throw listErr
+              // 캘린더 자체가 죽음 → 검증된 기본 캘린더로 이송, 검색결과는 빈 것으로 간주
+              effectiveCalendarId = defaultCalendarId
+              searchResult = { data: { items: [] } }
+            }
 
-                  try {
-                    const fallbackInserted = await executeWithRetry(() => calendar.events.insert({
-                      calendarId: targetCalendarId,
-                      requestBody: eventBody,
-                    }))
-                    batchFinalEventId = fallbackInserted.data.id || googleEventId
-                    result.synced++
-                    processedCount++
-                    onProgress?.({ id: activity.id, title: activity.title, status: 'synced', current: processedCount })
-                  } catch (finalErr) {
-                    throw finalErr
-                  }
-                }
-              }
+            const existingEvent = searchResult.data.items?.[0]
+            if (existingEvent?.id) {
+              // 발견됨 → 그 이벤트로 relink (중복 0). 정정된 ID는 DB에 다시 저장됨.
+              await executeWithRetry(() => calendar.events.update({
+                calendarId: effectiveCalendarId,
+                eventId: existingEvent.id as string,
+                requestBody: eventBody,
+              }))
+              markSynced(existingEvent.id as string)
             } else {
-              throw updateErr
+              // 없음 → stale ID 소거하고 정규 커스텀 ID로 신규 생성
+              const finalId = await insertWithRecovery(effectiveCalendarId)
+              markSynced(finalId)
             }
           }
 
