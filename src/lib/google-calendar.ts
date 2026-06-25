@@ -316,7 +316,8 @@ export async function syncActivityToGoogle(userId: string, activity: any, catego
       })
       await logSyncHistory(supabase, { userId, activityId: activity.id, googleEventId, calendarId, action: 'UPDATED', activityTitle: activity.title, activityStartTime: activity.start_time })
     } catch (updateErr: any) {
-      if (updateErr.code === 404) {
+      const isNotFound = updateErr.code === 404 || updateErr.status === 404 || updateErr.message?.includes('Not Found')
+      if (isNotFound) {
         // Custom ID로 존재하지 않음 → 기존 extendedProperty로 검색 (마이그레이션)
         try {
           const searchResult = await calendar.events.list({
@@ -343,7 +344,52 @@ export async function syncActivityToGoogle(userId: string, activity: any, catego
             await logSyncHistory(supabase, { userId, activityId: activity.id, googleEventId, calendarId, action: 'CREATED', activityTitle: activity.title, activityStartTime: activity.start_time })
           }
         } catch (fallbackErr: any) {
-          // Fallback도 실패하면 그냥 insert 시도 (ID 없이)
+          const isFallbackNotFound = fallbackErr.code === 404 || fallbackErr.status === 404 || fallbackErr.message?.includes('Not Found')
+          
+          if (isFallbackNotFound) {
+            console.log(`Calendar ${calendarId} not found. Auto-recovering...`)
+            // 캘린더가 구글에서 삭제된 경우 DB 정리 후 복구
+            let updatedSettings = { ...settings }
+            let needsSettingsUpdate = false
+            
+            if (settings.groupMapping) {
+              const newMapping = { ...settings.groupMapping }
+              for (const [catId, mappedCalId] of Object.entries(newMapping)) {
+                if (mappedCalId === calendarId) {
+                  delete newMapping[catId]
+                  needsSettingsUpdate = true
+                }
+              }
+              if (needsSettingsUpdate) {
+                updatedSettings.groupMapping = newMapping
+                await supabase.from('users').update({ google_sync_settings: updatedSettings }).eq('id', userId)
+              }
+            }
+            
+            // 만약 기본 캘린더였다면 초기화
+            const { data: u } = await supabase.from('users').select('google_sync_calendar_id').eq('id', userId).single()
+            if (u?.google_sync_calendar_id === calendarId) {
+              await supabase.from('users').update({ google_sync_calendar_id: null, google_sync_calendar_name: null }).eq('id', userId)
+            }
+            
+            // 새 캘린더를 얻어와서 재시도
+            try {
+              const newCalendarId = await getSyncCalendarId(userId, auth, supabase, categories, updatedSettings)
+              if (newCalendarId) {
+                const inserted = await calendar.events.insert({
+                  calendarId: newCalendarId,
+                  requestBody: { ...eventBody, id: googleEventId },
+                })
+                finalGoogleEventId = inserted.data.id || googleEventId
+                await logSyncHistory(supabase, { userId, activityId: activity.id, googleEventId: finalGoogleEventId, calendarId: newCalendarId, action: 'CREATED', activityTitle: activity.title, activityStartTime: activity.start_time, errorMessage: '기존 캘린더가 존재하지 않아 새 캘린더로 자동 복구되었습니다.' })
+                return
+              }
+            } catch (retryErr) {
+              console.error('Failed to auto-recover calendar:', retryErr)
+            }
+          }
+          
+          // 위에서 복구되지 않은 다른 에러면 일반 insert 시도
           const inserted = await calendar.events.insert({
             calendarId,
             requestBody: eventBody,
