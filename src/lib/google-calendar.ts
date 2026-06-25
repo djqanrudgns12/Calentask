@@ -687,7 +687,7 @@ export async function watchGoogleCalendar(userId: string) {
     let primaryResponse: any = null
 
     for (const calId of calendarIdsToWatch) {
-      const channelId = `calentask-sync-${userId}-${Date.now()}-${calId.substring(0, 8)}`
+      const channelId = `sync-${crypto.randomUUID()}`
       try {
         const response = await calendar.events.watch({
           calendarId: calId,
@@ -695,6 +695,7 @@ export async function watchGoogleCalendar(userId: string) {
             id: channelId,
             type: 'web_hook',
             address: webhookUrl,
+            token: userId,
           }
         })
 
@@ -894,6 +895,13 @@ export async function handleGoogleCalendarSync(userId: string, customSupabase?: 
         }
       }
 
+      // 사용자 카테고리 정보 사전 조회 (스마트 라우팅 용도)
+      let userCategories: any[] = []
+      if (settings.groupMapping) {
+        const { data: cats } = await supabase.from('categories').select('id, name').eq('user_id', userId)
+        if (cats) userCategories = cats
+      }
+
       // 업데이트/삽입 작업을 수집하여 병렬 처리
       const updateTasks: Promise<any>[] = []
       const insertTasks: Promise<any>[] = []
@@ -1073,6 +1081,41 @@ export async function handleGoogleCalendarSync(userId: string, customSupabase?: 
                   .single()
 
                 if (insertedActivity) {
+                  // [강화] 스마트 카테고리 라우팅 로직 시작
+                  const sourceCalendarId = event.__calendarId || calendarId
+                  
+                  // 해당 캘린더를 목적지로 삼는 모든 카테고리 ID 추출
+                  const mappedCategoryIds = Object.entries(settings.groupMapping || {})
+                    .filter(([_, calId]) => calId === sourceCalendarId)
+                    .map(([catId]) => catId)
+
+                  if (mappedCategoryIds.length > 0) {
+                    let targetCategoryId = mappedCategoryIds[0] // 기본값: 매핑된 첫 번째 카테고리 (Fallback)
+                    
+                    if (mappedCategoryIds.length > 1) {
+                      // N:1 매핑 시, 제목(summary) 또는 메모(description)에 카테고리 이름이 포함되어 있는지 검사 (스마트 라우팅)
+                      const searchStr = `${event.summary || ''} ${event.description || ''}`.toLowerCase()
+                      for (const catId of mappedCategoryIds) {
+                        const cat = userCategories.find(c => c.id === catId)
+                        if (cat && searchStr.includes(cat.name.toLowerCase())) {
+                          targetCategoryId = catId
+                          break
+                        }
+                      }
+                    }
+
+                    // activity_category_map 에 연결 정보 INSERT
+                    try {
+                      await supabase.from('activity_category_map').insert({
+                        activity_id: insertedActivity.id,
+                        category_id: targetCategoryId
+                      })
+                    } catch (mapErr) {
+                      console.warn(`[handleGoogleCalendarSync] Failed to insert category mapping for ${insertedActivity.id}:`, mapErr)
+                    }
+                  }
+                  // [강화] 스마트 카테고리 라우팅 로직 끝
+
                   try {
                     await calendar.events.patch({
                       calendarId: event.__calendarId || calendarId,
