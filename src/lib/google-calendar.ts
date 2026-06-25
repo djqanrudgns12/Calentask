@@ -1436,15 +1436,41 @@ export async function syncBatchActivitiesToGoogle(userId: string, activities: an
             processedCount++
             onProgress?.({ id: activity.id, title: activity.title, status: 'synced', current: processedCount })
           } catch (updateErr: any) {
-            if (updateErr.code === 404) {
-              // 기존 extendedProperty로 검색 (마이그레이션 Fallback)
+            const isNotFound = updateErr.code === 404 || updateErr.status === 404 || updateErr.message?.includes('Not Found')
+            if (isNotFound) {
+              let searchResult
               try {
-                const searchResult = await executeWithRetry(() => calendar.events.list({
+                searchResult = await executeWithRetry(() => calendar.events.list({
                   calendarId: targetCalendarId,
                   privateExtendedProperty: [`calentask_id=${activity.id}`],
                 }))
-                const existingEvent = searchResult.data.items?.[0]
-                if (existingEvent?.id) {
+              } catch (listErr: any) {
+                const isCalendarNotFound = listErr.code === 404 || listErr.status === 404 || listErr.message?.includes('Not Found')
+                if (isCalendarNotFound) {
+                  if (defaultCalendarId && defaultCalendarId !== targetCalendarId) {
+                    try {
+                      const insertedBatch = await executeWithRetry(() => calendar.events.insert({
+                        calendarId: defaultCalendarId,
+                        requestBody: { ...eventBody, id: googleEventId },
+                      }))
+                      batchFinalEventId = insertedBatch.data.id || googleEventId
+                      result.synced++
+                      processedCount++
+                      onProgress?.({ id: activity.id, title: activity.title, status: 'synced', current: processedCount })
+                      return // Arrow function success return
+                    } catch (retryErr: any) {
+                      throw retryErr
+                    }
+                  } else {
+                    throw listErr
+                  }
+                }
+                throw listErr
+              }
+
+              const existingEvent = searchResult.data.items?.[0]
+              if (existingEvent?.id) {
+                try {
                   await executeWithRetry(() => calendar.events.update({
                     calendarId: targetCalendarId,
                     eventId: existingEvent.id as string,
@@ -1454,7 +1480,11 @@ export async function syncBatchActivitiesToGoogle(userId: string, activities: an
                   result.synced++
                   processedCount++
                   onProgress?.({ id: activity.id, title: activity.title, status: 'synced', current: processedCount })
-                } else {
+                } catch (fallbackUpdateErr) {
+                  throw fallbackUpdateErr
+                }
+              } else {
+                try {
                   await executeWithRetry(() => calendar.events.insert({
                     calendarId: targetCalendarId,
                     requestBody: { ...eventBody, id: googleEventId },
@@ -1462,16 +1492,38 @@ export async function syncBatchActivitiesToGoogle(userId: string, activities: an
                   result.synced++
                   processedCount++
                   onProgress?.({ id: activity.id, title: activity.title, status: 'synced', current: processedCount })
+                } catch (insertErr: any) {
+                  const isInsertNotFound = insertErr.code === 404 || insertErr.status === 404 || insertErr.message?.includes('Not Found')
+                  if (isInsertNotFound && (eventBody as any).recurringEventId) {
+                    delete (eventBody as any).recurringEventId
+                    try {
+                      const retryInsert = await executeWithRetry(() => calendar.events.insert({
+                        calendarId: targetCalendarId,
+                        requestBody: { ...eventBody, id: googleEventId }
+                      }))
+                      batchFinalEventId = retryInsert.data.id || googleEventId
+                      result.synced++
+                      processedCount++
+                      onProgress?.({ id: activity.id, title: activity.title, status: 'synced', current: processedCount })
+                      return // Arrow function success return
+                    } catch (retryInsertErr) {
+                      // fall through to final fallback
+                    }
+                  }
+
+                  try {
+                    const fallbackInserted = await executeWithRetry(() => calendar.events.insert({
+                      calendarId: targetCalendarId,
+                      requestBody: eventBody,
+                    }))
+                    batchFinalEventId = fallbackInserted.data.id || googleEventId
+                    result.synced++
+                    processedCount++
+                    onProgress?.({ id: activity.id, title: activity.title, status: 'synced', current: processedCount })
+                  } catch (finalErr) {
+                    throw finalErr
+                  }
                 }
-              } catch {
-                const insertedBatch = await executeWithRetry(() => calendar.events.insert({
-                  calendarId: targetCalendarId,
-                  requestBody: eventBody,
-                }))
-                batchFinalEventId = insertedBatch.data.id || googleEventId
-                result.synced++
-                processedCount++
-                onProgress?.({ id: activity.id, title: activity.title, status: 'synced', current: processedCount })
               }
             } else {
               throw updateErr
