@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server'
+import { NextResponse, after } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/server'
 import { handleGoogleCalendarSync } from '@/lib/google-calendar'
 
@@ -30,12 +30,16 @@ export async function POST(request: Request) {
 
     if (userId) {
       const supabase = createAdminClient()
-      // 2~4. 해당 유저의 변경분 동기화 로직 비동기 실행
-      // 구글 웹훅은 반드시 200 OK를 빨리 반환해야 하므로 백그라운드에서 실행합니다.
-      Promise.resolve().then(() => {
-        handleGoogleCalendarSync(userId as string, supabase).catch(err => {
+      // 2~4. 해당 유저의 변경분 동기화 로직을 응답 이후 실행합니다.
+      // 구글 웹훅은 200 OK를 빨리 반환해야 하므로 next/server의 after()로 스케줄합니다.
+      // (Vercel 서버리스에서는 fire-and-forget 백그라운드 Promise가 응답 후 동결되어
+      //  실행되지 않으므로, waitUntil 기반의 after()로 작업 완료를 보장해야 합니다.)
+      after(async () => {
+        try {
+          await handleGoogleCalendarSync(userId as string, supabase)
+        } catch (err) {
           console.error(`[Google Webhook] Sync error for user ${userId}:`, err)
-        })
+        }
       })
     }
 

@@ -648,7 +648,7 @@ export async function clearSyncedActivitiesFromGoogle(userId: string) {
     if (!auth) return { success: false, reason: 'no_auth' }
 
     // 삭제 대상 캘린더 ID 목록을 먼저 수집 (설정 초기화 전에 읽어야 함)
-    const { data: user } = await supabase.from('users').select('google_sync_settings, google_sync_calendar_id, google_channel_id, google_resource_id').eq('id', userId).single()
+    const { data: user } = await supabase.from('users').select('google_sync_settings, google_sync_calendar_id, google_channel_id, google_resource_id, google_channels').eq('id', userId).single()
     const settings: GoogleSyncSettings = user?.google_sync_settings || {}
     
     const calendarIdsToClear = new Set<string>()
@@ -672,18 +672,24 @@ export async function clearSyncedActivitiesFromGoogle(userId: string) {
     }).eq('id', userId)
 
     // ═══════════════════════════════════════════════════
-    // [2단계] Google channels.stop → 웹훅 구독 해제
+    // [2단계] Google channels.stop → 웹훅 구독 해제 (모든 채널)
     // ═══════════════════════════════════════════════════
     // 구글 측에 "더 이상 알림 보내지 마" 요청을 보냅니다.
+    // 다중 캘린더 매핑 시 여러 채널이 존재하므로 google_channels의 모든 채널을 정리합니다.
     // 1단계에서 이미 DB를 차단했으므로, 이 호출이 실패해도 안전합니다.
-    if (user?.google_channel_id && user?.google_resource_id) {
+    const channelsToStop: Array<{ id: string; resourceId: string }> = []
+    const channelsMap: Record<string, WatchChannel> = (user?.google_channels && typeof user.google_channels === 'object') ? user.google_channels : {}
+    for (const ch of Object.values(channelsMap)) {
+      if (ch?.channelId && ch?.resourceId) channelsToStop.push({ id: ch.channelId, resourceId: ch.resourceId })
+    }
+    // primary 채널이 맵에 없을 수도 있으니 하위호환으로 함께 처리
+    if (user?.google_channel_id && user?.google_resource_id &&
+        !channelsToStop.some(c => c.id === user.google_channel_id)) {
+      channelsToStop.push({ id: user.google_channel_id, resourceId: user.google_resource_id })
+    }
+    for (const ch of channelsToStop) {
       try {
-        await calendar.channels.stop({
-          requestBody: {
-            id: user.google_channel_id,
-            resourceId: user.google_resource_id
-          }
-        })
+        await calendar.channels.stop({ requestBody: { id: ch.id, resourceId: ch.resourceId } })
       } catch (e: any) {
         // 채널이 이미 만료되었거나 존재하지 않을 수 있음 → 무시해도 안전
         console.warn('Failed to stop google calendar watch channel during clear:', e.message)
@@ -703,6 +709,7 @@ export async function clearSyncedActivitiesFromGoogle(userId: string) {
       google_sync_settings: {},
       google_sync_token: null,
       google_channel_expiration: null,
+      google_channels: {},
     }).eq('id', userId)
 
     // ═══════════════════════════════════════════════════
@@ -800,39 +807,31 @@ export async function clearSyncedActivitiesFromGoogle(userId: string) {
  * Subscribes to Google Calendar Webhooks (Watch API)
 
  */
-export async function watchGoogleCalendar(userId: string) {
+interface WatchChannel {
+  channelId: string
+  resourceId: string
+  expiration: string | null // ISO string
+}
+
+export async function watchGoogleCalendar(userId: string, options?: { force?: boolean }) {
   try {
+    const force = options?.force === true
     const supabase = createAdminClient()
     const auth = await getGoogleAuthClient(userId, supabase)
     if (!auth) return
 
     const { data: userData } = await supabase
       .from('users')
-      .select('google_sync_settings, google_channel_id, google_resource_id, google_channel_expiration')
+      .select('google_sync_settings, google_channel_id, google_resource_id, google_channel_expiration, google_channels')
       .eq('id', userId)
       .single()
 
     const settings: GoogleSyncSettings = userData?.google_sync_settings || {}
 
-    // 기존 채널이 아직 유효하면 재등록 불필요
-    if (userData?.google_channel_id && userData?.google_channel_expiration) {
-      const expiration = new Date(userData.google_channel_expiration)
-      if (expiration.getTime() > Date.now() + 60 * 60 * 1000) { // 만료 1시간 이상 남음
-        return { channelId: userData.google_channel_id, alreadyActive: true }
-      }
-      // 만료 임박 또는 만료됨 → 기존 채널 정리 시도
-      try {
-        const calendar = google.calendar({ version: 'v3', auth })
-        await calendar.channels.stop({
-          requestBody: {
-            id: userData.google_channel_id,
-            resourceId: userData.google_resource_id,
-          }
-        })
-      } catch {
-        // 이미 만료된 채널 정리 실패는 무시
-      }
-    }
+    // 기존 채널 맵 로드 (다중 캘린더 추적)
+    const channels: Record<string, WatchChannel> = (userData?.google_channels && typeof userData.google_channels === 'object')
+      ? { ...userData.google_channels }
+      : {}
 
     // Watch할 캘린더 목록 수집 (기본 캘린더 + 그룹 매핑 캘린더)
     const calendarIdsToWatch = new Set<string>()
@@ -845,14 +844,52 @@ export async function watchGoogleCalendar(userId: string) {
     if (calendarIdsToWatch.size === 0) return
 
     const calendar = google.calendar({ version: 'v3', auth })
+    const RENEW_THRESHOLD = 60 * 60 * 1000 // 만료 1시간 이내면 갱신
+    const isChannelValid = (ch?: WatchChannel) =>
+      !!ch && !!ch.expiration && new Date(ch.expiration).getTime() > Date.now() + RENEW_THRESHOLD
+
+    // 더 이상 필요 없는 캘린더(매핑 해제됨)의 채널은 정리
+    let channelsChanged = false
+    for (const [calId, ch] of Object.entries(channels)) {
+      if (!calendarIdsToWatch.has(calId)) {
+        try {
+          await calendar.channels.stop({ requestBody: { id: ch.channelId, resourceId: ch.resourceId } })
+        } catch {
+          // 이미 만료/존재하지 않으면 무시
+        }
+        delete channels[calId]
+        channelsChanged = true
+      }
+    }
+
+    // 모든 대상 캘린더가 유효한 채널을 가졌고 force가 아니면 재등록 불필요
+    const needsWork = force || Array.from(calendarIdsToWatch).some(calId => !isChannelValid(channels[calId]))
+    if (!needsWork) {
+      // 정리로 맵이 변경됐으면 저장 후, 초기 동기화만 보장하고 종료
+      if (channelsChanged) {
+        await supabase.from('users').update({ google_channels: channels }).eq('id', userId)
+      }
+      await handleGoogleCalendarSync(userId, supabase)
+      return { alreadyActive: true }
+    }
+
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://calentask-orcin.vercel.app'
     const webhookUrl = `${siteUrl}/api/webhooks/google`
 
-    // 첫 번째(기본) 캘린더의 채널 정보를 DB에 저장
-    let primaryChannelId = ''
-    let primaryResponse: any = null
-
     for (const calId of calendarIdsToWatch) {
+      const existing = channels[calId]
+      // 유효한 채널이 이미 있고 강제 갱신이 아니면 건너뜀
+      if (!force && isChannelValid(existing)) continue
+
+      // 만료 임박/강제 갱신 → 기존 채널 정리 후 재등록
+      if (existing) {
+        try {
+          await calendar.channels.stop({ requestBody: { id: existing.channelId, resourceId: existing.resourceId } })
+        } catch {
+          // 이미 만료된 채널 정리 실패는 무시
+        }
+      }
+
       const channelId = `sync-${crypto.randomUUID()}`
       try {
         const response = await calendar.events.watch({
@@ -864,31 +901,36 @@ export async function watchGoogleCalendar(userId: string) {
             token: userId,
           }
         })
-
-        if (!primaryChannelId) {
-          primaryChannelId = channelId
-          primaryResponse = response
+        channels[calId] = {
+          channelId,
+          resourceId: response.data.resourceId as string,
+          expiration: response.data.expiration ? new Date(parseInt(response.data.expiration)).toISOString() : null,
         }
       } catch (watchErr: any) {
         console.warn(`Failed to watch calendar ${calId}:`, watchErr.message)
+        delete channels[calId]
       }
     }
 
-    if (primaryChannelId && primaryResponse) {
-      await supabase
-        .from('users')
-        .update({
-          google_channel_id: primaryChannelId,
-          google_resource_id: primaryResponse.data.resourceId,
-          google_channel_expiration: primaryResponse.data.expiration ? new Date(parseInt(primaryResponse.data.expiration)).toISOString() : null,
-        })
-        .eq('id', userId)
-    }
+    // 기본 캘린더 채널을 primary 컬럼에도 기록 (웹훅 안전장치/하위호환)
+    const primary = defaultCalId ? channels[defaultCalId] : undefined
+    const fallback = Object.values(channels)[0]
+    const primaryCh = primary || fallback
+
+    await supabase
+      .from('users')
+      .update({
+        google_channels: channels,
+        google_channel_id: primaryCh?.channelId || null,
+        google_resource_id: primaryCh?.resourceId || null,
+        google_channel_expiration: primaryCh?.expiration || null,
+      })
+      .eq('id', userId)
 
     // 초기 동기화 수행
     await handleGoogleCalendarSync(userId, supabase)
 
-    return primaryResponse?.data
+    return { channels }
   } catch (error) {
     console.error('Failed to watch Google Calendar:', error)
   }

@@ -823,6 +823,28 @@ export async function updateGoogleSyncSettingsAction(settings: any) {
     .eq('id', user.id)
 
   if (error) throw error
+
+  // 그룹 매핑이 변경되면 새로 매핑된 구글 캘린더에도 watch 채널을 등록해야
+  // 해당 캘린더에서의 추가/수정이 Calentask로 실시간 역방향 동기화됩니다.
+  // 동기화가 활성 상태일 때만(연동/동기화 캘린더 존재) 재등록합니다.
+  try {
+    const { createAdminClient } = await import('@/lib/supabase/server')
+    const adminClient = createAdminClient()
+    const { data: userRow } = await adminClient
+      .from('users')
+      .select('is_google_linked, google_sync_calendar_id, google_refresh_token')
+      .eq('id', user.id)
+      .single()
+
+    if (userRow?.google_refresh_token && (userRow?.is_google_linked || userRow?.google_sync_calendar_id)) {
+      const { watchGoogleCalendar } = await import('@/lib/google-calendar')
+      await watchGoogleCalendar(user.id)
+    }
+  } catch (watchErr) {
+    console.error('Failed to re-register watch after settings update:', watchErr)
+    // watch 재등록 실패해도 설정 저장 자체는 성공 처리
+  }
+
   return { success: true }
 }
 
