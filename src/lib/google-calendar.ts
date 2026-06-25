@@ -206,9 +206,26 @@ function getLocalIsoString(utcString: string, timeZone: string = 'Asia/Seoul') {
 }
 
 /**
- * Maps a Calentask Activity to a Google Event payload
+ * 삭제된 회차(soft-deleted 자식 예외)의 original_start_time(UTC) 목록을
+ * Google recurrence 배열에 넣을 EXDATE 라인으로 변환한다.
+ * - 시간 일정: EXDATE;TZID=Asia/Seoul:YYYYMMDDTHHMMSS (DTSTART와 동일한 로컬 표현)
+ * - 종일 일정: EXDATE;VALUE=DATE:YYYYMMDD
  */
-function mapActivityToGoogleEvent(activity: any, categories: any[], settings?: GoogleSyncSettings) {
+function buildExDateLines(exStartTimesUtc: string[], isAllDay: boolean): string[] {
+  if (!exStartTimesUtc.length) return []
+  if (isAllDay) {
+    const dates = exStartTimesUtc.map(t => getLocalIsoString(t).split('T')[0].replace(/-/g, ''))
+    return [`EXDATE;VALUE=DATE:${dates.join(',')}`]
+  }
+  const dts = exStartTimesUtc.map(t => getLocalIsoString(t).replace(/[-:]/g, ''))
+  return [`EXDATE;TZID=Asia/Seoul:${dts.join(',')}`]
+}
+
+/**
+ * Maps a Calentask Activity to a Google Event payload
+ * @param exDatesUtc 반복 마스터일 때, 제외할 회차(삭제된 자식 예외)의 original_start_time(UTC) 목록
+ */
+function mapActivityToGoogleEvent(activity: any, categories: any[], settings?: GoogleSyncSettings, exDatesUtc: string[] = []) {
   let colorId = '9'
   if (settings?.colorMapping && categories.length > 0) {
     for (const cat of categories) {
@@ -260,7 +277,7 @@ function mapActivityToGoogleEvent(activity: any, categories: any[], settings?: G
     end,
     colorId,
     reminders,
-    ...(activity.recurrence_rule ? { recurrence: [`RRULE:${activity.recurrence_rule}`] } : {}),
+    ...(activity.recurrence_rule ? { recurrence: [`RRULE:${activity.recurrence_rule}`, ...buildExDateLines(exDatesUtc, activity.is_all_day)] } : {}),
     extendedProperties: {
       private: {
         calentask_id: activity.id,
@@ -320,7 +337,20 @@ export async function syncActivityToGoogle(userId: string, activity: any, catego
     if (!calendarId) return
 
     const calendar = google.calendar({ version: 'v3', auth })
-    const eventBody = mapActivityToGoogleEvent(activity, categories, settings)
+
+    // 반복 마스터를 push할 때, 삭제된 회차(soft-deleted 자식 예외)를 EXDATE로 제외시킨다.
+    let exDatesUtc: string[] = []
+    if (activity.recurrence_rule) {
+      const { data: exChildren } = await supabase
+        .from('activities')
+        .select('original_start_time')
+        .eq('parent_activity_id', activity.id)
+        .not('deleted_at', 'is', null)
+        .not('original_start_time', 'is', null)
+      exDatesUtc = (exChildren || []).map((c: any) => c.original_start_time).filter(Boolean)
+    }
+
+    const eventBody = mapActivityToGoogleEvent(activity, categories, settings, exDatesUtc)
 
     if (activity.parent_activity_id) {
       const parentEventId = toGoogleEventId(activity.parent_activity_id)
@@ -953,10 +983,142 @@ export async function watchGoogleCalendar(userId: string, options?: { force?: bo
  * Handles delta sync with Google Calendar using syncToken.
  * 최적화: Bulk SELECT + Map 조회 + 병렬 업데이트로 N+1 문제 해결.
  */
-export async function handleGoogleCalendarSync(userId: string, customSupabase?: any) {
+/**
+ * Google이 보낸 반복 예외 인스턴스(recurringEventId 보유)를 Calentask의 자식 예외 행으로 반영한다.
+ * - 취소(status=cancelled) 회차 → soft-deleted 자식 예외 (해당 회차만 삭제)
+ * - 수정(confirmed) 회차 → 자식 예외 생성/갱신 (해당 회차만 변경)
+ * Google의 originalStartTime은 정상 타임스탬프이므로 UTC ISO로 안전하게 변환된다(EXDATE 문자열 tz 파싱 불필요).
+ */
+async function handleRecurringExceptionInstance(supabase: any, userId: string, event: any) {
   try {
-    const supabase = customSupabase || createAdminClient()
+    const recurringEventId: string = event.recurringEventId
+    const isCancelled = event.status === 'cancelled'
 
+    // 마스터 activity 찾기: Custom ID 역변환 → 실패 시 google_event_id 조회
+    let masterId: string | null = null
+    const candidate = fromGoogleEventId(recurringEventId)
+    if (candidate) {
+      const { data } = await supabase.from('activities').select('id').eq('user_id', userId).eq('id', candidate).maybeSingle()
+      if (data) masterId = data.id
+    }
+    if (!masterId) {
+      const { data } = await supabase.from('activities').select('id').eq('user_id', userId).eq('google_event_id', recurringEventId).maybeSingle()
+      if (data) masterId = data.id
+    }
+    if (!masterId) return // Calentask 시리즈가 아님 → 무시
+
+    const origStart = event.originalStartTime?.dateTime || event.originalStartTime?.date
+    if (!origStart) return
+    const origStartUtc = new Date(origStart).toISOString()
+
+    const { data: existingChild } = await supabase
+      .from('activities')
+      .select('id, deleted_at')
+      .eq('user_id', userId)
+      .eq('parent_activity_id', masterId)
+      .eq('original_start_time', origStartUtc)
+      .maybeSingle()
+
+    if (isCancelled) {
+      // 이 회차 삭제 → soft-deleted 자식 예외 보장
+      if (existingChild) {
+        if (!existingChild.deleted_at) {
+          await supabase.from('activities').update({ deleted_at: new Date().toISOString() }).eq('id', existingChild.id)
+        }
+      } else {
+        await supabase.from('activities').insert({
+          user_id: userId,
+          title: event.summary || '제목 없음',
+          start_time: origStartUtc,
+          end_time: origStartUtc,
+          is_all_day: !!event.originalStartTime?.date,
+          type: 'EVENT',
+          parent_activity_id: masterId,
+          original_start_time: origStartUtc,
+          deleted_at: new Date().toISOString(),
+        })
+      }
+    } else {
+      // 수정된 회차 → 자식 예외 생성/갱신
+      const start = event.start?.dateTime || event.start?.date
+      const end = event.end?.dateTime || event.end?.date
+      if (!start || !end) return
+      const isAllDay = !!event.start?.date
+      const reminders = (event.reminders?.useDefault === false && event.reminders?.overrides)
+        ? event.reminders.overrides.map((r: any) => ({ method: r.method, minutes: r.minutes }))
+        : []
+      const payload: any = {
+        title: event.summary || '제목 없음',
+        memo: event.description || '',
+        start_time: start,
+        end_time: end,
+        is_all_day: isAllDay,
+        reminders,
+        parent_activity_id: masterId,
+        original_start_time: origStartUtc,
+        deleted_at: null,
+      }
+      if (existingChild) {
+        await supabase.from('activities').update(payload).eq('id', existingChild.id)
+      } else {
+        await supabase.from('activities').insert({ user_id: userId, type: 'EVENT', ...payload })
+      }
+    }
+  } catch (e) {
+    console.error('[handleRecurringExceptionInstance] error:', e)
+  }
+}
+
+/**
+ * 동일 유저의 pull 동기화 동시 실행을 막는 coalescing lock 래퍼.
+ * after() 적용 이후 push마다 webhook이 pull을 트리거하므로, 버스트 시
+ * google_sync_token을 read-modify-write로 경쟁하는 문제를 직렬화로 해결한다.
+ *  - 잠금 보유 중 들어온 요청은 sync_rerun_requested로 표시되어 후행 1회로 합쳐진다.
+ *  - 잠금은 2분 후 스스로 만료되어 교착을 방지한다(크래시/타임아웃 안전).
+ */
+export async function handleGoogleCalendarSync(userId: string, customSupabase?: any) {
+  const supabase = customSupabase || createAdminClient()
+  const STALE_MS = 2 * 60 * 1000
+
+  // 원자적 잠금 획득: 잠금이 비었거나(또는 만료됐을 때만) sync_lock_at을 현재로 설정.
+  // Postgres READ COMMITTED에서 UPDATE ... WHERE는 행 잠금으로 직렬화되어,
+  // 동시 요청 중 정확히 하나만 행을 갱신(=잠금 획득)한다.
+  const staleThreshold = new Date(Date.now() - STALE_MS).toISOString()
+  const { data: lockRow } = await supabase
+    .from('users')
+    .update({ sync_lock_at: new Date().toISOString() })
+    .eq('id', userId)
+    .or(`sync_lock_at.is.null,sync_lock_at.lt.${staleThreshold}`)
+    .select('id')
+    .maybeSingle()
+
+  if (!lockRow) {
+    // 다른 동기화가 진행 중 → 후행 1회만 요청하고 종료
+    await supabase.from('users').update({ sync_rerun_requested: true }).eq('id', userId)
+    return
+  }
+
+  try {
+    let rerun = true
+    while (rerun) {
+      // 실행 직전에 플래그를 내려, 실행 도중 들어온 요청만 다음 루프로 합친다(trailing).
+      await supabase.from('users').update({ sync_rerun_requested: false }).eq('id', userId)
+      await runGoogleCalendarSync(userId, supabase)
+      const { data: flag } = await supabase
+        .from('users')
+        .select('sync_rerun_requested')
+        .eq('id', userId)
+        .single()
+      rerun = !!flag?.sync_rerun_requested
+    }
+  } finally {
+    // 예외/정상 모두 잠금 해제
+    await supabase.from('users').update({ sync_lock_at: null }).eq('id', userId)
+  }
+}
+
+async function runGoogleCalendarSync(userId: string, supabase: any) {
+  try {
     // ★ 안전장치: 초기화 진행 중(google_channel_id가 null)이면 조기 종료 ★
     // 이 함수가 웹훅에 의해 호출될 때, clearSyncedActivitiesFromGoogle이
     // 이미 1단계(channel_id NULL)를 실행한 상태라면 동기화를 수행해서는 안 됩니다.
@@ -1072,7 +1234,7 @@ export async function handleGoogleCalendarSync(userId: string, customSupabase?: 
     await supabase.from('users').update({ google_sync_token: newRawSyncToken }).eq('id', userId)
 
     if (has410Error) {
-      return handleGoogleCalendarSync(userId, supabase)
+      return runGoogleCalendarSync(userId, supabase)
     }
 
     if (settings.direction !== 'EXPORT_ONLY') {
@@ -1131,6 +1293,17 @@ export async function handleGoogleCalendarSync(userId: string, customSupabase?: 
         const isCancelled = event.status === 'cancelled'
         const calentaskId = event.extendedProperties?.private?.calentask_id
 
+        // ── 반복 예외 인스턴스 처리 (Google이 보낸 recurringEventId 보유 이벤트) ──
+        // Google UI에서 한 회차를 삭제/수정하면 EXDATE가 아니라 예외 인스턴스로 나타난다.
+        // 이를 Calentask의 자식 예외 행(parent_activity_id + original_start_time)으로 변환한다.
+        // (이 분기를 타지 않으면 수정된 회차가 별도 단발 일정으로 중복 생성되는 버그가 있었음)
+        if (event.recurringEventId) {
+          if (conflictStrategy !== 'CALENTASK_WINS') {
+            await handleRecurringExceptionInstance(supabase, userId, event)
+          }
+          continue
+        }
+
         if (calentaskId) {
           const activity = activityMap.get(calentaskId)
 
@@ -1176,8 +1349,11 @@ export async function handleGoogleCalendarSync(userId: string, customSupabase?: 
                         end_time: end,
                         is_all_day: isAllDay,
                         reminders,
-                        // 반복 규칙이 있을 때만 반영(없을 때 기존 값을 지우지 않도록 보수적 처리)
-                        ...(getRecurrenceRuleFromEvent(event) ? { recurrence_rule: getRecurrenceRuleFromEvent(event) } : {}),
+                        // 반복 규칙 반영: 마스터/단발 이벤트는 그대로 반영(반복이 사라졌으면 해제=null).
+                        // 인스턴스(recurringEventId 보유)는 마스터의 RRULE을 덮어쓰지 않도록, 반복 규칙이 있을 때만 반영.
+                        ...((!event.recurringEventId || getRecurrenceRuleFromEvent(event))
+                          ? { recurrence_rule: getRecurrenceRuleFromEvent(event) }
+                          : {}),
                         google_event_id: event.id as string,
                         updated_at: new Date(event.updated as string).toISOString()
                       })
@@ -1245,8 +1421,11 @@ export async function handleGoogleCalendarSync(userId: string, customSupabase?: 
                         end_time: end,
                         is_all_day: isAllDay,
                         reminders,
-                        // 반복 규칙이 있을 때만 반영(없을 때 기존 값을 지우지 않도록 보수적 처리)
-                        ...(getRecurrenceRuleFromEvent(event) ? { recurrence_rule: getRecurrenceRuleFromEvent(event) } : {}),
+                        // 반복 규칙 반영: 마스터/단발 이벤트는 그대로 반영(반복이 사라졌으면 해제=null).
+                        // 인스턴스(recurringEventId 보유)는 마스터의 RRULE을 덮어쓰지 않도록, 반복 규칙이 있을 때만 반영.
+                        ...((!event.recurringEventId || getRecurrenceRuleFromEvent(event))
+                          ? { recurrence_rule: getRecurrenceRuleFromEvent(event) }
+                          : {}),
                         google_event_id: event.id as string,
                         updated_at: new Date(event.updated as string).toISOString()
                       })

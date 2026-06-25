@@ -3,7 +3,49 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
+import { rrulestr } from 'rrule'
 import { syncActivityToGoogle, deleteActivityFromGoogle } from '@/lib/google-calendar'
+
+/**
+ * 반복 규칙(RRULE 본문)에 UNTIL을 안전하게 설정한다. rrule 라이브러리로 파싱·재직렬화하여
+ * 문자열 조작/타임존 경계(KST) 오류를 피한다. 실패 시 기존 문자열 방식으로 폴백.
+ * @param rruleBody "FREQ=WEEKLY;..." (RRULE: 접두사 없음)
+ * @param until 이 시각(포함) 이후 발생을 제외 → 보통 "이번 회차 시작 - 1초"를 넘긴다
+ */
+function setRRuleUntil(rruleBody: string, until: Date): string {
+  try {
+    const rule = rrulestr(`RRULE:${rruleBody}`) as any
+    const RRuleCtor = rule.constructor
+    const newRule = new RRuleCtor({ ...rule.origOptions, until })
+    // toString()이 "DTSTART:...\nRRULE:..."를 낼 수 있으므로 RRULE 라인만 추출
+    const str: string = newRule.toString()
+    const rruleLine = str.split('\n').find((l: string) => l.toUpperCase().startsWith('RRULE:')) || str
+    return rruleLine.replace(/^RRULE:/i, '').trim()
+  } catch {
+    const untilStr = until.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z'
+    if (rruleBody.includes('UNTIL=')) return rruleBody.replace(/UNTIL=[^;]+/, `UNTIL=${untilStr}`)
+    return rruleBody + `;UNTIL=${untilStr}`
+  }
+}
+
+/**
+ * 주어진 마스터 activity를 다시 조회해 Google에 재push한다(카테고리 포함).
+ * 반복 스코프 편집/삭제 후 부모 마스터의 변경(UNTIL/EXDATE)을 Google에 반영하기 위함.
+ */
+async function resyncMasterToGoogle(supabase: any, userId: string, activityId: string) {
+  try {
+    const { data: activity } = await supabase.from('activities').select('*').eq('id', activityId).single()
+    if (!activity) return
+    const { data: catMaps } = await supabase
+      .from('activity_category_map')
+      .select('categories(id, name, hex_color)')
+      .eq('activity_id', activityId)
+    const categoryObjects = catMaps?.map((m: any) => m.categories).filter(Boolean) || []
+    await syncActivityToGoogle(userId, activity, categoryObjects)
+  } catch (e) {
+    console.error('Google resync (master) error:', e)
+  }
+}
 
 export type Activity = {
   id: string
@@ -559,24 +601,16 @@ export async function updateRecurringActivity(
   }
 
   if (editMode === 'THIS_AND_FOLLOWING') {
-    // 1. 부모 일정 UNTIL 설정
+    // 1. 부모 일정 UNTIL 설정 (이번 회차 직전까지만 유지) — rrule 라이브러리로 안전하게 처리
     const parentRRule = originalActivity.recurrence_rule || ''
-    // 간단한 UNTIL 치환 (실제로는 rrule 라이브러리를 통해 하는게 안전하나, 문자열 조작으로 임시 처리)
-    const untilDate = new Date(originalStartTime)
-    untilDate.setUTCHours(0,0,0,0)
-    const untilStr = untilDate.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z'
-    
-    let newParentRRule = parentRRule
-    if (newParentRRule.includes('UNTIL=')) {
-      newParentRRule = newParentRRule.replace(/UNTIL=[^;]+/, `UNTIL=${untilStr}`)
-    } else {
-      newParentRRule += `;UNTIL=${untilStr}`
-    }
+    const until = new Date(new Date(originalStartTime).getTime() - 1000) // 이번 회차 시작 - 1초
+    const newParentRRule = setRRuleUntil(parentRRule, until)
 
     await supabase.from('activities').update({ recurrence_rule: newParentRRule }).eq('id', parentId)
-    // 구글 동기화는 여기서 생략 (원래 부모를 업데이트 해야 함)
+    // 잘린 부모 마스터를 Google에 반영
+    await resyncMasterToGoogle(supabase, userData.user.id, parentId)
 
-    // 2. 새로운 부모 일정 생성
+    // 2. 새로운 부모 일정 생성 (createActivity 내부에서 Google push 수행)
     return await createActivity({
       ...payload,
       parent_activity_id: null,
@@ -606,7 +640,7 @@ export async function deleteRecurringActivity(
   const parentId = originalActivity.parent_activity_id || originalActivity.id
 
   if (editMode === 'THIS_EVENT') {
-    // 예외 일정으로 생성 후 삭제 처리 (해당 회차만 삭제했음을 마킹)
+    // 예외 일정으로 생성 후 삭제 처리 (해당 회차만 삭제했음을 마킹 = 로컬 EXDATE 표현)
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { id, created_at, updated_at, activity_category_map, ...rest } = originalActivity
     await supabase.from('activities').insert({
@@ -614,22 +648,22 @@ export async function deleteRecurringActivity(
       user_id: userData.user.id,
       parent_activity_id: parentId,
       original_start_time: originalStartTime,
+      // 자식 예외는 자체 반복/구글 이벤트를 갖지 않음(마스터 값 복사 방지)
+      recurrence_rule: null,
+      google_event_id: null,
       deleted_at: new Date().toISOString()
     })
+    // 마스터를 재push → mapActivityToGoogleEvent가 이 회차를 EXDATE로 제외 (Google에서도 사라짐)
+    await resyncMasterToGoogle(supabase, userData.user.id, parentId)
   } else if (editMode === 'ALL_EVENTS') {
     await deleteActivity(parentId)
   } else if (editMode === 'THIS_AND_FOLLOWING') {
     const parentRRule = originalActivity.recurrence_rule || ''
-    const untilDate = new Date(originalStartTime)
-    untilDate.setUTCHours(0,0,0,0)
-    const untilStr = untilDate.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z'
-    let newParentRRule = parentRRule
-    if (newParentRRule.includes('UNTIL=')) {
-      newParentRRule = newParentRRule.replace(/UNTIL=[^;]+/, `UNTIL=${untilStr}`)
-    } else {
-      newParentRRule += `;UNTIL=${untilStr}`
-    }
+    const until = new Date(new Date(originalStartTime).getTime() - 1000) // 이번 회차 시작 - 1초
+    const newParentRRule = setRRuleUntil(parentRRule, until)
     await supabase.from('activities').update({ recurrence_rule: newParentRRule }).eq('id', parentId)
+    // 잘린 부모 마스터를 Google에 반영
+    await resyncMasterToGoogle(supabase, userData.user.id, parentId)
   }
 
   revalidatePath('/')
