@@ -272,6 +272,19 @@ function mapActivityToGoogleEvent(activity: any, categories: any[], settings?: G
 }
 
 /**
+ * Google 이벤트의 recurrence 배열에서 Calentask 형식의 반복 규칙(RRULE 본문)을 추출합니다.
+ * - Google: ["RRULE:FREQ=WEEKLY;BYDAY=FR", "EXDATE;...", ...]
+ * - Calentask(recurrence_rule): "FREQ=WEEKLY;BYDAY=FR" (RRULE: 접두사 없음, push 시 다시 붙임)
+ * 반복 일정이 아니면 null을 반환합니다.
+ */
+function getRecurrenceRuleFromEvent(event: any): string | null {
+  if (!Array.isArray(event?.recurrence)) return null
+  const rruleLine = event.recurrence.find((r: string) => typeof r === 'string' && r.toUpperCase().startsWith('RRULE:'))
+  if (!rruleLine) return null
+  return rruleLine.replace(/^RRULE:/i, '').trim() || null
+}
+
+/**
  * 범용적인 Google API 에러 판별 유틸리티
  */
 function isGoogleError(err: any, code: number): boolean {
@@ -1163,6 +1176,8 @@ export async function handleGoogleCalendarSync(userId: string, customSupabase?: 
                         end_time: end,
                         is_all_day: isAllDay,
                         reminders,
+                        // 반복 규칙이 있을 때만 반영(없을 때 기존 값을 지우지 않도록 보수적 처리)
+                        ...(getRecurrenceRuleFromEvent(event) ? { recurrence_rule: getRecurrenceRuleFromEvent(event) } : {}),
                         google_event_id: event.id as string,
                         updated_at: new Date(event.updated as string).toISOString()
                       })
@@ -1230,6 +1245,8 @@ export async function handleGoogleCalendarSync(userId: string, customSupabase?: 
                         end_time: end,
                         is_all_day: isAllDay,
                         reminders,
+                        // 반복 규칙이 있을 때만 반영(없을 때 기존 값을 지우지 않도록 보수적 처리)
+                        ...(getRecurrenceRuleFromEvent(event) ? { recurrence_rule: getRecurrenceRuleFromEvent(event) } : {}),
                         google_event_id: event.id as string,
                         updated_at: new Date(event.updated as string).toISOString()
                       })
@@ -1279,6 +1296,7 @@ export async function handleGoogleCalendarSync(userId: string, customSupabase?: 
                   is_all_day: isAllDay,
                   type: 'EVENT', // default type for imports
                   reminders,
+                  recurrence_rule: getRecurrenceRuleFromEvent(event),
                   google_event_id: event.id as string,
                 }
                 

@@ -683,30 +683,12 @@ export async function forceSyncNowAction() {
 
   // Pull (구글 변경점 가져오기) 작업
   try {
-    const { createAdminClient } = await import('@/lib/supabase/server')
-    const { handleGoogleCalendarSync, watchGoogleCalendar } = await import('@/lib/google-calendar')
-    const adminClient = createAdminClient()
+    const { watchGoogleCalendar } = await import('@/lib/google-calendar')
 
-    // Watch 채널 만료 확인 및 재등록
-    const { data: userRow } = await adminClient
-      .from('users')
-      .select('google_channel_id, google_channel_expiration')
-      .eq('id', userData.user.id)
-      .single()
-
-    const channelExpired = !userRow?.google_channel_id || 
-      !userRow?.google_channel_expiration ||
-      new Date(userRow.google_channel_expiration).getTime() < Date.now() + 60 * 60 * 1000 // 1시간 이내 만료
-
-    if (channelExpired) {
-      try {
-        await watchGoogleCalendar(userData.user.id)
-      } catch (watchErr) {
-        console.error('Failed to re-register watch channel:', watchErr)
-      }
-    }
-
-    await handleGoogleCalendarSync(userData.user.id, adminClient)
+    // watchGoogleCalendar는 멱등하다: 누락/만료 임박 채널(기본+모든 그룹 매핑 캘린더)만
+    // 재구독하고, 마지막에 pull 동기화(handleGoogleCalendarSync)까지 수행한다.
+    // 따라서 "지금 동기화" 버튼 한 번으로 매핑 캘린더 watch 누락도 즉시 복구된다.
+    await watchGoogleCalendar(userData.user.id)
   } catch (error) {
     console.error('Failed to handle google calendar pull sync:', error)
   }

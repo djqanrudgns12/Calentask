@@ -6,7 +6,7 @@ import { watchGoogleCalendar, handleGoogleCalendarSync } from '@/lib/google-cale
 // Vercel Cron이 하루 1회 호출합니다. (Google 채널은 최대 약 7일 후 만료)
 // watchGoogleCalendar가 만료 임박 채널만 갱신하고, 안전망으로 pull 동기화도 수행합니다.
 export const dynamic = 'force-dynamic'
-export const maxDuration = 300
+export const maxDuration = 60
 
 export async function GET(request: Request) {
   // Vercel Cron은 Authorization: Bearer ${CRON_SECRET} 헤더를 전달합니다.
