@@ -168,26 +168,57 @@ export function CalendarClient() {
     // 아카이브 노트 렌더링 체감 속도를 0초로 만들기 위한 백그라운드 선탑재(Prefetching) 실행
     useArchiveStore.getState().prefetchArchive()
 
-    // 실시간 DB 변경 감지 (구글 웹훅 자동 반영을 위한 WebSocket 연동)
+    // 실시간 DB 변경 감지 (구글 웹훅·다른 기기 입력을 새로고침 없이 자동 반영하는 WebSocket 연동)
+    // ※ 동작하려면 Supabase에서 각 테이블이 supabase_realtime publication에 등록되어 있어야 함
+    //   (마이그레이션 20260626020000_enable_realtime.sql 참고)
     const initRealtime = async () => {
       const { createClient } = await import('@/lib/supabase/client')
       const supabase = createClient()
-      
-      const channel = supabase.channel('activities_realtime')
-        .on(
-          'postgres_changes',
-          { event: '*', schema: 'public', table: 'activities' },
-          () => {
-            queryClient.invalidateQueries({ queryKey: ['activities'] })
-          }
-        )
+
+      // 잦은 연속 변경 시 과도한 재조회를 막기 위한 가벼운 디바운스
+      const timers: Record<string, ReturnType<typeof setTimeout>> = {}
+      const debounce = (key: string, fn: () => void, delay = 250) => {
+        if (timers[key]) clearTimeout(timers[key])
+        timers[key] = setTimeout(fn, delay)
+      }
+      const invalidate = (keys: string[][]) =>
+        keys.forEach((key) => queryClient.invalidateQueries({ queryKey: key }))
+
+      const channel = supabase.channel('db_realtime')
+        // 캘린더 일정
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'activities' }, () =>
+          debounce('activities', () => invalidate([['activities'], ['pendingActivities'], ['deleted_activities']])))
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'activity_category_map' }, () =>
+          debounce('activities', () => invalidate([['activities']])))
+        // 카테고리
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'categories' }, () =>
+          debounce('categories', () => invalidate([['categories'], ['activities']])))
+        // 기념일
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'anniversaries' }, () =>
+          debounce('anniversaries', () => invalidate([['anniversaries'], ['anniversaries_list']])))
+        // Agenda 할일 (Zustand 스토어)
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'agenda_tasks' }, () =>
+          debounce('agenda', () => useAgendaStore.getState().fetchTasks()))
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'agenda_subtasks' }, () =>
+          debounce('agenda', () => useAgendaStore.getState().fetchTasks()))
+        // 아카이브 노트 (Zustand 스토어)
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'notes' }, () =>
+          debounce('archive', () => useArchiveStore.getState().fetchTabs()))
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'archive_tabs' }, () =>
+          debounce('archive', () => useArchiveStore.getState().fetchTabs()))
+        // 링크 라운지
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'link_lounge_bookmarks' }, () =>
+          debounce('link', () => invalidate([['link_lounge_bookmarks'], ['deleted_link_bookmarks']])))
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'link_lounge_categories' }, () =>
+          debounce('link', () => invalidate([['link_lounge_categories']])))
         .subscribe()
 
       return () => {
+        Object.values(timers).forEach(clearTimeout)
         supabase.removeChannel(channel)
       }
     }
-    
+
     let cleanupFunc: (() => void) | undefined
     initRealtime().then(cleanup => { cleanupFunc = cleanup })
 
@@ -195,6 +226,23 @@ export function CalendarClient() {
       if (cleanupFunc) cleanupFunc()
     }
   }, [queryClient])
+
+  // A3: 다른 기기/탭에서 작업 후 이 창으로 복귀하면 Zustand 기반 탭 데이터를 다시 불러온다.
+  // (React Query 기반 탭은 QueryProvider의 refetchOnWindowFocus가 자동 처리)
+  useEffect(() => {
+    const onVisible = () => {
+      if (document.visibilityState !== 'visible') return
+      const vm = useCalendarStore.getState().viewMode
+      if (vm === 'archive_agenda' || vm === 'home') useAgendaStore.getState().fetchTasks()
+      if (vm === 'archive_notes') useArchiveStore.getState().fetchTabs()
+    }
+    document.addEventListener('visibilitychange', onVisible)
+    window.addEventListener('focus', onVisible)
+    return () => {
+      document.removeEventListener('visibilitychange', onVisible)
+      window.removeEventListener('focus', onVisible)
+    }
+  }, [])
 
   // 인접 월(이전/다음 달) 프리패치 로직 (전략 4)
   useEffect(() => {
