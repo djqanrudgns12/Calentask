@@ -1,5 +1,5 @@
-const CACHE_NAME = 'calentask-pwa-cache-v2';
-const PRECACHE_URLS = ['/', '/icon-192x192.png', '/icon-512x512.png'];
+const CACHE_NAME = 'calentask-pwa-cache-v4';
+const PRECACHE_URLS = ['/', '/icon-192x192.png', '/icon-512x512.png', '/manifest.json'];
 
 self.addEventListener('install', (event) => {
   self.skipWaiting();
