@@ -212,17 +212,17 @@ export function HomeDashboard() {
       </motion.div>
 
       {/* Main BENTO Grid */}
-      <div className={`grid grid-cols-1 gap-5 md:gap-6 ${hasPending ? 'lg:grid-cols-3 lg:grid-cols-[300px_1fr_300px] xl:grid-cols-[350px_1fr_350px]' : 'lg:grid-cols-3'}`}>
+      <div className={`grid grid-cols-1 gap-5 md:gap-6 items-stretch ${hasPending ? 'lg:grid-cols-[360px_1fr_300px] xl:grid-cols-[380px_1fr_340px]' : 'lg:grid-cols-3'}`}>
         
         {/* 미지정 카테고리 배정 (왼쪽) */}
         {hasPending && (
-          <motion.div variants={itemVariants} className="lg:col-span-1">
+          <motion.div variants={itemVariants} className="lg:col-span-1 h-full">
             <PendingClassification />
           </motion.div>
         )}
 
         {/* 오늘의 타임라인 — 메인 영역 */}
-        <motion.div variants={itemVariants} className={hasPending ? 'lg:col-span-1' : 'lg:col-span-2'}>
+        <motion.div variants={itemVariants} className={`h-full ${hasPending ? 'lg:col-span-1 min-w-0' : 'lg:col-span-2'}`}>
           <ScheduleTimeline 
             events={timelineEvents} 
             currentRange={selectedRange} 
@@ -231,7 +231,7 @@ export function HomeDashboard() {
         </motion.div>
 
         {/* 할 일 — 사이드 영역 */}
-        <motion.div variants={itemVariants} className="lg:col-span-1">
+        <motion.div variants={itemVariants} className="lg:col-span-1 h-full">
           <SmartAgenda />
         </motion.div>
       </div>

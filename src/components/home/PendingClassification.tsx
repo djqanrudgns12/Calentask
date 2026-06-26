@@ -28,23 +28,28 @@ export function PendingClassification() {
   }
 
   return (
-    <div className="bg-white/60 dark:bg-zinc-900/60 backdrop-blur-md rounded-3xl border border-indigo-100 dark:border-indigo-900/30 p-5 md:p-6 shadow-sm mb-6">
-      <div className="flex items-center gap-3 mb-4">
-        <div className="bg-indigo-100 dark:bg-indigo-900/50 p-2 rounded-xl text-indigo-600 dark:text-indigo-400">
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-          </svg>
+    <div className="h-full flex flex-col bg-white/80 backdrop-blur-xl rounded-3xl border-2 border-indigo-50 shadow-[0_8px_30px_rgb(99,102,241,0.08)] relative overflow-hidden ring-1 ring-white/50">
+      {/* Decorative gradient blur at the top */}
+      <div className="absolute top-0 left-0 right-0 h-40 bg-gradient-to-br from-indigo-50/80 via-purple-50/40 to-transparent pointer-events-none" />
+      
+      <div className="p-5 md:p-6 pb-4 flex items-center justify-between shrink-0 relative z-10 border-b border-indigo-50/50">
+        <div className="flex items-center gap-3">
+          <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-indigo-100 to-purple-100 flex items-center justify-center shadow-inner border border-white/50 shrink-0">
+            <svg className="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+            </svg>
+          </div>
+          <div>
+            <h2 className="text-base md:text-lg font-extrabold text-slate-800 tracking-tight">분류 대기 중인 일정</h2>
+            <p className="text-[11px] md:text-xs text-slate-500 font-medium">새 일정의 카테고리를 지정하세요.</p>
+          </div>
         </div>
-        <div>
-          <h2 className="text-lg font-bold text-slate-800 dark:text-slate-100">분류 대기 중인 일정</h2>
-          <p className="text-xs text-slate-500 dark:text-slate-400">구글 캘린더에서 가져온 새 일정의 카테고리를 지정해주세요.</p>
-        </div>
-        <div className="ml-auto bg-indigo-100 text-indigo-600 dark:bg-indigo-900/40 dark:text-indigo-400 text-xs font-bold px-2 py-1 rounded-full">
+        <div className="ml-2 bg-indigo-600 text-white text-xs font-bold px-2.5 py-1 rounded-full shadow-sm shrink-0">
           {pendingActivities.length}
         </div>
       </div>
 
-      <div className="space-y-3">
+      <div className="px-5 md:px-6 pb-5 pt-2 flex-1 overflow-y-auto hide-scrollbar space-y-3 relative z-10">
         <AnimatePresence>
           {pendingActivities.map((activity) => {
             const timeStr = activity.is_all_day 
@@ -56,25 +61,25 @@ export function PendingClassification() {
             return (
               <motion.div
                 key={activity.id}
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                exit={{ opacity: 0, height: 0 }}
-                className="flex flex-col sm:flex-row sm:items-center gap-3 p-3 bg-white dark:bg-zinc-800/80 rounded-2xl border border-slate-100 dark:border-zinc-700/50 shadow-sm transition-all hover:border-indigo-200 dark:hover:border-indigo-800"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                className="flex flex-col gap-3 p-4 bg-white rounded-2xl border border-indigo-50 shadow-sm transition-all hover:shadow-md hover:border-indigo-200 group"
               >
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="text-xs font-medium text-indigo-500 bg-indigo-50 dark:bg-indigo-900/30 px-2 py-0.5 rounded-md whitespace-nowrap">
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <span className="text-[10px] md:text-[11px] font-bold text-indigo-600 bg-indigo-50 border border-indigo-100/50 px-2 py-0.5 rounded-md whitespace-nowrap">
                       {dateStr} {timeStr}
                     </span>
                   </div>
-                  <h3 className="font-semibold text-sm text-slate-800 dark:text-slate-100 truncate">
+                  <h3 className="font-semibold text-sm text-slate-800 leading-snug break-words">
                     {activity.title || '(제목 없음)'}
                   </h3>
                 </div>
 
-                <div className="flex items-center gap-2 shrink-0">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-2 shrink-0 pt-1">
                   <select
-                    className="text-sm bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 rounded-xl px-3 py-2 outline-none focus:ring-2 focus:ring-indigo-500 transition-shadow min-w-[120px]"
+                    className="flex-1 min-w-[120px] text-[11px] md:text-xs font-medium bg-slate-50 border border-slate-200 rounded-xl px-2 md:px-3 py-2 outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 transition-all"
                     value={selectedCategories[activity.id] || ''}
                     onChange={(e) => handleSelectChange(activity.id, e.target.value)}
                   >
@@ -85,7 +90,7 @@ export function PendingClassification() {
                   </select>
                   <Button
                     size="sm"
-                    className="rounded-xl px-4 bg-indigo-600 hover:bg-indigo-700 text-white"
+                    className="rounded-xl px-3 md:px-4 bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-700 hover:to-indigo-600 text-white font-bold shadow-md shadow-indigo-500/20 disabled:opacity-50 disabled:shadow-none transition-all h-8 md:h-9 text-xs w-full sm:w-auto"
                     disabled={!selectedCategories[activity.id] || isPending}
                     onClick={() => handleAssign(activity.id)}
                   >
