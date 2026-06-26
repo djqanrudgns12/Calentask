@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 
 interface BeforeInstallPromptEvent extends Event {
   readonly platforms: string[]
@@ -12,7 +12,22 @@ interface BeforeInstallPromptEvent extends Event {
 }
 
 // 브라우저 종류를 감지하여 데스크톱 가이드에서 브라우저별 맞춤 안내를 제공하기 위한 유틸
-type BrowserType = 'chrome' | 'edge' | 'other'
+export type BrowserType = 'chrome' | 'edge' | 'other'
+
+// 플랫폼: 설치 방식이 근본적으로 다르므로 3가지로 구분
+//  - ios:     beforeinstallprompt 미지원 → Safari "홈 화면에 추가" 가이드
+//  - android: Chrome 등에서 프롬프트 지원, 없으면 ⋮ 메뉴 가이드
+//  - desktop: Chromium 계열 프롬프트 지원, 없으면 주소창 가이드
+export type Platform = 'ios' | 'android' | 'desktop'
+
+// 설치 클릭 시 호출부가 받는 액션 (discriminated union)
+export type InstallAction =
+  | { action: 'installed' }
+  | { action: 'dismissed' }
+  | { action: 'show-ios-guide' }
+  | { action: 'show-android-guide' }
+  | { action: 'show-desktop-guide'; browserType: BrowserType }
+  | { action: 'show-inapp-guide'; platform: Platform }
 
 function detectBrowser(): BrowserType {
   if (typeof navigator === 'undefined') return 'other'
@@ -24,19 +39,58 @@ function detectBrowser(): BrowserType {
   return 'other'
 }
 
+function detectPlatform(): Platform {
+  if (typeof navigator === 'undefined') return 'desktop'
+  const ua = navigator.userAgent.toLowerCase()
+  const isIos = /iphone|ipad|ipod/.test(ua) || (ua.includes('mac') && 'ontouchend' in document)
+  if (isIos) return 'ios'
+  if (ua.includes('android')) return 'android'
+  return 'desktop'
+}
+
+// 카카오톡/네이버/인스타그램 등 인앱(내장) 브라우저 감지.
+// 이 환경들은 "홈 화면에 추가"가 불가능하므로 외부 브라우저로 열도록 안내해야 한다.
+function detectInAppBrowser(): boolean {
+  if (typeof navigator === 'undefined') return false
+  const ua = navigator.userAgent.toLowerCase()
+  const inAppTokens = [
+    'kakaotalk',
+    'naver',         // 네이버 앱 / 네이버 검색 인앱
+    'line/',
+    'instagram',
+    'fban',          // Facebook
+    'fbav',
+    'fb_iab',
+    'daumapps',      // 다음 앱
+    'whale',         // 네이버 웨일 (모바일 앱 인앱 케이스 포함)
+    'everytimeapp',  // 에브리타임
+    'band',          // 밴드
+    'kakaostory',
+    'trill',         // 틱톡
+  ]
+  return inAppTokens.some((token) => ua.includes(token))
+}
+
 export function usePwaInstall() {
-  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null)
   const [isInstallable, setIsInstallable] = useState(false)
-  const [isIos, setIsIos] = useState(false)
   const [isStandalone, setIsStandalone] = useState(false)
+  const [platform, setPlatform] = useState<Platform>('desktop')
+  const [isInAppBrowser, setIsInAppBrowser] = useState(false)
   const [browserType, setBrowserType] = useState<BrowserType>('other')
 
+  // deferredPrompt는 렌더링에 직접 쓰이지 않고 클릭 시점에만 참조되므로 ref로 보관한다.
+  // (setTimeout 재확인 시 stale-closure를 피하기 위함)
+  const deferredPromptRef = useRef<BeforeInstallPromptEvent | null>(null)
+
+  // 파생 편의 플래그
+  const isIos = platform === 'ios'
+
   useEffect(() => {
-    // 1. 스탠드얼론(설치된 앱) 모드인지 감지 및 동적 리스너 등록
+    // 1. 스탠드얼론(설치된 앱) 모드 감지 및 동적 리스너 등록
     const checkStandalone = () => {
       return window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone === true
     }
-    
+
     setIsStandalone(checkStandalone())
 
     const mediaQuery = window.matchMedia('(display-mode: standalone)')
@@ -49,52 +103,48 @@ export function usePwaInstall() {
       mediaQuery.addListener(handleMediaQueryChange)
     }
 
-    // 2. 브라우저 종류 감지
+    // 2. 플랫폼 / 브라우저 / 인앱 여부 감지
+    const detectedPlatform = detectPlatform()
+    setPlatform(detectedPlatform)
     setBrowserType(detectBrowser())
+    setIsInAppBrowser(detectInAppBrowser())
 
-    // 3. iOS 기기 감지 (아이패드 데스크톱 모드 포함)
-    const userAgent = window.navigator.userAgent.toLowerCase()
-    const isIosDevice = /iphone|ipad|ipod/.test(userAgent) || (userAgent.includes('mac') && 'ontouchend' in document)
-    setIsIos(isIosDevice)
-
-    if (isIosDevice) {
-      // iOS는 beforeinstallprompt를 지원하지 않으므로, 스탠드얼론이 아니라면 설치 가능 상태로 둠
+    // iOS는 beforeinstallprompt를 지원하지 않으므로, 스탠드얼론이 아니라면 설치 가능 상태로 둠
+    if (detectedPlatform === 'ios') {
       setIsInstallable(true)
     }
 
-    // 4. beforeinstallprompt 감지 (안드로이드, 데스크톱 크롬 등)
-    // React hydration 지연으로 인해 이벤트를 놓치는 경우를 방지하기 위해
-    // 전역 변수에 캐시된 이벤트를 우선 확인
+    // 3. beforeinstallprompt 감지 (안드로이드, 데스크톱 크롬 등)
+    // React hydration 지연으로 이벤트를 놓치는 경우를 방지하기 위해
+    // layout.tsx 인라인 스크립트가 전역 변수에 캐시해 둔 이벤트를 우선 확인
     const winAny = window as any
     if (winAny.deferredPWAEvent) {
-      setDeferredPrompt(winAny.deferredPWAEvent)
+      deferredPromptRef.current = winAny.deferredPWAEvent
       setIsInstallable(true)
     }
 
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault()
-      // 이벤트 캐치 (이벤트가 발생했다는 것은 앱이 설치되어 있지 않음을 의미)
-      setDeferredPrompt(e as BeforeInstallPromptEvent)
+      deferredPromptRef.current = e as BeforeInstallPromptEvent
       winAny.deferredPWAEvent = e
       setIsInstallable(true)
     }
 
-    // 5. 앱 설치 완료 감지 (설치 직후 상태 업데이트)
+    // 4. 앱 설치 완료 감지 (설치 직후 상태 업데이트)
     const handleAppInstalled = () => {
       setIsStandalone(true)
       setIsInstallable(false)
-      setDeferredPrompt(null)
+      deferredPromptRef.current = null
+      winAny.deferredPWAEvent = null
     }
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
     window.addEventListener('appinstalled', handleAppInstalled)
 
-    // 6. React hydration 타이밍 이슈 대비: 짧은 지연 후 전역 변수 재확인
-    // layout.tsx 인라인 스크립트가 이벤트를 먼저 캐치하지만,
-    // React useEffect가 실행될 때까지 약간의 지연이 있을 수 있음
+    // 5. React hydration 타이밍 이슈 대비: 짧은 지연 후 전역 변수 재확인
     const retryTimer = setTimeout(() => {
-      if (!deferredPrompt && winAny.deferredPWAEvent) {
-        setDeferredPrompt(winAny.deferredPWAEvent)
+      if (!deferredPromptRef.current && winAny.deferredPWAEvent) {
+        deferredPromptRef.current = winAny.deferredPWAEvent
         setIsInstallable(true)
       }
     }, 1000)
@@ -109,48 +159,49 @@ export function usePwaInstall() {
         mediaQuery.removeListener(handleMediaQueryChange)
       }
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  const installApp = useCallback(async () => {
-    if (isIos) {
-      // iOS는 외부 컴포넌트(모달)에서 가이드를 띄우도록 처리
-      return { action: 'show-ios-guide' as const }
+  const installApp = useCallback(async (): Promise<InstallAction> => {
+    // 0. 인앱(내장) 브라우저는 설치가 불가능하므로 외부 브라우저로 열도록 안내
+    if (isInAppBrowser) {
+      return { action: 'show-inapp-guide', platform }
     }
 
-    // React state에 없으면 전역 변수에서 한번 더 확인
-    const prompt = deferredPrompt || (window as any).deferredPWAEvent as BeforeInstallPromptEvent | null
-
-    if (!prompt) {
-      // 브라우저 정책(이미 설치됨, 캐시 등)으로 자동 설치 프롬프트가 없을 경우
-      // → 브라우저별 시각적 데스크톱 설치 가이드 모달을 표시
-      return { action: 'show-desktop-guide' as const, browserType }
-    }
-
-    // 설치 프롬프트 띄우기
-    try {
-      await prompt.prompt()
-      const { outcome } = await prompt.userChoice
-
-      if (outcome === 'accepted') {
-        setDeferredPrompt(null)
-        ;(window as any).deferredPWAEvent = null
-        setIsInstallable(false)
-        return { action: 'installed' as const }
-      } else {
-        return { action: 'dismissed' as const }
+    // 1. 네이티브 설치 프롬프트가 있으면 우선 사용 (Android Chrome, Desktop Chromium)
+    const prompt = deferredPromptRef.current || ((window as any).deferredPWAEvent as BeforeInstallPromptEvent | null)
+    if (prompt) {
+      try {
+        await prompt.prompt()
+        const { outcome } = await prompt.userChoice
+        if (outcome === 'accepted') {
+          deferredPromptRef.current = null
+          ;(window as any).deferredPWAEvent = null
+          setIsInstallable(false)
+          return { action: 'installed' }
+        }
+        return { action: 'dismissed' }
+      } catch {
+        // prompt()가 실패하면 (이미 사용된 prompt 등) 플랫폼별 가이드로 폴백
       }
-    } catch {
-      // prompt()가 실패하면 (이미 사용된 prompt 등) 데스크톱 가이드로 폴백
-      return { action: 'show-desktop-guide' as const, browserType }
     }
-  }, [deferredPrompt, isIos, browserType])
+
+    // 2. 프롬프트가 없으면 플랫폼별 가이드 모달로 분기
+    if (platform === 'ios') {
+      return { action: 'show-ios-guide' }
+    }
+    if (platform === 'android') {
+      return { action: 'show-android-guide' }
+    }
+    return { action: 'show-desktop-guide', browserType }
+  }, [isInAppBrowser, platform, browserType])
 
   return {
     isInstallable,
     isStandalone,
     isIos,
+    platform,
+    isInAppBrowser,
     browserType,
-    installApp
+    installApp,
   }
 }

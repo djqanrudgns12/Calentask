@@ -8,8 +8,8 @@ import { logout } from '@/app/actions/auth'
 import { useCalendarStore } from '@/store/useCalendarStore'
 import { useQueryClient } from '@tanstack/react-query'
 import { useGlobalUIStore } from '@/store/useGlobalUIStore'
-import { Keyboard } from 'lucide-react'
-import { PwaInstallPrompt } from '@/components/ui/PwaInstallPrompt'
+import { Keyboard, Download } from 'lucide-react'
+import { useInstallAction } from '@/components/pwa/useInstallAction'
 
 export function ProfileDropdown({ onOpenSettings }: { onOpenSettings: () => void }) {
   const [isOpen, setIsOpen] = useState(false)
@@ -17,6 +17,7 @@ export function ProfileDropdown({ onOpenSettings }: { onOpenSettings: () => void
   const { resetStore } = useCalendarStore()
   const { openShortcutsModal } = useGlobalUIStore()
   const queryClient = useQueryClient()
+  const { onInstallClick, GuideModals, isStandalone } = useInstallAction()
 
   const handleLogout = async () => {
     // 1. 상태 초기화
@@ -32,6 +33,7 @@ export function ProfileDropdown({ onOpenSettings }: { onOpenSettings: () => void
   const avatarUrl = profile?.avatar_url
 
   return (
+    <>
     <Popover open={isOpen} onOpenChange={setIsOpen}>
       <PopoverTrigger className="flex items-center gap-2 px-1.5 py-1.5 rounded-full hover:bg-muted transition-colors focus:outline-none">
         <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 shadow-md flex items-center justify-center text-sm font-bold text-white overflow-hidden ring-2 ring-transparent hover:ring-indigo-200 hover:scale-105 transition-all">
@@ -84,8 +86,19 @@ export function ProfileDropdown({ onOpenSettings }: { onOpenSettings: () => void
             단축키 안내
           </button>
           
-          <PwaInstallPrompt />
-          
+          {!isStandalone && (
+            <button
+              onClick={() => {
+                setIsOpen(false)
+                onInstallClick()
+              }}
+              className="flex items-center gap-3 px-3 py-2 text-sm font-medium text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 rounded-lg transition-colors text-left"
+            >
+              <Download className="w-4 h-4 text-indigo-500" />
+              앱 설치
+            </button>
+          )}
+
           <button
             onClick={() => {
               setIsOpen(false)
@@ -107,5 +120,7 @@ export function ProfileDropdown({ onOpenSettings }: { onOpenSettings: () => void
         </div>
       </PopoverContent>
     </Popover>
+    {GuideModals}
+    </>
   )
 }

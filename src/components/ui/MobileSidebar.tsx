@@ -14,8 +14,7 @@ import { UpcomingAnniversaryWidget } from '@/components/anniversary/UpcomingAnni
 import { logout } from '@/app/actions/auth'
 import { useQueryClient } from '@tanstack/react-query'
 import { Download } from 'lucide-react'
-import { usePwaInstall } from '@/hooks/usePwaInstall'
-import { IOSInstallGuideModal } from '@/components/pwa/IOSInstallGuideModal'
+import { useInstallAction } from '@/components/pwa/useInstallAction'
 
 interface MobileSidebarProps {
   open: boolean
@@ -161,8 +160,7 @@ function CollapsibleGroup({
 export function MobileSidebar({ open, onOpenChange, onOpenSettings }: MobileSidebarProps) {
   const { viewMode, setViewMode, resetStore } = useCalendarStore()
   const queryClient = useQueryClient()
-  const { isInstallable, isStandalone, installApp } = usePwaInstall()
-  const [showIOSModal, setShowIOSModal] = useState(false)
+  const { onInstallClick, GuideModals, isStandalone } = useInstallAction()
 
   // 아코디언 상태
   const isCalendarMenuOpen = ['monthly', 'weekly', 'list', 'semester', 'archive_agenda', 'anniversary'].includes(viewMode)
@@ -190,15 +188,6 @@ export function MobileSidebar({ open, onOpenChange, onOpenSettings }: MobileSide
     onOpenSettings()
   }
 
-  const handleInstallClick = async () => {
-    const result = await installApp()
-    if (result?.action === 'show-ios-guide') {
-      setShowIOSModal(true)
-    } else if (result?.action === 'show-desktop-guide') {
-      alert('설치 프롬프트를 띄울 수 없거나 이미 설치되어 있습니다.')
-    }
-  }
-
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
@@ -209,7 +198,7 @@ export function MobileSidebar({ open, onOpenChange, onOpenSettings }: MobileSide
         <SheetHeader className="px-5 pt-5 pb-3 shrink-0">
           <SheetTitle className="flex items-center gap-3">
             <img
-              src="/icon.png"
+              src="/icon-192x192.png"
               alt="Calentask"
               className="w-8 h-8 rounded-xl object-cover shadow-sm shrink-0"
             />
@@ -411,7 +400,7 @@ export function MobileSidebar({ open, onOpenChange, onOpenSettings }: MobileSide
           {!isStandalone && (
             <Button
               variant="default"
-              onClick={handleInstallClick}
+              onClick={onInstallClick}
               className="w-full text-[14px] font-bold flex items-center justify-center gap-2 h-10 whitespace-nowrap bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white border-0 shadow-md shadow-blue-500/20 transition-all active:scale-95"
             >
               <Download className="w-4 h-4 shrink-0" />
@@ -435,7 +424,7 @@ export function MobileSidebar({ open, onOpenChange, onOpenSettings }: MobileSide
           </button>
         </div>
       </SheetContent>
-      <IOSInstallGuideModal open={showIOSModal} onOpenChange={setShowIOSModal} />
+      {GuideModals}
     </Sheet>
   )
 }
