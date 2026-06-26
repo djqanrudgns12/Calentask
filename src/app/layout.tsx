@@ -23,7 +23,6 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   title: "Calentask",
   description: "통합 캘린더 애플리케이션",
-  manifest: "/manifest.json",
   icons: {
     icon: "/icon-192x192.png",
     apple: "/icon-192x192.png",
