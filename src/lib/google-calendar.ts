@@ -1495,9 +1495,12 @@ async function runGoogleCalendarSync(userId: string, supabase: any) {
                     .map(([catId]) => catId)
 
                   if (mappedCategoryIds.length > 0) {
-                    let targetCategoryId = mappedCategoryIds[0] // 기본값: 매핑된 첫 번째 카테고리 (Fallback)
+                    let targetCategoryId: string | null = null
                     
-                    if (mappedCategoryIds.length > 1) {
+                    if (mappedCategoryIds.length === 1) {
+                      // 1:1 매핑: 바로 할당
+                      targetCategoryId = mappedCategoryIds[0]
+                    } else if (mappedCategoryIds.length > 1) {
                       // N:1 매핑 시, 제목(summary) 또는 메모(description)에 카테고리 이름이 포함되어 있는지 검사 (스마트 라우팅)
                       const searchStr = `${event.summary || ''} ${event.description || ''}`.toLowerCase()
                       for (const catId of mappedCategoryIds) {
@@ -1507,16 +1510,19 @@ async function runGoogleCalendarSync(userId: string, supabase: any) {
                           break
                         }
                       }
+                      // 스마트 라우팅에 실패하면 targetCategoryId는 null로 유지되어 미지정(분류 대기) 상태가 됨
                     }
 
-                    // activity_category_map 에 연결 정보 INSERT
-                    try {
-                      await supabase.from('activity_category_map').insert({
-                        activity_id: insertedActivity.id,
-                        category_id: targetCategoryId
-                      })
-                    } catch (mapErr) {
-                      console.warn(`[handleGoogleCalendarSync] Failed to insert category mapping for ${insertedActivity.id}:`, mapErr)
+                    if (targetCategoryId) {
+                      // activity_category_map 에 연결 정보 INSERT
+                      try {
+                        await supabase.from('activity_category_map').insert({
+                          activity_id: insertedActivity.id,
+                          category_id: targetCategoryId
+                        })
+                      } catch (mapErr) {
+                        console.warn(`[handleGoogleCalendarSync] Failed to insert category mapping for ${insertedActivity.id}:`, mapErr)
+                      }
                     }
                   }
                   // [강화] 스마트 카테고리 라우팅 로직 끝

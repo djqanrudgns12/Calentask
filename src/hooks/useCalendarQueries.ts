@@ -408,3 +408,24 @@ export function useSearchActivities(query: string) {
     enabled: query.length > 1, // 2글자 이상일 때만 검색
   })
 }
+
+import { getPendingActivities, assignCategoryToPendingActivity } from '@/app/actions/calendar'
+
+export function usePendingActivities() {
+  return useQuery({
+    queryKey: ['pendingActivities'],
+    queryFn: () => getPendingActivities(),
+  })
+}
+
+export function useAssignCategoryToPendingActivity() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ activityId, categoryId }: { activityId: string, categoryId: string }) => 
+      assignCategoryToPendingActivity(activityId, categoryId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['pendingActivities'] })
+      queryClient.invalidateQueries({ queryKey: ['activities'] })
+    }
+  })
+}
