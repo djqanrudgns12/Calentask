@@ -9,10 +9,12 @@ export async function login(formData: FormData) {
   const keepLoggedIn = formData.get('keepLoggedIn') === 'on'
   
   const cookieStore = await cookies()
+  const isProduction = process.env.NODE_ENV === 'production'
   if (keepLoggedIn) {
     cookieStore.set('sb-keep-logged-in', 'true', { 
       httpOnly: true, 
       sameSite: 'lax', 
+      secure: isProduction,
       path: '/',
       maxAge: 60 * 60 * 24 * 365
     })
@@ -20,6 +22,7 @@ export async function login(formData: FormData) {
     cookieStore.set('sb-keep-logged-in', 'false', { 
       httpOnly: true, 
       sameSite: 'lax', 
+      secure: isProduction,
       path: '/' 
     })
   }

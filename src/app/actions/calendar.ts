@@ -1160,3 +1160,52 @@ export async function getCleanedSyncTimelineAction() {
   })
 }
 
+
+// 분류 대기 중인 일정 가져오기
+export async function getPendingActivities() {
+  const supabase = await createClient()
+  const { data: userData } = await supabase.auth.getUser()
+  if (!userData.user) throw new Error('Not authenticated')
+
+  const { data, error } = await supabase
+    .from('activities')
+    .select(`
+      id, title, start_time, end_time, is_all_day, memo, type, google_event_id,
+      activity_category_map(category_id)
+    `)
+    .eq('user_id', userData.user.id)
+    .not('google_event_id', 'is', null)
+    .is('deleted_at', null)
+    .order('start_time', { ascending: true })
+
+  if (error) throw new Error(error.message)
+
+  // 카테고리가 없는 항목만 필터링
+  const pending = data.filter((item: any) => !item.activity_category_map || item.activity_category_map.length === 0)
+  
+  return pending as unknown as Activity[]
+}
+
+// 분류 대기 중인 일정에 카테고리 할당하기
+export async function assignCategoryToPendingActivity(activityId: string, categoryId: string) {
+  const supabase = await createClient()
+  const { data: userData } = await supabase.auth.getUser()
+  if (!userData.user) throw new Error('Not authenticated')
+
+  const { error: mappingError } = await supabase
+    .from('activity_category_map')
+    .insert({ activity_id: activityId, category_id: categoryId })
+
+  if (mappingError) throw new Error(mappingError.message)
+
+  // 업데이트 트리거를 발생시켜 캐시/UI 무효화 유도
+  await supabase
+    .from('activities')
+    .update({ updated_at: new Date().toISOString() })
+    .eq('id', activityId)
+    .eq('user_id', userData.user.id)
+
+  revalidatePath('/')
+  return true
+}
+

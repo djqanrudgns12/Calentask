@@ -1,6 +1,8 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
+const ONE_YEAR_SECONDS = 60 * 60 * 24 * 365
+
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({
     request,
@@ -23,7 +25,12 @@ export async function updateSession(request: NextRequest) {
           })
           cookiesToSet.forEach(({ name, value, options }) => {
             const cookieOptions = { ...options }
-            if (!keepLoggedIn) {
+            if (keepLoggedIn) {
+              // Actively extend cookie lifetime to 1 year
+              cookieOptions.maxAge = ONE_YEAR_SECONDS
+              delete cookieOptions.expires
+            } else {
+              // Session cookie: browser will delete on close
               delete cookieOptions.maxAge
               delete cookieOptions.expires
             }

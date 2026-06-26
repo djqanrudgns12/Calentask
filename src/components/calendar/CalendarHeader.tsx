@@ -9,6 +9,7 @@ import { CategoryPresetMenu } from '@/components/calendar/CategoryPresetMenu'
 import { ProfileDropdown } from '@/components/profile/ProfileDropdown'
 import { DatePickerPopover } from '@/components/calendar/DatePickerPopover'
 import { SpotlightSearch } from '@/components/calendar/SpotlightSearch'
+import { RefreshButton } from '@/components/calendar/RefreshButton'
 import { AnimatePresence, motion } from 'framer-motion'
 
 interface CalendarHeaderProps {
@@ -571,6 +572,9 @@ export function CalendarHeader({ onOpenSettings, onOpenMobileSidebar }: Calendar
           )}
         </AnimatePresence>
 
+          {/* 모든 탭에서 보이는 공용 새로고침 버튼 */}
+          <RefreshButton />
+
           <div className="hidden sm:block ml-1">
             <ProfileDropdown onOpenSettings={onOpenSettings} />
           </div>
@@ -593,6 +597,9 @@ export function CalendarHeader({ onOpenSettings, onOpenMobileSidebar }: Calendar
               <PanelLeftOpen className="w-5 h-5" />
             </button>
           )}
+
+          {/* 모바일 전용 새로고침 버튼 (데스크톱 우측 슬롯은 hidden md:flex라 모바일에선 보이지 않음) */}
+          <RefreshButton className="md:hidden flex items-center justify-center w-10 h-10 rounded-xl bg-card border border-border shadow-sm shrink-0 !p-0" />
 
           {/* Unified Dynamic Wrapper */}
           <div className={wrapperClassName}>

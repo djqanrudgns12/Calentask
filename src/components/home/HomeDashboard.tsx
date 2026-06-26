@@ -12,6 +12,8 @@ import type { Activity } from '@/app/actions/calendar'
 import { ScheduleTimeline } from './ScheduleTimeline'
 import { SmartAgenda } from './SmartAgenda'
 import { QuickActions } from './QuickActions'
+import { PendingClassification } from './PendingClassification'
+import { usePendingActivities } from '@/hooks/useCalendarQueries'
 import { LinkLoungeCard } from './LinkLoungeCard'
 import { RecentNotes } from './RecentNotes'
 
@@ -47,6 +49,9 @@ export type TimelineRange = 'yesterday' | 'today' | 'tomorrow' | 'last_month' | 
 export function HomeDashboard() {
   const { data: profile } = useUserProfile()
   const { tasks, isInitialized } = useAgendaStore()
+  const { data: pendingActivities } = usePendingActivities()
+  
+  const hasPending = pendingActivities && pendingActivities.length > 0
 
   const [selectedRange, setSelectedRange] = useState<TimelineRange>('today')
 
@@ -207,9 +212,17 @@ export function HomeDashboard() {
       </motion.div>
 
       {/* Main BENTO Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 md:gap-6">
-        {/* 오늘의 타임라인 — 메인 영역 (2/3) */}
-        <motion.div variants={itemVariants} className="lg:col-span-2">
+      <div className={`grid grid-cols-1 gap-5 md:gap-6 items-stretch ${hasPending ? 'lg:grid-cols-[360px_1fr_300px] xl:grid-cols-[380px_1fr_340px]' : 'lg:grid-cols-3'}`}>
+        
+        {/* 미지정 카테고리 배정 (왼쪽) */}
+        {hasPending && (
+          <motion.div variants={itemVariants} className="lg:col-span-1 h-full">
+            <PendingClassification />
+          </motion.div>
+        )}
+
+        {/* 오늘의 타임라인 — 메인 영역 */}
+        <motion.div variants={itemVariants} className={`h-full ${hasPending ? 'lg:col-span-1 min-w-0' : 'lg:col-span-2'}`}>
           <ScheduleTimeline 
             events={timelineEvents} 
             currentRange={selectedRange} 
@@ -217,8 +230,8 @@ export function HomeDashboard() {
           />
         </motion.div>
 
-        {/* 할 일 — 사이드 영역 (1/3) */}
-        <motion.div variants={itemVariants} className="lg:col-span-1">
+        {/* 할 일 — 사이드 영역 */}
+        <motion.div variants={itemVariants} className="lg:col-span-1 h-full">
           <SmartAgenda />
         </motion.div>
       </div>

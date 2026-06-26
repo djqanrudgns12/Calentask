@@ -312,6 +312,7 @@ export function useDeleteActivity() {
     onMutate: async (id) => {
       // 현재 캐시된 모든 activities 쿼리를 취소하고 낙관적 업데이트
       await queryClient.cancelQueries({ queryKey: ['activities'] })
+      await queryClient.cancelQueries({ queryKey: ['pendingActivities'] })
       
       // 모든 ['activities', ...] 쿼리 데이터에서 삭제 대상 제거
       const queriesData = queryClient.getQueriesData<Activity[]>({ queryKey: ['activities'] })
@@ -322,18 +323,32 @@ export function useDeleteActivity() {
           queryClient.setQueryData(key, data.filter(a => a.id !== id))
         }
       })
+
+      // pendingActivities 캐시에서도 낙관적으로 즉시 제거
+      const previousPending = queryClient.getQueryData<Activity[]>(['pendingActivities'])
+      if (previousPending) {
+        queryClient.setQueryData(
+          ['pendingActivities'],
+          previousPending.filter(a => a.id !== id)
+        )
+      }
       
-      return { previousQueries }
+      return { previousQueries, previousPending }
     },
     onError: (_err, _id, context) => {
       // 에러 시 모든 쿼리를 이전 상태로 롤백
       context?.previousQueries.forEach(([key, data]) => {
         queryClient.setQueryData(key, data)
       })
+      // pendingActivities도 롤백
+      if (context?.previousPending) {
+        queryClient.setQueryData(['pendingActivities'], context.previousPending)
+      }
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['activities'] })
       queryClient.invalidateQueries({ queryKey: ['deleted_activities'] })
+      queryClient.invalidateQueries({ queryKey: ['pendingActivities'] })
     }
   })
 }
@@ -406,5 +421,26 @@ export function useSearchActivities(query: string) {
     queryKey: ['searchActivities', query],
     queryFn: () => searchActivities(query),
     enabled: query.length > 1, // 2글자 이상일 때만 검색
+  })
+}
+
+import { getPendingActivities, assignCategoryToPendingActivity } from '@/app/actions/calendar'
+
+export function usePendingActivities() {
+  return useQuery({
+    queryKey: ['pendingActivities'],
+    queryFn: () => getPendingActivities(),
+  })
+}
+
+export function useAssignCategoryToPendingActivity() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ activityId, categoryId }: { activityId: string, categoryId: string }) => 
+      assignCategoryToPendingActivity(activityId, categoryId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['pendingActivities'] })
+      queryClient.invalidateQueries({ queryKey: ['activities'] })
+    }
   })
 }
