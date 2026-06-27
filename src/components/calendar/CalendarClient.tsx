@@ -53,6 +53,7 @@ import { MobileCategoryBar } from '@/components/calendar/MobileCategoryBar'
 import { MobileSidebar } from '@/components/ui/MobileSidebar'
 import { SchoolMealsClient } from '@/components/school-meals/SchoolMealsClient'
 import { SchoolScheduleClient } from '@/components/school-schedule/SchoolScheduleClient'
+import { AcademicDataClient } from '@/components/school-schedule/AcademicDataClient'
 import dynamic from 'next/dynamic'
 
 const TemplateCenterTab = dynamic(() => import('@/components/insights/TemplateCenterTab'), { ssr: false })
@@ -73,7 +74,7 @@ export function CalendarClient() {
 
   const isHome = viewMode === 'home'
   const isSchoolMeals = viewMode === 'school_meals'
-  const isCalendarMenuOpen = ['monthly', 'weekly', 'list', 'semester', 'archive_agenda', 'anniversary', 'google_sync', 'school_schedule'].includes(viewMode)
+  const isCalendarMenuOpen = ['monthly', 'weekly', 'list', 'semester', 'archive_agenda', 'anniversary', 'google_sync', 'school_schedule', 'academic_data'].includes(viewMode)
   const isMyCalendarActive = ['monthly', 'weekly', 'list', 'semester'].includes(viewMode)
   const isArchiveMenuOpen = ['archive_notes', 'link_lounge'].includes(viewMode)
   const isDataCenterMenuOpen = ['insights', 'nice_import', 'tags', 'trash', 'template_center'].includes(viewMode)
@@ -386,6 +387,16 @@ export function CalendarClient() {
                         <span>학사일정</span>
                       </button>
 
+                      <button
+                        onClick={() => setViewMode('academic_data')}
+                        className={`w-full text-left px-3 py-2 rounded-lg text-[13px] font-medium transition-colors flex items-center gap-2.5 ${
+                          viewMode === 'academic_data' ? 'bg-teal-50/70 text-teal-700 shadow-sm font-semibold' : 'text-muted-foreground hover:bg-accent hover:text-foreground'
+                        }`}
+                      >
+                        <Database className={`w-3.5 h-3.5 ${viewMode === 'academic_data' ? 'text-teal-600' : 'text-muted-foreground/50'}`} />
+                        <span>학사일정 데이터 관리</span>
+                      </button>
+
                       <button 
                         onClick={() => setViewMode('archive_agenda')}
                         className={`w-full text-left px-3 py-2 rounded-lg text-[13px] font-medium transition-all duration-300 flex items-center gap-2.5 ${
@@ -642,6 +653,11 @@ export function CalendarClient() {
                 {viewMode === 'school_schedule' && (
                   <div className="min-h-full flex flex-col bg-background rounded-xl md:rounded-3xl overflow-x-hidden border border-border shadow-sm">
                     <SchoolScheduleClient />
+                  </div>
+                )}
+                {viewMode === 'academic_data' && (
+                  <div className="min-h-full flex flex-col bg-background rounded-xl md:rounded-3xl overflow-x-hidden border border-border shadow-sm">
+                    <AcademicDataClient />
                   </div>
                 )}
                 {viewMode === 'template_center' && (

@@ -281,7 +281,48 @@ export async function getActivities(startDate: string, endDate: string) {
       .filter(Boolean)
   }))
 
-  return activities
+  // 메인 캘린더 노출이 설정된 학사일정 병합 (소스에 category_id가 지정된 경우만, 읽기 전용)
+  const academic = await getAcademicEventsForCalendar(supabase, startDate, endDate)
+
+  return [...activities, ...academic]
+}
+
+// getActivities 내부 헬퍼: 소스에 카테고리가 지정된 학사일정 이벤트를 Activity 형태로 변환
+async function getAcademicEventsForCalendar(supabase: any, startDate: string, endDate: string): Promise<Activity[]> {
+  const fromYmd = startDate.slice(0, 10)
+  const toYmd = endDate.slice(0, 10)
+  const { data, error } = await supabase
+    .from('academic_events')
+    .select('id, event_date, title, academic_sources!inner(category_id, categories:category_id(id, name, hex_color, is_default, user_id))')
+    .gte('event_date', fromYmd)
+    .lte('event_date', toYmd)
+    .not('academic_sources.category_id', 'is', null)
+
+  if (error || !data) return []
+
+  return data.map((r: any) => {
+    const cat = r.academic_sources?.categories
+    return {
+      id: `academic:${r.id}`,
+      user_id: '',
+      title: r.title,
+      start_time: `${r.event_date}T00:00:00`,
+      end_time: `${r.event_date}T23:59:59`,
+      is_all_day: true,
+      memo: null,
+      type: 'EVENT',
+      hex_color: cat?.hex_color || '#0EA5E9',
+      template_id: null,
+      deleted_at: null,
+      categories: cat ? [cat] : [],
+      attachments: [],
+      reminders: null,
+      recurrence_rule: null,
+      parent_activity_id: null,
+      original_start_time: null,
+      google_event_id: 'ACADEMIC_SHEET',
+    } as Activity
+  })
 }
 
 // 일정 생성

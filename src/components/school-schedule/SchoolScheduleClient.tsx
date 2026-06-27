@@ -1,53 +1,36 @@
 'use client'
 
 import React, { useState, useEffect, useMemo } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
-import { GraduationCap, Calendar as CalendarIcon, ChevronLeft, ChevronRight, School, Search, Loader2 } from 'lucide-react'
+import { GraduationCap, Calendar as CalendarIcon, ChevronLeft, ChevronRight, Database, Loader2, Inbox } from 'lucide-react'
 import { useCalendarStore } from '@/store/useCalendarStore'
-import { useUserProfile } from '@/hooks/useCalendarQueries'
-import { getAcademicSchedule } from './academicUtils'
+import { getAcademicEvents } from '@/app/actions/academicData'
 import { Activity } from '@/app/actions/calendar'
-import { format, addMonths, subMonths, startOfWeek, endOfWeek, addWeeks, subWeeks, startOfMonth, endOfMonth, parseISO } from 'date-fns'
-import { ko } from 'date-fns/locale'
+import { format, addMonths, subMonths, startOfWeek, endOfWeek, addWeeks, subWeeks } from 'date-fns'
 
 import { AcademicMonthlyView } from './AcademicMonthlyView'
-import { SchoolSearchCard } from '../school-meals/SchoolSearchCard'
 import { AcademicEventDetailPopover } from './AcademicEventDetailPopover'
 
 export function SchoolScheduleClient() {
-  const { data: profile } = useUserProfile()
-  const { calendarFontSize, weekStartsOn } = useCalendarStore()
-  
+  const { calendarFontSize, weekStartsOn, setViewMode } = useCalendarStore()
+
   const [currentDate, setCurrentDate] = useState(new Date())
   const [subView, setSubView] = useState<'monthly' | 'weekly' | 'semester'>('monthly')
   const [events, setEvents] = useState<Activity[]>([])
   const [loading, setLoading] = useState(false)
   const [selectedEvent, setSelectedEvent] = useState<Activity | null>(null)
-  
-  const [filterType, setFilterType] = useState<'ALL' | 'EXAM' | 'HOLIDAY' | 'EVENT'>('ALL')
-
-  const hasSchool = !!(profile?.neis_office_code && profile?.neis_school_code)
 
   useEffect(() => {
-    if (hasSchool) {
-      fetchEvents(currentDate)
-    }
-  }, [hasSchool, currentDate.getMonth(), currentDate.getFullYear()])
+    fetchEvents(currentDate)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentDate.getMonth(), currentDate.getFullYear()])
 
   const fetchEvents = async (date: Date) => {
-    if (!profile?.neis_office_code || !profile?.neis_school_code) return
     setLoading(true)
     try {
-      // 해당 월의 앞뒤 1달 데이터를 넉넉히 가져옴 (임시)
-      const from = format(subMonths(date, 1), 'yyyyMMdd')
-      const to = format(addMonths(date, 2), 'yyyyMMdd')
-      
-      const res = await getAcademicSchedule(
-        profile.neis_office_code, 
-        profile.neis_school_code,
-        from,
-        to
-      )
+      // 보이는 달의 앞뒤로 넉넉히 가져옴 (날짜 문자열 YYYY-MM-DD)
+      const from = format(subMonths(date, 1), 'yyyy-MM-dd')
+      const to = format(addMonths(date, 2), 'yyyy-MM-dd')
+      const res = await getAcademicEvents(from, to)
       setEvents(res)
     } catch (error) {
       console.error(error)
@@ -56,24 +39,10 @@ export function SchoolScheduleClient() {
     }
   }
 
-  const filteredEvents = useMemo(() => {
-    if (filterType === 'ALL') return events
-    return events.filter(e => {
-      const isExam = e.google_event_id === 'NEIS_SCHEDULE_TYPE_EXAM'
-      const isHoliday = e.google_event_id === 'NEIS_SCHEDULE_TYPE_HOLIDAY'
-      const isEvent = e.google_event_id === 'NEIS_SCHEDULE_TYPE_EVENT'
-      
-      if (filterType === 'EXAM' && isExam) return true
-      if (filterType === 'HOLIDAY' && isHoliday) return true
-      if (filterType === 'EVENT' && isEvent) return true
-      return false
-    })
-  }, [events, filterType])
-
   const handlePrev = () => {
     if (subView === 'monthly') setCurrentDate(subMonths(currentDate, 1))
     if (subView === 'weekly') setCurrentDate(subWeeks(currentDate, 1))
-    if (subView === 'semester') setCurrentDate(subMonths(currentDate, 6)) // 대략 6개월
+    if (subView === 'semester') setCurrentDate(subMonths(currentDate, 6))
   }
 
   const handleNext = () => {
@@ -82,11 +51,8 @@ export function SchoolScheduleClient() {
     if (subView === 'semester') setCurrentDate(addMonths(currentDate, 6))
   }
 
-  const handleToday = () => {
-    setCurrentDate(new Date())
-  }
+  const handleToday = () => setCurrentDate(new Date())
 
-  // 상단 바텍스트 포맷팅
   const headerText = useMemo(() => {
     if (subView === 'monthly') return format(currentDate, 'yyyy년 M월')
     if (subView === 'weekly') {
@@ -105,57 +71,30 @@ export function SchoolScheduleClient() {
     return ''
   }, [currentDate, subView, weekStartsOn])
 
-  if (!hasSchool) {
-    return (
-      <div className="flex-1 flex items-center justify-center p-4">
-        <div className="w-full max-w-md">
-          <SchoolSearchCard onSelectSchool={(school) => {
-            // SchoolMealsClient 쪽의 SchoolSearchCard가 알아서 프로필을 업데이트해줌
-            window.location.reload()
-          }} />
-        </div>
-      </div>
-    )
-  }
+  const isEmpty = !loading && events.length === 0
 
   return (
     <div className="flex-1 flex flex-col min-h-0 bg-background relative overflow-hidden">
-      
       {/* Header Area */}
       <div className="px-4 py-3 md:px-6 md:py-4 border-b border-border flex flex-col md:flex-row md:items-center justify-between gap-4 shrink-0">
-        
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-sky-100 text-sky-600 flex items-center justify-center shrink-0">
             <GraduationCap className="w-5 h-5" />
           </div>
           <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-lg md:text-xl font-bold flex items-center gap-2">
-                {profile.neis_school_name} 학사일정
-              </h1>
-              <button
-                onClick={() => {
-                  // 임시로 상태 변경 로직. 실제로는 Profile을 비우거나 상태를 변경하여 검색 화면으로 전환
-                  if (confirm('다른 학교를 검색하시겠습니까?')) {
-                    import('@/app/actions/profile').then(({ updateUserProfile }) => {
-                      updateUserProfile({ neis_office_code: null as any, neis_school_code: null as any, neis_school_name: null as any })
-                        .then(() => window.location.reload())
-                    })
-                  }
-                }}
-                className="px-2 py-1 text-xs bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-md transition-colors border border-slate-200"
-              >
-                학교 변경
-              </button>
-            </div>
-            <p className="text-xs md:text-sm text-muted-foreground flex items-center gap-1.5 mt-0.5">
-              <School className="w-3.5 h-3.5" />
-              학교 공식 학사일정을 동기화하세요
-            </p>
+            <h1 className="text-lg md:text-xl font-bold">학사일정</h1>
+            <p className="text-xs md:text-sm text-muted-foreground mt-0.5">등록한 구글 시트 학사일정을 달력으로 봅니다.</p>
           </div>
         </div>
-        
+
         <div className="flex flex-col md:flex-row items-center gap-3">
+          <button
+            onClick={() => setViewMode('academic_data')}
+            className="px-3 py-1.5 text-xs md:text-sm font-medium bg-teal-50 hover:bg-teal-100 text-teal-700 rounded-lg border border-teal-200 transition-colors flex items-center gap-1.5"
+          >
+            <Database className="w-3.5 h-3.5" />
+            데이터 관리
+          </button>
           {/* SubView Selector */}
           <div className="flex p-1 bg-muted/50 rounded-lg shrink-0 border border-border/50">
             {(['monthly', 'weekly', 'semester'] as const).map(view => (
@@ -174,7 +113,7 @@ export function SchoolScheduleClient() {
       </div>
 
       {/* Toolbar */}
-      <div className="px-4 py-2 border-b border-border flex flex-col md:flex-row md:items-center justify-between gap-2 shrink-0 bg-muted/20">
+      <div className="px-4 py-2 border-b border-border flex items-center justify-between gap-2 shrink-0 bg-muted/20">
         <div className="flex items-center gap-2">
           <div className="flex items-center bg-background rounded-lg border shadow-sm p-0.5">
             <button onClick={handlePrev} className="p-1.5 hover:bg-muted rounded-md text-muted-foreground transition-colors">
@@ -187,38 +126,28 @@ export function SchoolScheduleClient() {
               <ChevronRight className="w-4 h-4" />
             </button>
           </div>
-          <span className="text-lg font-bold ml-2 tabular-nums tracking-tight">
-            {headerText}
-          </span>
+          <span className="text-lg font-bold ml-2 tabular-nums tracking-tight">{headerText}</span>
           {loading && <Loader2 className="w-4 h-4 animate-spin text-sky-500 ml-2" />}
-        </div>
-
-        {/* Filters */}
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 md:pb-0 scrollbar-hide">
-          {(['ALL', 'EXAM', 'HOLIDAY', 'EVENT'] as const).map(f => (
-            <button
-              key={f}
-              onClick={() => setFilterType(f)}
-              className={`px-3 py-1.5 text-[13px] font-medium rounded-full border whitespace-nowrap transition-colors ${
-                filterType === f 
-                ? 'bg-sky-100 border-sky-200 text-sky-700' 
-                : 'bg-background border-border text-muted-foreground hover:bg-accent'
-              }`}
-            >
-              {f === 'ALL' ? '전체' : f === 'EXAM' ? '📝 시험/평가' : f === 'HOLIDAY' ? '🏖️ 휴업일' : '🏫 교내행사'}
-            </button>
-          ))}
         </div>
       </div>
 
       {/* Main View Area */}
       <div className="flex-1 min-h-0 relative overflow-hidden bg-dot-pattern">
         {subView === 'monthly' && (
-          <AcademicMonthlyView 
-            currentDate={currentDate} 
-            events={filteredEvents} 
-            onEventClick={setSelectedEvent} 
-          />
+          <>
+            <AcademicMonthlyView currentDate={currentDate} events={events} onEventClick={setSelectedEvent} />
+            {isEmpty && (
+              <div className="absolute inset-x-0 top-2 flex justify-center pointer-events-none">
+                <button
+                  onClick={() => setViewMode('academic_data')}
+                  className="pointer-events-auto inline-flex items-center gap-2 px-4 py-2 rounded-full bg-teal-600 text-white text-sm font-medium shadow-lg hover:bg-teal-700 transition-colors"
+                >
+                  <Inbox className="w-4 h-4" />
+                  등록된 학사일정이 없습니다 — 데이터 관리에서 시트를 등록하세요
+                </button>
+              </div>
+            )}
+          </>
         )}
         {subView === 'weekly' && (
           <div className="flex items-center justify-center h-full text-muted-foreground flex-col gap-2">
@@ -236,10 +165,7 @@ export function SchoolScheduleClient() {
 
       {/* Detail Popover */}
       {selectedEvent && (
-        <AcademicEventDetailPopover 
-          event={selectedEvent} 
-          onClose={() => setSelectedEvent(null)} 
-        />
+        <AcademicEventDetailPopover event={selectedEvent} onClose={() => setSelectedEvent(null)} />
       )}
     </div>
   )

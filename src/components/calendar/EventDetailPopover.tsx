@@ -9,7 +9,7 @@ import { toast } from 'sonner'
 import { useQueryClient } from '@tanstack/react-query'
 
 export function EventDetailPopover() {
-  const { selectedEventDetail, closeEventDetail, openEditEvent, openDeleteConfirm } = useCalendarStore()
+  const { selectedEventDetail, closeEventDetail, openEditEvent, openDeleteConfirm, setViewMode } = useCalendarStore()
   const openAddDialog = useAgendaStore(state => state.openAddDialog)
   const queryClient = useQueryClient()
 
@@ -44,6 +44,9 @@ export function EventDetailPopover() {
   }
 
   if (!event) return null
+
+  // 학사일정 시트에서 온 읽기 전용 이벤트 (메인 캘린더 노출분)
+  const isAcademic = event.id.startsWith('academic:')
 
   const handleRetrySync = async () => {
     setIsSyncing(true)
@@ -145,6 +148,7 @@ export function EventDetailPopover() {
             )}
 
             {/* Sync Status */}
+            {!isAcademic && (
             <div className="flex items-center gap-3">
               <div className="w-5 h-5 flex items-center justify-center shrink-0">
                 <svg viewBox="0 0 48 48" className="w-4 h-4 opacity-70">
@@ -175,9 +179,27 @@ export function EventDetailPopover() {
                 )}
               </div>
             </div>
+            )}
           </div>
 
           {/* Action Footer */}
+          {isAcademic ? (
+            <div className="flex flex-col gap-2 px-5 py-4 border-t border-border/50 bg-slate-50/50">
+              <div className="text-[11px] font-bold text-muted-foreground flex items-center gap-1.5 px-1">
+                <span className="text-teal-500">🎓</span>
+                학사일정 시트에서 가져온 항목입니다. 수정/삭제는 데이터 관리에서 하세요.
+              </div>
+              <div className="flex items-center justify-end gap-2">
+                <button
+                  onClick={() => { closeEventDetail(); setViewMode('academic_data') }}
+                  className="px-4 py-2 text-sm font-semibold text-white bg-teal-600 hover:bg-teal-700 shadow-sm rounded-lg transition-colors flex items-center gap-1.5"
+                >
+                  <Pencil className="w-4 h-4" />
+                  데이터 관리로 이동
+                </button>
+              </div>
+            </div>
+          ) : (
           <div className="flex flex-col gap-3 px-5 py-4 border-t border-border/50 bg-slate-50/50">
             <div className="text-[11px] font-bold text-muted-foreground flex items-center gap-1.5 px-1">
               <span className="text-amber-500">💡</span>
@@ -192,14 +214,14 @@ export function EventDetailPopover() {
                 아젠다로 보내기
               </button>
               <div className="flex gap-2">
-                <button 
+                <button
                   onClick={handleDelete}
                   className="px-4 py-2 text-sm font-semibold text-red-600 hover:bg-red-50 rounded-lg transition-colors flex items-center gap-1.5"
                 >
                   <Trash2 className="w-4 h-4" />
                   삭제
                 </button>
-                <button 
+                <button
                   onClick={handleEdit}
                   className="px-4 py-2 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 shadow-sm rounded-lg transition-colors flex items-center gap-1.5"
                 >
@@ -209,6 +231,7 @@ export function EventDetailPopover() {
               </div>
             </div>
           </div>
+          )}
         </div>
       </div>
     </>

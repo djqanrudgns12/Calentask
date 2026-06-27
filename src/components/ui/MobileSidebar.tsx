@@ -163,7 +163,7 @@ export function MobileSidebar({ open, onOpenChange, onOpenSettings }: MobileSide
   const { onInstallClick, GuideModals, isStandalone } = useInstallAction()
 
   // 아코디언 상태
-  const isCalendarMenuOpen = ['monthly', 'weekly', 'list', 'semester', 'archive_agenda', 'anniversary'].includes(viewMode)
+  const isCalendarMenuOpen = ['monthly', 'weekly', 'list', 'semester', 'archive_agenda', 'anniversary', 'school_schedule', 'academic_data', 'google_sync'].includes(viewMode)
   const isArchiveMenuOpen = ['archive_notes', 'link_lounge'].includes(viewMode)
   const isDataCenterMenuOpen = ['insights', 'nice_import', 'tags', 'trash', 'template_center'].includes(viewMode)
 
@@ -276,6 +276,14 @@ export function MobileSidebar({ open, onOpenChange, onOpenSettings }: MobileSide
                   iconColor="text-sky-600"
                   activeBg="bg-sky-50/70 text-sky-700"
                   onClick={() => navigate('school_schedule')}
+                />
+                <SubMenuItem
+                  icon={Database}
+                  label="학사일정 데이터 관리"
+                  isActive={viewMode === 'academic_data'}
+                  iconColor="text-teal-600"
+                  activeBg="bg-teal-50/70 text-teal-700"
+                  onClick={() => navigate('academic_data')}
                 />
                 <SubMenuItem
                   icon={Sparkles}

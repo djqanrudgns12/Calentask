@@ -424,6 +424,124 @@ export function useSearchActivities(query: string) {
   })
 }
 
+import {
+  getAcademicSources,
+  getAcademicEvents,
+  searchAcademicEvents,
+  getExclusionRules,
+  registerAcademicSource,
+  applyResyncAcademicSource,
+  updateAcademicSource,
+  deleteAcademicSource,
+  updateAcademicEvent,
+  deleteAcademicEvents,
+  addExclusionRule,
+  deleteExclusionRule,
+} from '@/app/actions/academicData'
+
+// ── 학사일정 데이터 관리 ──
+function invalidateAcademic(queryClient: ReturnType<typeof useQueryClient>) {
+  queryClient.invalidateQueries({ queryKey: ['academic_sources'] })
+  queryClient.invalidateQueries({ queryKey: ['academic_events'] })
+  queryClient.invalidateQueries({ queryKey: ['academic_search'] })
+  queryClient.invalidateQueries({ queryKey: ['activities'] }) // 메인 캘린더 병합 반영
+}
+
+export function useAcademicSources() {
+  return useQuery({
+    queryKey: ['academic_sources'],
+    queryFn: () => getAcademicSources(),
+  })
+}
+
+export function useAcademicEvents(startDate: string, endDate: string) {
+  return useQuery({
+    queryKey: ['academic_events', startDate, endDate],
+    queryFn: () => getAcademicEvents(startDate, endDate),
+    enabled: !!startDate && !!endDate,
+    placeholderData: keepPreviousData,
+  })
+}
+
+export function useExclusionRules() {
+  return useQuery({
+    queryKey: ['exclusion_rules'],
+    queryFn: () => getExclusionRules(),
+  })
+}
+
+export function useSearchAcademicEvents(params: { query?: string; sourceId?: string; from?: string; to?: string }) {
+  return useQuery({
+    queryKey: ['academic_search', params],
+    queryFn: () => searchAcademicEvents(params),
+  })
+}
+
+export function useRegisterAcademicSource() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (input: { url: string; year: number; label?: string }) => registerAcademicSource(input),
+    onSuccess: () => invalidateAcademic(queryClient),
+  })
+}
+
+export function useApplyResyncAcademicSource() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (sourceId: string) => applyResyncAcademicSource(sourceId),
+    onSuccess: () => invalidateAcademic(queryClient),
+  })
+}
+
+export function useUpdateAcademicSource() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ sourceId, patch }: { sourceId: string; patch: { label?: string | null; category_id?: string | null; year?: number } }) =>
+      updateAcademicSource(sourceId, patch),
+    onSuccess: () => invalidateAcademic(queryClient),
+  })
+}
+
+export function useDeleteAcademicSource() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (sourceId: string) => deleteAcademicSource(sourceId),
+    onSuccess: () => invalidateAcademic(queryClient),
+  })
+}
+
+export function useUpdateAcademicEvent() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, patch }: { id: string; patch: { date?: string; title?: string } }) => updateAcademicEvent(id, patch),
+    onSuccess: () => invalidateAcademic(queryClient),
+  })
+}
+
+export function useDeleteAcademicEvents() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (ids: string[]) => deleteAcademicEvents(ids),
+    onSuccess: () => invalidateAcademic(queryClient),
+  })
+}
+
+export function useAddExclusionRule() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (keyword: string) => addExclusionRule(keyword),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['exclusion_rules'] }),
+  })
+}
+
+export function useDeleteExclusionRule() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (id: string) => deleteExclusionRule(id),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['exclusion_rules'] }),
+  })
+}
+
 import { getPendingActivities, assignCategoryToPendingActivity } from '@/app/actions/calendar'
 
 export function usePendingActivities() {

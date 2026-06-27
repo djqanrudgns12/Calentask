@@ -3,7 +3,7 @@ import { persist } from 'zustand/middleware'
 import { Activity, Category } from '@/app/actions/calendar'
 import type { CalendarFontSize } from '@/lib/calendarFontSize'
 
-export type ViewMode = 'home' | 'monthly' | 'weekly' | 'list' | 'semester' | 'nice_import' | 'anniversary' | 'google_sync' | 'school_meals' | 'school_schedule' | 'insights' | 'archive_notes' | 'archive_agenda' | 'link_lounge' | 'tags' | 'trash' | 'template_center'
+export type ViewMode = 'home' | 'monthly' | 'weekly' | 'list' | 'semester' | 'nice_import' | 'anniversary' | 'google_sync' | 'school_meals' | 'school_schedule' | 'academic_data' | 'insights' | 'archive_notes' | 'archive_agenda' | 'link_lounge' | 'tags' | 'trash' | 'template_center'
 
 
 interface CalendarState {
