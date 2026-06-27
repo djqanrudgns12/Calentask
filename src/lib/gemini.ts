@@ -2,7 +2,7 @@
 // 규칙 파서가 실패한 비정형 시트를 구조화 JSON으로 추출하는 폴백.
 // GEMINI_API_KEY(서버 전용 환경변수) 사용. 신규 npm 의존성 없이 REST fetch.
 
-const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-2.5-flash'
+const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-3.1-flash-lite'
 const GEMINI_ENDPOINT = (model: string, key: string) =>
   `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`
 
