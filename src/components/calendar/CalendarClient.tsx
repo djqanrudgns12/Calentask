@@ -2,8 +2,9 @@
 /* eslint-disable @next/next/no-img-element */
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
+import { useSwipeable } from 'react-swipeable'
 import { useCalendarStore } from '@/store/useCalendarStore'
 import { useArchiveStore } from '@/store/useArchiveStore'
 import { useAgendaStore } from '@/store/useAgendaStore'
@@ -71,6 +72,57 @@ export function CalendarClient() {
     semesterYear, semesterTerm, activeCategories, resetStore,
     weekStartsOn
   } = useCalendarStore()
+
+  // --- 스와이프 전역 모바일 뷰 전환 (Swipe Navigation) 상태 ---
+  const FLATTENED_VIEWS = [
+    'home',
+    'school_meals',
+    'monthly',
+    'weekly',
+    'list',
+    'semester',
+    'school_schedule',
+    'academic_data',
+    'archive_agenda',
+    'anniversary',
+    'google_sync',
+    'archive_notes',
+    'link_lounge',
+    'insights',
+    'template_center',
+    'nice_import',
+    'tags',
+    'trash'
+  ] as const;
+
+  const prevViewModeRef = useRef<typeof viewMode>(viewMode)
+  const prevViewMode = prevViewModeRef.current
+  useEffect(() => {
+    prevViewModeRef.current = viewMode
+  }, [viewMode])
+
+  const oldIndex = FLATTENED_VIEWS.indexOf(prevViewMode as any)
+  const newIndex = FLATTENED_VIEWS.indexOf(viewMode as any)
+  const slideDirection = newIndex >= oldIndex ? 'left' : 'right'
+
+  const swipeHandlers = useSwipeable({
+    onSwipedLeft: () => {
+      const currentIndex = FLATTENED_VIEWS.indexOf(viewMode as any)
+      if (currentIndex !== -1 && currentIndex < FLATTENED_VIEWS.length - 1) {
+        setViewMode(FLATTENED_VIEWS[currentIndex + 1] as any)
+      }
+    },
+    onSwipedRight: () => {
+      const currentIndex = FLATTENED_VIEWS.indexOf(viewMode as any)
+      if (currentIndex > 0) {
+        setViewMode(FLATTENED_VIEWS[currentIndex - 1] as any)
+      }
+    },
+    preventScrollOnSwipe: false, // 스크롤을 막지 않아 캘린더 세로 스크롤 허용
+    trackMouse: false, // 데스크톱에서는 동작하지 않음
+    delta: 50 // 터치 민감도 50px
+  })
+
 
   const isHome = viewMode === 'home'
   const isSchoolMeals = viewMode === 'school_meals'
@@ -623,15 +675,38 @@ export function CalendarClient() {
           onDragEnd={handleDragEnd}
           onDragCancel={handleDragCancel}
         >
-          <div className="flex-1 overflow-y-auto overflow-x-hidden px-1 md:px-8 pb-8">
+          <div className="flex-1 overflow-y-auto overflow-x-hidden px-1 md:px-8 pb-8" {...swipeHandlers}>
             {!mounted ? (
               <div className="flex h-full w-full items-center justify-center">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
               </div>
             ) : (
-              <>
-                {/* 모바일 카테고리 필터 바 — 캘린더 뷰에서만 표시, 캘린더와 함께 스크롤 */}
-                {isMyCalendarActive && <MobileCategoryBar />}
+              <AnimatePresence mode="wait" custom={slideDirection}>
+                <motion.div
+                  key={viewMode}
+                  custom={slideDirection}
+                  variants={{
+                    enter: (direction: string) => ({
+                      x: direction === 'left' ? '20%' : '-20%',
+                      opacity: 0,
+                    }),
+                    center: {
+                      x: 0,
+                      opacity: 1,
+                    },
+                    exit: (direction: string) => ({
+                      x: direction === 'left' ? '-20%' : '20%',
+                      opacity: 0,
+                    }),
+                  }}
+                  initial="enter"
+                  animate="center"
+                  exit="exit"
+                  transition={{ type: 'spring', stiffness: 350, damping: 35 }}
+                  className="w-full min-h-full flex flex-col"
+                >
+                  {/* 모바일 카테고리 필터 바 — 캘린더 뷰에서만 표시, 캘린더와 함께 스크롤 */}
+                  {isMyCalendarActive && <MobileCategoryBar />}
 
                 {viewMode === 'monthly' && <MonthlyView currentDate={currentDate} events={events} />}
                 {viewMode === 'weekly' && <WeeklyView currentDate={currentDate} events={events} />}
@@ -695,7 +770,8 @@ export function CalendarClient() {
                     <HomeDashboard />
                   </div>
                 )}
-              </>
+                </motion.div>
+              </AnimatePresence>
             )}
           </div>
           <DragOverlay>
