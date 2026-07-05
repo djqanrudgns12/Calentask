@@ -33,7 +33,8 @@ const COLOR_SWATCHES = [
 ]
 
 export function EditCategoryDialog() {
-  const { editingCategory, closeEditCategory } = useCalendarStore()
+  const editingCategory = useCalendarStore(s => s.editingCategory)
+  const closeEditCategory = useCalendarStore(s => s.closeEditCategory)
   const { mutate: updateCategory, isPending } = useUpdateCategory()
   const { data: categories = [] } = useCategories()
 

@@ -10,7 +10,7 @@ import { useRouter } from 'next/navigation'
 export function CommandPalette() {
   const [open, setOpen] = useState(false)
   const { tabs, setActiveTabId } = useArchiveStore()
-  const { setViewMode } = useCalendarStore()
+  const setViewMode = useCalendarStore(s => s.setViewMode)
   const router = useRouter()
 
   useEffect(() => {

@@ -9,7 +9,9 @@ import { Button } from '@/components/ui/button'
 import { Popover, PopoverContent, PopoverTrigger, PopoverHeader, PopoverTitle } from '@/components/ui/popover'
 
 export function GlobalCategoryFilter() {
-  const { activeCategories, setActiveCategories, openEditCategory } = useCalendarStore()
+  const activeCategories = useCalendarStore(s => s.activeCategories)
+  const setActiveCategories = useCalendarStore(s => s.setActiveCategories)
+  const openEditCategory = useCalendarStore(s => s.openEditCategory)
   const { data: categories = [] } = useCategories()
   const { mutate: createCategory, isPending: isCreating } = useCreateCategory()
   const { mutate: deleteCategory, isPending: isDeleting } = useDeleteCategory()
@@ -153,7 +155,9 @@ export function GlobalCategoryFilter() {
  * 코드 중복 없이 한 곳에서 관리하기 위함입니다.
  */
 export function CategoryPopoverContent() {
-  const { activeCategories, setActiveCategories, openEditCategory } = useCalendarStore()
+  const activeCategories = useCalendarStore(s => s.activeCategories)
+  const setActiveCategories = useCalendarStore(s => s.setActiveCategories)
+  const openEditCategory = useCalendarStore(s => s.openEditCategory)
   const { data: categories = [] } = useCategories()
   const { mutate: createCategory, isPending: isCreating } = useCreateCategory()
   const { mutate: deleteCategory, isPending: isDeleting } = useDeleteCategory()

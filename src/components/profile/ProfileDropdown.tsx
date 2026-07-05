@@ -14,7 +14,7 @@ import { useInstallAction } from '@/components/pwa/useInstallAction'
 export function ProfileDropdown({ onOpenSettings }: { onOpenSettings: () => void }) {
   const [isOpen, setIsOpen] = useState(false)
   const { data: profile, isLoading } = useUserProfile()
-  const { resetStore } = useCalendarStore()
+  const resetStore = useCalendarStore(s => s.resetStore)
   const { openShortcutsModal } = useGlobalUIStore()
   const queryClient = useQueryClient()
   const { onInstallClick, GuideModals, isStandalone } = useInstallAction()

@@ -4,16 +4,22 @@ import { useCalendarStore } from '@/store/useCalendarStore'
 import type { CalendarFontSize } from '@/lib/calendarFontSize'
 
 export function CalendarSettingsTab() {
-  const { 
-    showHolidays, setShowHolidays, 
-    showHolidaysAsTags, setShowHolidaysAsTags,
-    showNationalDays, setShowNationalDays,
-    showAnniversaries, setShowAnniversaries,
-    showTraditionalTerms, setShowTraditionalTerms,
-    calendarFontSize, setCalendarFontSize,
-    weekStartsOn, setWeekStartsOn,
-    showSaturdayBlue, setShowSaturdayBlue,
-  } = useCalendarStore()
+  const showHolidays = useCalendarStore(s => s.showHolidays)
+  const setShowHolidays = useCalendarStore(s => s.setShowHolidays)
+  const showHolidaysAsTags = useCalendarStore(s => s.showHolidaysAsTags)
+  const setShowHolidaysAsTags = useCalendarStore(s => s.setShowHolidaysAsTags)
+  const showNationalDays = useCalendarStore(s => s.showNationalDays)
+  const setShowNationalDays = useCalendarStore(s => s.setShowNationalDays)
+  const showAnniversaries = useCalendarStore(s => s.showAnniversaries)
+  const setShowAnniversaries = useCalendarStore(s => s.setShowAnniversaries)
+  const showTraditionalTerms = useCalendarStore(s => s.showTraditionalTerms)
+  const setShowTraditionalTerms = useCalendarStore(s => s.setShowTraditionalTerms)
+  const calendarFontSize = useCalendarStore(s => s.calendarFontSize)
+  const setCalendarFontSize = useCalendarStore(s => s.setCalendarFontSize)
+  const weekStartsOn = useCalendarStore(s => s.weekStartsOn)
+  const setWeekStartsOn = useCalendarStore(s => s.setWeekStartsOn)
+  const showSaturdayBlue = useCalendarStore(s => s.showSaturdayBlue)
+  const setShowSaturdayBlue = useCalendarStore(s => s.setShowSaturdayBlue)
 
   return (
     <div className="flex flex-col gap-6 md:gap-8 w-full max-w-2xl mx-auto py-2 md:py-4">

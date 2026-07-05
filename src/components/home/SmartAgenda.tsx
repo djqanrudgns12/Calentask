@@ -14,7 +14,7 @@ const INITIAL_DISPLAY_COUNT = 5
 
 export const SmartAgenda = React.memo(function SmartAgenda() {
   const { tasks, addTask, setTaskStatus, updateTask, deleteTask, addSubtask, updateSubtask, deleteSubtask } = useAgendaStore()
-  const { setViewMode } = useCalendarStore()
+  const setViewMode = useCalendarStore(s => s.setViewMode)
   const { data: categories = [] } = useCategories()
   const [selectedTaskId, setSelectedTaskId] = React.useState<string | null>(null)
   const [editForm, setEditForm] = React.useState<Partial<AgendaTask> | null>(null)

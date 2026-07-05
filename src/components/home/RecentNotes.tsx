@@ -10,7 +10,7 @@ import { ko } from 'date-fns/locale'
 
 export function RecentNotes() {
   const { tabs, items, setActiveTabId } = useArchiveStore()
-  const { setViewMode } = useCalendarStore()
+  const setViewMode = useCalendarStore(s => s.setViewMode)
 
   // 모든 탭의 아이템을 수집하여 수정일 기준 내림차순 정렬
   const recentNotes = useMemo(() => {

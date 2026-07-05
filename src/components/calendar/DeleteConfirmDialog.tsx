@@ -11,7 +11,9 @@ import { RefreshCcw } from 'lucide-react'
 import { toast } from 'sonner'
 
 export function DeleteConfirmDialog() {
-  const { deletingEventId, deletingEvent, closeDeleteConfirm } = useCalendarStore()
+  const deletingEventId = useCalendarStore(s => s.deletingEventId)
+  const deletingEvent = useCalendarStore(s => s.deletingEvent)
+  const closeDeleteConfirm = useCalendarStore(s => s.closeDeleteConfirm)
   const { mutate: deleteActivity, isPending } = useDeleteActivity()
   
   const updateAgendaTask = useAgendaStore(state => state.updateTask)

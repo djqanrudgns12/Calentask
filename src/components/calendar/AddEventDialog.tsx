@@ -73,7 +73,14 @@ const CARD = 'bg-card/85 backdrop-blur-[16px] rounded-[20px] border border-trans
 const LABEL = 'text-[14px] font-bold text-foreground flex items-center whitespace-nowrap shrink-0'
 
 export function AddEventDialog({ children }: { children?: React.ReactNode }) {
-  const { isAddEventOpen, closeAddEvent, addEventDate, prefillEventData, prefillAgendaTaskId, openAddEvent, editingEvent, openEditCategory } = useCalendarStore()
+  const isAddEventOpen = useCalendarStore(s => s.isAddEventOpen)
+  const closeAddEvent = useCalendarStore(s => s.closeAddEvent)
+  const addEventDate = useCalendarStore(s => s.addEventDate)
+  const prefillEventData = useCalendarStore(s => s.prefillEventData)
+  const prefillAgendaTaskId = useCalendarStore(s => s.prefillAgendaTaskId)
+  const openAddEvent = useCalendarStore(s => s.openAddEvent)
+  const editingEvent = useCalendarStore(s => s.editingEvent)
+  const openEditCategory = useCalendarStore(s => s.openEditCategory)
   const { dialogRef, scrollRef, handleFocusScroll } = useKeyboardAwareDialog(isAddEventOpen)
 
   const [title, setTitle] = useState('')

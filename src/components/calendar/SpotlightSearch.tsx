@@ -18,7 +18,12 @@ export function SpotlightSearch({ open, onOpenChange }: SpotlightSearchProps) {
   const [query, setQuery] = useState('')
   const [debouncedQuery, setDebouncedQuery] = useState('')
 
-  const { viewMode, setViewMode, setCurrentDate, setSemesterYear, setSemesterTerm, openEventDetail } = useCalendarStore()
+  const viewMode = useCalendarStore(s => s.viewMode)
+  const setViewMode = useCalendarStore(s => s.setViewMode)
+  const setCurrentDate = useCalendarStore(s => s.setCurrentDate)
+  const setSemesterYear = useCalendarStore(s => s.setSemesterYear)
+  const setSemesterTerm = useCalendarStore(s => s.setSemesterTerm)
+  const openEventDetail = useCalendarStore(s => s.openEventDetail)
 
   useEffect(() => {
     const timer = setTimeout(() => {

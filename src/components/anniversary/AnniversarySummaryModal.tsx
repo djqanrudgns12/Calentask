@@ -19,7 +19,7 @@ export function AnniversarySummaryModal({
   daysLeft: number;
   isToday: boolean;
 }) {
-  const { setViewMode } = useCalendarStore();
+  const setViewMode = useCalendarStore(s => s.setViewMode);
   const themeColor = event.hex_color || '#4f46e5';
 
   let Icon = Calendar;

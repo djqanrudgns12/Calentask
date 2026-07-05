@@ -9,7 +9,11 @@ import { toast } from 'sonner'
 import { useQueryClient } from '@tanstack/react-query'
 
 export function EventDetailPopover() {
-  const { selectedEventDetail, closeEventDetail, openEditEvent, openDeleteConfirm, setViewMode } = useCalendarStore()
+  const selectedEventDetail = useCalendarStore(s => s.selectedEventDetail)
+  const closeEventDetail = useCalendarStore(s => s.closeEventDetail)
+  const openEditEvent = useCalendarStore(s => s.openEditEvent)
+  const openDeleteConfirm = useCalendarStore(s => s.openDeleteConfirm)
+  const setViewMode = useCalendarStore(s => s.setViewMode)
   const openAddDialog = useAgendaStore(state => state.openAddDialog)
   const queryClient = useQueryClient()
 

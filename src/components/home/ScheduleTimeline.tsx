@@ -25,7 +25,11 @@ const RANGE_LABELS: Record<TimelineRange, string> = {
 }
 
 export const ScheduleTimeline = React.memo(function ScheduleTimeline({ events, currentRange, onRangeChange }: ScheduleTimelineProps) {
-  const { openEventDetail, openAddEvent, setViewMode, openEditEvent, openDeleteConfirm } = useCalendarStore()
+  const openEventDetail = useCalendarStore(s => s.openEventDetail)
+  const openAddEvent = useCalendarStore(s => s.openAddEvent)
+  const setViewMode = useCalendarStore(s => s.setViewMode)
+  const openEditEvent = useCalendarStore(s => s.openEditEvent)
+  const openDeleteConfirm = useCalendarStore(s => s.openDeleteConfirm)
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
 

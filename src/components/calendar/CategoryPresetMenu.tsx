@@ -11,7 +11,11 @@ import type { CategoryPreset } from '@/app/actions/calendar'
 import { cn } from '@/lib/utils'
 
 export function CategoryPresetMenu() {
-  const { activeCategories, activePresetId, activePresetName, setActivePreset, setActiveCategories } = useCalendarStore()
+  const activeCategories = useCalendarStore(s => s.activeCategories)
+  const activePresetId = useCalendarStore(s => s.activePresetId)
+  const activePresetName = useCalendarStore(s => s.activePresetName)
+  const setActivePreset = useCalendarStore(s => s.setActivePreset)
+  const setActiveCategories = useCalendarStore(s => s.setActiveCategories)
   const { data: presets = [], isLoading } = useCategoryPresets()
   
   const { mutate: createPreset, isPending: isCreating } = useCreateCategoryPreset()

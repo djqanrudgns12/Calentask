@@ -32,7 +32,8 @@ const actions = [
 ]
 
 export function QuickActions() {
-  const { openAddEvent, setViewMode } = useCalendarStore()
+  const openAddEvent = useCalendarStore(s => s.openAddEvent)
+  const setViewMode = useCalendarStore(s => s.setViewMode)
 
   const handleClick = (id: string) => {
     switch (id) {

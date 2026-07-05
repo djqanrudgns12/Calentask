@@ -10,7 +10,7 @@ export function useGlobalShortcuts() {
   const router = useRouter()
   const { toggleShortcutsModal, closeShortcutsModal } = useGlobalUIStore()
   const { isPinLocked } = useArchiveStore()
-  const { openAddEvent } = useCalendarStore()
+  const openAddEvent = useCalendarStore(s => s.openAddEvent)
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {

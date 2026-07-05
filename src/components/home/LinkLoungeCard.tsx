@@ -14,7 +14,7 @@ export function LinkLoungeCard() {
   const { data: bookmarks = [] } = useLinkLoungeBookmarks()
   const { data: serverCategories = ['기타'] } = useLinkLoungeCategories()
   
-  const { setViewMode } = useCalendarStore()
+  const setViewMode = useCalendarStore(s => s.setViewMode)
   const [selectedCategory, setSelectedCategory] = useState<string>('전체')
   const [copiedId, setCopiedId] = useState<string | null>(null)
 

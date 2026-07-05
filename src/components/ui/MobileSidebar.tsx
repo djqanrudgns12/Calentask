@@ -158,7 +158,9 @@ function CollapsibleGroup({
 // MobileSidebar 본체
 // ═══════════════════════════════════════════════
 export function MobileSidebar({ open, onOpenChange, onOpenSettings }: MobileSidebarProps) {
-  const { viewMode, setViewMode, resetStore } = useCalendarStore()
+  const viewMode = useCalendarStore(s => s.viewMode)
+  const setViewMode = useCalendarStore(s => s.setViewMode)
+  const resetStore = useCalendarStore(s => s.resetStore)
   const queryClient = useQueryClient()
   const { onInstallClick, GuideModals, isStandalone } = useInstallAction()
 

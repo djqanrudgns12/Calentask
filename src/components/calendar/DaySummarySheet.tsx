@@ -12,7 +12,10 @@ interface DaySummarySheetProps {
 }
 
 export function DaySummarySheet({ events }: DaySummarySheetProps) {
-  const { selectedDaySummary, closeDaySummary, openEventDetail, openAddEvent } = useCalendarStore()
+  const selectedDaySummary = useCalendarStore(s => s.selectedDaySummary)
+  const closeDaySummary = useCalendarStore(s => s.closeDaySummary)
+  const openEventDetail = useCalendarStore(s => s.openEventDetail)
+  const openAddEvent = useCalendarStore(s => s.openAddEvent)
 
   // Filter events for this specific day
   const dayEvents = selectedDaySummary ? events.filter(e => isEventOnDay(e, selectedDaySummary)) : []

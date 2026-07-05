@@ -62,7 +62,8 @@ export function ArchiveAgendaView() {
 
   const { tasks, fetchTasks, isInitialized, addTask, updateTask, setTaskStatus, addSubtask, updateSubtask, deleteSubtask, deleteTask, viewMode, setViewMode } = useAgendaStore();
   const { data: categories = [] } = useCategories();
-  const { openAddEvent, openAddEventWithPrefill } = useCalendarStore();
+  const openAddEvent = useCalendarStore(s => s.openAddEvent);
+  const openAddEventWithPrefill = useCalendarStore(s => s.openAddEventWithPrefill);
 
   const handleAddToCalendar = (task: AgendaTask) => {
     openAddEventWithPrefill(task.id, {

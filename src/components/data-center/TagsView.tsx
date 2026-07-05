@@ -26,7 +26,7 @@ export function TagsView() {
     getTotalUsageCount
   } = useTagsManagement()
 
-  const { openEditCategory } = useCalendarStore()
+  const openEditCategory = useCalendarStore(s => s.openEditCategory)
   
   // 선택된 카테고리 ID (우측 상세 패널용)
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null)
