@@ -198,7 +198,7 @@ export function MasonryBoard() {
                 <div className="relative rounded-xl overflow-hidden bg-muted">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img 
-                    src={item.data?.image || ''} 
+                    src={item.data?.image || undefined} 
                     alt={item.title} 
                     className="w-full h-auto object-cover transform group-hover:scale-105 transition-transform duration-500"
                     loading="lazy"
@@ -250,7 +250,7 @@ export function MasonryBoard() {
               <div className="w-full md:w-2/3 bg-muted flex items-center justify-center relative overflow-hidden group">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img 
-                  src={activeImage.data?.image} 
+                  src={activeImage.data?.image || undefined} 
                   alt={activeImage.title} 
                   className="max-w-full max-h-[70vh] md:max-h-[90vh] object-contain"
                 />
@@ -363,7 +363,7 @@ export function MasonryBoard() {
               }}
             >
               <motion.img 
-                src={activeImage.data?.image} 
+                src={activeImage.data?.image || undefined} 
                 alt={activeImage.title}
                 drag
                 dragConstraints={{ left: -2000, right: 2000, top: -2000, bottom: 2000 }}
