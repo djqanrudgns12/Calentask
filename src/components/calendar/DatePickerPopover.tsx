@@ -11,10 +11,13 @@ interface DatePickerPopoverProps {
 }
 
 export function DatePickerPopover({ children }: DatePickerPopoverProps) {
-  const { 
-    currentDate, viewMode, setCurrentDate,
-    semesterYear, semesterTerm, setSemesterYear, setSemesterTerm 
-  } = useCalendarStore()
+  const currentDate = useCalendarStore(s => s.currentDate)
+  const viewMode = useCalendarStore(s => s.viewMode)
+  const setCurrentDate = useCalendarStore(s => s.setCurrentDate)
+  const semesterYear = useCalendarStore(s => s.semesterYear)
+  const semesterTerm = useCalendarStore(s => s.semesterTerm)
+  const setSemesterYear = useCalendarStore(s => s.setSemesterYear)
+  const setSemesterTerm = useCalendarStore(s => s.setSemesterTerm)
 
   const [open, setOpen] = useState(false)
   

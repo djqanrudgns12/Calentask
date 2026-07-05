@@ -21,10 +21,10 @@ import { Folder, ChevronDown, ChevronUp, X } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 
 export function MobileCategoryBar() {
-  const { 
-    activeCategories, setActiveCategories, 
-    isCategoryBarExpanded, setCategoryBarExpanded 
-  } = useCalendarStore()
+  const activeCategories = useCalendarStore(s => s.activeCategories)
+  const setActiveCategories = useCalendarStore(s => s.setActiveCategories)
+  const isCategoryBarExpanded = useCalendarStore(s => s.isCategoryBarExpanded)
+  const setCategoryBarExpanded = useCalendarStore(s => s.setCategoryBarExpanded)
   const { data: categories = [] } = useCategories()
   const [popoverOpen, setPopoverOpen] = useState(false)
 

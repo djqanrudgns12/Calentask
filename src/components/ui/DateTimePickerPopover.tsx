@@ -41,7 +41,8 @@ export function DateTimePickerPopover({ date, setDate, children, align = "center
     }
   }, [open, date]);
 
-  const { weekStartsOn, showSaturdayBlue } = useCalendarStore();
+  const weekStartsOn = useCalendarStore(s => s.weekStartsOn);
+  const showSaturdayBlue = useCalendarStore(s => s.showSaturdayBlue);
 
   // Generate calendar days
   const monthStart = startOfMonth(currentMonth);

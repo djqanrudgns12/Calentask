@@ -27,11 +27,14 @@ interface AcademicMonthlyViewProps {
 }
 
 export const AcademicMonthlyView = React.memo(function AcademicMonthlyView({ currentDate, events, onEventClick }: AcademicMonthlyViewProps) {
-  const { 
-    showHolidays, showHolidaysAsTags,
-    showNationalDays, showAnniversaries, showTraditionalTerms,
-    calendarFontSize, weekStartsOn, showSaturdayBlue
-  } = useCalendarStore()
+  const showHolidays = useCalendarStore(s => s.showHolidays)
+  const showHolidaysAsTags = useCalendarStore(s => s.showHolidaysAsTags)
+  const showNationalDays = useCalendarStore(s => s.showNationalDays)
+  const showAnniversaries = useCalendarStore(s => s.showAnniversaries)
+  const showTraditionalTerms = useCalendarStore(s => s.showTraditionalTerms)
+  const calendarFontSize = useCalendarStore(s => s.calendarFontSize)
+  const weekStartsOn = useCalendarStore(s => s.weekStartsOn)
+  const showSaturdayBlue = useCalendarStore(s => s.showSaturdayBlue)
   
   const fontClasses = getCalendarFontClasses(calendarFontSize)
   const weekdayHeaders = getWeekdayHeaders(weekStartsOn)

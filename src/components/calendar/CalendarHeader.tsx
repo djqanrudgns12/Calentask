@@ -18,12 +18,15 @@ interface CalendarHeaderProps {
 }
 
 export function CalendarHeader({ onOpenSettings, onOpenMobileSidebar }: CalendarHeaderProps) {
-  const { 
-    currentDate, viewMode, setViewMode,
-    semesterYear, semesterTerm,
-    setCurrentDate, setSemesterYear, setSemesterTerm,
-    weekStartsOn
-  } = useCalendarStore()
+  const currentDate = useCalendarStore(s => s.currentDate)
+  const viewMode = useCalendarStore(s => s.viewMode)
+  const setViewMode = useCalendarStore(s => s.setViewMode)
+  const semesterYear = useCalendarStore(s => s.semesterYear)
+  const semesterTerm = useCalendarStore(s => s.semesterTerm)
+  const setCurrentDate = useCalendarStore(s => s.setCurrentDate)
+  const setSemesterYear = useCalendarStore(s => s.setSemesterYear)
+  const setSemesterTerm = useCalendarStore(s => s.setSemesterTerm)
+  const weekStartsOn = useCalendarStore(s => s.weekStartsOn)
 
   const [isSearchOpen, setIsSearchOpen] = useState(false)
 

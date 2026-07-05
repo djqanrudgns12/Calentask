@@ -11,7 +11,9 @@ import { AcademicMonthlyView } from './AcademicMonthlyView'
 import { AcademicEventDetailPopover } from './AcademicEventDetailPopover'
 
 export function SchoolScheduleClient() {
-  const { calendarFontSize, weekStartsOn, setViewMode } = useCalendarStore()
+  const calendarFontSize = useCalendarStore(s => s.calendarFontSize)
+  const weekStartsOn = useCalendarStore(s => s.weekStartsOn)
+  const setViewMode = useCalendarStore(s => s.setViewMode)
 
   const [currentDate, setCurrentDate] = useState(new Date())
   const [subView, setSubView] = useState<'monthly' | 'weekly' | 'semester'>('monthly')
