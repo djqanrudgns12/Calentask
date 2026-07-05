@@ -10,7 +10,7 @@ import { getCalendarFontClasses, getWeekdayHeaders } from '@/lib/calendarFontSiz
 import { Pencil, Trash2 } from 'lucide-react'
 import { useDroppable, useDraggable } from '@dnd-kit/core'
 
-import React from 'react'
+import React, { useMemo } from 'react'
 
 function DraggableEventCard({ event, children }: { event: Activity, children: React.ReactNode }) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
@@ -66,12 +66,22 @@ export const MonthlyView = React.memo(function MonthlyView({ currentDate, events
   const year = currentDate.getFullYear()
   const { data: specialDaysMap = {} } = useSpecialDays(year)
 
-  const monthStart = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1)
-  const monthEnd = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0)
-  const startDate = startOfWeek(monthStart, { weekStartsOn })
-  const endDate = endOfWeek(monthEnd, { weekStartsOn })
+  const days = useMemo(() => {
+    const monthStart = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1)
+    const monthEnd = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0)
+    const startDate = startOfWeek(monthStart, { weekStartsOn })
+    const endDate = endOfWeek(monthEnd, { weekStartsOn })
+    return eachDayOfInterval({ start: startDate, end: endDate })
+  }, [currentDate, weekStartsOn])
 
-  const days = eachDayOfInterval({ start: startDate, end: endDate })
+  // 셀마다 events.filter를 반복(O(일수×이벤트))하지 않도록 일자→이벤트 맵을 사전 계산
+  const dayEventsMap = useMemo(() => {
+    const map = new Map<string, Activity[]>()
+    for (const day of days) {
+      map.set(format(day, 'yyyy-MM-dd'), events.filter(e => isEventOnDay(e, day)))
+    }
+    return map
+  }, [days, events])
 
   return (
     <div className="flex-1 flex flex-col min-h-0 h-full">
@@ -92,9 +102,8 @@ export const MonthlyView = React.memo(function MonthlyView({ currentDate, events
           const isCurrentMonth = isSameMonth(day, currentDate)
           const isToday = isSameDay(day, new Date())
 
-          const dayEvents = events.filter(e => isEventOnDay(e, day))
-          
           const dateStr = format(day, 'yyyy-MM-dd')
+          const dayEvents = dayEventsMap.get(dateStr) || []
           const specialDays = specialDaysMap[dateStr] || []
           
           const holidays = specialDays.filter(d => d.type === 'holiday')

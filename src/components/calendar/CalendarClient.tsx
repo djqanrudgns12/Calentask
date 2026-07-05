@@ -2,7 +2,7 @@
 /* eslint-disable @next/next/no-img-element */
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { useSwipeable } from 'react-swipeable'
 import { useCalendarStore } from '@/store/useCalendarStore'
@@ -189,7 +189,7 @@ export function CalendarClient() {
     }
   }, [isAgendaInitialized, fetchAgendaTasks])
 
-  const agendaEvents = agendaTasksStore
+  const agendaEvents = useMemo(() => agendaTasksStore
     .filter(task => task.status !== 'trash' && task.deadline && task.is_calendar_registered === true)
     .map(task => {
       const taskDate = new Date(task.deadline!);
@@ -207,20 +207,24 @@ export function CalendarClient() {
         color: '#3b82f6',
         hex_color: '#3b82f6'
       };
-    }) as unknown as Activity[]
+    }) as unknown as Activity[], [agendaTasksStore])
 
-  let events = [
-    ...(activitiesData || []),
-    ...((anniversaryEvents || []) as unknown as Activity[]),
-    ...agendaEvents
-  ]
+  // 참조 안정성을 유지해야 MonthlyView 등의 React.memo가 실효성을 가짐
+  const events = useMemo(() => {
+    const merged = [
+      ...(activitiesData || []),
+      ...((anniversaryEvents || []) as unknown as Activity[]),
+      ...agendaEvents
+    ]
 
-  // 글로벌 카테고리 필터 적용
-  if (activeCategories.length > 0) {
-    events = events.filter(event => 
-      event.categories?.some(cat => activeCategories.includes(cat.id) || cat.id === 'agenda-category')
-    )
-  }
+    // 글로벌 카테고리 필터 적용
+    if (activeCategories.length > 0) {
+      return merged.filter(event =>
+        event.categories?.some(cat => activeCategories.includes(cat.id) || cat.id === 'agenda-category')
+      )
+    }
+    return merged
+  }, [activitiesData, anniversaryEvents, agendaEvents, activeCategories])
 
   const { activeEvent, handleDragStart, handleDragEnd, handleDragCancel } = useEventDragDrop({
     viewMode: viewMode as any,
