@@ -74,13 +74,11 @@ export function CalendarClient() {
   } = useCalendarStore()
 
   // --- 스와이프 전역 모바일 뷰 전환 (Swipe Navigation) 상태 ---
-  const FLATTENED_VIEWS = [
+  const CALENDAR_VIEWS = ['monthly', 'weekly', 'list', 'semester'] as const;
+  const MAJOR_VIEWS = [
     'home',
     'school_meals',
-    'monthly',
-    'weekly',
-    'list',
-    'semester',
+    'CALENDAR_GROUP',
     'school_schedule',
     'academic_data',
     'archive_agenda',
@@ -95,27 +93,54 @@ export function CalendarClient() {
     'trash'
   ] as const;
 
+  // 마지막으로 보던 캘린더 하위 뷰 기억
+  const lastCalendarViewRef = useRef<typeof viewMode>('monthly');
+  useEffect(() => {
+    if (CALENDAR_VIEWS.includes(viewMode as any)) {
+      lastCalendarViewRef.current = viewMode;
+    }
+  }, [viewMode]);
+
+  // 현재 viewMode가 CALENDAR_VIEWS에 속하면 'CALENDAR_GROUP'으로 취급
+  const currentMajorView = CALENDAR_VIEWS.includes(viewMode as any) ? 'CALENDAR_GROUP' : viewMode;
+
   const prevViewModeRef = useRef<typeof viewMode>(viewMode)
   const prevViewMode = prevViewModeRef.current
+  const prevMajorView = CALENDAR_VIEWS.includes(prevViewMode as any) ? 'CALENDAR_GROUP' : prevViewMode;
+
   useEffect(() => {
     prevViewModeRef.current = viewMode
   }, [viewMode])
 
-  const oldIndex = FLATTENED_VIEWS.indexOf(prevViewMode as any)
-  const newIndex = FLATTENED_VIEWS.indexOf(viewMode as any)
-  const slideDirection = newIndex >= oldIndex ? 'left' : 'right'
+  const oldIndex = MAJOR_VIEWS.indexOf(prevMajorView as any)
+  const newIndex = MAJOR_VIEWS.indexOf(currentMajorView as any)
+  // 동일한 그룹 내에서의 이동(예: monthly -> weekly 사이드바 클릭 등)일 경우 애니메이션 방향 계산 보완
+  let slideDirection = newIndex >= oldIndex ? 'left' : 'right'
+  if (oldIndex === newIndex) {
+     const oldSubIndex = CALENDAR_VIEWS.indexOf(prevViewMode as any);
+     const newSubIndex = CALENDAR_VIEWS.indexOf(viewMode as any);
+     slideDirection = newSubIndex >= oldSubIndex ? 'left' : 'right';
+  }
 
   const swipeHandlers = useSwipeable({
-    onSwipedLeft: () => {
-      const currentIndex = FLATTENED_VIEWS.indexOf(viewMode as any)
-      if (currentIndex !== -1 && currentIndex < FLATTENED_VIEWS.length - 1) {
-        setViewMode(FLATTENED_VIEWS[currentIndex + 1] as any)
+    onSwipedLeft: (e) => {
+      // 스마트 스와이프 예외 로직: 가로 스크롤 영역이나 지정된 예외 요소에서의 스와이프 무시
+      if ((e.event.target as HTMLElement).closest('.no-swipe, .overflow-x-auto, .overflow-x-scroll, .touch-pan-x, [data-no-swipe="true"]')) return;
+
+      const currentIndex = MAJOR_VIEWS.indexOf(currentMajorView as any)
+      if (currentIndex !== -1 && currentIndex < MAJOR_VIEWS.length - 1) {
+        const nextView = MAJOR_VIEWS[currentIndex + 1];
+        setViewMode((nextView === 'CALENDAR_GROUP' ? lastCalendarViewRef.current : nextView) as any)
       }
     },
-    onSwipedRight: () => {
-      const currentIndex = FLATTENED_VIEWS.indexOf(viewMode as any)
+    onSwipedRight: (e) => {
+      // 스마트 스와이프 예외 로직
+      if ((e.event.target as HTMLElement).closest('.no-swipe, .overflow-x-auto, .overflow-x-scroll, .touch-pan-x, [data-no-swipe="true"]')) return;
+
+      const currentIndex = MAJOR_VIEWS.indexOf(currentMajorView as any)
       if (currentIndex > 0) {
-        setViewMode(FLATTENED_VIEWS[currentIndex - 1] as any)
+        const prevView = MAJOR_VIEWS[currentIndex - 1];
+        setViewMode((prevView === 'CALENDAR_GROUP' ? lastCalendarViewRef.current : prevView) as any)
       }
     },
     preventScrollOnSwipe: false, // 스크롤을 막지 않아 캘린더 세로 스크롤 허용
@@ -133,6 +158,7 @@ export function CalendarClient() {
 
   const handleLogout = async () => {
     resetStore()
+    lastCalendarViewRef.current = 'monthly'
     queryClient.clear()
     await logout()
   }
@@ -224,9 +250,18 @@ export function CalendarClient() {
     // 실시간 DB 변경 감지 (구글 웹훅·다른 기기 입력을 새로고침 없이 자동 반영하는 WebSocket 연동)
     // ※ 동작하려면 Supabase에서 각 테이블이 supabase_realtime publication에 등록되어 있어야 함
     //   (마이그레이션 20260626020000_enable_realtime.sql 참고)
+    let isMounted = true
+
     const initRealtime = async () => {
       const { createClient } = await import('@/lib/supabase/client')
       const supabase = createClient()
+
+      // 방어 코드: 기존에 db_realtime 채널이 남아있으면 깔끔하게 지우기 (StrictMode Race Condition 방지)
+      supabase.getChannels().forEach((ch) => {
+        if (ch.topic === 'realtime:db_realtime') {
+          supabase.removeChannel(ch)
+        }
+      })
 
       // 잦은 연속 변경 시 과도한 재조회를 막기 위한 가벼운 디바운스
       const timers: Record<string, ReturnType<typeof setTimeout>> = {}
@@ -273,9 +308,14 @@ export function CalendarClient() {
     }
 
     let cleanupFunc: (() => void) | undefined
-    initRealtime().then(cleanup => { cleanupFunc = cleanup })
+    initRealtime().then(cleanup => { 
+      cleanupFunc = cleanup 
+      // 만약 initRealtime 완료 전 언마운트 되었다면 즉시 클린업 실행
+      if (!isMounted && cleanupFunc) cleanupFunc()
+    })
 
     return () => {
+      isMounted = false
       if (cleanupFunc) cleanupFunc()
     }
   }, [queryClient])
@@ -675,7 +715,7 @@ export function CalendarClient() {
           onDragEnd={handleDragEnd}
           onDragCancel={handleDragCancel}
         >
-          <div className="flex-1 overflow-y-auto overflow-x-hidden px-1 md:px-8 pb-8" {...swipeHandlers}>
+          <div className="flex-1 overflow-y-auto overflow-x-hidden px-1 md:px-8 pb-8 flex flex-col" {...swipeHandlers}>
             {!mounted ? (
               <div className="flex h-full w-full items-center justify-center">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
@@ -703,7 +743,7 @@ export function CalendarClient() {
                   animate="center"
                   exit="exit"
                   transition={{ type: 'spring', stiffness: 350, damping: 35 }}
-                  className="w-full min-h-full flex flex-col"
+                  className="w-full flex-1 flex flex-col"
                 >
                   {/* 모바일 카테고리 필터 바 — 캘린더 뷰에서만 표시, 캘린더와 함께 스크롤 */}
                   {isMyCalendarActive && <MobileCategoryBar />}
@@ -741,27 +781,27 @@ export function CalendarClient() {
                   </div>
                 )}
                 {viewMode === 'archive_notes' && (
-                  <div className="h-full bg-background rounded-xl md:rounded-3xl overflow-hidden shadow-sm border border-border">
+                  <div className="flex-1 flex flex-col min-h-0 bg-background rounded-xl md:rounded-3xl overflow-hidden shadow-sm border border-border">
                     <ArchiveNotesView />
                   </div>
                 )}
                 {viewMode === 'link_lounge' && (
-                  <div className="h-full bg-background rounded-xl md:rounded-3xl overflow-hidden shadow-sm border border-border">
+                  <div className="flex-1 flex flex-col min-h-0 bg-background rounded-xl md:rounded-3xl overflow-hidden shadow-sm border border-border">
                     <LinkLoungeView />
                   </div>
                 )}
                 {viewMode === 'archive_agenda' && (
-                  <div className="h-full bg-background rounded-xl md:rounded-3xl overflow-hidden shadow-sm border border-border">
+                  <div className="flex-1 flex flex-col min-h-0 bg-background rounded-xl md:rounded-3xl overflow-hidden shadow-sm border border-border">
                     <ArchiveAgendaView />
                   </div>
                 )}
                 {viewMode === 'tags' && (
-                  <div className="h-full rounded-xl md:rounded-3xl overflow-hidden shadow-sm border border-border bg-background">
+                  <div className="flex-1 flex flex-col min-h-0 rounded-xl md:rounded-3xl overflow-hidden shadow-sm border border-border bg-background">
                     <TagsView />
                   </div>
                 )}
                 {viewMode === 'trash' && (
-                  <div className="h-full rounded-xl md:rounded-3xl overflow-hidden shadow-sm border border-border bg-background">
+                  <div className="flex-1 flex flex-col min-h-0 rounded-xl md:rounded-3xl overflow-hidden shadow-sm border border-border bg-background">
                     <TrashView />
                   </div>
                 )}

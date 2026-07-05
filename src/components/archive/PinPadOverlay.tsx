@@ -258,9 +258,9 @@ export function PinPadOverlay({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="relative w-full h-full overflow-hidden">
+    <div className="relative w-full flex-1 flex flex-col min-h-0 overflow-hidden">
       {/* Underlying Content */}
-      <div className={cn("w-full h-full transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)]", isPinLocked ? "blur-xl pointer-events-none select-none scale-[0.98] opacity-50" : "blur-0 scale-100 opacity-100")}>
+      <div className={cn("w-full flex-1 flex flex-col min-h-0 transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)]", isPinLocked ? "blur-xl pointer-events-none select-none scale-[0.98] opacity-50" : "blur-0 scale-100 opacity-100")}>
         {children}
       </div>
 

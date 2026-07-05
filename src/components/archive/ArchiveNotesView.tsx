@@ -277,7 +277,7 @@ export function ArchiveNotesView() {
 
   return (
     <PinPadOverlay>
-      <div className="flex flex-col h-full bg-background">
+      <div className="flex flex-col flex-1 min-h-0 bg-background">
         {/* Header & Tabs — 집중 모드 시 전체 숨김 */}
         {!isFocusMode && (
           <div className="border-b border-border bg-card/50 backdrop-blur-md sticky top-0 z-10 shrink-0">
@@ -347,7 +347,7 @@ export function ArchiveNotesView() {
         {/* Board Content Area */}
         <div className={cn("flex-1 overflow-hidden", isFocusMode ? "p-0" : "p-3")}>
           <div ref={boardContainerRef} className={cn(
-            "w-full h-full overflow-hidden relative",
+            "w-full h-full overflow-hidden relative no-swipe",
             isFocusMode 
               ? "bg-card rounded-none border-0 shadow-none" 
               : "bg-card rounded-2xl shadow-sm border border-border"

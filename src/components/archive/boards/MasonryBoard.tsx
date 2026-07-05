@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { Upload, X, Maximize2, Image as ImageIcon, Trash2, Heart, Search, Download, ZoomIn, ZoomOut } from 'lucide-react';
 import { useArchiveStore } from '@/store/useArchiveStore';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -18,6 +19,11 @@ export function MasonryBoard() {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [scale, setScale] = useState(1);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const activeImage = items.find(i => i.id === activeImageId);
 
@@ -225,8 +231,11 @@ export function MasonryBoard() {
         )}
       </div>
 
-      {/* Lightbox Modal */}
-      <AnimatePresence>
+      {/* Modals Portaled to Body */}
+      {mounted && createPortal(
+        <>
+          {/* Lightbox Modal */}
+          <AnimatePresence>
         {activeImage && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
             <motion.div 
@@ -372,6 +381,9 @@ export function MasonryBoard() {
           </motion.div>
         )}
       </AnimatePresence>
+        </>,
+        document.body
+      )}
     </div>
   );
 }
