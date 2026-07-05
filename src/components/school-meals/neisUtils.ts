@@ -1,4 +1,4 @@
-export const NEIS_API_KEY = 'cefedc8bc1294ccf904b8ddf9bb815cf'
+export const NEIS_API_KEY = '07f9fb76f9724f199ade78f4f9a1cde1'
 
 export interface SchoolInfo {
   officeCode: string

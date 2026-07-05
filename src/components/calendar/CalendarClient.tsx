@@ -365,7 +365,7 @@ export function CalendarClient() {
   }, [currentDate, weekStartsOn, mounted, queryClient, viewMode])
 
   return (
-    <div className="flex h-screen overflow-hidden bg-background">
+    <div className="flex h-[100dvh] overflow-hidden bg-background">
       {/* Sidebar - Apple Style Glass effect */}
       <aside className="hidden md:flex flex-col w-64 bg-sidebar border-r border-sidebar-border h-full shrink-0 relative shadow-sm">
         <div className="p-6 pb-2 flex items-center justify-between">
@@ -743,7 +743,7 @@ export function CalendarClient() {
                   animate="center"
                   exit="exit"
                   transition={{ type: 'spring', stiffness: 350, damping: 35 }}
-                  className="w-full flex-1 flex flex-col"
+                  className="w-full flex-1 flex flex-col min-h-0"
                 >
                   {/* 모바일 카테고리 필터 바 — 캘린더 뷰에서만 표시, 캘린더와 함께 스크롤 */}
                   {isMyCalendarActive && <MobileCategoryBar />}

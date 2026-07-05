@@ -69,9 +69,9 @@ export function SettingsModal({ open, onOpenChange, initialTab = 'profile' }: Se
           </div>
 
           {/* Main Content Area */}
-          <div className="flex-1 min-w-0 relative">
+          <div className="flex-1 min-w-0 relative flex flex-col">
             <PinPadOverlay>
-              <div className="h-full overflow-y-auto p-3 sm:p-6 md:p-8 absolute inset-0">
+              <div className="flex-1 overflow-y-auto p-3 sm:p-6 md:p-8">
                 <div className="max-w-3xl mx-auto">
                   {activeTab === 'profile' && <ProfileTab />}
                   {activeTab === 'calendar' && <CalendarSettingsTab />}
