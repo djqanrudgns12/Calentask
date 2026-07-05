@@ -53,12 +53,18 @@ interface MonthlyViewProps {
 }
 
 export const MonthlyView = React.memo(function MonthlyView({ currentDate, events }: MonthlyViewProps) {
-  const { 
-    openDaySummary, openEventDetail, openEditEvent, openDeleteConfirm, 
-    showHolidays, showHolidaysAsTags,
-    showNationalDays, showAnniversaries, showTraditionalTerms,
-    calendarFontSize, weekStartsOn, showSaturdayBlue
-  } = useCalendarStore()
+  const openDaySummary = useCalendarStore(s => s.openDaySummary)
+  const openEventDetail = useCalendarStore(s => s.openEventDetail)
+  const openEditEvent = useCalendarStore(s => s.openEditEvent)
+  const openDeleteConfirm = useCalendarStore(s => s.openDeleteConfirm)
+  const showHolidays = useCalendarStore(s => s.showHolidays)
+  const showHolidaysAsTags = useCalendarStore(s => s.showHolidaysAsTags)
+  const showNationalDays = useCalendarStore(s => s.showNationalDays)
+  const showAnniversaries = useCalendarStore(s => s.showAnniversaries)
+  const showTraditionalTerms = useCalendarStore(s => s.showTraditionalTerms)
+  const calendarFontSize = useCalendarStore(s => s.calendarFontSize)
+  const weekStartsOn = useCalendarStore(s => s.weekStartsOn)
+  const showSaturdayBlue = useCalendarStore(s => s.showSaturdayBlue)
   
   const fontClasses = getCalendarFontClasses(calendarFontSize)
   const weekdayHeaders = getWeekdayHeaders(weekStartsOn)

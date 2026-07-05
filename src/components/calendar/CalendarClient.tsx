@@ -68,11 +68,15 @@ export function CalendarClient() {
   const queryClient = useQueryClient()
   const router = useRouter()
   
-  const { 
-    currentDate, viewMode, setViewMode,
-    semesterYear, semesterTerm, activeCategories, resetStore,
-    weekStartsOn
-  } = useCalendarStore()
+  // 필드별 셀렉터: 다이얼로그 등 일시 상태 변경 시 불필요한 전체 리렌더 방지
+  const currentDate = useCalendarStore(s => s.currentDate)
+  const viewMode = useCalendarStore(s => s.viewMode)
+  const setViewMode = useCalendarStore(s => s.setViewMode)
+  const semesterYear = useCalendarStore(s => s.semesterYear)
+  const semesterTerm = useCalendarStore(s => s.semesterTerm)
+  const activeCategories = useCalendarStore(s => s.activeCategories)
+  const resetStore = useCalendarStore(s => s.resetStore)
+  const weekStartsOn = useCalendarStore(s => s.weekStartsOn)
 
   // --- 스와이프 전역 모바일 뷰 전환 (Swipe Navigation) 상태 ---
   const CALENDAR_VIEWS = ['monthly', 'weekly', 'list', 'semester'] as const;

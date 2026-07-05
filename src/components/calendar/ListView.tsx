@@ -15,7 +15,9 @@ interface ListViewProps {
 }
 
 export function ListView({ currentDate, events }: ListViewProps) {
-  const { openEventDetail, openEditEvent, openDeleteConfirm } = useCalendarStore()
+  const openEventDetail = useCalendarStore(s => s.openEventDetail)
+  const openEditEvent = useCalendarStore(s => s.openEditEvent)
+  const openDeleteConfirm = useCalendarStore(s => s.openDeleteConfirm)
   const [expandedDates, setExpandedDates] = useState<Record<string, boolean>>({})
 
   const toggleExpand = (dateStr: string) => {
