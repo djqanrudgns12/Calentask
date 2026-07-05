@@ -1,4 +1,4 @@
-import { Anniversary } from '@/utils/anniversaryCalculator';
+import type { Anniversary } from '@/utils/anniversaryCalculator';
 import { motion } from 'framer-motion';
 import { Pencil, Trash2 } from 'lucide-react';
 

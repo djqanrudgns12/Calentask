@@ -1,5 +1,4 @@
 import Papa from 'papaparse'
-import * as XLSX from 'xlsx'
 import { NicePayload } from '@/app/actions/niceImport'
 
 export type ParseResult = {
@@ -11,10 +10,10 @@ export type ParseResult = {
  * 나이스 복무 파일(CSV 또는 XLSX)을 파싱하여 정제된 페이로드 배열로 반환합니다.
  */
 export async function parseNiceFile(file: File): Promise<ParseResult> {
-  return new Promise((resolve, reject) => {
-    const extension = file.name.split('.').pop()?.toLowerCase()
+  const extension = file.name.split('.').pop()?.toLowerCase()
 
-    if (extension === 'csv') {
+  if (extension === 'csv') {
+    return new Promise((resolve, reject) => {
       Papa.parse(file, {
         header: true,
         skipEmptyLines: true,
@@ -29,7 +28,13 @@ export async function parseNiceFile(file: File): Promise<ParseResult> {
         },
         error: (err) => reject(err),
       })
-    } else if (extension === 'xlsx' || extension === 'xls') {
+    })
+  }
+
+  if (extension === 'xlsx' || extension === 'xls') {
+    // xlsx는 무거운 라이브러리이므로 엑셀 파일 업로드 시점에만 로드
+    const XLSX = await import('xlsx')
+    return new Promise((resolve, reject) => {
       const reader = new FileReader()
       reader.onload = (e) => {
         try {
@@ -46,10 +51,10 @@ export async function parseNiceFile(file: File): Promise<ParseResult> {
       }
       reader.onerror = (err) => reject(err)
       reader.readAsArrayBuffer(file)
-    } else {
-      reject(new Error('지원하지 않는 파일 형식입니다. CSV 또는 XLSX 파일을 업로드해주세요.'))
-    }
-  })
+    })
+  }
+
+  throw new Error('지원하지 않는 파일 형식입니다. CSV 또는 XLSX 파일을 업로드해주세요.')
 }
 
 /**

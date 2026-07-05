@@ -5,7 +5,7 @@ import { AnniversaryTimeline } from './AnniversaryTimeline';
 import { Plus, Trash2, Pencil, LayoutGrid, List } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { createClient } from '@/lib/supabase/client';
-import { Anniversary } from '@/utils/anniversaryCalculator';
+import type { Anniversary } from '@/utils/anniversaryCalculator';
 
 export function AnniversarySettingsView() {
   const [viewMode, setViewMode] = useState<'grid' | 'timeline'>('grid');

@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { AnniversaryPresetType, Anniversary } from '@/utils/anniversaryCalculator';
+import type { AnniversaryPresetType, Anniversary } from '@/utils/anniversaryCalculator';
 import { CalendarDays, Sparkles, Settings2, ChevronDown, ChevronLeft } from 'lucide-react';
 import { format } from 'date-fns';
 

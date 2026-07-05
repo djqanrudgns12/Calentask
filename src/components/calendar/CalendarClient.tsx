@@ -30,7 +30,6 @@ import { LinkLoungeView } from '@/components/link-lounge/LinkLoungeView';
 
 import { DaySummarySheet } from '@/components/calendar/DaySummarySheet'
 import { EventDetailPopover } from '@/components/calendar/EventDetailPopover'
-import { NiceImportView } from '@/components/calendar/NiceImportView'
 import { DeleteConfirmDialog } from '@/components/calendar/DeleteConfirmDialog'
 import { EditCategoryDialog } from '@/components/calendar/EditCategoryDialog'
 import { SettingsModal } from '@/components/profile/SettingsModal'
@@ -58,6 +57,8 @@ import { AcademicDataClient } from '@/components/school-schedule/AcademicDataCli
 import dynamic from 'next/dynamic'
 
 const TemplateCenterTab = dynamic(() => import('@/components/insights/TemplateCenterTab'), { ssr: false })
+// xlsx·papaparse를 초기 번들에서 분리하기 위해 지연 로딩
+const NiceImportView = dynamic(() => import('@/components/calendar/NiceImportView').then(m => m.NiceImportView), { ssr: false })
 
 export function CalendarClient() {
   const [mounted, setMounted] = useState(false)

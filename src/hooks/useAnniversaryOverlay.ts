@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { createClient } from '@/lib/supabase/client';
-import { Anniversary, calculateOverlays, OverlayEvent } from '@/utils/anniversaryCalculator';
+import type { Anniversary, OverlayEvent } from '@/utils/anniversaryCalculator';
 
 /**
  * 데이터베이스에서 사용자의 기념일 설정을 가져와
@@ -24,6 +24,9 @@ export function useAnniversaryOverlay(rangeStart: string, rangeEnd: string) {
         console.error('Failed to fetch anniversaries:', error);
         return [];
       }
+
+      // lunar-javascript(음력 계산)를 초기 번들에서 분리하기 위해 지연 로딩
+      const { calculateOverlays } = await import('@/utils/anniversaryCalculator');
 
       const start = new Date(rangeStart);
       const end = new Date(rangeEnd);

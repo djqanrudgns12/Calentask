@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { createClient } from '@/lib/supabase/client';
-import { Anniversary, calculateOverlays, OverlayEvent } from '@/utils/anniversaryCalculator';
+import type { Anniversary, OverlayEvent } from '@/utils/anniversaryCalculator';
 import { startOfDay, addDays, differenceInDays } from 'date-fns';
 
 export function useUpcomingAnniversary() {
@@ -20,6 +20,9 @@ export function useUpcomingAnniversary() {
       if (error || !anniversaries || anniversaries.length === 0) {
         return null;
       }
+
+      // lunar-javascript(음력 계산)를 초기 번들에서 분리하기 위해 지연 로딩
+      const { calculateOverlays } = await import('@/utils/anniversaryCalculator');
 
       const today = startOfDay(new Date());
       // 앞으로 1년치 검색

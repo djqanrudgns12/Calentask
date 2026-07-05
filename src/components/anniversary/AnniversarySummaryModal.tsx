@@ -1,6 +1,6 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { OverlayEvent } from '@/utils/anniversaryCalculator';
+import type { OverlayEvent } from '@/utils/anniversaryCalculator';
 import { Calendar, Settings2, Heart, Gift, Star, Banknote } from 'lucide-react';
 import { format } from 'date-fns';
 import { useCalendarStore } from '@/store/useCalendarStore';
