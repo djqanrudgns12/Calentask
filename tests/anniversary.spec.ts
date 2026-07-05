@@ -22,6 +22,8 @@ async function signupAndLogin(page: Page, suffix: string) {
 // 헬퍼: 기념일 설정 뷰 열기
 // ============================================================
 async function openAnniversarySettings(page: Page) {
+  // 기본 뷰가 홈 대시보드로 변경되어 사이드바의 "캘린더 관리" 그룹을 먼저 펼쳐야 함
+  await page.click('button:has-text("캘린더 관리")');
   await page.click('button:has-text("기념일 설정")');
   // Phase 2에서 UI가 변경됨: h1 대신 그리드 뷰의 "새로운 기념일" 버튼으로 확인
   await expect(page.locator('text="새로운 기념일"').first()).toBeVisible({ timeout: 10000 });
@@ -45,6 +47,12 @@ async function addAnniversary(
 
   // 프리셋 선택 — PRESET_LABELS 기준 (💕 연인/커플, 🎂 생일, 📝 시험/디데이, 💰 월급/정기일, ✨ 직접 설정)
   await page.click(`button:has-text("${opts.preset}")`);
+
+  // 직접 설정은 2단계 폼: 계산 방식(날짜수)을 골라야 제목 입력 단계로 진입
+  if (opts.preset === '직접 설정') {
+    await page.click('button:has-text("디데이/날짜수 계산")');
+    await page.click('button:has(div:text-is("날짜수"))');
+  }
 
   // 제목 입력 — Floating Label 패턴이므로 id로 찾기
   await page.fill('#anni-title', opts.title);
@@ -106,13 +114,16 @@ test.describe('2️⃣ Phase 3 - 동적 폼 상태 전환(Micro-Interaction) 검
     await page.click('button:has-text("월급/정기일")');
     await expect(page.locator('label:has-text("어떤 정기일인가요?")')).toBeVisible();
 
-    // CUSTOM
-    await page.click('button:has-text("직접 설정")');
-    await expect(page.locator('label:has-text("어떤 기념일인가요?")')).toBeVisible();
-
     // BIRTHDAY
     await page.click('button:has-text("생일")');
     await expect(page.locator('label:has-text("누구의 생일인가요?")')).toBeVisible();
+
+    // CUSTOM — 2단계 폼: 계산 방식 선택(1단계) 후에야 제목 라벨(2단계)이 나타남
+    await page.click('button:has-text("직접 설정")');
+    await expect(page.locator('text=직접 선택해 보세요')).toBeVisible();
+    await page.click('button:has-text("디데이/날짜수 계산")');
+    await page.click('button:has(div:text-is("날짜수"))');
+    await expect(page.locator('label:has-text("날짜수 제목을 입력하세요")')).toBeVisible();
   });
 
   test('BIRTHDAY 선택 시 음력 옵션이 나타나고, 다른 프리셋으로 바꾸면 사라진다', async ({ page }) => {
