@@ -1,8 +1,9 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { format } from 'date-fns'
+import { useQuery } from '@tanstack/react-query'
 import { Utensils, Flame, AlertCircle, Settings2, Link as LinkIcon, Trash2, Palette, RefreshCw } from 'lucide-react'
 import { getSchoolMeals, MealInfo } from './neisUtils'
 import { getColorClasses, CARD_COLORS } from './colorUtils'
@@ -28,27 +29,17 @@ interface Props {
 }
 
 export function SchoolMealCard({ config, currentDate, onChangeSchool, onChangeColor, onDelete }: Props) {
-  const [meals, setMeals] = useState<MealInfo[]>([])
-  const [isLoading, setIsLoading] = useState(false)
   const [showDetails, setShowDetails] = useState(false)
 
-  useEffect(() => {
-    let isMounted = true
-    const fetchMeals = async () => {
-      setIsLoading(true)
-      try {
-        const dateStr = format(currentDate, 'yyyyMMdd')
-        const data = await getSchoolMeals(config.officeCode, config.schoolCode, dateStr)
-        if (isMounted) setMeals(data)
-      } catch (error) {
-        console.error(error)
-      } finally {
-        if (isMounted) setIsLoading(false)
-      }
-    }
-    fetchMeals()
-    return () => { isMounted = false }
-  }, [currentDate, config.officeCode, config.schoolCode])
+  const dateStr = format(currentDate, 'yyyyMMdd')
+  // 급식은 날짜 단위 정적 데이터 — React Query 캐시로 동일 날짜 재방문 시 재요청 방지
+  const { data: meals = [], isLoading } = useQuery<MealInfo[]>({
+    queryKey: ['school_meals', config.officeCode, config.schoolCode, dateStr],
+    queryFn: () => getSchoolMeals(config.officeCode, config.schoolCode, dateStr),
+    staleTime: 1000 * 60 * 60 * 6,
+    gcTime: 1000 * 60 * 60 * 24,
+    refetchOnWindowFocus: false,
+  })
 
   const parseAllergens = (text: string) => {
     const items = text.split(/\d+\.\s*/).filter(Boolean).map(s => s.trim())

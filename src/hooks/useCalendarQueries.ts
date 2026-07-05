@@ -18,6 +18,8 @@ export function useCategories() {
       const data = await getCategories()
       return [...data, SYS_ANNIVERSARY_CATEGORY]
     },
+    // 참조 데이터: realtime 구독·mutation invalidation이 갱신을 보장
+    staleTime: 1000 * 60 * 5,
   })
 }
 
@@ -106,6 +108,7 @@ export function useCategoryPresets() {
   return useQuery({
     queryKey: ['category_presets'],
     queryFn: () => getCategoryPresets(),
+    staleTime: 1000 * 60 * 5,
   })
 }
 
@@ -395,6 +398,7 @@ export function useUserProfile() {
   return useQuery({
     queryKey: ['userProfile'],
     queryFn: () => getUserProfile(),
+    staleTime: 1000 * 60 * 5,
   })
 }
 

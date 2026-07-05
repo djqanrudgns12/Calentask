@@ -1,5 +1,3 @@
-export const NEIS_API_KEY = '07f9fb76f9724f199ade78f4f9a1cde1'
-
 export interface SchoolInfo {
   officeCode: string
   schoolCode: string
@@ -18,7 +16,8 @@ export interface MealInfo {
 export async function searchSchools(keyword: string): Promise<SchoolInfo[]> {
   if (!keyword.trim()) return []
   
-  const url = `https://open.neis.go.kr/hub/schoolInfo?KEY=${NEIS_API_KEY}&Type=json&pIndex=1&pSize=50&SCHUL_NM=${encodeURIComponent(keyword)}`
+  // API 키 노출 방지를 위해 내부 프록시(/api/neis)를 경유
+  const url = `/api/neis?endpoint=schoolInfo&pIndex=1&pSize=50&SCHUL_NM=${encodeURIComponent(keyword)}`
   
   const res = await fetch(url)
   if (!res.ok) throw new Error('학교 검색에 실패했습니다.')
@@ -40,7 +39,7 @@ export async function searchSchools(keyword: string): Promise<SchoolInfo[]> {
 
 export async function getSchoolMeals(officeCode: string, schoolCode: string, dateStr: string): Promise<MealInfo[]> {
   const formattedDate = dateStr.replace(/-/g, '') // e.g., 20260625
-  const url = `https://open.neis.go.kr/hub/mealServiceDietInfo?KEY=${NEIS_API_KEY}&Type=json&pIndex=1&pSize=3&ATPT_OFCDC_SC_CODE=${officeCode}&SD_SCHUL_CODE=${schoolCode}&MLSV_YMD=${formattedDate}`
+  const url = `/api/neis?endpoint=mealServiceDietInfo&pIndex=1&pSize=3&ATPT_OFCDC_SC_CODE=${officeCode}&SD_SCHUL_CODE=${schoolCode}&MLSV_YMD=${formattedDate}`
   
   const res = await fetch(url)
   if (!res.ok) throw new Error('급식 정보를 불러오는데 실패했습니다.')
