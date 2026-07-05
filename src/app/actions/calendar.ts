@@ -258,7 +258,15 @@ export async function deleteCategoryPreset(id: string) {
 // 일정 가져오기 (해당 월 기준 필터링을 위해 start, end 파라미터 사용)
 export async function getActivities(startDate: string, endDate: string) {
   const supabase = await createClient()
-  
+  const { data: userData } = await supabase.auth.getUser()
+  if (!userData.user) throw new Error('Not authenticated')
+
+  // 날짜가 .or() 필터 문자열에 직접 보간되므로 형식을 사전 검증 (호출원은 모두 toISOString() 사용)
+  const ISO_DATE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{1,3})?Z$/
+  if (!ISO_DATE.test(startDate) || !ISO_DATE.test(endDate)) {
+    throw new Error('Invalid date range')
+  }
+
   const { data, error } = await supabase
     .from('activities')
     .select(`
@@ -269,6 +277,9 @@ export async function getActivities(startDate: string, endDate: string) {
         categories(id, name, hex_color, is_default, user_id)
       )
     `)
+    // RLS 위에 이중 방어로 user_id를 명시 필터
+    .eq('user_id', userData.user.id)
+    // 반복(rrule) 마스터·예외 일정은 클라이언트 전개에 항상 필요하므로 날짜 범위와 무관하게 조회 (의도된 동작)
     .or(`and(start_time.lte.${endDate},end_time.gte.${startDate},deleted_at.is.null),and(recurrence_rule.not.is.null,deleted_at.is.null),and(parent_activity_id.not.is.null,deleted_at.is.null)`)
 
   if (error) throw new Error(error.message)

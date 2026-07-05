@@ -3,6 +3,37 @@
 
 import { createAdminClient } from '@/lib/supabase/server'
 import { z } from 'zod'
+import { headers } from 'next/headers'
+
+// 무차별 대입 완화: 인스턴스별 인메모리 스로틀 (15분 5회).
+// 서버리스에서는 인스턴스마다 별도 카운터라 완전하지 않음 — 완전한 방어는 DB 기반 레이트리밋 필요.
+const attemptMap = new Map<string, { count: number; resetAt: number }>()
+const WINDOW_MS = 15 * 60 * 1000
+const MAX_ATTEMPTS = 5
+
+async function isThrottled(action: string, identifier: string): Promise<boolean> {
+  const headerList = await headers()
+  const ip = headerList.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown'
+  const key = `${action}:${ip}:${identifier}`
+  const now = Date.now()
+
+  // 만료 항목 정리 (무한 증가 방지)
+  if (attemptMap.size > 1000) {
+    for (const [k, v] of attemptMap) {
+      if (now > v.resetAt) attemptMap.delete(k)
+    }
+  }
+
+  const entry = attemptMap.get(key)
+  if (!entry || now > entry.resetAt) {
+    attemptMap.set(key, { count: 1, resetAt: now + WINDOW_MS })
+    return false
+  }
+  entry.count += 1
+  return entry.count > MAX_ATTEMPTS
+}
+
+const THROTTLE_ERROR = { error: '시도 횟수가 너무 많습니다. 15분 후 다시 시도해주세요.', success: false as const }
 
 // 유틸리티: 아이디 마스킹 (예: calen -> ca**n)
 function maskUsername(username: string) {
@@ -21,6 +52,10 @@ export async function findUsername(prevState: any, formData: FormData) {
 
   if (!fullName || !recoveryEmail) {
     return { error: '이름과 복구 이메일을 모두 입력해주세요.', success: false }
+  }
+
+  if (await isThrottled('find', recoveryEmail)) {
+    return THROTTLE_ERROR
   }
 
   try {
@@ -64,6 +99,10 @@ export async function resetUserPassword(prevState: any, formData: FormData) {
   const parsedPassword = passwordSchema.safeParse(newPassword)
   if (!parsedPassword.success) {
     return { error: '비밀번호는 최소 8자 이상이어야 합니다.', success: false }
+  }
+
+  if (await isThrottled('reset', username)) {
+    return THROTTLE_ERROR
   }
 
   try {
