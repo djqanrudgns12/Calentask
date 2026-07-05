@@ -24,7 +24,6 @@
     "@supabase/ssr": "^0.10.3",
     "@supabase/supabase-js": "^2.106.0",
     "@tanstack/react-query": "^5.100.11",
-    "@tanstack/react-table": "^8.21.3",
     "@tiptap/extension-color": "^3.24.0",
     "@tiptap/extension-font-family": "^3.24.0",
     "@tiptap/extension-highlight": "^3.24.0",
