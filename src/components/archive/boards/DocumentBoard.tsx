@@ -390,7 +390,7 @@ export function DocumentBoard() {
       const editorText = editor.getText() || '';
 
       // If store JSON differs from editor JSON (or text differs for raw text), and it's not a local update
-      if (storeJson !== editorJson && (storeJson !== '{}' || storeText !== editorText)) {
+      if (!editor.isFocused && storeJson !== editorJson && (storeJson !== '{}' || storeText !== editorText)) {
         setTimeout(() => {
           if (!editor.isDestroyed) {
             editor.commands.setContent(getValidContent());

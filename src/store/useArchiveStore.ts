@@ -412,13 +412,20 @@ export const useArchiveStore = create<ArchiveState>()(
         }
       });
       
-      const createdItem: BoardItem = { ...newItem, id: created.id };
-      set(state => ({
-        items: {
-          ...state.items,
-          [boardId]: (state.items[boardId] || []).map(i => i.id === tempId ? createdItem : i)
-        }
-      }));
+      set(state => {
+        const currentItems = state.items[boardId] || [];
+        const currentItem = currentItems.find(i => i.id === tempId);
+        if (!currentItem) return state; // If deleted before response
+        
+        const finalItem: BoardItem = { ...currentItem, id: created.id };
+        
+        return {
+          items: {
+            ...state.items,
+            [boardId]: currentItems.map(i => i.id === tempId ? finalItem : i)
+          }
+        };
+      });
     } catch (error) {
       console.error('Failed to create item:', error);
       set(state => ({
