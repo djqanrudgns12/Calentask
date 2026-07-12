@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input'
 import { X, Plus, Pencil, Zap, Link as LinkIcon, Image as ImageIcon, FileText, Paperclip, ToggleRight, Play, Square, Clock, Tag, Palette, AlignLeft, Upload, Bell, RefreshCcw } from 'lucide-react'
 import { useCategories, useCreateActivity, useUpdateActivity, useCreateCategory, useDeleteCategory } from '@/hooks/useCalendarQueries'
 import { updateRecurringActivity } from '@/app/actions/calendar'
-import { format, startOfMonth, endOfMonth, parseISO } from 'date-fns'
+import { format, parseISO } from 'date-fns'
 import { Popover, PopoverContent, PopoverTrigger, PopoverHeader, PopoverTitle } from '@/components/ui/popover'
 import { createClient } from '@/lib/supabase/client'
 import { useActivityTemplates } from '@/hooks/useInsightsQueries'
@@ -106,10 +106,6 @@ export function AddEventDialog({ children }: { children?: React.ReactNode }) {
   const [editMode, setEditMode] = useState<'THIS_EVENT' | 'THIS_AND_FOLLOWING' | 'ALL_EVENTS'>('THIS_EVENT')
   const [originalStartTime, setOriginalStartTime] = useState<string | null>(null)
 
-
-  const currentMonthStart = startOfMonth(new Date()).toISOString()
-  const currentMonthEnd = endOfMonth(new Date()).toISOString()
-
   /* ── 자동 시간 교정 ── */
   useEffect(() => {
     if (isAllDay) {
@@ -127,8 +123,8 @@ export function AddEventDialog({ children }: { children?: React.ReactNode }) {
 
   const { data: categories = [] } = useCategories()
   const { data: templates = [] } = useActivityTemplates()
-  const { mutate: createActivity, isPending: isCreating } = useCreateActivity(currentMonthStart, currentMonthEnd)
-  const { mutate: updateActivity, isPending: isUpdating } = useUpdateActivity(currentMonthStart, currentMonthEnd)
+  const { mutate: createActivity, isPending: isCreating } = useCreateActivity()
+  const { mutate: updateActivity, isPending: isUpdating } = useUpdateActivity()
   const { mutate: createCategory } = useCreateCategory()
   const { mutate: deleteCategory } = useDeleteCategory()
 
@@ -272,7 +268,7 @@ export function AddEventDialog({ children }: { children?: React.ReactNode }) {
     const payload = { title, start_time: sO.toISOString(), end_time: eO.toISOString(), is_all_day: isAllDay, type: 'EVENT' as const, memo, hex_color: customColor, template_id: templateId, attachments, reminders, parent_activity_id: null, original_start_time: null }
 
     const onSuccessAction = () => {
-      toast.success(editingEvent ? '일정이 성공적으로 수정되었습니다.' : '일정이 구글 캘린더에도 생성되었습니다.')
+      toast.success(editingEvent ? '일정이 성공적으로 수정되었습니다.' : '일정이 등록되었습니다.')
       if (prefillAgendaTaskId) useAgendaStore.getState().updateTask(prefillAgendaTaskId, { is_calendar_registered: true })
       closeAddEvent()
       if (isAlsoAgenda) {

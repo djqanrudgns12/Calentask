@@ -273,6 +273,8 @@ function mapActivityToGoogleEvent(activity: any, categories: any[], settings?: G
     summary: isPrivate ? '바쁨' : activity.title,
     description: isPrivate ? '' : (activity.memo || ''),
     visibility: isPrivate ? 'private' : 'default',
+    // 외부 서비스(네이버 등)의 미러링은 confirmed 이벤트만 안정적으로 노출하므로 명시
+    status: 'confirmed',
     start,
     end,
     colorId,
