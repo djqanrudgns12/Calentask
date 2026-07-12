@@ -228,46 +228,63 @@ export function useActivities(startDate: string, endDate: string) {
   })
 }
 
-export function useCreateActivity(startDate: string, endDate: string) {
+// 낙관적 업데이트 대상 카테고리 객체를 캐시에서 즉시 확보 (색상 즉시 반영)
+function pickCategoriesFromCache(queryClient: ReturnType<typeof useQueryClient>, categoryIds: string[]) {
+  const allCategories = queryClient.getQueryData<Category[]>(['categories']) || []
+  return allCategories.filter(c => categoryIds.includes(c.id))
+}
+
+export function useCreateActivity() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: ({ payload, categoryIds }: { payload: Omit<Activity, 'id' | 'user_id' | 'deleted_at' | 'categories'>, categoryIds: string[] }) => 
+    mutationFn: ({ payload, categoryIds }: { payload: Omit<Activity, 'id' | 'user_id' | 'deleted_at' | 'categories'>, categoryIds: string[] }) =>
       createActivity(payload, categoryIds),
     onMutate: async (newActivityData) => {
-      await queryClient.cancelQueries({ queryKey: ['activities', startDate, endDate] })
-      
-      const previousActivities = queryClient.getQueryData<Activity[]>(['activities', startDate, endDate])
-      
-      if (previousActivities) {
-        const optimisticActivity: Activity = {
-          id: `temp-${Date.now()}`,
-          user_id: 'temp',
-          title: newActivityData.payload.title,
-          start_time: newActivityData.payload.start_time,
-          end_time: newActivityData.payload.end_time,
-          is_all_day: newActivityData.payload.is_all_day,
-          memo: newActivityData.payload.memo || null,
-          type: newActivityData.payload.type,
-          hex_color: newActivityData.payload.hex_color || null,
-          template_id: newActivityData.payload.template_id || null,
-          deleted_at: null,
-          categories: [],
-          attachments: [],
-          reminders: [],
-          recurrence_rule: null,
-          parent_activity_id: null,
-          original_start_time: null
-        }
-        
-        queryClient.setQueryData(['activities', startDate, endDate], [...previousActivities, optimisticActivity])
+      // 캘린더가 보고 있는 날짜 범위와 무관하게 캐시된 모든 범위에 즉시 반영
+      // (기존에는 고정된 '이번 달' 키에만 써서 실제 조회 키와 불일치 → 낙관적 반영이 동작하지 않았음)
+      await queryClient.cancelQueries({ queryKey: ['activities'] })
+
+      const previousQueries = queryClient.getQueriesData<Activity[]>({ queryKey: ['activities'] })
+      const optimisticCategories = pickCategoriesFromCache(queryClient, newActivityData.categoryIds)
+      const tempId = `temp-${Date.now()}`
+
+      const optimisticActivity: Activity = {
+        id: tempId,
+        user_id: 'temp',
+        title: newActivityData.payload.title,
+        start_time: newActivityData.payload.start_time,
+        end_time: newActivityData.payload.end_time,
+        is_all_day: newActivityData.payload.is_all_day,
+        memo: newActivityData.payload.memo || null,
+        type: newActivityData.payload.type,
+        hex_color: newActivityData.payload.hex_color || null,
+        template_id: newActivityData.payload.template_id || null,
+        deleted_at: null,
+        categories: optimisticCategories,
+        attachments: [],
+        reminders: newActivityData.payload.reminders || [],
+        recurrence_rule: newActivityData.payload.recurrence_rule || null,
+        parent_activity_id: newActivityData.payload.parent_activity_id || null,
+        original_start_time: newActivityData.payload.original_start_time || null
       }
-      return { previousActivities }
+
+      queryClient.setQueriesData<Activity[]>({ queryKey: ['activities'] }, (old) =>
+        old ? [...old, optimisticActivity] : old
+      )
+
+      return { previousQueries, tempId, optimisticCategories }
     },
-    onError: (err, newActivityData, context) => {
-      if (context?.previousActivities) {
-        queryClient.setQueryData(['activities', startDate, endDate], context.previousActivities)
-      }
+    onSuccess: (activity, _variables, context) => {
+      // 임시 행을 서버 행으로 치환 (백그라운드 재조회 완료 전에도 실제 ID 확보)
+      queryClient.setQueriesData<Activity[]>({ queryKey: ['activities'] }, (old) =>
+        old?.map(a => a.id === context.tempId ? { ...a, ...activity, categories: context.optimisticCategories } : a)
+      )
+    },
+    onError: (_err, _newActivityData, context) => {
+      context?.previousQueries.forEach(([key, data]) => {
+        queryClient.setQueryData(key, data)
+      })
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['activities'] })
@@ -275,32 +292,31 @@ export function useCreateActivity(startDate: string, endDate: string) {
   })
 }
 
-export function useUpdateActivity(startDate: string, endDate: string) {
+export function useUpdateActivity() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: ({ id, payload, categoryIds }: { id: string, payload: Partial<Omit<Activity, 'id' | 'user_id' | 'deleted_at' | 'categories'>>, categoryIds: string[] }) => 
+    mutationFn: ({ id, payload, categoryIds }: { id: string, payload: Partial<Omit<Activity, 'id' | 'user_id' | 'deleted_at' | 'categories'>>, categoryIds: string[] }) =>
       updateActivity(id, payload, categoryIds),
     onMutate: async (newActivityData) => {
-      await queryClient.cancelQueries({ queryKey: ['activities', startDate, endDate] })
-      
-      const previousActivities = queryClient.getQueryData<Activity[]>(['activities', startDate, endDate])
-      
-      if (previousActivities) {
-        queryClient.setQueryData(['activities', startDate, endDate], 
-          previousActivities.map(activity => 
-            activity.id === newActivityData.id 
-              ? { ...activity, ...newActivityData.payload, categories: [] } // 카테고리는 낙관적 업데이트에 포함 생략(단순화)
-              : activity
-          )
+      await queryClient.cancelQueries({ queryKey: ['activities'] })
+
+      const previousQueries = queryClient.getQueriesData<Activity[]>({ queryKey: ['activities'] })
+      const optimisticCategories = pickCategoriesFromCache(queryClient, newActivityData.categoryIds)
+
+      queryClient.setQueriesData<Activity[]>({ queryKey: ['activities'] }, (old) =>
+        old?.map(activity =>
+          activity.id === newActivityData.id
+            ? { ...activity, ...newActivityData.payload, categories: optimisticCategories }
+            : activity
         )
-      }
-      return { previousActivities }
+      )
+      return { previousQueries }
     },
-    onError: (err, newActivityData, context) => {
-      if (context?.previousActivities) {
-        queryClient.setQueryData(['activities', startDate, endDate], context.previousActivities)
-      }
+    onError: (_err, _newActivityData, context) => {
+      context?.previousQueries.forEach(([key, data]) => {
+        queryClient.setQueryData(key, data)
+      })
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['activities'] })

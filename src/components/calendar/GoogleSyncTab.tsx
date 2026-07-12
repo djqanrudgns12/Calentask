@@ -137,11 +137,14 @@ export function GoogleSyncTab() {
     }
   }
 
-  const handleStartSync = async (type: 'simple' | 'custom') => {
+  const handleStartSync = async (type: 'simple' | 'custom' | 'primary') => {
     setIsSyncing(true)
     try {
       if (type === 'simple') {
         await startGoogleSyncAction()
+      } else if (type === 'primary') {
+        // 구글 기본 캘린더로 직접 동기화 — 네이버 등 외부 서비스는 기본 캘린더만 미러링함
+        await startGoogleSyncAction('primary', 'Google 기본 캘린더')
       } else {
         if (!selectedCalendarId) {
           alert('캘린더를 선택해주세요.')
@@ -345,7 +348,7 @@ export function GoogleSyncTab() {
                   </div>
                 </div>
 
-                <div className="grid md:grid-cols-2 gap-5">
+                <div className="grid md:grid-cols-3 gap-5">
                   {/* 간편 동기화 */}
                   <motion.div 
                     whileHover={{ y: -4 }}
@@ -367,6 +370,30 @@ export function GoogleSyncTab() {
                     </p>
                     <Button className="w-full bg-blue-600 hover:bg-blue-700 shadow-md relative z-10" disabled={isSyncing} size="lg">
                       {isSyncing ? '동기화 중...' : '간편하게 시작하기'}
+                    </Button>
+                  </motion.div>
+
+                  {/* 기본 캘린더 동기화 (외부 서비스 호환) */}
+                  <motion.div
+                    whileHover={{ y: -4 }}
+                    className="bg-white/80 backdrop-blur-xl border border-emerald-100 rounded-2xl p-6 hover:border-emerald-300 hover:shadow-xl hover:shadow-emerald-500/10 transition-all cursor-pointer flex flex-col group relative overflow-hidden"
+                    onClick={() => handleStartSync('primary')}
+                  >
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-400/5 rounded-full blur-2xl group-hover:bg-emerald-400/10 transition-all"></div>
+                    <div className="flex items-center gap-4 mb-4 relative z-10">
+                      <div className="w-12 h-12 bg-gradient-to-br from-emerald-50 to-teal-50 text-emerald-600 rounded-2xl flex items-center justify-center shrink-0 border border-emerald-100 shadow-sm">
+                        <Globe2 className="w-6 h-6" />
+                      </div>
+                      <div>
+                        <h4 className="font-extrabold text-slate-900 text-lg group-hover:text-emerald-700 transition-colors">기본 캘린더로 동기화</h4>
+                        <p className="text-xs text-emerald-600 font-bold uppercase tracking-wider mt-0.5">외부 서비스 호환</p>
+                      </div>
+                    </div>
+                    <p className="text-sm text-slate-600 mb-6 flex-1 relative z-10">
+                      구글의 ‘기본 캘린더’에 직접 일정을 기록합니다. 네이버 캘린더 등 외부 서비스는 구글 기본 캘린더만 가져오므로, 외부 연동이 필요하다면 이 방식을 선택하세요.
+                    </p>
+                    <Button className="w-full bg-emerald-600 hover:bg-emerald-700 shadow-md relative z-10" disabled={isSyncing} size="lg">
+                      {isSyncing ? '동기화 중...' : '기본 캘린더로 시작하기'}
                     </Button>
                   </motion.div>
 
