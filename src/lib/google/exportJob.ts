@@ -41,10 +41,19 @@ export const STALE_HEARTBEAT_MS = 90_000
 
 export type JobStatus = 'RUNNING' | 'PAUSED' | 'SUCCEEDED' | 'FAILED' | 'CANCELLED'
 
+/**
+ * FULL   평소의 전체 내보내기. 내용이 그대로면 건너뛴다(구글 쿼터 절약).
+ * RETRY  실패한 항목만 다시.
+ * FORCE  **미러 세이프 재전송**. 건너뛰기 없이 전부 다시 `events.update` 한다.
+ *        네이버처럼 구글을 주기적으로 당겨 가는 단방향 미러가 놓친 일정을 되살리는 유일한 수단.
+ *        삭제·재생성이 없으므로 진행 중에도 구글 캘린더에서 일정이 사라지지 않는다.
+ */
+export type JobMode = 'FULL' | 'RETRY' | 'FORCE'
+
 export interface SyncJob {
   id: string
   user_id: string
-  mode: 'FULL' | 'RETRY'
+  mode: JobMode
   status: JobStatus
   total: number
   processed: number
@@ -103,7 +112,7 @@ async function getUnfinishedJob(supabase: any, userId: string): Promise<SyncJob 
  */
 export async function startOrResumeJob(
   userId: string,
-  options: { mode?: 'FULL' | 'RETRY'; activityIds?: string[]; restart?: boolean } = {}
+  options: { mode?: JobMode; activityIds?: string[]; restart?: boolean } = {}
 ): Promise<{ job: SyncJob; started: boolean }> {
   const supabase = createAdminClient()
   const mode = options.mode || 'FULL'
@@ -153,7 +162,7 @@ export async function startOrResumeJob(
 async function countTargets(
   supabase: any,
   userId: string,
-  mode: 'FULL' | 'RETRY',
+  mode: JobMode,
   activityIds: string[]
 ): Promise<number> {
   if (mode === 'RETRY') return activityIds.length
@@ -233,12 +242,13 @@ export async function runExportJob(jobId: string, userId: string): Promise<void>
   }
 
   try {
-    // 전체 내보내기를 처음 시작할 때, 캘린더에 흩어진 중복 사본을 먼저 정리한다.
-    // 라우팅이 바뀔 때마다 이전 위치의 사본이 남던 문제를 실제로 걷어내야
-    // 이후 push가 "정확히 하나"를 갱신하는 상태에서 출발할 수 있다.
+    // 전체 내보내기를 처음 시작할 때, 흩어진 사본을 가리키도록 DB 링크를 맞춰 둔다.
+    // ★ 여기서는 구글 이벤트를 삭제하지 않는다 ★
+    // 삭제와 재생성 사이의 공백을 외부 미러(네이버 등)가 그대로 복제해 일정이 사라진다.
+    // (실측: 150건 삭제 후 29분간 구글이 비어 있었고, 그 사이 네이버가 그 상태를 가져갔다.)
     if (job.mode === 'FULL' && cursor === 0) {
       try {
-        const { removed, relinked } = await reconcileGoogleDuplicates(userId)
+        const { removed, relinked } = await reconcileGoogleDuplicates(userId, { allowDelete: false })
         if (removed > 0 || relinked > 0) {
           console.info(
             `[runExportJob] reconciled google events: ${removed} duplicates removed, ${relinked} links repaired`
@@ -302,7 +312,9 @@ export async function runExportJob(jobId: string, userId: string): Promise<void>
         void flush()
       }
 
-      const result = await syncBatchActivitiesToGoogle(userId, activities, onProgress)
+      const result = await syncBatchActivitiesToGoogle(userId, activities, onProgress, {
+        force: job.mode === 'FORCE',
+      })
       if (result.failedItems.length > 0) {
         failedItems = [...failedItems, ...result.failedItems]
       }

@@ -147,6 +147,26 @@ export function useSyncJobControls() {
     [setJob, setSubmitting, openPanel]
   )
 
+  /**
+   * 미러 세이프 재전송. 내용이 그대로여도 전부 다시 보낸다.
+   *
+   * 네이버 캘린더는 구글을 주기적으로 당겨 가는 단방향 미러라, 이벤트의 `updated`가
+   * 바뀌어야만 다시 가져간다. 평소 동기화는 "바뀐 게 없다"며 건너뛰기 때문에
+   * 네이버가 한 번 놓친 일정은 스스로 돌아오지 못한다. 이 버튼이 그 상태를 푼다.
+   */
+  const forceResend = useCallback(async () => {
+    setSubmitting(true)
+    openPanel()
+    try {
+      const job = await postJob({ action: 'start', mode: 'FORCE', restart: true })
+      setJob(job)
+    } catch (err) {
+      toast.error(errorMessage(err, '재전송을 시작하지 못했습니다.'))
+    } finally {
+      setSubmitting(false)
+    }
+  }, [setJob, setSubmitting, openPanel])
+
   const retryFailed = useCallback(
     async (activityIds: string[]) => {
       if (activityIds.length === 0) return
@@ -178,5 +198,5 @@ export function useSyncJobControls() {
     [setJob, setSubmitting]
   )
 
-  return { start, retryFailed, cancel }
+  return { start, forceResend, retryFailed, cancel }
 }

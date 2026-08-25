@@ -368,6 +368,8 @@ export async function moveCalendarEvent(command: MoveCalendarEventCommand) {
     return
   }
 
+  // 시각만 옮기는 조작이다. categoryIds를 넘기지 않으면 기존 카테고리가 그대로 유지되고,
+  // 그룹 라우팅도 근거를 잃지 않아 구글 캘린더가 바뀌지 않는다.
   const payload = { start_time: start, end_time: end, is_all_day: command.allDay }
   const recurring = Boolean(command.recurrenceRule || command.parentActivityId || command.originalStartTime)
   if (!recurring) {

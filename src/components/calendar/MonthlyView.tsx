@@ -231,7 +231,6 @@ export const MonthlyView = React.memo(function MonthlyView({
         start: drop.start,
         end: drop.end,
         allDay: drop.summary.allDay,
-        categoryIds: drop.summary.categories.map(category => category.id).filter(id => id !== 'agenda-category'),
         recurrenceRule: drop.summary.recurrenceRule,
         parentActivityId: drop.summary.parentActivityId,
         originalStartTime: drop.summary.originalStartTime,

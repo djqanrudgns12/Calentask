@@ -73,7 +73,6 @@ export function useEventDragDrop({ viewMode, events, startDateStr, endDateStr }:
       newEnd = addDays(new Date(oldEnd.getTime() + deltaMinutes * 60000), dayDiff)
     }
 
-    const categoryIds = draggedEvent.categories?.map(c => c.id) || []
     
     // 캐시 키
     const queryKey = ['activities', startDateStr, endDateStr]
@@ -94,10 +93,13 @@ export function useEventDragDrop({ viewMode, events, startDateStr, endDateStr }:
     // 2. 서버 통신 (즉시)
     try {
       // Error handling is managed by React Query typically, but since we call server action directly here:
+      // 카테고리 인자를 넘기지 않는다 = "건드리지 않는다".
+      // 예전에는 캐시에 categories가 없으면 조용히 []가 넘어가, 일정의 카테고리가 사라지고
+      // 구글 이벤트가 기본 캘린더로 끌려갔다(외부 미러에는 삭제로 보인다).
       await updateActivity(draggedEvent.id, {
         start_time: newStart.toISOString(),
         end_time: newEnd.toISOString()
-      }, categoryIds)
+      })
 
       // 3. Undo 토스트 발생
       toast.success('일정이 이동되었습니다.', {
@@ -111,7 +113,7 @@ export function useEventDragDrop({ viewMode, events, startDateStr, endDateStr }:
               await updateActivity(draggedEvent.id, {
                 start_time: draggedEvent.start_time,
                 end_time: draggedEvent.end_time
-              }, categoryIds)
+              })
               toast.info('이동이 취소되었습니다.')
             } catch (err) {
               toast.error('실행 취소 중 오류가 발생했습니다.')

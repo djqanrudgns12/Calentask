@@ -57,7 +57,8 @@ export type MoveCalendarEventCommand = {
   start: string
   end: string
   allDay: boolean
-  categoryIds: string[]
+  /** 지정하면 카테고리를 그 값으로 교체한다. 생략하면 건드리지 않는다(시각만 이동). */
+  categoryIds?: string[]
   recurrenceRule: string | null
   parentActivityId: string | null
   originalStartTime: string | null

@@ -81,6 +81,29 @@ function isGoogleError(err: any, code: number): boolean {
   return false
 }
 
+/**
+ * 구글이 스스로 만들어 주고 **일반 일정으로는 수정할 수 없는** 이벤트인지.
+ *
+ * 연락처 생일(birthday), 지메일에서 추출된 예약(fromGmail), 근무 장소(workingLocation),
+ * 집중 시간(focusTime), 부재중(outOfOffice)이 여기 해당한다.
+ * 이런 이벤트를 Calentask로 들여오면, 그 뒤 모든 push가
+ * `Event type cannot be changed`로 **영구 실패**해서 배치 전체를 실패로 물들인다.
+ * 그래서 수입 단계에서 아예 걸러낸다.
+ */
+function isReadOnlyGoogleEvent(event: calendar_v3.Schema$Event): boolean {
+  const eventType = (event as any).eventType
+  return typeof eventType === 'string' && eventType !== 'default'
+}
+
+/**
+ * 다시 시도해도 결과가 달라지지 않는(영구적인) push 거부인지.
+ * 구글 소유의 읽기 전용 일정에 update를 시도했을 때 돌아온다.
+ */
+function isImmutablePushError(err: any): boolean {
+  const message = String(err?.message || err?.response?.data?.error?.message || '')
+  return /event type cannot be changed|cannot change the event type/i.test(message)
+}
+
 /** 재시도해도 의미가 있는(일시적) 오류인지. */
 function isTransientGoogleError(err: any): boolean {
   const status = err?.response?.status ?? err?.status ?? Number.parseInt(err?.code, 10)
@@ -538,14 +561,23 @@ function eventPayloadHash(eventBody: calendar_v3.Schema$Event, calendarId: strin
     .digest('hex')
 }
 
-/** 카테고리 → 그룹 매핑 캘린더를 O(1)로 찾는다. */
+/**
+ * 카테고리 → 그룹 매핑 캘린더를 찾는다.
+ *
+ * ★ 반드시 결정적이어야 한다 ★
+ * 예전에는 `categories` 배열을 받은 순서대로 훑었는데, 이 순서는 Supabase 조인 결과에 따라
+ * 실행마다 달라질 수 있다. 카테고리 두 개가 서로 다른 캘린더로 매핑돼 있으면 목적지가
+ * 실행마다 바뀌어, 이벤트가 두 캘린더 사이를 `events.move`로 왕복했다.
+ * 외부 미러(네이버 등)에는 그때마다 "삭제 후 재생성"으로 보여 일정이 사라진다.
+ * 카테고리 ID로 정렬해 같은 입력이면 언제나 같은 목적지가 나오게 한다.
+ */
 function mappedCalendarFor(categories: any[], settings: GoogleSyncSettings): string | null {
   if (!settings.groupMapping) return null
-  for (const cat of categories) {
-    const mapped = settings.groupMapping[cat?.id]
-    if (mapped) return mapped
-  }
-  return null
+  const mapped = categories
+    .map((cat) => ({ id: String(cat?.id ?? ''), calendarId: settings.groupMapping?.[cat?.id] }))
+    .filter((entry) => !!entry.calendarId)
+    .sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0))
+  return mapped[0]?.calendarId || null
 }
 
 /**
@@ -559,9 +591,22 @@ function mappedCalendarFor(categories: any[], settings: GoogleSyncSettings): str
 function desiredCalendarFor(
   categories: any[],
   settings: GoogleSyncSettings,
-  scope: SyncScope
+  scope: SyncScope,
+  currentCalendarId?: string | null
 ): string {
-  return mappedCalendarFor(categories, settings) || scope.writeCalendarId
+  const mapped = mappedCalendarFor(categories, settings)
+  if (mapped) return mapped
+
+  // ★ 라우팅 근거가 없으면 옮기지 않는다 ★
+  // 카테고리가 비어 있다는 건 "기본 캘린더로 보내라"는 뜻이 아니라 "판단할 근거가 없다"는 뜻이다.
+  // 예전에는 무조건 기본 쓰기 캘린더를 목적지로 삼아서, 시각만 바꾸는 수정(달력 드래그 이동 등)이
+  // 카테고리를 함께 비워 버리면 이미 그룹 캘린더에 잘 들어가 있던 일정이 `events.move`로
+  // 기본 캘린더로 끌려 나갔다. 외부 미러에는 이것이 삭제로 보인다.
+  // 이미 우리가 쓰는 캘린더에 자리 잡고 있다면 그 자리를 지킨다.
+  if (currentCalendarId && scope.writableCalendarIds.has(currentCalendarId)) {
+    return currentCalendarId
+  }
+  return scope.writeCalendarId
 }
 
 /**
@@ -755,7 +800,12 @@ export async function syncActivityToGoogle(userId: string, activity: any, catego
     const scope = await resolveSyncScope(userId, auth, supabase, settings)
     if (!scope) return
 
-    const desiredCalendarId = desiredCalendarFor(categories, settings, scope)
+    const desiredCalendarId = desiredCalendarFor(
+      categories,
+      settings,
+      scope,
+      activity.google_calendar_id
+    )
 
     // 반복 마스터를 push할 때, 삭제된 회차(soft-deleted 자식 예외)를 EXDATE로 제외시킨다.
     let exDatesUtc: string[] = []
@@ -825,6 +875,11 @@ export async function syncActivityToGoogle(userId: string, activity: any, catego
       eventPayloadHash(eventBody, placed.calendarId)
     )
   } catch (error: any) {
+    // 구글 소유의 읽기 전용 일정(생일 등)은 재시도해도 결과가 같다. 오류로 남기지 않는다.
+    if (isImmutablePushError(error)) {
+      console.warn(`[syncActivityToGoogle] read-only google event, skipped: ${activity.id}`)
+      return
+    }
     console.error('Failed to sync activity to Google Calendar:', error)
     await logSyncHistory(supabase, {
       userId,
@@ -1871,6 +1926,11 @@ async function applyDelta(
     const instances: calendar_v3.Schema$Event[] = []
     const primaries: calendar_v3.Schema$Event[] = []
     for (const event of events) {
+      // ★ 구글 소유의 읽기 전용 일정(생일/근무장소/부재중 등)은 들이지 않는다 ★
+      // 한 번 수입되면 되밀 때마다 `Event type cannot be changed`로 영구 실패해
+      // 모든 배치 동기화가 '실패'로 표시된다(실측: "Happy birthday!" 1건이 4개 작업을 전부 오염시킴).
+      // 취소(cancelled) 이벤트는 eventType이 비어 올 수 있으므로 삭제 반영 경로는 막지 않는다.
+      if (event.status !== 'cancelled' && isReadOnlyGoogleEvent(event)) continue
       if (event.recurringEventId) instances.push(event)
       else primaries.push(event)
     }
@@ -2625,6 +2685,28 @@ export async function migrateCategoryActivitiesToCalendar(
 // ─────────────────────────────────────────────────────────────
 
 /**
+ * 한 번의 정리에서 구글 이벤트를 지울 수 있는 최대 건수.
+ *
+ * 이 상한이 없어서 2026-08-25 07:23에 구글 이벤트 150건이 한꺼번에 삭제됐고,
+ * 다시 만들어지기까지 약 29분 동안 구글 캘린더가 비어 있었다.
+ * 그 사이에 네이버가 구글을 읽어 가면서 "없음"을 정답으로 복제해 버렸다.
+ */
+const RECONCILE_DELETE_LIMIT = 20
+
+export interface ReconcileOptions {
+  /**
+   * 여분 사본을 실제로 삭제할지. 기본값은 false(= 링크 복구만).
+   *
+   * 자동 경로(배치 동기화 시작 시)에서는 절대 삭제하지 않는다. 삭제와 재생성 사이의
+   * 공백을 외부 미러(네이버 등)가 그대로 복제해 일정이 사라지기 때문이다.
+   * 사용자가 "중복 정리"를 명시적으로 실행했을 때만 true로 넘긴다.
+   */
+  allowDelete?: boolean
+  /** 이번 실행에서 허용할 삭제 건수 상한. */
+  deleteLimit?: number
+}
+
+/**
  * 같은 Calentask 일정이 여러 캘린더에 사본으로 흩어져 있으면 하나만 남기고 정리한다.
  *
  * 목적지가 바뀌었을 때 `events.move` 대신 신규 insert를 하던 시절에 만들어진 중복을
@@ -2632,9 +2714,12 @@ export async function migrateCategoryActivitiesToCalendar(
  * 캘린더별로 **한 번씩만** 훑어 태그 목록을 모은 뒤 메모리에서 대조한다.
  */
 export async function reconcileGoogleDuplicates(
-  userId: string
-): Promise<{ removed: number; relinked: number }> {
+  userId: string,
+  options: ReconcileOptions = {}
+): Promise<{ removed: number; relinked: number; deferredDeletes: number }> {
   const supabase = createAdminClient()
+  const allowDelete = options.allowDelete === true
+  const deleteLimit = options.deleteLimit ?? RECONCILE_DELETE_LIMIT
 
   const { data: user } = await supabase
     .from('users')
@@ -2642,13 +2727,13 @@ export async function reconcileGoogleDuplicates(
     .eq('id', userId)
     .single()
 
-  if (!user?.google_refresh_token) return { removed: 0, relinked: 0 }
+  if (!user?.google_refresh_token) return { removed: 0, relinked: 0, deferredDeletes: 0 }
   const settings: GoogleSyncSettings = user.google_sync_settings || {}
 
   const auth = buildOAuthClient(user.google_refresh_token)
   const calendar = google.calendar({ version: 'v3', auth })
   const scope = await resolveSyncScope(userId, auth, supabase, settings)
-  if (!scope) return { removed: 0, relinked: 0 }
+  if (!scope) return { removed: 0, relinked: 0, deferredDeletes: 0 }
 
   // 1) 우리가 쓰는 캘린더들을 한 번씩 훑어 calentask_id 태그가 붙은 사본을 모은다.
   type Copy = { calendarId: string; eventId: string; updatedMs: number }
@@ -2686,7 +2771,7 @@ export async function reconcileGoogleDuplicates(
     }
   }
 
-  if (copiesByActivity.size === 0) return { removed: 0, relinked: 0 }
+  if (copiesByActivity.size === 0) return { removed: 0, relinked: 0, deferredDeletes: 0 }
 
   // 2) 태그가 가리키는 활동들의 현재 링크와 목적지를 한 번에 읽는다.
   const activityIds = [...copiesByActivity.keys()]
@@ -2703,7 +2788,10 @@ export async function reconcileGoogleDuplicates(
       const categories = (row.activity_category_map || [])
         .map((m: any) => m.categories)
         .filter(Boolean)
-      desiredById.set(row.id, desiredCalendarFor(categories, settings, scope))
+      desiredById.set(
+        row.id,
+        desiredCalendarFor(categories, settings, scope, row.google_calendar_id)
+      )
       currentLinkById.set(row.id, {
         eventId: row.google_event_id,
         calendarId: row.google_calendar_id,
@@ -2715,6 +2803,7 @@ export async function reconcileGoogleDuplicates(
   const limit = pLimit(5)
   let removed = 0
   let relinked = 0
+  let deferredDeletes = 0
 
   for (const [activityId, list] of copiesByActivity.entries()) {
     // 태그가 가리키는 활동이 DB에 없으면(영구 삭제됨) 손대지 않는다.
@@ -2750,6 +2839,16 @@ export async function reconcileGoogleDuplicates(
 
     const strays = list.filter((c) => c !== keep)
     if (strays.length === 0) continue
+
+    // ★ 삭제는 기본적으로 하지 않는다 ★
+    // 구글에서 이벤트를 지우면, 그 순간에 구글을 읽어 간 외부 미러(네이버 등)는
+    // "없음"을 정답으로 복제한다. 우리가 곧바로 다시 만들어도 미러는 알 길이 없다.
+    // 여분 사본은 링크만 정리해 두고, 실제 삭제는 사용자가 명시적으로 요청했을 때만 한다.
+    if (!allowDelete || removed + strays.length > deleteLimit) {
+      deferredDeletes += strays.length
+      continue
+    }
+
     await Promise.allSettled(
       strays.map((copy) =>
         limit(async () => {
@@ -2768,16 +2867,18 @@ export async function reconcileGoogleDuplicates(
     )
   }
 
-  if (removed > 0 || relinked > 0) {
+  if (removed > 0 || relinked > 0 || deferredDeletes > 0) {
+    const deferredNote =
+      deferredDeletes > 0 ? `, 안전을 위해 삭제 보류 ${deferredDeletes}건` : ''
     await logSyncHistory(supabase, {
       userId,
       calendarId: 'ALL',
       action: 'DELETED',
-      activityTitle: `구글 연결 정리 (중복 ${removed}건 제거, 링크 ${relinked}건 복구)`,
+      activityTitle: `구글 연결 정리 (중복 ${removed}건 제거, 링크 ${relinked}건 복구${deferredNote})`,
     })
   }
 
-  return { removed, relinked }
+  return { removed, relinked, deferredDeletes }
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -2806,6 +2907,21 @@ export interface BatchSyncResult {
   failedItems: Array<{ id: string; title: string; error: string }>
 }
 
+export interface BatchSyncOptions {
+  /**
+   * 내용이 그대로여도 구글로 다시 전송한다(= "미러 세이프 재전송").
+   *
+   * 네이버 캘린더처럼 구글을 **주기적으로 당겨 가는 단방향 미러**는, 이벤트의 `updated`
+   * 타임스탬프가 바뀌어야 다시 가져간다. 평소의 해시 스킵은 구글 왕복을 아끼는 대신
+   * `updated`를 그대로 두기 때문에, 미러가 한 번 놓친 일정은 사용자가 "지금 동기화"를
+   * 몇 번을 눌러도 영원히 돌아오지 않는다(실측: synced 0 / skipped 153).
+   *
+   * 이 옵션은 그 상태를 푸는 **유일한 탈출구**다. 삭제나 재생성 없이 `events.update`만
+   * 수행하므로, 미러가 중간에 폴링하더라도 일정이 사라지는 순간이 존재하지 않는다.
+   */
+  force?: boolean
+}
+
 /**
  * Batch syncs activities to Google Calendar.
  *
@@ -2817,7 +2933,8 @@ export interface BatchSyncResult {
 export async function syncBatchActivitiesToGoogle(
   userId: string,
   activities: any[],
-  onProgress?: (event: SyncProgressEvent) => void
+  onProgress?: (event: SyncProgressEvent) => void,
+  options: BatchSyncOptions = {}
 ): Promise<BatchSyncResult> {
   const result: BatchSyncResult = { synced: 0, skipped: 0, taskSkipped: 0, failed: 0, failedItems: [] }
   if (!activities || activities.length === 0) return result
@@ -2849,6 +2966,8 @@ export async function syncBatchActivitiesToGoogle(
 
     const tasks = activities.map((activity) =>
       limit(async () => {
+        // catch 블록에서도 참조해야 하므로 try 밖에 둔다.
+        let contentHash: string | undefined
         try {
           if (activity.type === 'TASK') {
             result.taskSkipped++
@@ -2866,16 +2985,23 @@ export async function syncBatchActivitiesToGoogle(
             ? activity.activity_category_map.map((acm: any) => acm.categories).filter(Boolean)
             : []
 
-          // 목적지는 오직 설정(그룹 및 라우팅 → 기본 쓰기 캘린더)이 정한다.
-          // 현재 위치(google_calendar_id)를 우선하면 고급 설정을 바꿔도 반영되지 않는다.
-          const desiredCalendarId = desiredCalendarFor(categories, settings, scope)
+          // 목적지는 설정(그룹 및 라우팅 → 기본 쓰기 캘린더)이 정한다.
+          // 다만 라우팅 근거(카테고리)가 없으면 현재 자리를 지킨다 — desiredCalendarFor 참고.
+          const desiredCalendarId = desiredCalendarFor(
+            categories,
+            settings,
+            scope,
+            activity.google_calendar_id
+          )
 
           const eventBody = mapActivityToGoogleEvent(activity, categories, settings) as any
 
           // 이미 최신이면 구글 왕복 자체를 건너뛴다.
           // 해시에 목적지가 포함되어 있어 라우팅이 바뀌면 반드시 다시 계산된다.
-          const contentHash = eventPayloadHash(eventBody, desiredCalendarId)
+          // force 모드에서는 이 지름길을 쓰지 않는다(미러가 다시 가져가도록 updated를 갱신해야 하므로).
+          contentHash = eventPayloadHash(eventBody, desiredCalendarId)
           if (
+            !options.force &&
             activity.google_event_id &&
             activity.google_calendar_id === desiredCalendarId &&
             activity.google_content_hash === contentHash
@@ -2919,6 +3045,29 @@ export async function syncBatchActivitiesToGoogle(
           processedCount++
           onProgress?.({ id: activity.id, title: activity.title, status: 'synced', current: processedCount })
         } catch (err: any) {
+          // 구글이 소유한 읽기 전용 일정(연락처 생일 등)은 몇 번을 보내도 같은 이유로 거부된다.
+          // 이를 '실패'로 세면 배치 전체가 FAILED로 표시되고, 사용자는 그걸 보고 또 재실행한다.
+          // (실측: "Happy birthday!" 1건 때문에 4개 작업이 연속으로 실패 표시됐다.)
+          // 건너뜀으로 분류하고 해시를 남겨, 다음 배치에서는 구글 왕복조차 하지 않게 한다.
+          if (isImmutablePushError(err)) {
+            if (contentHash) {
+              await supabase
+                .from('activities')
+                .update({ google_content_hash: contentHash })
+                .eq('id', activity.id)
+                .eq('user_id', userId)
+            }
+            result.skipped++
+            processedCount++
+            onProgress?.({
+              id: activity.id,
+              title: activity.title,
+              status: 'skipped',
+              current: processedCount,
+            })
+            return
+          }
+
           console.error(`Failed to sync activity ${activity.id}:`, err)
           result.failed++
           result.failedItems.push({ id: activity.id, title: activity.title, error: err.message })

@@ -1,7 +1,13 @@
 import { NextResponse, after } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/server'
-import { startOrResumeJob, runExportJob, cancelJob, getLatestJob } from '@/lib/google/exportJob'
+import {
+  startOrResumeJob,
+  runExportJob,
+  cancelJob,
+  getLatestJob,
+  type JobMode,
+} from '@/lib/google/exportJob'
 
 function errorResponse(error: unknown) {
   const message = error instanceof Error ? error.message : 'Internal Server Error'
@@ -43,7 +49,10 @@ export async function POST(request: Request) {
       return NextResponse.json({ ok: true })
     }
 
-    const mode = body.mode === 'RETRY' ? 'RETRY' : 'FULL'
+    // FORCE = 미러 세이프 재전송. 내용이 그대로여도 전부 다시 보내 구글의 updated를 갱신한다
+    // (네이버처럼 구글을 주기적으로 당겨 가는 미러가 놓친 일정을 되살리는 유일한 수단).
+    const mode: JobMode =
+      body.mode === 'RETRY' ? 'RETRY' : body.mode === 'FORCE' ? 'FORCE' : 'FULL'
     const activityIds: string[] = Array.isArray(body.activityIds) ? body.activityIds : []
 
     if (mode === 'RETRY' && activityIds.length === 0) {

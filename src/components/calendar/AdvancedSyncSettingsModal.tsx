@@ -4,10 +4,11 @@
 import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, AlertTriangle, CheckCircle2, RefreshCw, Filter, Shield, Settings2, FolderTree, ArrowRightLeft, ArrowDownToLine, ArrowUpFromLine, Trash2, Plus, GripVertical, Lock, Unlock, Clock, CalendarDays } from 'lucide-react'
-import { getGoogleSyncSettingsAction, updateGoogleSyncSettingsAction, clearGoogleSyncDataAction, createGoogleCalendarAction, updateGoogleCalendarMetaAction, deleteGoogleCalendarAction, migrateActivitiesBetweenCalendarsAction, startGoogleSyncAction } from '@/app/actions/calendar'
+import { getGoogleSyncSettingsAction, updateGoogleSyncSettingsAction, clearGoogleSyncDataAction, createGoogleCalendarAction, updateGoogleCalendarMetaAction, deleteGoogleCalendarAction, migrateActivitiesBetweenCalendarsAction, startGoogleSyncAction, reconcileGoogleDuplicatesAction } from '@/app/actions/calendar'
 import { useUserProfile } from '@/hooks/useCalendarQueries'
 import { SyncHistoryTab } from './SyncHistoryTab'
 import { Button } from '@/components/ui/button'
+import { useSyncJobControls } from '@/hooks/useSyncJob'
 import { DndContext, DragOverlay, pointerWithin, KeyboardSensor, PointerSensor, useSensor, useSensors, useDroppable, defaultDropAnimationSideEffects } from '@dnd-kit/core'
 import { SortableContext, useSortable, verticalListSortingStrategy, arrayMove } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
@@ -27,6 +28,7 @@ const GOOGLE_COLORS = [
 
 export function AdvancedSyncSettingsModal({ isOpen, onClose, onStartSync, calendarList, categories }: { isOpen: boolean, onClose: () => void, onStartSync?: () => void, calendarList: any[], categories: any[] }) {
   const [activeTab, setActiveTab] = useState<'core' | 'group' | 'history' | 'danger'>('core')
+  const { forceResend } = useSyncJobControls()
   
   const [settings, setSettings] = useState<any>({
     direction: 'TWO_WAY',
@@ -40,6 +42,7 @@ export function AdvancedSyncSettingsModal({ isOpen, onClose, onStartSync, calend
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
   const [isClearing, setIsClearing] = useState(false)
+  const [isReconciling, setIsReconciling] = useState(false)
   const [saveMessage, setSaveMessage] = useState('')
   const [localCalendarList, setLocalCalendarList] = useState<any[]>(calendarList)
   
@@ -298,6 +301,27 @@ export function AdvancedSyncSettingsModal({ isOpen, onClose, onStartSync, calend
     }
   }
 
+  const handleReconcileDuplicates = async () => {
+    const warning = [
+      '구글 캘린더에 남아 있는 중복 사본을 정리합니다.',
+      '네이버 등 외부 캘린더는 이 삭제를 그대로 따라 하므로, 꼭 필요할 때만 실행해 주세요.',
+      '계속하시겠습니까?',
+    ].join('\n\n')
+    if (!confirm(warning)) return
+    setIsReconciling(true)
+    try {
+      const res = await reconcileGoogleDuplicatesAction()
+      const deferred = res.deferredDeletes > 0
+        ? `\n안전 상한을 넘어 ${res.deferredDeletes}건은 이번에 지우지 않았습니다. 다시 실행하면 이어서 정리됩니다.`
+        : ''
+      alert(`중복 ${res.removed}건 제거, 연결 정보 ${res.relinked}건 복구했습니다.${deferred}`)
+    } catch (e: unknown) {
+      alert(`정리 실패: ${e instanceof Error ? e.message : '알 수 없는 오류'}`)
+    } finally {
+      setIsReconciling(false)
+    }
+  }
+
   const handleClearData = async () => {
     if (!confirm('경고: 구글 캘린더에 동기화된 모든 Calentask 일정이 삭제됩니다. 계속하시겠습니까?')) return
     setIsClearing(true)
@@ -497,6 +521,37 @@ export function AdvancedSyncSettingsModal({ isOpen, onClose, onStartSync, calend
                         </div>
                       </div>
 
+                      {/* 네이버 캘린더처럼 구글을 '주기적으로 당겨 가는' 외부 미러는,
+                          이벤트의 updated 값이 바뀌어야만 다시 가져간다. 평소 동기화는
+                          "바뀐 게 없다"며 건너뛰기 때문에, 미러가 한 번 놓친 일정은
+                          사용자가 아무리 동기화를 눌러도 스스로 돌아오지 못한다.
+                          이 버튼이 그 교착을 푸는 유일한 수단이다. */}
+                      <div className="bg-emerald-50 border border-emerald-200 p-4 sm:p-5 rounded-2xl">
+                        <div className="flex items-start gap-4">
+                          <ArrowUpFromLine className="w-6 h-6 text-emerald-600 shrink-0 mt-0.5" />
+                          <div className="flex-1 min-w-0">
+                            <h4 className="font-bold text-emerald-900 text-base sm:text-lg">
+                              외부 캘린더(네이버 등)로 다시 보내기
+                            </h4>
+                            <p className="text-xs sm:text-sm text-emerald-800/90 mt-1 leading-relaxed">
+                              구글에는 정상인데 <b>네이버 캘린더에만 일정이 보이지 않을 때</b> 사용하세요.
+                              모든 일정을 구글로 다시 전송해 &lsquo;방금 수정됨&rsquo; 상태로 만들어, 네이버가 다시 가져가게 합니다.
+                              일정을 지웠다 만들지 않으므로 진행 중에도 캘린더가 비는 순간이 없습니다.
+                            </p>
+                            <p className="text-[11px] sm:text-xs text-emerald-700/80 mt-2 leading-relaxed">
+                              네이버는 즉시 반영되지 않습니다. 실행 후 <b>10~30분</b> 정도 기다려 주세요.
+                              그래도 안 보이면 네이버 캘린더 설정에서 <b>이 구글 캘린더들이 모두 구독 중인지</b> 확인이 필요합니다.
+                            </p>
+                            <Button
+                              onClick={forceResend}
+                              className="mt-3 bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-600/20 font-bold w-full sm:w-auto"
+                            >
+                              <ArrowUpFromLine className="w-4 h-4 mr-2" /> 전체 일정 다시 보내기
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+
                       {/* 미배정 카테고리는 '기본 대상 캘린더'로 떨어진다.
                           그 캘린더가 외부 앱(네이버 등)에서 꺼져 있으면 그 일정만 보이지 않으므로,
                           어디로 떨어지는지 보여 주고 바꿀 수 있게 한다. */}
@@ -607,6 +662,23 @@ export function AdvancedSyncSettingsModal({ isOpen, onClose, onStartSync, calend
                               {isClearing ? <><RefreshCw className="w-4 h-4 mr-2 animate-spin" /> 초기화 중...</> : <><Trash2 className="w-4 h-4 mr-2" /> 모든 일정 초기화</>}
                             </Button>
                           </div>
+                        </div>
+                      </div>
+
+                      {/* 자동 동기화는 구글 이벤트를 절대 삭제하지 않는다(삭제 공백을 네이버가 복제해
+                          일정이 사라지기 때문). 중복이 실제로 쌓였을 때만 사용자가 직접 실행한다. */}
+                      <div className="bg-amber-50 border border-amber-200 p-4 sm:p-5 rounded-2xl flex items-start gap-4">
+                        <AlertTriangle className="w-6 h-6 text-amber-500 shrink-0 mt-0.5" />
+                        <div className="flex-1 min-w-0">
+                          <h3 className="text-lg font-bold text-amber-900 mb-2">구글 중복 사본 정리</h3>
+                          <p className="text-sm text-amber-800 mb-4 leading-relaxed">
+                            같은 일정이 구글 캘린더에 여러 개 보일 때만 사용하세요.
+                            평소 동기화는 안전을 위해 구글 이벤트를 삭제하지 않습니다.
+                            <b> 네이버 등 외부 캘린더는 이 삭제를 그대로 따라 합니다.</b>
+                          </p>
+                          <Button onClick={handleReconcileDuplicates} disabled={isReconciling} variant="outline" className="border-amber-300 text-amber-800 hover:bg-amber-100 w-full sm:w-auto">
+                            {isReconciling ? <><RefreshCw className="w-4 h-4 mr-2 animate-spin" /> 정리 중...</> : <><Filter className="w-4 h-4 mr-2" /> 중복 사본 정리하기</>}
+                          </Button>
                         </div>
                       </div>
                     </motion.div>

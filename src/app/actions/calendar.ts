@@ -46,6 +46,21 @@ async function loadCategoryObjects(userId: string, categoryIds: string[]): Promi
 }
 
 /**
+ * 활동에 **현재 붙어 있는** 카테고리를 DB에서 직접 읽는다.
+ *
+ * 부분 수정(시각만 변경 등)에서 호출자가 카테고리 목록을 넘기지 않았을 때 쓴다.
+ * 이걸 빈 배열로 두면 그룹 라우팅이 근거를 잃고 일정이 기본 캘린더로 끌려간다.
+ */
+async function loadActivityCategoryObjects(userId: string, activityId: string): Promise<any[]> {
+  const { createAdminClient } = await import('@/lib/supabase/server')
+  const { data } = await createAdminClient()
+    .from('activity_category_map')
+    .select('categories(id, name, hex_color)')
+    .eq('activity_id', activityId)
+  return (data || []).map((row: any) => row.categories).filter(Boolean)
+}
+
+/**
  * 반복 규칙(RRULE 본문)에 UNTIL을 안전하게 설정한다. rrule 라이브러리로 파싱·재직렬화하여
  * 문자열 조작/타임존 경계(KST) 오류를 피한다. 실패 시 기존 문자열 방식으로 폴백.
  * @param rruleBody "FREQ=WEEKLY;..." (RRULE: 접두사 없음)
@@ -420,11 +435,23 @@ export async function createActivity(
   return activity
 }
 
-// 일정 수정
+/**
+ * 일정 수정.
+ *
+ * ★ `categoryIds`의 의미를 반드시 구분한다 ★
+ *  - `undefined` (인자 생략) → "카테고리는 건드리지 않는다". 기존 매핑을 그대로 두고,
+ *    구글 push에도 **DB에 저장된 현재 카테고리**를 다시 읽어서 쓴다.
+ *  - `[]` (빈 배열)          → "카테고리를 전부 해제한다"는 명시적 의도.
+ *
+ * 예전에는 이 둘을 구분하지 않아서, 시각만 바꾸는 경로(달력 드래그 이동 등)가
+ * 빈 배열을 넘기면 (1) 일정의 카테고리가 통째로 사라지고
+ * (2) 그룹 라우팅이 근거를 잃어 구글 이벤트가 기본 캘린더로 `events.move` 되었다.
+ * 외부 미러(네이버 등)에는 그 이동이 "삭제 후 재생성"으로 보여 일정이 사라진다.
+ */
 export async function updateActivity(
   id: string,
   payload: Partial<Omit<Activity, 'id' | 'user_id' | 'deleted_at' | 'categories'>>,
-  categoryIds: string[]
+  categoryIds?: string[]
 ) {
   const supabase = await createClient()
   const { data: userData } = await supabase.auth.getUser()
@@ -441,31 +468,35 @@ export async function updateActivity(
 
   if (activityError) throw new Error(activityError.message)
 
-  // 2. 기존 카테고리 매핑 삭제
-  const { error: deleteError } = await supabase
-    .from('activity_category_map')
-    .delete()
-    .eq('activity_id', id)
-
-  if (deleteError) throw new Error(deleteError.message)
-
-  // 3. 새로운 카테고리 매핑 생성
-  if (categoryIds.length > 0) {
-    const mappings = categoryIds.map(categoryId => ({
-      activity_id: id,
-      category_id: categoryId
-    }))
-    const { error: mappingError } = await supabase
+  // 2~3. 카테고리 매핑 교체 — 호출자가 목록을 넘겼을 때만 손댄다.
+  if (categoryIds !== undefined) {
+    const { error: deleteError } = await supabase
       .from('activity_category_map')
-      .insert(mappings)
+      .delete()
+      .eq('activity_id', id)
 
-    if (mappingError) throw new Error(mappingError.message)
+    if (deleteError) throw new Error(deleteError.message)
+
+    if (categoryIds.length > 0) {
+      const mappings = categoryIds.map(categoryId => ({
+        activity_id: id,
+        category_id: categoryId
+      }))
+      const { error: mappingError } = await supabase
+        .from('activity_category_map')
+        .insert(mappings)
+
+      if (mappingError) throw new Error(mappingError.message)
+    }
   }
 
   // Google Calendar 동기화는 응답 이후에 수행 (수정 체감 속도 확보)
   const userId = userData.user.id
   afterGoogleSync('Update', async () => {
-    const categoryObjects = await loadCategoryObjects(userId, categoryIds)
+    // 카테고리를 넘기지 않았다면 DB의 현재 상태를 읽어 라우팅 근거를 잃지 않게 한다.
+    const categoryObjects = categoryIds === undefined
+      ? await loadActivityCategoryObjects(userId, id)
+      : await loadCategoryObjects(userId, categoryIds)
     await syncActivityToGoogle(userId, activity, categoryObjects)
   })
 
@@ -657,7 +688,9 @@ export async function hardDeleteAllActivities() {
 export async function updateRecurringActivity(
   originalActivityId: string,
   payload: Partial<Omit<Activity, 'id' | 'user_id' | 'deleted_at' | 'categories'>>,
-  categoryIds: string[],
+  // `undefined` = 카테고리를 건드리지 않음 (updateActivity와 같은 규칙).
+  // 새 일정을 만드는 분기에서는 원본의 카테고리를 그대로 물려받는다.
+  categoryIds: string[] | undefined,
   editMode: 'THIS_EVENT' | 'THIS_AND_FOLLOWING' | 'ALL_EVENTS',
   originalStartTime: string
 ) {
@@ -670,10 +703,20 @@ export async function updateRecurringActivity(
     .select('*')
     .eq('id', originalActivityId)
     .single()
-  
+
   if (fetchErr) throw new Error(fetchErr.message)
 
   const parentId = originalActivity.parent_activity_id || originalActivity.id
+
+  /** 새 일정을 만들 때 쓸 카테고리. 지정되지 않았으면 원본의 것을 그대로 이어받는다. */
+  const inheritCategoryIds = async (): Promise<string[]> => {
+    if (categoryIds !== undefined) return categoryIds
+    const { data } = await supabase
+      .from('activity_category_map')
+      .select('category_id')
+      .eq('activity_id', originalActivityId)
+    return (data || []).map((row: any) => row.category_id)
+  }
 
   if (editMode === 'THIS_EVENT') {
     // 자식 예외 일정 생성
@@ -681,8 +724,8 @@ export async function updateRecurringActivity(
       ...payload,
       parent_activity_id: parentId,
       original_start_time: originalStartTime,
-    } as any, categoryIds)
-  } 
+    } as any, await inheritCategoryIds())
+  }
   
   if (editMode === 'ALL_EVENTS') {
     // 부모 자체 수정
@@ -704,7 +747,7 @@ export async function updateRecurringActivity(
       ...payload,
       parent_activity_id: null,
       original_start_time: null,
-    } as any, categoryIds)
+    } as any, await inheritCategoryIds())
   }
 }
 
@@ -967,6 +1010,23 @@ export async function clearGoogleSyncDataAction() {
   }
   
   return result
+}
+
+/**
+ * 구글 캘린더에 흩어진 **중복 사본**을 실제로 지운다.
+ *
+ * 자동 동기화 경로는 절대 삭제하지 않는다(삭제와 재생성 사이의 공백을 네이버 같은
+ * 외부 미러가 그대로 복제해 일정이 사라지기 때문). 그래서 삭제는 사용자가 이 버튼을
+ * 눌렀을 때만, 그것도 상한 안에서만 수행한다.
+ */
+export async function reconcileGoogleDuplicatesAction() {
+  const { createClient } = await import('@/lib/supabase/server')
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Unauthorized')
+
+  const { reconcileGoogleDuplicates } = await import('@/lib/google-calendar')
+  return await reconcileGoogleDuplicates(user.id, { allowDelete: true })
 }
 
 export async function createGoogleCalendarAction(name: string) {
