@@ -3,8 +3,39 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
+import { after } from 'next/server'
 import { rrulestr } from 'rrule'
 import { syncActivityToGoogle, deleteActivityFromGoogle } from '@/lib/google-calendar'
+import type { GoogleEventHint } from '@/lib/google-calendar'
+
+/**
+ * 구글 반영을 응답 이후로 미룬다.
+ *
+ * 구글 왕복(캘린더 확인 → update/insert → 링크 저장)은 수백 ms~수 초가 걸린다.
+ * 이걸 서버 액션 안에서 await 하면 사용자는 "저장" 버튼을 누르고 그만큼 기다린다.
+ * DB 저장은 이미 끝났고 실패해도 되돌리지 않는 작업이므로, after()로 응답 뒤에 돌린다.
+ * (Vercel 서버리스에서 일반 fire-and-forget Promise는 응답 후 동결되지만,
+ *  after()는 waitUntil 기반이라 완료가 보장된다.)
+ */
+function afterGoogleSync(label: string, task: () => Promise<unknown>) {
+  after(async () => {
+    try {
+      await task()
+    } catch (e) {
+      console.error(`Google Sync Error (${label}):`, e)
+    }
+  })
+}
+
+/** 색상/프라이버시/그룹 매핑 계산에 필요한 카테고리 객체를 조회한다. */
+async function loadCategoryObjects(supabase: any, categoryIds: string[]): Promise<any[]> {
+  if (categoryIds.length === 0) return []
+  const { data } = await supabase
+    .from('categories')
+    .select('id, name, hex_color')
+    .in('id', categoryIds)
+  return data || []
+}
 
 /**
  * 반복 규칙(RRULE 본문)에 UNTIL을 안전하게 설정한다. rrule 라이브러리로 파싱·재직렬화하여
@@ -367,21 +398,12 @@ export async function createActivity(
     if (mappingError) throw new Error(mappingError.message)
   }
 
-  // Google Calendar 동기화 (에러 발생 시에도 메인 흐름 중단 안 함)
-  try {
-    // 카테고리 객체 배열을 조회하여 전달 (색상/프라이버시/그룹 매핑에 필요)
-    let categoryObjects: any[] = []
-    if (categoryIds.length > 0) {
-      const { data: cats } = await supabase
-        .from('categories')
-        .select('id, name, hex_color')
-        .in('id', categoryIds)
-      categoryObjects = cats || []
-    }
-    await syncActivityToGoogle(userData.user.id, activity, categoryObjects)
-  } catch (e) {
-    console.error('Google Sync Error (Create):', e)
-  }
+  // Google Calendar 동기화는 응답 이후에 수행 (등록 체감 속도 확보)
+  const userId = userData.user.id
+  afterGoogleSync('Create', async () => {
+    const categoryObjects = await loadCategoryObjects(supabase, categoryIds)
+    await syncActivityToGoogle(userId, activity, categoryObjects)
+  })
 
   revalidatePath('/')
   return activity
@@ -429,21 +451,12 @@ export async function updateActivity(
     if (mappingError) throw new Error(mappingError.message)
   }
 
-  // Google Calendar 동기화
-  try {
-    // 카테고리 객체 배열을 조회하여 전달 (색상/프라이버시/그룹 매핑에 필요)
-    let categoryObjects: any[] = []
-    if (categoryIds.length > 0) {
-      const { data: cats } = await supabase
-        .from('categories')
-        .select('id, name, hex_color')
-        .in('id', categoryIds)
-      categoryObjects = cats || []
-    }
-    await syncActivityToGoogle(userData.user.id, activity, categoryObjects)
-  } catch (e) {
-    console.error('Google Sync Error (Update):', e)
-  }
+  // Google Calendar 동기화는 응답 이후에 수행 (수정 체감 속도 확보)
+  const userId = userData.user.id
+  afterGoogleSync('Update', async () => {
+    const categoryObjects = await loadCategoryObjects(supabase, categoryIds)
+    await syncActivityToGoogle(userId, activity, categoryObjects)
+  })
 
   revalidatePath('/')
   return activity
@@ -455,19 +468,18 @@ export async function deleteActivity(id: string) {
   const { data: userData } = await supabase.auth.getUser()
   if (!userData.user) throw new Error('Not authenticated')
 
+  const userId = userData.user.id
+
   const { error } = await supabase
     .from('activities')
     .update({ deleted_at: new Date().toISOString() })
     .eq('id', id)
+    .eq('user_id', userId)
 
   if (error) throw new Error(error.message)
 
   // 휴지통으로 이동 시 구글 캘린더에서는 완전 삭제 (정책 반영)
-  try {
-    await deleteActivityFromGoogle(userData.user.id, id)
-  } catch (e) {
-    console.error('Google Sync Error (Soft Delete):', e)
-  }
+  afterGoogleSync('Soft Delete', () => deleteActivityFromGoogle(userId, id))
 
   revalidatePath('/')
   return true
@@ -493,27 +505,27 @@ export async function restoreActivity(id: string) {
   const { data: userData } = await supabase.auth.getUser()
   if (!userData.user) throw new Error('Not authenticated')
 
+  const userId = userData.user.id
+
   const { data: activity, error } = await supabase
     .from('activities')
     .update({ deleted_at: null })
     .eq('id', id)
+    .eq('user_id', userId)
     .select()
     .single()
 
   if (error) throw new Error(error.message)
 
   // 휴지통 복구 시 구글 캘린더에 재생성 (정책 반영)
-  try {
-    // 해당 일정의 카테고리를 조회하여 전달 (색상/프라이버시/그룹 매핑에 필요)
+  afterGoogleSync('Restore', async () => {
     const { data: catMaps } = await supabase
       .from('activity_category_map')
       .select('categories(id, name, hex_color)')
       .eq('activity_id', id)
     const categoryObjects = catMaps?.map((m: any) => m.categories).filter(Boolean) || []
-    await syncActivityToGoogle(userData.user.id, activity, categoryObjects)
-  } catch (e) {
-    console.error('Google Sync Error (Restore):', e)
-  }
+    await syncActivityToGoogle(userId, activity, categoryObjects)
+  })
 
   revalidatePath('/')
   return true
@@ -525,19 +537,33 @@ export async function hardDeleteActivity(id: string) {
   const { data: userData } = await supabase.auth.getUser()
   if (!userData.user) throw new Error('Not authenticated')
 
+  const userId = userData.user.id
+
+  // 행을 지우기 **전에** 구글 연결 정보를 확보한다.
+  // 삭제 후에는 조회할 방법이 없어, 예전 구현은 커스텀 ID 추측에만 의존했고
+  // 구글에서 유입된 일정(구글이 부여한 ID)은 구글 쪽에 그대로 남아 되살아났다.
+  const { data: link } = await supabase
+    .from('activities')
+    .select('google_event_id, google_calendar_id, google_ical_uid')
+    .eq('id', id)
+    .eq('user_id', userId)
+    .maybeSingle()
+
   const { error } = await supabase
     .from('activities')
     .delete()
     .eq('id', id)
+    .eq('user_id', userId)
 
   if (error) throw new Error(error.message)
 
   // 영구 삭제 시 구글 캘린더에서도 삭제 확인 사살
-  try {
-    await deleteActivityFromGoogle(userData.user.id, id)
-  } catch (e) {
-    console.error('Google Sync Error (Hard Delete):', e)
+  const hint: GoogleEventHint = {
+    googleEventId: link?.google_event_id ?? null,
+    googleCalendarId: link?.google_calendar_id ?? null,
+    googleICalUid: link?.google_ical_uid ?? null,
   }
+  afterGoogleSync('Hard Delete', () => deleteActivityFromGoogle(userId, id, hint))
 
   revalidatePath('/')
   return true
@@ -1250,14 +1276,7 @@ export async function assignCategoryToPendingActivity(activityId: string, catego
 
   if (mappingError) throw new Error(mappingError.message)
 
-  // 업데이트 트리거를 발생시켜 캐시/UI 무효화 유도
-  await supabase
-    .from('activities')
-    .update({ updated_at: new Date().toISOString() })
-    .eq('id', activityId)
-    .eq('user_id', userData.user.id)
-
-  revalidatePath('/')
   return true
 }
+
 

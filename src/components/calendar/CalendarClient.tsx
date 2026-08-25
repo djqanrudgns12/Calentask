@@ -815,7 +815,7 @@ export function CalendarClient() {
                   </div>
                 )}
                 {viewMode === 'home' && (
-                  <div className="min-h-full bg-background md:bg-transparent rounded-xl md:rounded-3xl overflow-hidden">
+                  <div className="min-h-full bg-background md:bg-transparent rounded-xl md:rounded-3xl">
                     <HomeDashboard />
                   </div>
                 )}

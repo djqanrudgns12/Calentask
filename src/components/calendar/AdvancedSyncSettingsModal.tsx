@@ -30,7 +30,9 @@ export function AdvancedSyncSettingsModal({ isOpen, onClose, onStartSync, calend
     direction: 'TWO_WAY',
     conflictStrategy: 'LATEST_WINS',
     groupMapping: {},
-    privacyMapping: {}
+    privacyMapping: {},
+    importCalendarIds: [],
+    includePrimaryInImport: true
   })
 
   const [isLoading, setIsLoading] = useState(true)
@@ -56,11 +58,16 @@ export function AdvancedSyncSettingsModal({ isOpen, onClose, onStartSync, calend
     if (isOpen) {
       setIsLoading(true)
       getGoogleSyncSettingsAction().then(data => {
+        // ...data를 먼저 펼쳐야 여기서 다루지 않는 설정(colorMapping 등)이
+        // 저장 시 통째로 지워지지 않는다.
         setSettings({
+          ...data,
           direction: data.direction || 'TWO_WAY',
           conflictStrategy: data.conflictStrategy || 'LATEST_WINS',
           groupMapping: data.groupMapping || {},
-          privacyMapping: data.privacyMapping || {}
+          privacyMapping: data.privacyMapping || {},
+          importCalendarIds: data.importCalendarIds || [],
+          includePrimaryInImport: data.includePrimaryInImport !== false
         })
         setIsLoading(false)
       })
@@ -379,6 +386,76 @@ export function AdvancedSyncSettingsModal({ isOpen, onClose, onStartSync, calend
                           <RadioOption selected={settings.conflictStrategy === 'LATEST_WINS'} onClick={() => updateSetting('conflictStrategy', 'LATEST_WINS')} title="최근 수정 내용 우선" desc="수정 시간이 더 늦은 데이터를 최종본으로 간주합니다." />
                           <RadioOption selected={settings.conflictStrategy === 'CALENTASK_WINS'} onClick={() => updateSetting('conflictStrategy', 'CALENTASK_WINS')} title="항상 Calentask 우선" desc="구글 캘린더의 변경 사항을 무시합니다." />
                         </div>
+                      </section>
+
+                      <section>
+                        <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2 mb-2">
+                          <ArrowDownToLine className="w-5 h-5 text-indigo-500" /> 외부 캘린더 수신 범위
+                        </h3>
+                        <p className="text-xs sm:text-sm text-slate-500 mb-4 leading-relaxed">
+                          네이버 캘린더처럼 구글과 연동된 외부 서비스는 보통 구글 <b>기본 캘린더</b>에 일정을 기록합니다.
+                          여기에서 선택한 캘린더의 변경 사항까지 Calentask가 실시간으로 받아옵니다.
+                        </p>
+
+                        <button
+                          type="button"
+                          onClick={() => updateSetting('includePrimaryInImport', !(settings.includePrimaryInImport !== false))}
+                          className={`w-full flex items-start gap-4 p-4 rounded-2xl border text-left transition-all ${
+                            settings.includePrimaryInImport !== false
+                              ? 'bg-indigo-50 border-indigo-300 shadow-sm'
+                              : 'bg-white border-slate-200 hover:border-slate-300'
+                          }`}
+                        >
+                          <div className={`mt-0.5 w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0 transition-colors ${
+                            settings.includePrimaryInImport !== false ? 'bg-indigo-600 border-indigo-600' : 'border-slate-300'
+                          }`}>
+                            {settings.includePrimaryInImport !== false && <CheckCircle2 className="w-3.5 h-3.5 text-white" />}
+                          </div>
+                          <div>
+                            <div className="font-bold text-slate-800 text-sm sm:text-base">구글 기본 캘린더도 받아오기</div>
+                            <div className="text-xs sm:text-sm text-slate-500 mt-1 leading-relaxed">
+                              권장. 끄면 네이버 등 외부 서비스에서 등록한 일정이 Calentask로 들어오지 않습니다.
+                              켜면 기본 캘린더의 다른 일정들도 함께 수입될 수 있습니다.
+                            </div>
+                          </div>
+                        </button>
+
+                        {localCalendarList.length > 0 && (
+                          <div className="mt-4">
+                            <div className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">추가 수신 캘린더</div>
+                            <div className="grid grid-cols-1 gap-2 max-h-64 overflow-y-auto pr-1">
+                              {localCalendarList.map(cal => {
+                                const selected = (settings.importCalendarIds || []).includes(cal.id)
+                                return (
+                                  <button
+                                    key={cal.id}
+                                    type="button"
+                                    onClick={() => {
+                                      const current: string[] = settings.importCalendarIds || []
+                                      updateSetting(
+                                        'importCalendarIds',
+                                        selected ? current.filter(id => id !== cal.id) : [...current, cal.id]
+                                      )
+                                    }}
+                                    className={`flex items-center gap-3 px-4 py-3 rounded-xl border text-left transition-all ${
+                                      selected ? 'bg-indigo-50 border-indigo-300' : 'bg-white border-slate-200 hover:border-slate-300'
+                                    }`}
+                                  >
+                                    <span
+                                      className="w-3 h-3 rounded-full shrink-0 border border-black/10"
+                                      style={{ backgroundColor: cal.backgroundColor || '#94a3b8' }}
+                                    />
+                                    <span className="text-sm font-semibold text-slate-700 truncate flex-1">{cal.summary}</span>
+                                    {cal.primary && (
+                                      <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md shrink-0">기본</span>
+                                    )}
+                                    {selected && <CheckCircle2 className="w-4 h-4 text-indigo-600 shrink-0" />}
+                                  </button>
+                                )
+                              })}
+                            </div>
+                          </div>
+                        )}
                       </section>
                     </motion.div>
                   )}

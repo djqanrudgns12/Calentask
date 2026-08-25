@@ -568,6 +568,7 @@ export function usePendingActivities() {
   return useQuery({
     queryKey: ['pendingActivities'],
     queryFn: () => getPendingActivities(),
+    staleTime: 30_000,
   })
 }
 
@@ -576,9 +577,31 @@ export function useAssignCategoryToPendingActivity() {
   return useMutation({
     mutationFn: ({ activityId, categoryId }: { activityId: string, categoryId: string }) => 
       assignCategoryToPendingActivity(activityId, categoryId),
-    onSuccess: () => {
+    onMutate: async ({ activityId }) => {
+      // 진행 중인 refetch 취소 (optimistic 데이터 덮어쓰기 방지)
+      await queryClient.cancelQueries({ queryKey: ['pendingActivities'] })
+      
+      // 이전 데이터 스냅샷 (rollback용)
+      const previousPending = queryClient.getQueryData(['pendingActivities'])
+      
+      // Optimistic: UI에서 해당 일정 즉시 제거
+      queryClient.setQueryData(['pendingActivities'], (old: any[] | undefined) => 
+        old ? old.filter(item => item.id !== activityId) : []
+      )
+      
+      return { previousPending }
+    },
+    onError: (_err, _vars, context) => {
+      // 실패 시 이전 상태로 복원
+      if (context?.previousPending) {
+        queryClient.setQueryData(['pendingActivities'], context.previousPending)
+      }
+    },
+    onSettled: () => {
+      // 성공/실패 모두 최종적으로 서버 데이터와 동기화
       queryClient.invalidateQueries({ queryKey: ['pendingActivities'] })
       queryClient.invalidateQueries({ queryKey: ['activities'] })
-    }
+    },
   })
 }
+

@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { format } from 'date-fns'
 import { ko } from 'date-fns/locale'
@@ -10,22 +10,43 @@ import { Button } from '@/components/ui/button'
 export function PendingClassification() {
   const { data: pendingActivities, isLoading } = usePendingActivities()
   const { data: categories } = useCategories()
-  const { mutate: assignCategory, isPending } = useAssignCategoryToPendingActivity()
+  const { mutate: assignCategory } = useAssignCategoryToPendingActivity()
 
   const [selectedCategories, setSelectedCategories] = useState<Record<string, string>>({})
+  // 개별 아이템별 진행 상태 추적
+  const [assigningIds, setAssigningIds] = useState<Set<string>>(new Set())
+
+  const handleAssign = useCallback((activityId: string) => {
+    const categoryId = selectedCategories[activityId]
+    if (!categoryId || assigningIds.has(activityId)) return
+
+    setAssigningIds(prev => new Set(prev).add(activityId))
+
+    assignCategory(
+      { activityId, categoryId },
+      {
+        onSettled: () => {
+          setAssigningIds(prev => {
+            const next = new Set(prev)
+            next.delete(activityId)
+            return next
+          })
+          setSelectedCategories(prev => {
+            const next = { ...prev }
+            delete next[activityId]
+            return next
+          })
+        },
+      }
+    )
+  }, [selectedCategories, assigningIds, assignCategory])
+
+  const handleSelectChange = useCallback((activityId: string, categoryId: string) => {
+    setSelectedCategories(prev => ({ ...prev, [activityId]: categoryId }))
+  }, [])
 
   if (isLoading) return null
   if (!pendingActivities || pendingActivities.length === 0) return null
-
-  const handleAssign = (activityId: string) => {
-    const categoryId = selectedCategories[activityId]
-    if (!categoryId) return
-    assignCategory({ activityId, categoryId })
-  }
-
-  const handleSelectChange = (activityId: string, categoryId: string) => {
-    setSelectedCategories(prev => ({ ...prev, [activityId]: categoryId }))
-  }
 
   return (
     <div className="h-full flex flex-col bg-white/80 backdrop-blur-xl rounded-3xl border-2 border-indigo-50 shadow-[0_8px_30px_rgb(99,102,241,0.08)] relative overflow-hidden ring-1 ring-white/50">
@@ -57,13 +78,15 @@ export function PendingClassification() {
               : format(new Date(activity.start_time), 'a h:mm', { locale: ko })
             
             const dateStr = format(new Date(activity.start_time), 'M월 d일 (E)', { locale: ko })
+            const isAssigning = assigningIds.has(activity.id)
             
             return (
               <motion.div
                 key={activity.id}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.95 }}
+                exit={{ opacity: 0, scale: 0.95, transition: { duration: 0.2 } }}
+                layout
                 className="flex flex-col gap-3 p-4 bg-white rounded-2xl border border-indigo-50 shadow-sm transition-all hover:shadow-md hover:border-indigo-200 group"
               >
                 <div className="flex-1 min-w-0">
@@ -82,6 +105,7 @@ export function PendingClassification() {
                     className="flex-1 min-w-[120px] text-[11px] md:text-xs font-medium bg-slate-50 border border-slate-200 rounded-xl px-2 md:px-3 py-2 outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 transition-all"
                     value={selectedCategories[activity.id] || ''}
                     onChange={(e) => handleSelectChange(activity.id, e.target.value)}
+                    disabled={isAssigning}
                   >
                     <option value="" disabled>카테고리 선택</option>
                     {categories?.map((cat) => (
@@ -91,10 +115,10 @@ export function PendingClassification() {
                   <Button
                     size="sm"
                     className="rounded-xl px-3 md:px-4 bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-700 hover:to-indigo-600 text-white font-bold shadow-md shadow-indigo-500/20 disabled:opacity-50 disabled:shadow-none transition-all h-8 md:h-9 text-xs w-full sm:w-auto"
-                    disabled={!selectedCategories[activity.id] || isPending}
+                    disabled={!selectedCategories[activity.id] || isAssigning}
                     onClick={() => handleAssign(activity.id)}
                   >
-                    배정
+                    {isAssigning ? '배정 중...' : '배정'}
                   </Button>
                 </div>
               </motion.div>
@@ -105,3 +129,4 @@ export function PendingClassification() {
     </div>
   )
 }
+
