@@ -106,7 +106,6 @@ export function CalendarClient() {
   const resetStore = useCalendarStore(s => s.resetStore)
   const weekStartsOn = useCalendarStore(s => s.weekStartsOn)
   const openEventDetail = useCalendarStore(s => s.openEventDetail)
-  const openEditEvent = useCalendarStore(s => s.openEditEvent)
   const openAddEvent = useCalendarStore(s => s.openAddEvent)
 
   // --- 스와이프 전역 모바일 뷰 전환 (Swipe Navigation) 상태 ---
@@ -267,16 +266,6 @@ export function CalendarClient() {
       }
     }).catch(console.error)
   }, [loadMonthlyDetail, openEventDetail])
-
-  const handleMonthlyEventEdit = useCallback((summary: CalendarEventSummary) => {
-    if (summary.source !== 'activity') {
-      handleMonthlyEventOpen(summary)
-      return
-    }
-    void loadMonthlyDetail(summary).then(detail => {
-      if (detail) openEditEvent(detail)
-    }).catch(console.error)
-  }, [handleMonthlyEventOpen, loadMonthlyDetail, openEditEvent])
 
   const { activeEvent, handleDragStart, handleDragEnd, handleDragCancel } = useEventDragDrop({
     viewMode: viewMode === 'weekly' ? 'weekly' : 'monthly',
@@ -807,8 +796,6 @@ export function CalendarClient() {
                     events={monthlyEvents}
                     specialDays={monthlyQuery.data?.specialDays ?? {}}
                     isLoading={monthlyQuery.isFetching && !monthlyQuery.data}
-                    onEventOpen={handleMonthlyEventOpen}
-                    onEventEdit={handleMonthlyEventEdit}
                   />
                 )}
                 {viewMode === 'weekly' && <WeeklyView currentDate={currentDate} events={events} />}

@@ -557,8 +557,54 @@ function stableStringify(value: any): string {
  */
 function eventPayloadHash(eventBody: calendar_v3.Schema$Event, calendarId: string): string {
   return createHash('sha256')
-    .update(stableStringify({ calendarId, body: eventBody }))
+    .update(stableStringify({ calendarId, body: stripResendNonce(eventBody) }))
     .digest('hex')
+}
+
+/**
+ * 재전송 표식(nonce)을 심는 확장 속성 키.
+ *
+ * ★ 왜 필요한가 ★
+ * 구글은 **내용이 완전히 같은 `events.update`를 무시한다.** 요청은 200으로 성공하지만
+ * 이벤트의 `updated` 타임스탬프를 올려 주지 않는다.
+ * (실측 2026-08-25 13:17: 154건을 재전송했으나 구글이 `updated`를 갱신한 것은 1건뿐 —
+ *  그 1건은 실제로 내용이 달랐던 일정이었다.)
+ *
+ * 그런데 네이버 같은 외부 미러는 바로 그 `updated`가 바뀌어야 일정을 다시 가져간다.
+ * 따라서 "다시 보내기"가 실제로 효과를 내려면 페이로드가 **진짜로 달라져야** 한다.
+ * 이 비공개 확장 속성에 매번 다른 값을 넣어 구글이 변경으로 인식하게 만든다.
+ * 사용자에게는 보이지 않는 내부 메타데이터다.
+ */
+const RESEND_NONCE_KEY = 'calentask_resend'
+
+/**
+ * 지문 계산에서 재전송 표식을 제외한다.
+ *
+ * 이걸 빼지 않으면 nonce 때문에 지문이 매번 달라져, 평소 동기화가 모든 일정을
+ * 영원히 "변경됨"으로 판정하고 구글 왕복을 무한히 반복한다.
+ * 즉 지문은 **일정의 실제 내용**만 대표해야 한다.
+ */
+function stripResendNonce(eventBody: calendar_v3.Schema$Event): calendar_v3.Schema$Event {
+  const priv = eventBody.extendedProperties?.private
+  if (!priv || !(RESEND_NONCE_KEY in priv)) return eventBody
+
+  const { [RESEND_NONCE_KEY]: _omit, ...rest } = priv
+  return {
+    ...eventBody,
+    extendedProperties: { ...eventBody.extendedProperties, private: rest },
+  }
+}
+
+/**
+ * 페이로드에 재전송 표식을 찍어 구글이 "바뀐 이벤트"로 인식하게 만든다.
+ * 이것이 있어야 `updated`가 갱신되고, 네이버가 그 일정을 다시 가져간다.
+ */
+function stampResendNonce(eventBody: any): void {
+  eventBody.extendedProperties = eventBody.extendedProperties || {}
+  eventBody.extendedProperties.private = {
+    ...(eventBody.extendedProperties.private || {}),
+    [RESEND_NONCE_KEY]: Date.now().toString(36),
+  }
 }
 
 /**
@@ -779,7 +825,12 @@ async function persistPushResult(
  * Calentask에서 수정하면 update가 404 → insert 로 빠져 **구글에 중복 이벤트**가 생겼다.
  * 저장된 google_event_id를 1순위로 사용해 이 경로를 막는다.
  */
-export async function syncActivityToGoogle(userId: string, activity: any, categories: any[] = []) {
+export async function syncActivityToGoogle(
+  userId: string,
+  activity: any,
+  categories: any[] = [],
+  options: { force?: boolean } = {}
+) {
   const supabase = createAdminClient()
   try {
     const { data: user } = await supabase
@@ -821,6 +872,11 @@ export async function syncActivityToGoogle(userId: string, activity: any, catego
     }
 
     const eventBody = mapActivityToGoogleEvent(activity, categories, settings, exDatesUtc) as any
+
+    // 내용이 그대로면 구글은 update를 무시하고 `updated`를 올려 주지 않는다.
+    // 그러면 네이버 등 외부 미러가 이 일정을 다시 가져갈 근거가 없다.
+    // 강제 재전송일 때만 표식을 찍어 구글이 변경으로 인식하게 한다(지문 계산에서는 제외됨).
+    if (options.force) stampResendNonce(eventBody)
 
     if (activity.parent_activity_id) {
       await attachRecurringParent(calendar, desiredCalendarId, activity, eventBody)
@@ -2905,6 +2961,14 @@ export interface BatchSyncResult {
   taskSkipped: number
   failed: number
   failedItems: Array<{ id: string; title: string; error: string }>
+  /**
+   * 전송은 성공했는데 **구글이 `updated`를 갱신하지 않은** 건수.
+   *
+   * 이 값이 크면 재전송이 헛돈 것이다 — 구글이 변경으로 인식하지 않았으니
+   * 네이버 같은 외부 미러도 그 일정을 다시 가져가지 않는다.
+   * "성공했다"는 화면만 보고 안심하는 일이 없도록 반드시 기록에 남긴다.
+   */
+  notBumped: number
 }
 
 export interface BatchSyncOptions {
@@ -2936,7 +3000,7 @@ export async function syncBatchActivitiesToGoogle(
   onProgress?: (event: SyncProgressEvent) => void,
   options: BatchSyncOptions = {}
 ): Promise<BatchSyncResult> {
-  const result: BatchSyncResult = { synced: 0, skipped: 0, taskSkipped: 0, failed: 0, failedItems: [] }
+  const result: BatchSyncResult = { synced: 0, skipped: 0, taskSkipped: 0, failed: 0, failedItems: [], notBumped: 0 }
   if (!activities || activities.length === 0) return result
 
   try {
@@ -3000,6 +3064,13 @@ export async function syncBatchActivitiesToGoogle(
           // 해시에 목적지가 포함되어 있어 라우팅이 바뀌면 반드시 다시 계산된다.
           // force 모드에서는 이 지름길을 쓰지 않는다(미러가 다시 가져가도록 updated를 갱신해야 하므로).
           contentHash = eventPayloadHash(eventBody, desiredCalendarId)
+
+          // ★ 재전송은 페이로드를 실제로 바꿔야 효과가 있다 ★
+          // 구글은 내용이 동일한 update를 무시하고 `updated`를 올려 주지 않는다.
+          // 그러면 네이버가 다시 가져갈 근거가 생기지 않아 재전송이 통째로 헛돈다.
+          // 지문 계산에서는 이 표식을 제외하므로(stripResendNonce) 평소 스킵 판정은 그대로다.
+          if (options.force) stampResendNonce(eventBody)
+
           if (
             !options.force &&
             activity.google_event_id &&
@@ -3040,6 +3111,14 @@ export async function syncBatchActivitiesToGoogle(
             finalEventId,
             eventPayloadHash(eventBody, placed.calendarId)
           )
+
+          // 구글이 이 전송을 실제로 '변경'으로 인식했는지 확인한다.
+          // updated가 그대로면 외부 미러(네이버 등)는 이 일정을 다시 가져가지 않는다.
+          // 성공 화면만 보고 안심하는 일이 없도록 세어 둔다.
+          const bumped = placed.event?.updated
+          if (bumped && activity.google_synced_at && Date.parse(bumped) <= Date.parse(activity.google_synced_at)) {
+            result.notBumped++
+          }
 
           result.synced++
           processedCount++
@@ -3092,7 +3171,11 @@ export async function syncBatchActivitiesToGoogle(
         calendarId: 'ALL',
         action: 'BATCH_SYNC',
         status: result.failed > 0 ? 'FAILED' : 'SUCCESS',
-        activityTitle: `배치 동기화: ${result.synced}건 반영, ${result.skipped}건 건너뜀, ${result.failed}건 실패`,
+        activityTitle:
+          `배치 동기화: ${result.synced}건 반영, ${result.skipped}건 건너뜀, ${result.failed}건 실패` +
+          (result.notBumped > 0
+            ? ` / ⚠ ${result.notBumped}건은 구글이 변경으로 인식하지 않아 외부 캘린더에 전파되지 않습니다`
+            : ''),
       })
     }
   } catch (error: any) {

@@ -188,7 +188,9 @@ for (const cat of categories) { const mapped = settings.groupMapping[cat?.id]; i
 
 ### Non-Goals (이번 범위 아님)
 
-- 네이버 캘린더 **직접** 연동(네이버 OpenAPI/CalDAV) — 별도 검증 과제(9절)
+- 네이버 캘린더 **직접** 연동(네이버 OpenAPI) — 조사 완료, 채택 보류 (R8 참조)
+- **네이버 → Calentask 방향** — 네이버가 조회 API를 제공하지 않으므로 기술적으로 불가능.
+  제품 사양으로 "네이버는 받기 전용"을 고정한다.
 - 동기화 엔진 재작성 — 기존 안전장치(구조 문서 8절)는 그대로 유지
 
 ---
@@ -271,14 +273,88 @@ for (const cat of categories) { const mapped = settings.groupMapping[cat?.id]; i
 고급 설정에서 매핑을 바꿀 때 **"이 변경으로 N건이 A→B로 이동합니다"** 를 먼저 보여주고,
 "이동" / "새 일정부터 적용" 중 선택하게 함. (현재 `migrationPrompt`를 확장)
 
-### P2 — 검증 후 결정
+### P2 — 조사 완료 · 채택하지 않음
 
-#### R8. 네이버 직접 연동 타당성 검증
+#### R8. 네이버 캘린더 직접 연동 — 조사 완료 (2026-08-25)
 
-- 네이버 캘린더 OpenAPI(`openapi.naver.com/calendar/createSchedule.json`)의
-  **현재 제공 여부 / 생성 외 수정·삭제·조회 가능 여부 / CalDAV 지원 여부**를 실측 확인.
-- 가능하다면 `NaverCalendarAdapter`를 별도 모듈로 추가해 진짜 양방향 구현.
-- 불가능하면 **"네이버는 보기 전용 미러"** 를 제품 사양으로 명확히 고정.
+출처: [네이버 캘린더 API 명세](https://github.com/naver/naver-openapi-guide/blob/master/ko/login/calendar-api/calendar-api.md)
+
+**제공되는 것은 엔드포인트 단 하나뿐이다.**
+
+```
+POST https://openapi.naver.com/calendar/createSchedule.json
+  Authorization: Bearer {네이버 access_token}
+  calendarId=defaultCalendarId&scheduleIcalString={iCalendar 문자열}
+```
+
+| 기능 | 가능 여부 | 근거 |
+|---|---|---|
+| 생성 | ✅ | `createSchedule.json` |
+| 수정 | ⚠️ 가능해 보임 | 응답 `returnValue.processType`이 `"create"` 또는 **`"modify"`** → 같은 `UID`로 재전송 시 덮어쓰기(upsert)로 추정. **문서에 명시가 없어 실측 확인 필요** |
+| 삭제 | ❌ | 엔드포인트 없음 |
+| 조회 / 목록 | ❌ | 엔드포인트 없음 |
+| 캘린더 목록 조회 | ❌ | 없음 → 사실상 `defaultCalendarId` 하나만 사용 가능 |
+
+**데이터 형식**: iCalendar(RFC 5545). `UID`(캘린더 내 고유, `%` 불가), `DTSTART;TZID=Asia/Seoul`,
+`DTEND`, `SUMMARY`, `DESCRIPTION`, `LOCATION`, `RRULE`, `CLASS`, `TRANSP`, `SEQUENCE` 지원.
+**알림(VALARM)은 문서에 없음.** `SUMMARY`/`DESCRIPTION`/`LOCATION`은 UTF-8 인코딩 필수.
+
+**오류**: 403/1403 권한 없음(앱 등록 시 캘린더 API 권한 미체크 포함), 404/1404 없는 캘린더, 500/1500 일시 오류.
+
+##### 평가
+
+**해결되는 것 (핵심 병증)**
+- 저장 즉시 네이버에 반영 — 네이버의 폴링 주기에 의존하지 않는다.
+- **성공/실패 응답을 받는다** — 실패를 관측하고 재시도할 수 있다. 현재는 관측 자체가 불가능하다.
+- 네이버의 구글 캘린더 구독 설정, 구글 쪽 churn(이동·정리·재생성)과 완전히 무관해진다.
+- `UID`에 `activity.id`를 쓰면 구글용 상관 키 설계를 그대로 재사용할 수 있다.
+
+**해결되지 않는 것**
+1. **양방향 불가** — 조회 API가 없어 네이버에서 만든/수정한 일정은 영구히 가져올 수 없다.
+2. **삭제 불가** — Calentask에서 지운 일정이 네이버에 남는다.
+   (`STATUS:CANCELLED` 우회 가능 여부는 미검증. 안 되면 제목 덮어쓰기가 한계.)
+3. **그룹 라우팅 재현 불가** — 캘린더를 고를 수 없어 업무/복무/개인/동아리가 네이버에서 한 캘린더에 섞인다.
+4. **구글→네이버 미러를 반드시 꺼야 한다** — 병행하면 네이버에 일정이 두 개씩 생긴다.
+5. **신규 구축 비용** — 네이버 개발자센터 앱 등록, 캘린더 API 권한 체크,
+   네이버 로그인 OAuth 연동(리프레시 토큰 저장·갱신) 추가 필요.
+
+##### 결정: 채택하지 않음 (2026-08-25)
+
+조사 결과를 검토한 뒤 **네이버 직접 연동을 도입하지 않기로 결정했다.**
+
+주된 이유는 얻는 것 대비 잃는 것이 크다는 판단이다.
+
+- 삭제 API가 없어 **Calentask에서 지운 일정이 네이버에 계속 남는다.**
+  우회책(제목 덮어쓰기 등)은 캘린더를 더 지저분하게 만들 뿐이다.
+- 캘린더를 지정할 수 없어 **업무/복무/개인/동아리 그룹 라우팅이 네이버에서 통째로 무너진다.**
+  현재 6개 캘린더로 분리해 쓰는 방식을 포기해야 한다.
+- 조회 API가 없어 **양방향은 어차피 불가능**하다. 즉 직접 연동을 해도
+  사용자의 원래 기대("네이버에서 수정해도 반영")는 달성되지 않는다.
+- 그 대가로 네이버 OAuth·앱 등록·토큰 관리라는 새 유지보수 축이 하나 늘어난다.
+
+**따라서 제품 사양을 다음과 같이 고정한다.**
+
+> 네이버 캘린더는 **구글 캘린더를 경유해 받기만 하는 미러**다.
+> Calentask는 구글까지의 정확성과 재전송 수단(R1)을 책임지고,
+> 구글 → 네이버 구간은 네이버의 가져오기 기능에 맡긴다.
+
+이 결정에 따라 남은 대응은 **R6(사용자 안내)** 이며, 향후 네이버가 조회·삭제 API를
+제공하기 전까지 이 항목은 다시 검토하지 않는다.
+
+##### (참고) 향후 네이버가 API를 확장할 경우의 설계 스케치
+
+```
+src/lib/naver/
+  auth.ts       네이버 OAuth (users.naver_refresh_token)
+  icalendar.ts  activity → iCalendar 문자열 (UID = activity.id)
+  push.ts       createSchedule 호출 + upsert 판정(processType) + 재시도
+
+activities 추가 컬럼: naver_synced_at, naver_content_hash, naver_sync_error
+```
+
+- 구글 push와 **같은 트리거**(`afterGoogleSync`를 `afterExternalSync`로 일반화)에서 함께 호출.
+- 해시 스킵을 두되, **R1과 동일한 강제 재전송 탈출구를 반드시 함께 만든다**(같은 함정 재발 방지).
+- 도입 시 구글 → 네이버 미러를 **반드시 꺼야 한다**(병행하면 네이버에 일정이 두 개씩 생긴다).
 
 ---
 
@@ -299,13 +375,59 @@ for (const cat of categories) { const mapped = settings.groupMapping[cat?.id]; i
 
 | 요구사항 | 무엇을 했는가 | 파일 |
 |---|---|---|
-| **R1** 미러 세이프 재전송 | `BatchSyncOptions.force` 추가 → 해시 스킵 무시. `JobMode`에 `FORCE` 추가. 고급 설정 → 그룹 및 라우팅 탭에 **"전체 일정 다시 보내기"** 버튼 신설. `FORCE`는 중복 정리 단계를 건너뛰므로 삭제가 전혀 일어나지 않음 | `google-calendar.ts`, `google/exportJob.ts`, `sync/job/route.ts`, `useSyncJob.ts`, `AdvancedSyncSettingsModal.tsx` |
+| **R1** 미러 세이프 재전송 | `BatchSyncOptions.force` 추가 → 해시 스킵 무시. `JobMode`에 `FORCE` 추가. 고급 설정 → 그룹 및 라우팅 탭에 **"전체 일정 다시 보내기"** 버튼 신설. `FORCE`는 중복 정리 단계를 건너뛰므로 삭제가 전혀 일어나지 않음. **+ 재전송 표식(nonce)** — 아래 R1-a 참조 | `google-calendar.ts`, `google/exportJob.ts`, `sync/job/route.ts`, `useSyncJob.ts`, `AdvancedSyncSettingsModal.tsx` |
 | **R2** 중복 정리 안전 브레이크 | `ReconcileOptions.allowDelete` (기본 `false`) + `RECONCILE_DELETE_LIMIT = 20`. 자동 경로는 **삭제 없이 링크 복구만**. 삭제는 위험 구역의 **"중복 사본 정리하기"** 버튼으로만 | `google-calendar.ts`, `google/exportJob.ts`, `actions/calendar.ts`, `AdvancedSyncSettingsModal.tsx` |
 | **R3** 시스템 이벤트 차단 | `isReadOnlyGoogleEvent()` — `eventType !== 'default'`는 수입하지 않음. `isImmutablePushError()` — 영구 거부는 **실패가 아니라 건너뜀**으로 분류하고 해시를 남겨 재시도 자체를 없앰 | `google-calendar.ts` |
 | **R4** 라우팅 결정성 | `mappedCalendarFor()` 카테고리 ID 정렬(비결정성 제거). `desiredCalendarFor()`에 현재 위치 인자 추가 — **근거 없으면 옮기지 않음**. `updateActivity`/`updateRecurringActivity`의 `categoryIds`를 선택적으로 변경(`undefined` = 건드리지 않음). 드래그 이동 경로는 인자를 생략 | `google-calendar.ts`, `actions/calendar.ts`, `actions/calendarMonth.ts`, `types/calendarMonth.ts`, `useEventDragDrop.ts`, `MonthlyView.tsx` |
 | **DB** | `google_sync_jobs.mode`에 `FORCE` 허용 | `supabase/migrations/20260826010000_allow_force_sync_mode.sql` |
 
-**검증**: `tsc --noEmit` 오류 0건 / `next build` 성공 / `eslint` 신규 오류 0건(기존 27건과 동일).
+**검증**: `tsc --noEmit` 오류 0건 / `next build` 성공 / `eslint` 신규 오류 0건.
+
+---
+
+#### R1-a. 재전송 표식(nonce) — 1차 배포에서 드러난 구멍 (2026-08-25 13:17 실측)
+
+**증상**: 첫 배포 후 "전체 일정 다시 보내기"를 실행했더니 화면은 `154/154, 실패 0건`으로
+완벽하게 성공했는데, **네이버에는 여전히 반영되지 않았다.**
+
+**실측**
+
+| 확인 항목 | 결과 |
+|---|---|
+| 13:16 이후 **DB가 갱신된** 활동 행 | **154건** ← 우리 코드는 정상 실행 |
+| 13:16 이후 **구글 `updated`가 갱신된** 행 | **1건** ← 그 1건은 실제로 내용이 달랐던 일정 |
+
+**근본 원인**
+
+> **구글 캘린더는 내용이 완전히 동일한 `events.update`를 무시한다.**
+> 요청은 200 OK로 성공하지만 이벤트의 `updated` 타임스탬프를 올려 주지 않는다.
+
+R1의 설계 전제는 "다시 보내면 `updated`가 갱신되고, 그걸 보고 네이버가 다시 가져간다"였다.
+그런데 구글이 `updated`를 올려 주지 않으니 **재전송이 통째로 헛돌았다.**
+겉보기 성공률 100%가 실제 효과 0%를 가리고 있었다.
+
+**해결**
+
+`extendedProperties.private.calentask_resend`에 매 재전송마다 다른 값(nonce)을 심어
+페이로드를 **실제로** 다르게 만든다. 사용자에게는 보이지 않는 내부 메타데이터다.
+
+- `stampResendNonce()` — FORCE 모드에서만 표식을 찍는다.
+- `stripResendNonce()` — **지문(해시) 계산에서는 반드시 제외한다.**
+  제외하지 않으면 nonce 때문에 지문이 매번 달라져, 평소 동기화가 모든 일정을 영원히
+  "변경됨"으로 판정하고 구글 왕복을 무한 반복하게 된다.
+
+**재발 방지 — 관측 가능하게 만들기**
+
+`BatchSyncResult.notBumped` 추가. 전송은 성공했는데 구글이 `updated`를 올려 주지 않은
+건수를 세어, 동기화 이력에 다음과 같이 남긴다.
+
+```
+배치 동기화: 153건 반영, 1건 건너뜀, 0건 실패
+  / ⚠ 153건은 구글이 변경으로 인식하지 않아 외부 캘린더에 전파되지 않습니다
+```
+
+이 경고가 있으면 "성공했다"는 화면만 보고 안심하는 일이 없다.
+**이번 사건의 교훈: 성공 카운트는 효과의 증거가 아니다. 효과 자체를 세야 한다.**
 
 ### 알려진 트레이드오프
 
@@ -314,9 +436,14 @@ for (const cat of categories) { const mapped = settings.groupMapping[cat?.id]; i
 정리가 필요하면 위험 구역의 "중복 사본 정리하기"를 사용합니다.
 (현재 사용자 DB 기준 중복 사본은 0건이므로 당장 문제되지 않습니다.)
 
-### P1·P2 — 미구현
+### P1 — 미구현
 
-R5(진단 화면), R6(네이버 안내 강화 — 일부는 R1 카드에 포함), R7(라우팅 미리보기), R8(네이버 직접 연동 검증).
+R5(진단 화면), R6(네이버 안내 강화 — 일부는 R1 카드에 이미 포함), R7(라우팅 미리보기).
+
+### P2 — 종결
+
+R8(네이버 직접 연동)은 조사 후 **채택하지 않기로 결정**했다. 사유는 6절 R8 참조.
+네이버는 "구글을 경유한 받기 전용 미러"로 사양을 고정한다.
 
 ---
 

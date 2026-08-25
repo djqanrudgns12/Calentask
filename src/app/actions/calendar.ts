@@ -934,7 +934,9 @@ export async function forceSyncActivityAction(activityId: string) {
 
   try {
     const { syncActivityToGoogle } = await import('@/lib/google-calendar')
-    await syncActivityToGoogle(userData.user.id, activity, categories)
+    // 사용자가 명시적으로 누른 '다시 보내기'다. 내용이 그대로여도 구글이 변경으로
+    // 인식하도록 강제해야 네이버 등 외부 캘린더가 이 일정을 다시 가져간다.
+    await syncActivityToGoogle(userData.user.id, activity, categories, { force: true })
     revalidatePath('/')
     return { success: true }
   } catch (e: any) {

@@ -47,8 +47,6 @@ interface MonthlyViewProps {
   events: CalendarEventSummary[]
   specialDays: SpecialDaysMap
   isLoading?: boolean
-  onEventOpen: (event: CalendarEventSummary) => void
-  onEventEdit: (event: CalendarEventSummary) => void
 }
 
 const DAY_LABELS = ['일', '월', '화', '수', '목', '금', '토']
@@ -92,8 +90,6 @@ export const MonthlyView = React.memo(function MonthlyView({
   events,
   specialDays,
   isLoading = false,
-  onEventOpen,
-  onEventEdit,
 }: MonthlyViewProps) {
   const calendarRef = useRef<FullCalendar>(null)
   const queryClient = useQueryClient()
@@ -364,8 +360,7 @@ export const MonthlyView = React.memo(function MonthlyView({
           dateClick={arg => openDaySummary(arg.date)}
           eventClick={arg => {
             const summary = arg.event.extendedProps.summary as CalendarEventSummary | undefined
-            if (summary) onEventOpen(summary)
-            else openDaySummary(arg.event.start ?? new Date())
+            openDaySummary(summary ? new Date(summary.start) : (arg.event.start ?? new Date()))
           }}
           eventDrop={handleEventDrop}
           eventContent={renderEvent}
@@ -388,15 +383,11 @@ export const MonthlyView = React.memo(function MonthlyView({
             arg.el.onmouseleave = hideTooltip
             arg.el.onfocus = showTooltip
             arg.el.onblur = hideTooltip
-            arg.el.ondblclick = event => {
-              event.stopPropagation()
-              onEventEdit(summary)
-            }
             arg.el.onkeydown = event => {
               if (event.key === 'Enter' || event.key === ' ') {
                 event.preventDefault()
                 event.stopPropagation()
-                onEventOpen(summary)
+                openDaySummary(new Date(summary.start))
               }
             }
           }}
