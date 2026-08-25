@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "test:calendar": "npx tsx --test tests/calendar-month.test.ts",
     "seed": "npx tsx scripts/seed.ts",
     "postinstall": "patch-package"
   },

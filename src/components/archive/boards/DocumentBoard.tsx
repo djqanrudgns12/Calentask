@@ -1,6 +1,7 @@
 // @ts-nocheck
 'use client'
 
+import './DocumentBoardFonts.css';
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { 
   FileText, MoreHorizontal, Clock, AlignLeft, Bold, Italic, Type, Plus, Heading1, Heading2, Heading3, 

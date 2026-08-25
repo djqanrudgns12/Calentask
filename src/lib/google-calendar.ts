@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { createHash } from 'node:crypto'
 import { google, calendar_v3 } from 'googleapis'
 import { createAdminClient } from '@/lib/supabase/server'
 import pLimit from 'p-limit'
@@ -31,8 +32,8 @@ export interface GoogleSyncSettings {
   importCalendarIds?: string[]
   /**
    * 구글 기본(primary) 캘린더를 수신 대상에 포함할지 여부(기본 true).
-   * 네이버 캘린더 등 외부 서비스는 기본 캘린더에 일정을 기록하므로,
-   * 이 값이 false면 그렇게 만들어진 일정이 Calentask에 영영 들어오지 못한다.
+   * 외부 앱이 캘린더를 따로 고르지 않으면 대개 기본 캘린더에 일정을 만들기 때문에,
+   * 이 값이 false면 그렇게 만들어진 일정이 Calentask에 들어오지 못한다.
    */
   includePrimaryInImport?: boolean
 }
@@ -346,6 +347,8 @@ export interface SyncScope {
    * (읽기 전용으로 공유받은 캘린더에 쓰려 하면 매번 403이 난다.)
    */
   writableCalendarIds: Set<string>
+  /** 기존 이벤트의 현재 위치를 찾을 때 훑을 캘린더 목록(= 우리가 쓸 수 있는 곳들). */
+  searchCalendarIds: string[]
   /** 확정된 기본 캘린더 ID(별칭 정규화용). */
   primaryCalendarId: string | null
 }
@@ -374,7 +377,8 @@ async function resolveSyncScope(
 
   const writeCalendarId = normalize(writeRaw)
 
-  // 쓰기 대상: 기본 쓰기 캘린더 + 카테고리 그룹 매핑 캘린더
+  // 쓰기 대상: 기본 쓰기 캘린더 + 카테고리 그룹 매핑 캘린더.
+  // 매핑을 해제한 뒤에도 예전 목적지를 남겨 둬야 거기 있던 일정을 **옮겨 올** 수 있다.
   const writableCalendarIds = new Set<string>([writeCalendarId])
   for (const id of Object.values(settings.groupMapping || {})) {
     if (id) writableCalendarIds.add(normalize(id))
@@ -385,7 +389,7 @@ async function resolveSyncScope(
   for (const id of settings.importCalendarIds || []) {
     if (id) readCalendarIds.add(normalize(id))
   }
-  // 외부 서비스(네이버 등)는 기본 캘린더에 기록하므로 기본값으로 포함한다.
+  // 외부 앱이 캘린더를 고르지 않으면 대개 기본 캘린더에 만들어지므로 기본값으로 포함한다.
   if (settings.includePrimaryInImport !== false && primaryCalendarId) {
     readCalendarIds.add(primaryCalendarId)
   }
@@ -394,6 +398,7 @@ async function resolveSyncScope(
     writeCalendarId,
     readCalendarIds: [...readCalendarIds],
     writableCalendarIds,
+    searchCalendarIds: [...writableCalendarIds],
     primaryCalendarId,
   }
 }
@@ -511,6 +516,28 @@ function mapActivityToGoogleEvent(
   }
 }
 
+/** 키를 정렬해 안정적으로 직렬화한다(같은 내용 → 항상 같은 문자열). */
+function stableStringify(value: any): string {
+  if (value === null || typeof value !== 'object') return JSON.stringify(value) ?? 'null'
+  if (Array.isArray(value)) return `[${value.map(stableStringify).join(',')}]`
+  const keys = Object.keys(value).sort()
+  return `{${keys.map((k) => `${JSON.stringify(k)}:${stableStringify(value[k])}`).join(',')}}`
+}
+
+/**
+ * "이번에 구글로 보낼 내용"의 지문.
+ *
+ * 마지막으로 보낸 지문과 같으면 보낼 이유가 없다. 시각 비교(updated_at vs google_synced_at)와
+ * 달리 Postgres 시계와 Google 시계를 넘나들지 않으므로 여유값에 기댈 필요가 없고,
+ * "바뀐 게 없다"를 확정적으로 말할 수 있다.
+ * 목적지 캘린더도 포함해야 캘린더 이동이 건너뛰기로 삼켜지지 않는다.
+ */
+function eventPayloadHash(eventBody: calendar_v3.Schema$Event, calendarId: string): string {
+  return createHash('sha256')
+    .update(stableStringify({ calendarId, body: eventBody }))
+    .digest('hex')
+}
+
 /** 카테고리 → 그룹 매핑 캘린더를 O(1)로 찾는다. */
 function mappedCalendarFor(categories: any[], settings: GoogleSyncSettings): string | null {
   if (!settings.groupMapping) return null
@@ -519,6 +546,147 @@ function mappedCalendarFor(categories: any[], settings: GoogleSyncSettings): str
     if (mapped) return mapped
   }
   return null
+}
+
+/**
+ * 이 일정이 **있어야 할** 캘린더.
+ *
+ * 전적으로 사용자 설정(그룹 및 라우팅 → 기본 쓰기 캘린더)만으로 결정한다.
+ * 예전 구현은 `activity.google_calendar_id`(현재 위치)를 1순위로 삼았는데,
+ * 그러면 한 번 어딘가에 들어간 일정은 고급 설정을 아무리 바꿔도 그 자리에 못박혀
+ * "그룹 및 라우팅이 전혀 먹지 않는" 증상이 된다. 현재 위치는 '어디서 찾을지'에만 쓴다.
+ */
+function desiredCalendarFor(
+  categories: any[],
+  settings: GoogleSyncSettings,
+  scope: SyncScope
+): string {
+  return mappedCalendarFor(categories, settings) || scope.writeCalendarId
+}
+
+/**
+ * 이벤트가 지금 어느 캘린더에 있는지 찾는다.
+ *
+ * 저장된 위치를 먼저 짚어 보고(대부분 1회 왕복으로 끝난다), 빗나가면 후보 캘린더를 훑는다.
+ * 한 번도 연결된 적 없는 일정은 탐색 자체를 건너뛴다(신규 생성이 확실하므로).
+ */
+async function findEventLocation(
+  calendar: calendar_v3.Calendar,
+  activity: {
+    id: string
+    google_event_id?: string | null
+    google_calendar_id?: string | null
+    google_ical_uid?: string | null
+  },
+  candidateCalendarIds: string[]
+): Promise<{ calendarId: string; eventId: string } | null> {
+  const eventIds = [activity.google_event_id, toGoogleEventId(activity.id)].filter(
+    (id, i, arr): id is string => !!id && arr.indexOf(id) === i
+  )
+
+  const stored = activity.google_calendar_id
+  const ordered = stored
+    ? [stored, ...candidateCalendarIds.filter((id) => id !== stored)]
+    : candidateCalendarIds
+
+  for (const calId of ordered) {
+    for (const eventId of eventIds) {
+      try {
+        const res = await withRetry(() => calendar.events.get({ calendarId: calId, eventId }))
+        // 삭제된(tombstone) 이벤트는 "없는 것"으로 본다. 되살리는 건 insert 복구 경로가 맡는다.
+        if (res.data.status !== 'cancelled') {
+          return { calendarId: calId, eventId: res.data.id || eventId }
+        }
+      } catch (err: any) {
+        if (!isGoogleError(err, 404) && !isGoogleError(err, 410)) throw err
+      }
+    }
+
+    // ID가 통하지 않으면 태그/iCalUID로 실물을 찾는다(서드파티가 ID를 바꾼 경우).
+    try {
+      const located = await locateExistingEvent(calendar, calId, activity)
+      if (located.event?.id) return { calendarId: calId, eventId: located.event.id }
+    } catch {
+      // 이 캘린더에서의 탐색 실패는 다음 후보로 넘어간다.
+    }
+  }
+
+  return null
+}
+
+/**
+ * 이 일정의 구글 이벤트가 **원하는 캘린더에 정확히 하나만** 존재하도록 만든다.
+ *
+ * 핵심은 목적지가 바뀌었을 때 `events.move`로 **옮기는** 것이다.
+ * 새로 insert 하면 원래 캘린더의 사본이 그대로 남아 중복이 된다.
+ * (즉시 동기화 후 일정이 두 개씩 보이던 원인이 정확히 이것이다.)
+ */
+async function placeEvent(
+  calendar: calendar_v3.Calendar,
+  params: {
+    activity: any
+    eventBody: any
+    desiredCalendarId: string
+    candidateCalendarIds: string[]
+    /** 우리가 쓰기까지 하는 캘린더. 여기 없는 캘린더의 이벤트는 옮기지 않는다. */
+    writableCalendarIds: Set<string>
+  }
+): Promise<{ event: calendar_v3.Schema$Event | null; calendarId: string; note?: string }> {
+  const { activity, eventBody, desiredCalendarId, candidateCalendarIds, writableCalendarIds } = params
+  const canonicalEventId = toGoogleEventId(activity.id)
+
+  // 한 번도 구글과 연결된 적 없으면 탐색은 낭비다.
+  const everLinked = !!(activity.google_event_id || activity.google_calendar_id)
+  const found = everLinked
+    ? await findEventLocation(calendar, activity, candidateCalendarIds)
+    : null
+
+  if (!found) {
+    const inserted = await insertWithRecovery(calendar, desiredCalendarId, eventBody, canonicalEventId)
+    return { event: inserted.event, calendarId: desiredCalendarId, note: inserted.note }
+  }
+
+  let { calendarId, eventId } = found
+  let note: string | undefined
+
+  // 우리가 구독만 하는 캘린더(사용자의 기본 캘린더 등)에 있는 일정은 옮기지 않는다.
+  // 사용자가 직접 그곳에 만든 일정을 앱 캘린더로 끌어가는 셈이 되기 때문이다.
+  const mayRelocate = writableCalendarIds.has(calendarId)
+
+  if (calendarId !== desiredCalendarId && mayRelocate) {
+    try {
+      const moved = await withRetry(() =>
+        calendar.events.move({ calendarId, eventId, destination: desiredCalendarId })
+      )
+      eventId = moved.data.id || eventId
+      calendarId = desiredCalendarId
+    } catch (moveErr: any) {
+      // 이동 불가(반복 인스턴스, 권한 없는 캘린더 등)면 제자리에서 갱신한다.
+      // 여기서 insert로 도망가면 중복이 생기므로 절대 그렇게 하지 않는다.
+      note = `목적지 캘린더로 옮기지 못해 기존 캘린더에서 갱신했습니다: ${moveErr.message}`
+      console.warn(`[placeEvent] move failed (${calendarId} → ${desiredCalendarId}):`, moveErr.message)
+    }
+  }
+
+  try {
+    const res = await withRetry(() =>
+      calendar.events.update({ calendarId, eventId, requestBody: eventBody })
+    )
+    return { event: res.data, calendarId, note }
+  } catch (updateErr: any) {
+    if (!isGoogleError(updateErr, 400)) throw updateErr
+    // 색상/리마인더 등 부가 속성 유효성 문제 → 제거하고 한 번 더
+    delete eventBody.colorId
+    delete eventBody.reminders
+    const res = await withRetry(() =>
+      calendar.events.update({ calendarId, eventId, requestBody: eventBody })
+    )
+    return {
+      event: res.data,
+      calendarId,
+      note: note || '일부 속성(색상 등)을 제외하고 동기화되었습니다.',
+    }
+  }
 }
 
 /**
@@ -534,12 +702,15 @@ async function persistPushResult(
   activityId: string,
   calendarId: string,
   event: calendar_v3.Schema$Event | null | undefined,
-  fallbackEventId: string
+  fallbackEventId: string,
+  contentHash?: string
 ) {
   const payload: Record<string, any> = {
     google_event_id: event?.id || fallbackEventId,
     google_calendar_id: calendarId,
     google_synced_at: event?.updated || new Date().toISOString(),
+    // 다음 배치에서 "이미 최신"을 판정하는 근거
+    google_content_hash: contentHash ?? null,
   }
   if (event?.iCalUID) payload.google_ical_uid = event.iCalUID
 
@@ -579,13 +750,12 @@ export async function syncActivityToGoogle(userId: string, activity: any, catego
     const auth = buildOAuthClient(user.google_refresh_token)
     const calendar = google.calendar({ version: 'v3', auth })
 
-    const scope = await resolveSyncScope(userId, auth, supabase, settings, categories)
+    // 목적지는 설정만으로 정한다. categories를 scope 계산에 넘기지 않아야
+    // scope.writeCalendarId가 '사용자의 기본 쓰기 캘린더'로 남는다.
+    const scope = await resolveSyncScope(userId, auth, supabase, settings)
     if (!scope) return
 
-    // 이미 구글에 존재하는 일정은 원래 있던 캘린더를 유지한다(옮기면 중복/유실 위험).
-    // 신규 일정만 카테고리 그룹 매핑 → 기본 쓰기 캘린더 순으로 목적지를 정한다.
-    let calendarId =
-      activity.google_calendar_id || mappedCalendarFor(categories, settings) || scope.writeCalendarId
+    const desiredCalendarId = desiredCalendarFor(categories, settings, scope)
 
     // 반복 마스터를 push할 때, 삭제된 회차(soft-deleted 자식 예외)를 EXDATE로 제외시킨다.
     let exDatesUtc: string[] = []
@@ -603,119 +773,57 @@ export async function syncActivityToGoogle(userId: string, activity: any, catego
     const eventBody = mapActivityToGoogleEvent(activity, categories, settings, exDatesUtc) as any
 
     if (activity.parent_activity_id) {
-      await attachRecurringParent(calendar, calendarId, activity, eventBody)
+      await attachRecurringParent(calendar, desiredCalendarId, activity, eventBody)
     }
 
-    const canonicalEventId = toGoogleEventId(activity.id)
-    // 1차 시도용 ID: 살아있는 연결을 깨지 않도록 저장값을 우선한다.
-    const updateEventId = activity.google_event_id || canonicalEventId
-
-    let result: calendar_v3.Schema$Event | null = null
-    let finalEventId = updateEventId
-
+    let placed
     try {
-      const res = await withRetry(() =>
-        calendar.events.update({ calendarId, eventId: updateEventId, requestBody: eventBody })
-      )
-      result = res.data
-      finalEventId = res.data.id || updateEventId
-      await logSyncHistory(supabase, {
-        userId,
-        activityId: activity.id,
-        googleEventId: finalEventId,
-        calendarId,
-        action: 'UPDATED',
-        activityTitle: activity.title,
-        activityStartTime: activity.start_time,
+      placed = await placeEvent(calendar, {
+        activity,
+        eventBody,
+        desiredCalendarId,
+        candidateCalendarIds: scope.searchCalendarIds,
+        writableCalendarIds: scope.writableCalendarIds,
       })
-    } catch (updateErr: any) {
-      if (isGoogleError(updateErr, 400)) {
-        // 색상/리마인더 등 부가 속성 유효성 문제 → 제거하고 한 번 더
-        delete eventBody.colorId
-        delete eventBody.reminders
-        try {
-          const res = await withRetry(() =>
-            calendar.events.update({ calendarId, eventId: updateEventId, requestBody: eventBody })
-          )
-          await persistPushResult(supabase, userId, activity.id, calendarId, res.data, updateEventId)
-          await logSyncHistory(supabase, {
-            userId,
-            activityId: activity.id,
-            googleEventId: res.data.id || updateEventId,
-            calendarId,
-            action: 'UPDATED',
-            activityTitle: activity.title,
-            activityStartTime: activity.start_time,
-            errorMessage: '기본 속성 오류로 인해 일부 속성(색상 등)을 제외하고 동기화되었습니다.',
-          })
-          return
-        } catch {
-          /* 아래 복구 경로로 진행 */
-        }
-      }
-
-      if (!isGoogleError(updateErr, 404) && !isGoogleError(updateErr, 410)) {
-        await logSyncHistory(supabase, {
-          userId,
-          activityId: activity.id,
-          googleEventId: updateEventId,
-          calendarId,
-          action: 'ERROR',
-          status: 'FAILED',
-          errorMessage: updateErr.message,
-          activityTitle: activity.title,
-          activityStartTime: activity.start_time,
-        })
-        throw updateErr
-      }
-
-      // 404/410: 이벤트가 없거나 캘린더가 사라짐 → 실존 여부를 확인하고 스마트 복구
-      const located = await locateExistingEvent(calendar, calendarId, activity)
-
-      if (located.calendarDead) {
-        invalidateCalendarCache(userId, calendarId)
-        const revived = await recoverDeadCalendar(userId, supabase, auth, settings, calendarId, categories)
-        if (!revived) throw new Error('Failed to resolve a live sync calendar.')
-        calendarId = revived
-      }
-
-      if (located.event?.id) {
-        const res = await withRetry(() =>
-          calendar.events.update({
-            calendarId,
-            eventId: located.event!.id as string,
-            requestBody: eventBody,
-          })
-        )
-        result = res.data
-        finalEventId = res.data.id || (located.event.id as string)
-        await logSyncHistory(supabase, {
-          userId,
-          activityId: activity.id,
-          googleEventId: finalEventId,
-          calendarId,
-          action: 'UPDATED',
-          activityTitle: activity.title,
-          activityStartTime: activity.start_time,
-        })
-      } else {
-        const inserted = await insertWithRecovery(calendar, calendarId, eventBody, canonicalEventId)
-        result = inserted.event
-        finalEventId = inserted.event?.id || canonicalEventId
-        await logSyncHistory(supabase, {
-          userId,
-          activityId: activity.id,
-          googleEventId: finalEventId,
-          calendarId,
-          action: 'CREATED',
-          activityTitle: activity.title,
-          activityStartTime: activity.start_time,
-          errorMessage: inserted.note,
-        })
-      }
+    } catch (placeErr: any) {
+      // 목적지 캘린더가 구글에서 삭제됐을 수 있다 → 설정을 정리하고 살아있는 캘린더로 재시도.
+      if (!isGoogleError(placeErr, 404) && !isGoogleError(placeErr, 410)) throw placeErr
+      invalidateCalendarCache(userId, desiredCalendarId)
+      const revived = await recoverDeadCalendar(
+        userId, supabase, auth, settings, desiredCalendarId, categories
+      )
+      if (!revived) throw placeErr
+      placed = await placeEvent(calendar, {
+        activity,
+        eventBody,
+        desiredCalendarId: revived,
+        candidateCalendarIds: scope.searchCalendarIds,
+        writableCalendarIds: scope.writableCalendarIds,
+      })
     }
 
-    await persistPushResult(supabase, userId, activity.id, calendarId, result, finalEventId)
+    const finalEventId = placed.event?.id || toGoogleEventId(activity.id)
+    await logSyncHistory(supabase, {
+      userId,
+      activityId: activity.id,
+      googleEventId: finalEventId,
+      calendarId: placed.calendarId,
+      action: 'UPDATED',
+      activityTitle: activity.title,
+      activityStartTime: activity.start_time,
+      errorMessage: placed.note,
+    })
+
+    // 실제로 전송된 최종 페이로드 기준으로 지문을 남긴다(복구 과정에서 속성이 빠졌을 수 있음).
+    await persistPushResult(
+      supabase,
+      userId,
+      activity.id,
+      placed.calendarId,
+      placed.event,
+      finalEventId,
+      eventPayloadHash(eventBody, placed.calendarId)
+    )
   } catch (error: any) {
     console.error('Failed to sync activity to Google Calendar:', error)
     await logSyncHistory(supabase, {
@@ -1193,7 +1301,8 @@ export async function clearSyncedActivitiesFromGoogle(userId: string) {
         }
 
         // 개인 캘린더: calentask_id 태그가 있는 이벤트만 선별 삭제.
-        // privateExtendedProperty로 서버에서 걸러 받으면 전체 페이지를 훑지 않아도 된다.
+        // Google의 privateExtendedProperty는 `key=value` 형태만 받는다("존재 여부" 필터가 없다).
+        // 값을 특정할 수 없으므로 전체를 받아 클라이언트에서 걸러야 한다.
         let pageToken: string | null | undefined
         do {
           const res: any = await calendar.events.list({
@@ -1201,7 +1310,6 @@ export async function clearSyncedActivitiesFromGoogle(userId: string) {
             maxResults: 250,
             singleEvents: false,
             showDeleted: false,
-            privateExtendedProperty: ['calentask_id'],
             pageToken: pageToken || undefined,
           })
 
@@ -1603,6 +1711,9 @@ async function runGoogleCalendarSync(userId: string, supabase: any) {
     // 2) DB 반영은 캘린더 간 쓰기 경합을 피하기 위해 순차 처리한다.
     const nextCursors: Record<string, CalendarCursor> = {}
     const pushBackIds = new Set<string>()
+    const upsertedIds = new Set<string>()
+    const deleteCandidateIds = new Set<string>()
+    const outcomes: Array<{ calId: string; applied: DeltaOutcome; nextSyncToken?: string }> = []
 
     for (const result of fetched) {
       const previous = cursors[result.calId] || {}
@@ -1617,8 +1728,32 @@ async function runGoogleCalendarSync(userId: string, supabase: any) {
         writable: scope.writableCalendarIds.has(result.calId),
       })
       applied.pushBackIds.forEach((id) => pushBackIds.add(id))
+      applied.upsertedIds.forEach((id) => upsertedIds.add(id))
+      applied.deleteCandidateIds.forEach((id) => deleteCandidateIds.add(id))
+      outcomes.push({ calId: result.calId, applied, nextSyncToken: result.nextSyncToken })
+    }
 
-      if (applied.ok) {
+    // ★ 삭제는 모든 캘린더를 훑은 뒤에 확정한다 ★
+    // events.move로 A→B로 옮긴 일정은 A의 델타에서 cancelled로 보인다.
+    // 캘린더별로 즉시 지우면 처리 순서에 따라 방금 옮긴 일정이 사라진다.
+    const confirmedDeletes = [...deleteCandidateIds].filter((id) => !upsertedIds.has(id))
+    let deleteOk = true
+    if (confirmedDeletes.length > 0) {
+      try {
+        await softDeleteActivities(supabase, userId, confirmedDeletes)
+      } catch (deleteErr) {
+        deleteOk = false
+        console.error('[sync] Failed to apply deletions:', deleteErr)
+      }
+    }
+
+    // 3) 커서 커밋
+    for (const { calId, applied, nextSyncToken } of outcomes) {
+      const previous = cursors[calId] || {}
+      const result = { calId, nextSyncToken }
+      const succeeded = applied.ok && (deleteOk || applied.deleteCandidateIds.length === 0)
+
+      if (succeeded) {
         // ★ 커서는 반영이 끝난 뒤에만 전진시킨다 ★
         // 기존 구현은 아이템을 반영하기 전에 토큰을 저장해서, 처리 도중 타임아웃이 나면
         // 그 델타가 영구히 유실됐다("일부 항목만 반영됨"의 주범).
@@ -1659,6 +1794,24 @@ async function runGoogleCalendarSync(userId: string, supabase: any) {
   } catch (error) {
     console.error('Error in handleGoogleCalendarSync:', error)
   }
+}
+
+interface DeltaOutcome {
+  ok: boolean
+  applied: number
+  pushBackIds: string[]
+  /** 이번 캘린더에서 살아있다고 확인된 활동 id. 삭제 후보를 무효화하는 근거가 된다. */
+  upsertedIds: string[]
+  /** 이 캘린더에서 cancelled로 관측된 활동 id. 실행 전체가 끝나야 확정된다. */
+  deleteCandidateIds: string[]
+}
+
+const EMPTY_DELTA_OUTCOME: DeltaOutcome = {
+  ok: true,
+  applied: 0,
+  pushBackIds: [],
+  upsertedIds: [],
+  deleteCandidateIds: [],
 }
 
 interface DeltaContext {
@@ -1708,9 +1861,9 @@ async function applyDelta(
   calendarId: string,
   events: calendar_v3.Schema$Event[],
   options: { writable: boolean }
-): Promise<{ ok: boolean; applied: number; pushBackIds: string[] }> {
+): Promise<DeltaOutcome> {
   const { userId, supabase, calendar, strategy } = ctx
-  if (events.length === 0) return { ok: true, applied: 0, pushBackIds: [] }
+  if (events.length === 0) return EMPTY_DELTA_OUTCOME
 
   try {
     // ── 1. 반복 예외 인스턴스와 일반 이벤트 분리 ──
@@ -1855,10 +2008,13 @@ async function applyDelta(
       }
     }
 
-    // 같은 활동에 대해 tombstone과 살아있는 이벤트가 함께 왔다면(캘린더 간 이동 등)
-    // 살아있는 쪽을 채택한다. upsert가 먼저 실행되므로 명시적으로 걸러내야 한다.
-    const liveIds = new Set(upsertRows.map((row) => row.id))
-    const deleteIds = [...new Set(softDeleteIds)].filter((id) => !liveIds.has(id))
+    // 삭제 후보는 여기서 실행하지 않는다.
+    // events.move로 캘린더를 옮기면 **출발 캘린더의 델타에는 cancelled로** 나타나고
+    // 도착 캘린더의 델타에는 살아있는 이벤트로 나타난다. 캘린더별로 따로 처리하면
+    // 처리 순서에 따라 방금 옮긴 일정을 삭제해 버린다.
+    // 그래서 실행 전체가 끝난 뒤, 어느 캘린더에서든 살아있다고 확인된 것을 제외하고 지운다.
+    const upsertedIds = upsertRows.map((row) => row.id as string)
+    const deleteCandidateIds = [...new Set(softDeleteIds)]
 
     // ── 6. Google 쪽 태그 복구를 upsert보다 먼저 수행 ──
     // 패치는 event.updated를 갱신시키므로, 그 결과 시각을 google_synced_at에 반영해야
@@ -1902,23 +2058,6 @@ async function applyDelta(
       }
     }
 
-    if (deleteIds.length > 0) {
-      const deletedAt = new Date().toISOString()
-      for (const part of chunk(deleteIds, IN_FILTER_CHUNK)) {
-        const { error } = await supabase
-          .from('activities')
-          .update({
-            deleted_at: deletedAt,
-            google_event_id: null,
-            google_calendar_id: null,
-            google_ical_uid: null,
-          })
-          .eq('user_id', userId)
-          .in('id', part)
-        if (error) throw new Error(`activities soft-delete failed: ${error.message}`)
-      }
-    }
-
     if (categoryLinks.length > 0) {
       const { error } = await supabase
         .from('activity_category_map')
@@ -1936,10 +2075,35 @@ async function applyDelta(
       )
     }
 
-    return { ok: true, applied: upsertRows.length + deleteIds.length, pushBackIds }
+    return {
+      ok: true,
+      applied: upsertRows.length + deleteCandidateIds.length,
+      pushBackIds,
+      upsertedIds,
+      deleteCandidateIds,
+    }
   } catch (error: any) {
     console.error(`[applyDelta] Failed for calendar ${calendarId}:`, error.message)
-    return { ok: false, applied: 0, pushBackIds: [] }
+    return { ...EMPTY_DELTA_OUTCOME, ok: false }
+  }
+}
+
+/** 실행 전체가 끝난 뒤 한 번에 수행하는 soft-delete. */
+async function softDeleteActivities(supabase: any, userId: string, ids: string[]) {
+  if (ids.length === 0) return
+  const deletedAt = new Date().toISOString()
+  for (const part of chunk(ids, IN_FILTER_CHUNK)) {
+    const { error } = await supabase
+      .from('activities')
+      .update({
+        deleted_at: deletedAt,
+        google_event_id: null,
+        google_calendar_id: null,
+        google_ical_uid: null,
+      })
+      .eq('user_id', userId)
+      .in('id', part)
+    if (error) throw new Error(`activities soft-delete failed: ${error.message}`)
   }
 }
 
@@ -2351,12 +2515,12 @@ export async function migrateCategoryActivitiesToCalendar(
     let pageToken: string | null | undefined
     do {
       const res: any = await withRetry(() =>
+        // privateExtendedProperty는 `key=value`만 지원하므로 전체를 받아 클라이언트에서 거른다.
         calendar.events.list({
           calendarId: oldCalendarId,
           maxResults: 250,
           singleEvents: false,
           showDeleted: false,
-          privateExtendedProperty: ['calentask_id'],
           pageToken: pageToken || undefined,
         })
       )
@@ -2426,15 +2590,165 @@ export async function migrateCategoryActivitiesToCalendar(
 }
 
 // ─────────────────────────────────────────────────────────────
+// 중복 정리
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * 같은 Calentask 일정이 여러 캘린더에 사본으로 흩어져 있으면 하나만 남기고 정리한다.
+ *
+ * 목적지가 바뀌었을 때 `events.move` 대신 신규 insert를 하던 시절에 만들어진 중복을
+ * 실제로 걷어낸다. 활동마다 캘린더를 뒤지면 왕복이 (일정 수 × 캘린더 수)로 폭발하므로,
+ * 캘린더별로 **한 번씩만** 훑어 태그 목록을 모은 뒤 메모리에서 대조한다.
+ */
+export async function reconcileGoogleDuplicates(userId: string): Promise<{ removed: number }> {
+  const supabase = createAdminClient()
+
+  const { data: user } = await supabase
+    .from('users')
+    .select('google_sync_settings, google_refresh_token')
+    .eq('id', userId)
+    .single()
+
+  if (!user?.google_refresh_token) return { removed: 0 }
+  const settings: GoogleSyncSettings = user.google_sync_settings || {}
+
+  const auth = buildOAuthClient(user.google_refresh_token)
+  const calendar = google.calendar({ version: 'v3', auth })
+  const scope = await resolveSyncScope(userId, auth, supabase, settings)
+  if (!scope) return { removed: 0 }
+
+  // 1) 우리가 쓰는 캘린더들을 한 번씩 훑어 calentask_id 태그가 붙은 사본을 모은다.
+  type Copy = { calendarId: string; eventId: string; updatedMs: number }
+  const copiesByActivity = new Map<string, Copy[]>()
+
+  for (const calId of scope.searchCalendarIds) {
+    let pageToken: string | undefined
+    try {
+      do {
+        const res = await withRetry(() =>
+          calendar.events.list({
+            calendarId: calId,
+            maxResults: 250,
+            singleEvents: false,
+            showDeleted: false,
+            pageToken,
+          })
+        )
+        for (const event of res.data.items || []) {
+          const tag = event.extendedProperties?.private?.calentask_id
+          // 반복 예외 인스턴스는 마스터에 종속되므로 중복 판단 대상이 아니다.
+          if (!tag || !event.id || event.recurringEventId) continue
+          const list = copiesByActivity.get(tag) || []
+          list.push({
+            calendarId: calId,
+            eventId: event.id,
+            updatedMs: event.updated ? Date.parse(event.updated) : 0,
+          })
+          copiesByActivity.set(tag, list)
+        }
+        pageToken = res.data.nextPageToken ?? undefined
+      } while (pageToken)
+    } catch (err: any) {
+      console.warn(`[reconcile] Failed to scan calendar ${calId}:`, err.message)
+    }
+  }
+
+  const duplicated = [...copiesByActivity.entries()].filter(([, list]) => list.length > 1)
+  if (duplicated.length === 0) return { removed: 0 }
+
+  // 2) 각 일정이 "있어야 할" 캘린더를 카테고리 매핑으로 계산한다.
+  const activityIds = duplicated.map(([id]) => id)
+  const desiredById = new Map<string, string>()
+  for (const part of chunk(activityIds, IN_FILTER_CHUNK)) {
+    const { data } = await supabase
+      .from('activities')
+      .select('id, activity_category_map(categories(id))')
+      .eq('user_id', userId)
+      .in('id', part)
+    for (const row of data || []) {
+      const categories = (row.activity_category_map || [])
+        .map((m: any) => m.categories)
+        .filter(Boolean)
+      desiredById.set(row.id, desiredCalendarFor(categories, settings, scope))
+    }
+  }
+
+  // 3) 목적지에 있는 사본을 남기고(없으면 가장 최근 것) 나머지를 삭제한다.
+  const limit = pLimit(5)
+  let removed = 0
+
+  for (const [activityId, list] of duplicated) {
+    const desired = desiredById.get(activityId) || scope.writeCalendarId
+    const keep =
+      list.find((c) => c.calendarId === desired) ||
+      [...list].sort((a, b) => b.updatedMs - a.updatedMs)[0]
+
+    const strays = list.filter((c) => c !== keep)
+    await Promise.allSettled(
+      strays.map((copy) =>
+        limit(async () => {
+          try {
+            await withRetry(() =>
+              calendar.events.delete({ calendarId: copy.calendarId, eventId: copy.eventId })
+            )
+            removed++
+          } catch (err: any) {
+            if (!isGoogleError(err, 404) && !isGoogleError(err, 410)) {
+              console.warn(`[reconcile] Failed to remove duplicate ${copy.eventId}:`, err.message)
+            }
+          }
+        })
+      )
+    )
+
+    // 남긴 사본으로 DB 링크를 정정하고, 해시를 비워 다음 push가 내용을 다시 맞추게 한다.
+    await supabase
+      .from('activities')
+      .update({
+        google_event_id: keep.eventId,
+        google_calendar_id: keep.calendarId,
+        google_content_hash: null,
+      })
+      .eq('id', activityId)
+      .eq('user_id', userId)
+  }
+
+  if (removed > 0) {
+    await logSyncHistory(supabase, {
+      userId,
+      calendarId: 'ALL',
+      action: 'DELETED',
+      activityTitle: `중복 이벤트 정리 (${removed}건 제거)`,
+    })
+  }
+
+  return { removed }
+}
+
+// ─────────────────────────────────────────────────────────────
 // 배치 push
 // ─────────────────────────────────────────────────────────────
 
 export interface SyncProgressEvent {
   id?: string
   title: string
+  /**
+   * synced       내보내기 완료(생성 또는 갱신)
+   * skipped      마지막 전송 이후 바뀐 게 없어 건너뜀
+   * task_skipped 할 일(TASK)이라 캘린더 대상이 아님
+   * failed       실패
+   */
   status: 'synced' | 'skipped' | 'failed' | 'task_skipped'
   current: number
   error?: string
+}
+
+export interface BatchSyncResult {
+  synced: number
+  skipped: number
+  taskSkipped: number
+  failed: number
+  failedItems: Array<{ id: string; title: string; error: string }>
 }
 
 /**
@@ -2449,8 +2763,8 @@ export async function syncBatchActivitiesToGoogle(
   userId: string,
   activities: any[],
   onProgress?: (event: SyncProgressEvent) => void
-) {
-  const result = { synced: 0, skipped: 0, failed: 0, failedItems: [] as any[] }
+): Promise<BatchSyncResult> {
+  const result: BatchSyncResult = { synced: 0, skipped: 0, taskSkipped: 0, failed: 0, failedItems: [] }
   if (!activities || activities.length === 0) return result
 
   try {
@@ -2471,16 +2785,9 @@ export async function syncBatchActivitiesToGoogle(
     const scope = await resolveSyncScope(userId, auth, supabase, settings)
     if (!scope) throw new Error('No calendar ID')
 
-    // 살아있는 캘린더 집합을 1회만 수집해, 죽은 위치 정보가 타겟을 덮어쓰는 것을 막는다.
-    const validCalendarIds = new Set<string>(scope.readCalendarIds)
-    try {
-      const calendarList = await withRetry(() => calendar.calendarList.list({ maxResults: 250 }))
-      for (const item of calendarList.data.items || []) {
-        if (item.id && !item.deleted) validCalendarIds.add(item.id)
-      }
-    } catch (listErr) {
-      console.warn('Failed to list calendars for validation; falling back to sync scope only:', listErr)
-    }
+    // 예전에는 여기서 캘린더 목록을 받아 "저장된 위치가 아직 살아있는지" 검증했다.
+    // 이제 목적지는 저장된 위치가 아니라 설정이 정하고, 실존 여부는 placeEvent가
+    // 실제 조회로 확인하므로 이 왕복은 필요 없다.
 
     let processedCount = 0
     const limit = pLimit(3)
@@ -2489,8 +2796,10 @@ export async function syncBatchActivitiesToGoogle(
       limit(async () => {
         try {
           if (activity.type === 'TASK') {
+            result.taskSkipped++
             processedCount++
             onProgress?.({
+              id: activity.id,
               title: activity.title || '(할 일)',
               status: 'task_skipped',
               current: processedCount,
@@ -2502,57 +2811,54 @@ export async function syncBatchActivitiesToGoogle(
             ? activity.activity_category_map.map((acm: any) => acm.categories).filter(Boolean)
             : []
 
-          const storedCalendarId =
-            activity.google_calendar_id && validCalendarIds.has(activity.google_calendar_id)
-              ? activity.google_calendar_id
-              : null
-
-          let calendarId = storedCalendarId || mappedCalendarFor(categories, settings) || scope.writeCalendarId
+          // 목적지는 오직 설정(그룹 및 라우팅 → 기본 쓰기 캘린더)이 정한다.
+          // 현재 위치(google_calendar_id)를 우선하면 고급 설정을 바꿔도 반영되지 않는다.
+          const desiredCalendarId = desiredCalendarFor(categories, settings, scope)
 
           const eventBody = mapActivityToGoogleEvent(activity, categories, settings) as any
+
+          // 이미 최신이면 구글 왕복 자체를 건너뛴다.
+          // 해시에 목적지가 포함되어 있어 라우팅이 바뀌면 반드시 다시 계산된다.
+          const contentHash = eventPayloadHash(eventBody, desiredCalendarId)
+          if (
+            activity.google_event_id &&
+            activity.google_calendar_id === desiredCalendarId &&
+            activity.google_content_hash === contentHash
+          ) {
+            result.skipped++
+            processedCount++
+            onProgress?.({
+              id: activity.id,
+              title: activity.title,
+              status: 'skipped',
+              current: processedCount,
+            })
+            return
+          }
+
           if (activity.parent_activity_id) {
-            await attachRecurringParent(calendar, calendarId, activity, eventBody)
+            await attachRecurringParent(calendar, desiredCalendarId, activity, eventBody)
           }
 
-          const canonicalEventId = toGoogleEventId(activity.id)
-          const updateEventId = activity.google_event_id || canonicalEventId
+          // 이동이 필요하면 events.move로 **옮긴다**. 새로 만들면 원본이 남아 중복이 된다.
+          const placed = await placeEvent(calendar, {
+            activity,
+            eventBody,
+            desiredCalendarId,
+            candidateCalendarIds: scope.searchCalendarIds,
+            writableCalendarIds: scope.writableCalendarIds,
+          })
 
-          let event: calendar_v3.Schema$Event | null = null
-          let finalEventId = updateEventId
-
-          try {
-            const res = await withRetry(() =>
-              calendar.events.update({ calendarId, eventId: updateEventId, requestBody: eventBody })
-            )
-            event = res.data
-            finalEventId = res.data.id || updateEventId
-          } catch (updateErr: any) {
-            if (!isGoogleError(updateErr, 404) && !isGoogleError(updateErr, 410)) throw updateErr
-
-            const located = await locateExistingEvent(calendar, calendarId, activity)
-            if (located.calendarDead) {
-              invalidateCalendarCache(userId, calendarId)
-              calendarId = scope.writeCalendarId
-            }
-
-            if (located.event?.id) {
-              const res = await withRetry(() =>
-                calendar.events.update({
-                  calendarId,
-                  eventId: located.event!.id as string,
-                  requestBody: eventBody,
-                })
-              )
-              event = res.data
-              finalEventId = res.data.id || (located.event.id as string)
-            } else {
-              const inserted = await insertWithRecovery(calendar, calendarId, eventBody, canonicalEventId)
-              event = inserted.event
-              finalEventId = inserted.event?.id || canonicalEventId
-            }
-          }
-
-          await persistPushResult(supabase, userId, activity.id, calendarId, event, finalEventId)
+          const finalEventId = placed.event?.id || toGoogleEventId(activity.id)
+          await persistPushResult(
+            supabase,
+            userId,
+            activity.id,
+            placed.calendarId,
+            placed.event,
+            finalEventId,
+            eventPayloadHash(eventBody, placed.calendarId)
+          )
 
           result.synced++
           processedCount++
@@ -2575,13 +2881,16 @@ export async function syncBatchActivitiesToGoogle(
 
     await Promise.allSettled(tasks)
 
-    await logSyncHistory(supabase, {
-      userId,
-      calendarId: 'ALL',
-      action: 'BATCH_SYNC',
-      status: result.failed > 0 ? 'FAILED' : 'SUCCESS',
-      activityTitle: `배치 동기화: ${result.synced}건 반영, ${result.failed}건 실패`,
-    })
+    // 배치 하나하나가 아니라 작업 단위로 남기고 싶으므로, 실제로 구글에 쓴 게 있을 때만 기록한다.
+    if (result.synced > 0 || result.failed > 0) {
+      await logSyncHistory(supabase, {
+        userId,
+        calendarId: 'ALL',
+        action: 'BATCH_SYNC',
+        status: result.failed > 0 ? 'FAILED' : 'SUCCESS',
+        activityTitle: `배치 동기화: ${result.synced}건 반영, ${result.skipped}건 건너뜀, ${result.failed}건 실패`,
+      })
+    }
   } catch (error: any) {
     console.error('Failed to process batch sync:', error)
     await logSyncHistory(createAdminClient(), {

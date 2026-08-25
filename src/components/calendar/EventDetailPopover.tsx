@@ -50,7 +50,9 @@ export function EventDetailPopover() {
   if (!event) return null
 
   // 학사일정 시트에서 온 읽기 전용 이벤트 (메인 캘린더 노출분)
-  const isAcademic = event.id.startsWith('academic:')
+  const eventSource = event.calendar_source ?? (event.id.startsWith('academic:') ? 'academic' : 'activity')
+  const isAcademic = eventSource === 'academic'
+  const isNativeActivity = eventSource === 'activity'
 
   const handleRetrySync = async () => {
     setIsSyncing(true)
@@ -65,7 +67,7 @@ export function EventDetailPopover() {
       } else {
         toast.error(`연동 실패: ${res.error}`, { id: toastId })
       }
-    } catch (e: any) {
+    } catch {
       toast.error('연동 요청 중 오류가 발생했습니다.', { id: toastId })
     } finally {
       setIsSyncing(false)
@@ -152,7 +154,7 @@ export function EventDetailPopover() {
             )}
 
             {/* Sync Status */}
-            {!isAcademic && (
+            {isNativeActivity && (
             <div className="flex items-center gap-3">
               <div className="w-5 h-5 flex items-center justify-center shrink-0">
                 <svg viewBox="0 0 48 48" className="w-4 h-4 opacity-70">
@@ -203,7 +205,7 @@ export function EventDetailPopover() {
                 </button>
               </div>
             </div>
-          ) : (
+          ) : isNativeActivity ? (
           <div className="flex flex-col gap-3 px-5 py-4 border-t border-border/50 bg-slate-50/50">
             <div className="text-[11px] font-bold text-muted-foreground flex items-center gap-1.5 px-1">
               <span className="text-amber-500">💡</span>
@@ -235,6 +237,18 @@ export function EventDetailPopover() {
               </div>
             </div>
           </div>
+          ) : (
+            <div className="flex items-center justify-end gap-2 border-t border-border/50 bg-muted/30 px-5 py-4">
+              <button
+                onClick={() => {
+                  closeEventDetail()
+                  setViewMode(eventSource === 'agenda' ? 'archive_agenda' : 'anniversary')
+                }}
+                className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-indigo-700"
+              >
+                {eventSource === 'agenda' ? '아젠다에서 관리' : '기념일에서 관리'}
+              </button>
+            </div>
           )}
         </div>
       </div>

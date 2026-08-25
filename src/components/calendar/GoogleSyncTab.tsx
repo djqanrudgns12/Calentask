@@ -6,9 +6,9 @@ import { Globe2, Smartphone, Monitor, CheckCircle2, ChevronRight, AlertCircle, R
 import { createClient } from '@/lib/supabase/client'
 import { useUserProfile } from '@/hooks/useCalendarQueries'
 import { getGoogleCalendarListAction, startGoogleSyncAction, forceSyncNowAction, verifyGoogleTokenAction } from '@/app/actions/calendar'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion } from 'framer-motion'
 import { useQueryClient } from '@tanstack/react-query'
-import { SyncProgressModal } from './SyncProgressModal'
+import { useSyncJobControls } from '@/hooks/useSyncJob'
 import { WidgetGuideModal } from './WidgetGuideModal'
 import { AdvancedSyncSettingsModal } from './AdvancedSyncSettingsModal'
 import { useCategories } from '@/hooks/useCalendarQueries'
@@ -18,18 +18,14 @@ export function GoogleSyncTab() {
   const { data: profile, refetch: refetchProfile } = useUserProfile()
   const [authUser, setAuthUser] = useState<any>(null)
   
-  // Custom Sync State
-  const [isCustomOpen, setIsCustomOpen] = useState(false)
+  // 고급 설정 모달에 넘겨줄 구글 캘린더 목록
   const [calendarList, setCalendarList] = useState<any[]>([])
-  const [selectedCalendarId, setSelectedCalendarId] = useState('')
-  const [customCalendarName, setCustomCalendarName] = useState('')
-  
+
   // Loading States
   const [isLinking, setIsLinking] = useState(false)
   const [isUnlinking, setIsUnlinking] = useState(false)
-  const [isLoadingCalendars, setIsLoadingCalendars] = useState(false)
   const [isSyncing, setIsSyncing] = useState(false)
-  const [isSyncModalOpen, setIsSyncModalOpen] = useState(false)
+  const { start: startExportJob } = useSyncJobControls()
 
   // Widget Guide State
   const [guideModalType, setGuideModalType] = useState<'desktop' | 'ios' | 'android' | null>(null)
@@ -121,46 +117,22 @@ export function GoogleSyncTab() {
     window.location.href = '/api/auth/google/sync'
   }
 
-  const handleOpenCustomSync = async () => {
-    setIsCustomOpen(true)
-    if (calendarList.length === 0) {
-      setIsLoadingCalendars(true)
-      try {
-        const cals = await getGoogleCalendarListAction()
-        setCalendarList(cals.filter((c: any) => c.id !== profile?.google_sync_calendar_id))
-      } catch (err) {
-        console.error(err)
-        alert('캘린더 목록을 불러오지 못했습니다.')
-      } finally {
-        setIsLoadingCalendars(false)
-      }
-    }
-  }
-
-  const handleStartSync = async (type: 'simple' | 'custom' | 'primary') => {
+  const handleStartSync = async (type: 'simple' | 'primary') => {
     setIsSyncing(true)
     try {
       if (type === 'simple') {
         await startGoogleSyncAction()
-      } else if (type === 'primary') {
-        // 구글 기본 캘린더로 직접 동기화 — 네이버 등 외부 서비스는 기본 캘린더만 미러링함
-        await startGoogleSyncAction('primary', 'Google 기본 캘린더')
       } else {
-        if (!selectedCalendarId) {
-          alert('캘린더를 선택해주세요.')
-          setIsSyncing(false)
-          return
-        }
-        const selectedCal = calendarList.find(c => c.id === selectedCalendarId)
-        await startGoogleSyncAction(selectedCalendarId, selectedCal?.summary)
+        // 구글 기본 캘린더로 직접 동기화 — 외부 앱이 기본으로 켜 두는 캘린더라 설정이 가장 적게 든다
+        await startGoogleSyncAction('primary', 'Google 기본 캘린더')
       }
       // 서버 DB가 업데이트 되었으므로 UI 리패치
       await queryClient.invalidateQueries({ queryKey: ['userProfile'] })
       await refetchProfile()
       setIsSyncing(false)
-      
-      // 청크 동기화 모달 띄우기
-      setIsSyncModalOpen(true)
+
+      // 내보내기 작업 시작 (서버가 끝까지 진행하므로 여기서 기다릴 필요가 없다)
+      await startExportJob()
     } catch (error) {
       console.error(error)
       alert('동기화 시작 중 오류가 발생했습니다.')
@@ -173,12 +145,13 @@ export function GoogleSyncTab() {
     try {
       // Pull (Google -> Calentask)
       await forceSyncNowAction()
-      
+
       await queryClient.invalidateQueries({ queryKey: ['userProfile'] })
       await refetchProfile()
-      
-      // Push (Calentask -> Google) via Chunk Modal
-      setIsSyncModalOpen(true)
+
+      // Push (Calentask -> Google). 서버 주도 작업이라 이 화면을 벗어나도 계속된다.
+      // 이미 돌고 있는 작업이 있으면 새로 시작하지 않고 거기에 붙는다(진행률 유실 방지).
+      await startExportJob()
     } catch (err) {
       console.error(err)
       alert('동기화 중 오류가 발생했습니다.')
@@ -390,7 +363,7 @@ export function GoogleSyncTab() {
                       </div>
                     </div>
                     <p className="text-sm text-slate-600 mb-6 flex-1 relative z-10">
-                      구글의 ‘기본 캘린더’에 직접 일정을 기록합니다. 네이버 캘린더 등 외부 서비스는 구글 기본 캘린더만 가져오므로, 외부 연동이 필요하다면 이 방식을 선택하세요.
+                      구글의 ‘기본 캘린더’에 직접 일정을 기록합니다. 외부 앱은 대개 기본 캘린더를 처음부터 켜 둔 상태로 가져오므로, 설정을 최소화하고 싶다면 이 방식이 편합니다.
                     </p>
                     <Button className="w-full bg-emerald-600 hover:bg-emerald-700 shadow-md relative z-10" disabled={isSyncing} size="lg">
                       {isSyncing ? '동기화 중...' : '기본 캘린더로 시작하기'}
@@ -564,16 +537,10 @@ export function GoogleSyncTab() {
         </div>
       </div>
 
-      <SyncProgressModal 
-        isOpen={isSyncModalOpen} 
-        onClose={() => setIsSyncModalOpen(false)}
-        onSuccess={() => {
-          queryClient.invalidateQueries({ queryKey: ['userProfile'] })
-          refetchProfile()
-        }}
-      />
+      {/* 진행 상황 창은 앱 셸(CalendarClient)에 상주한다.
+          이 탭을 벗어나도 작업이 끊기지 않도록 하기 위함. */}
 
-      <WidgetGuideModal 
+      <WidgetGuideModal
         type={guideModalType} 
         isOpen={guideModalType !== null} 
         onClose={() => setGuideModalType(null)} 

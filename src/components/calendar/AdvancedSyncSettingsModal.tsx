@@ -1,12 +1,14 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, AlertTriangle, CheckCircle2, RefreshCw, Filter, Shield, Settings2, FolderTree, ArrowRightLeft, ArrowDownToLine, ArrowUpFromLine, Trash2, Plus, GripVertical, Lock, Unlock, Clock } from 'lucide-react'
-import { getGoogleSyncSettingsAction, updateGoogleSyncSettingsAction, clearGoogleSyncDataAction, createGoogleCalendarAction, updateGoogleCalendarMetaAction, deleteGoogleCalendarAction, migrateActivitiesBetweenCalendarsAction } from '@/app/actions/calendar'
+import { X, AlertTriangle, CheckCircle2, RefreshCw, Filter, Shield, Settings2, FolderTree, ArrowRightLeft, ArrowDownToLine, ArrowUpFromLine, Trash2, Plus, GripVertical, Lock, Unlock, Clock, CalendarDays } from 'lucide-react'
+import { getGoogleSyncSettingsAction, updateGoogleSyncSettingsAction, clearGoogleSyncDataAction, createGoogleCalendarAction, updateGoogleCalendarMetaAction, deleteGoogleCalendarAction, migrateActivitiesBetweenCalendarsAction, startGoogleSyncAction } from '@/app/actions/calendar'
+import { useUserProfile } from '@/hooks/useCalendarQueries'
 import { SyncHistoryTab } from './SyncHistoryTab'
 import { Button } from '@/components/ui/button'
-import { DndContext, DragOverlay, closestCorners, closestCenter, pointerWithin, KeyboardSensor, PointerSensor, useSensor, useSensors, useDroppable, defaultDropAnimationSideEffects } from '@dnd-kit/core'
+import { DndContext, DragOverlay, pointerWithin, KeyboardSensor, PointerSensor, useSensor, useSensors, useDroppable, defaultDropAnimationSideEffects } from '@dnd-kit/core'
 import { SortableContext, useSortable, verticalListSortingStrategy, arrayMove } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 const GOOGLE_COLORS = [
@@ -47,6 +49,29 @@ export function AdvancedSyncSettingsModal({ isOpen, onClose, onStartSync, calend
   const [localGroups, setLocalGroups] = useState<Record<string, any[]>>({})
   
   const [isCreatingCalendar, setIsCreatingCalendar] = useState(false)
+
+  // 미배정 카테고리가 떨어지는 '기본 대상 캘린더'
+  const { data: profile, refetch: refetchProfile } = useUserProfile()
+  const [isChangingDefault, setIsChangingDefault] = useState(false)
+  const defaultCalendarId = profile?.google_sync_calendar_id || ''
+  const unassignedCount = (localGroups['unassigned'] || []).length
+
+  const handleChangeDefaultCalendar = async (calendarId: string) => {
+    if (!calendarId || calendarId === defaultCalendarId) return
+    const target = localCalendarList.find(c => c.id === calendarId)
+    setIsChangingDefault(true)
+    try {
+      // 기존 액션이 캘린더 지정 + watch 재등록까지 함께 처리한다.
+      await startGoogleSyncAction(calendarId, target?.summary || '기본 캘린더')
+      await refetchProfile()
+      setSaveMessage('기본 캘린더 변경됨')
+      setTimeout(() => setSaveMessage(''), 2000)
+    } catch {
+      setSaveMessage('변경 실패')
+    } finally {
+      setIsChangingDefault(false)
+    }
+  }
 
   // Memoize sensors to avoid re-initialization on render
   const sensors = useSensors(
@@ -118,7 +143,7 @@ export function AdvancedSyncSettingsModal({ isOpen, onClose, onStartSync, calend
       await updateGoogleSyncSettingsAction(newSettings)
       setSaveMessage('저장 완료')
       setTimeout(() => setSaveMessage(''), 2000)
-    } catch (e) {
+    } catch {
       setSaveMessage('저장 실패')
     } finally {
       setIsSaving(false)
@@ -172,7 +197,7 @@ export function AdvancedSyncSettingsModal({ isOpen, onClose, onStartSync, calend
       const overItems = prev[overContainer]
       
       const activeIndex = activeItems.findIndex(c => `cat_${c.id}` === active.id)
-      let overIndex = overItems.findIndex(c => `cat_${c.id}` === overId)
+      const overIndex = overItems.findIndex(c => `cat_${c.id}` === overId)
       
       const isBelowOverItem =
         over &&
@@ -393,7 +418,7 @@ export function AdvancedSyncSettingsModal({ isOpen, onClose, onStartSync, calend
                           <ArrowDownToLine className="w-5 h-5 text-indigo-500" /> 외부 캘린더 수신 범위
                         </h3>
                         <p className="text-xs sm:text-sm text-slate-500 mb-4 leading-relaxed">
-                          네이버 캘린더처럼 구글과 연동된 외부 서비스는 보통 구글 <b>기본 캘린더</b>에 일정을 기록합니다.
+                          외부 앱에서 캘린더를 따로 고르지 않고 일정을 만들면 보통 구글 <b>기본 캘린더</b>에 저장됩니다.
                           여기에서 선택한 캘린더의 변경 사항까지 Calentask가 실시간으로 받아옵니다.
                         </p>
 
@@ -469,6 +494,50 @@ export function AdvancedSyncSettingsModal({ isOpen, onClose, onStartSync, calend
                           <p className="text-xs sm:text-sm text-indigo-700/80 mt-1 leading-relaxed">
                             카테고리를 드래그 앤 드롭하여 목적지 구글 캘린더를 지정하세요. 캘린더 아이콘 우측의 톱니바퀴로 색상과 이름을 원격 제어할 수 있습니다.
                           </p>
+                        </div>
+                      </div>
+
+                      {/* 미배정 카테고리는 '기본 대상 캘린더'로 떨어진다.
+                          그 캘린더가 외부 앱(네이버 등)에서 꺼져 있으면 그 일정만 보이지 않으므로,
+                          어디로 떨어지는지 보여 주고 바꿀 수 있게 한다. */}
+                      <div className={`p-4 sm:p-5 rounded-2xl border ${
+                        unassignedCount > 0 ? 'bg-amber-50 border-amber-200' : 'bg-slate-50 border-slate-200'
+                      }`}>
+                        <div className="flex items-start gap-4">
+                          <CalendarDays className={`w-6 h-6 shrink-0 mt-0.5 ${
+                            unassignedCount > 0 ? 'text-amber-500' : 'text-slate-400'
+                          }`} />
+                          <div className="flex-1 min-w-0">
+                            <h4 className="font-bold text-slate-900 text-base sm:text-lg">
+                              기본 대상 캘린더
+                            </h4>
+                            <p className="text-xs sm:text-sm text-slate-600 mt-1 leading-relaxed">
+                              아래 어느 그룹에도 배정되지 않은 카테고리의 일정이 여기로 저장됩니다.
+                              {unassignedCount > 0 && (
+                                <b className="text-amber-700"> 현재 미배정 카테고리가 {unassignedCount}개 있습니다.</b>
+                              )}
+                            </p>
+
+                            <select
+                              value={defaultCalendarId}
+                              onChange={e => handleChangeDefaultCalendar(e.target.value)}
+                              disabled={isChangingDefault || localCalendarList.length === 0}
+                              className="mt-3 w-full px-3 py-2.5 rounded-xl border border-slate-200 bg-white text-sm font-semibold text-slate-800 disabled:opacity-50"
+                            >
+                              {localCalendarList.length === 0 && <option value="">캘린더 목록을 불러오는 중...</option>}
+                              {localCalendarList.map(cal => (
+                                <option key={cal.id} value={cal.id}>
+                                  {cal.summary}{cal.primary ? ' (기본)' : ''}
+                                </option>
+                              ))}
+                            </select>
+
+                            <p className="text-[11px] text-slate-500 mt-3 leading-relaxed">
+                              💡 네이버 캘린더는 구글의 각 캘린더를 <b>개별 항목으로</b> 가져갑니다.
+                              네이버 앱의 캘린더 목록에서 해당 캘린더가 <b>체크되어 있어야</b> 일정이 보입니다.
+                              특정 그룹만 네이버에 안 보인다면 먼저 그 체크박스를 확인해 주세요.
+                            </p>
+                          </div>
                         </div>
                       </div>
 
@@ -600,7 +669,7 @@ export function AdvancedSyncSettingsModal({ isOpen, onClose, onStartSync, calend
 function DroppableCalendarGroup({ calendar, categories, settings, onTogglePrivacy, onUpdateCalendarList, onDeleteCalendarGroup }: any) {
   const { setNodeRef, isOver } = useDroppable({ id: `cal_${calendar.id}` })
   const [isPopoverOpen, setIsPopoverOpen] = useState(false)
-  const [isUpdating, setIsUpdating] = useState(false) // handleDelete용으로 유지
+  const [, setIsUpdating] = useState(false) // 값은 읽지 않고 handleDelete의 진행 표시용으로만 유지
   const [editSummary, setEditSummary] = useState(calendar.summary)
   const isUnassigned = calendar.id === 'unassigned'
   const popoverRef = useRef<HTMLDivElement>(null)

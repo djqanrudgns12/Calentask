@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { format, subMonths, addMonths, subWeeks, addWeeks, startOfWeek, endOfWeek, isSameMonth, isSameYear } from 'date-fns'
-import { Menu, ChevronLeft, ChevronRight, Search, Sparkles, Bell, CalendarHeart, Activity, BrainCircuit, Home, Bookmark, NotebookPen, Tag, Trash2, PanelLeftOpen, Globe2, Utensils } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Search, Sparkles, Bell, CalendarHeart, BrainCircuit, Home, Bookmark, NotebookPen, Tag, Trash2, PanelLeftOpen, Globe2, Utensils } from 'lucide-react'
 import { useCalendarStore } from '@/store/useCalendarStore'
 import { GlobalCategoryFilter } from '@/components/calendar/GlobalCategoryFilter'
 import { CategoryPresetMenu } from '@/components/calendar/CategoryPresetMenu'
@@ -11,6 +11,8 @@ import { DatePickerPopover } from '@/components/calendar/DatePickerPopover'
 import { SpotlightSearch } from '@/components/calendar/SpotlightSearch'
 import { RefreshButton } from '@/components/calendar/RefreshButton'
 import { AnimatePresence, motion } from 'framer-motion'
+import { usePrefetchCalendarMonth } from '@/hooks/useCalendarMonth'
+import { toCalendarMonthKey } from '@/lib/calendarMonth'
 
 interface CalendarHeaderProps {
   onOpenSettings: () => void
@@ -27,8 +29,14 @@ export function CalendarHeader({ onOpenSettings, onOpenMobileSidebar }: Calendar
   const setSemesterYear = useCalendarStore(s => s.setSemesterYear)
   const setSemesterTerm = useCalendarStore(s => s.setSemesterTerm)
   const weekStartsOn = useCalendarStore(s => s.weekStartsOn)
+  const prefetchCalendarMonth = usePrefetchCalendarMonth()
 
   const [isSearchOpen, setIsSearchOpen] = useState(false)
+
+  const prefetchAdjacentMonth = (delta: -1 | 1) => {
+    if (viewMode !== 'monthly') return
+    void prefetchCalendarMonth(toCalendarMonthKey(addMonths(currentDate, delta)))
+  }
 
   // 뷰별 네비게이션 로직
   const handlePrev = () => {
@@ -124,7 +132,7 @@ export function CalendarHeader({ onOpenSettings, onOpenMobileSidebar }: Calendar
   const isSchoolMeals = viewMode === 'school_meals'
   const isSchoolSchedule = viewMode === 'school_schedule'
 
-  let wrapperClassName = "flex-1 flex flex-row items-center justify-between rounded-xl md:rounded-[2rem] px-2 py-1.5 md:px-4 md:py-2.5 gap-2 md:gap-4 transition-all duration-500 overflow-hidden relative "
+  let wrapperClassName = `flex-1 flex flex-row items-center justify-between rounded-xl md:rounded-[2rem] px-2 py-1.5 md:px-4 ${viewMode === 'monthly' ? 'md:py-1.5' : 'md:py-2.5'} gap-2 md:gap-4 transition-all duration-500 overflow-hidden relative `
 
   if (isHome) {
     wrapperClassName += "bg-card/90 backdrop-blur-xl shadow-[0_10px_40px_-10px_rgba(139,92,246,0.15)] border border-violet-100/80"
@@ -491,16 +499,16 @@ export function CalendarHeader({ onOpenSettings, onOpenMobileSidebar }: Calendar
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -10 }}
-          className="flex-1 flex flex-row items-center justify-center gap-2 md:gap-4 overflow-x-auto hide-scrollbar w-full"
+          className="flex-1 flex flex-row items-center justify-start md:justify-center gap-2 md:gap-4 overflow-x-auto hide-scrollbar w-full"
         >
           <div className="flex items-center space-x-1 sm:space-x-2 shrink-0">
-            <button onClick={handlePrev} className="p-2 rounded-full hover:bg-muted text-muted-foreground transition-colors">
+            <button onClick={handlePrev} onPointerEnter={() => prefetchAdjacentMonth(-1)} onFocus={() => prefetchAdjacentMonth(-1)} className="p-2 rounded-full hover:bg-muted text-muted-foreground transition-colors">
               <ChevronLeft className="w-5 h-5" />
             </button>
             <DatePickerPopover>
               {renderHeaderTitle()}
             </DatePickerPopover>
-            <button onClick={handleNext} className="p-2 rounded-full hover:bg-muted text-muted-foreground transition-colors">
+            <button onClick={handleNext} onPointerEnter={() => prefetchAdjacentMonth(1)} onFocus={() => prefetchAdjacentMonth(1)} className="p-2 rounded-full hover:bg-muted text-muted-foreground transition-colors">
               <ChevronRight className="w-5 h-5" />
             </button>
             <button onClick={handleToday} className="px-3 py-1.5 rounded-full bg-muted hover:bg-slate-200 text-[11px] md:text-xs font-bold text-foreground transition-colors ml-1 min-h-[32px]">
@@ -515,6 +523,12 @@ export function CalendarHeader({ onOpenSettings, onOpenMobileSidebar }: Calendar
               <button
                 key={mode}
                 onClick={() => setViewMode(mode)}
+                onPointerEnter={() => {
+                  if (mode === 'monthly') void import('@/components/calendar/MonthlyView')
+                }}
+                onFocus={() => {
+                  if (mode === 'monthly') void import('@/components/calendar/MonthlyView')
+                }}
                 className={`px-2.5 py-1.5 md:px-3 md:py-1.5 rounded-full text-[11px] md:text-xs font-bold transition-all whitespace-nowrap min-h-[32px] ${
                   viewMode === mode ? 'bg-card text-blue-600 shadow-sm ring-1 ring-border/50' : 'text-muted-foreground hover:text-foreground'
                 }`}
@@ -588,7 +602,7 @@ export function CalendarHeader({ onOpenSettings, onOpenMobileSidebar }: Calendar
 
   return (
     <>
-      <header className="px-2 sm:px-6 py-2 sm:py-4 w-full z-20 relative">
+      <header className={`px-2 sm:px-6 ${viewMode === 'monthly' ? 'py-1.5 sm:py-2' : 'py-2 sm:py-4'} w-full z-20 relative`}>
         <div className="flex w-full items-center gap-2">
           {/* Mobile Sidebar Trigger */}
           {onOpenMobileSidebar && (

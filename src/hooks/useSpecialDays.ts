@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { SpecialDaysMap } from '@/app/api/holidays/route'
+import type { SpecialDaysMap } from '@/types/calendarMonth'
 
 export function useSpecialDays(year: number) {
   return useQuery({

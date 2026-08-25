@@ -18,15 +18,15 @@ function TooltipProvider({
   )
 }
 
-function Tooltip({ ...props }: TooltipPrimitive.Root.Props) {
+function Tooltip<Payload = unknown>({ ...props }: TooltipPrimitive.Root.Props<Payload>) {
   return <TooltipPrimitive.Root data-slot="tooltip" {...props} />
 }
 
-function TooltipTrigger({
+function TooltipTrigger<Payload = unknown>({
   asChild,
   children,
   ...props
-}: TooltipPrimitive.Trigger.Props & { asChild?: boolean }) {
+}: TooltipPrimitive.Trigger.Props<Payload> & { asChild?: boolean }) {
   if (asChild && React.isValidElement(children)) {
     return (
       <TooltipPrimitive.Trigger data-slot="tooltip-trigger" render={children} {...props} />
@@ -37,6 +37,7 @@ function TooltipTrigger({
 
 function TooltipContent({
   className,
+  anchor,
   side = "top",
   sideOffset = 4,
   align = "center",
@@ -46,11 +47,12 @@ function TooltipContent({
 }: TooltipPrimitive.Popup.Props &
   Pick<
     TooltipPrimitive.Positioner.Props,
-    "align" | "alignOffset" | "side" | "sideOffset"
+    "align" | "alignOffset" | "anchor" | "side" | "sideOffset"
   >) {
   return (
     <TooltipPrimitive.Portal>
       <TooltipPrimitive.Positioner
+        anchor={anchor}
         align={align}
         alignOffset={alignOffset}
         side={side}

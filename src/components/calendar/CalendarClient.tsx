@@ -1,73 +1,101 @@
-/* eslint-disable react-hooks/set-state-in-effect */
-/* eslint-disable @next/next/no-img-element */
 'use client'
 
-import { useState, useEffect, useRef, useMemo } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react'
+import Image from 'next/image'
 import { useSwipeable } from 'react-swipeable'
-import { useCalendarStore } from '@/store/useCalendarStore'
+import { useCalendarStore, type ViewMode } from '@/store/useCalendarStore'
 import { useArchiveStore } from '@/store/useArchiveStore'
 import { useAgendaStore } from '@/store/useAgendaStore'
 import { Button } from '@/components/ui/button'
 import { Plus, Tags, Database, LogOut, Calendar as CalendarIcon, DownloadCloud, Gift, Sparkles, ChevronDown, Archive, NotebookPen, Bookmark, Trash2, Settings, Home, Puzzle, Globe2, Utensils, GraduationCap } from 'lucide-react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
 
 import { startOfWeek, endOfWeek } from 'date-fns'
 import { DndContext, MouseSensor, TouchSensor, useSensor, useSensors, DragOverlay } from '@dnd-kit/core'
 import { useEventDragDrop } from '@/hooks/useEventDragDrop'
-import { useActivities, expandActivities } from '@/hooks/useCalendarQueries'
-import { type Activity, getActivities } from '@/app/actions/calendar'
+import { useActivities } from '@/hooks/useCalendarQueries'
+import { type Activity } from '@/app/actions/calendar'
+import { getCalendarEventDetail } from '@/app/actions/calendarMonth'
 import { logout } from '@/app/actions/auth'
 import { useQueryClient } from '@tanstack/react-query'
-import { AddEventDialog } from '@/components/calendar/AddEventDialog'
-import { MonthlyView } from '@/components/calendar/MonthlyView'
-import { WeeklyView } from '@/components/calendar/WeeklyView'
-import { ListView } from '@/components/calendar/ListView'
-import { SemesterView } from '@/components/calendar/SemesterView'
-
-
-import { LinkLoungeView } from '@/components/link-lounge/LinkLoungeView';
-
-import { DaySummarySheet } from '@/components/calendar/DaySummarySheet'
-import { EventDetailPopover } from '@/components/calendar/EventDetailPopover'
-import { DeleteConfirmDialog } from '@/components/calendar/DeleteConfirmDialog'
-import { EditCategoryDialog } from '@/components/calendar/EditCategoryDialog'
-import { SettingsModal } from '@/components/profile/SettingsModal'
-import { TagsView } from '@/components/data-center/TagsView'
-import { TrashView } from '@/components/data-center/TrashView'
-import { ClearAllDataDialog } from '@/components/profile/ClearAllDataDialog'
 import { CalendarHeader } from '@/components/calendar/CalendarHeader'
-import { AnniversaryConfetti } from '@/components/anniversary/AnniversaryConfetti'
-import { AddAgendaTaskDialog } from '@/components/archive/AddAgendaTaskDialog'
-import { UpcomingAnniversaryWidget } from '@/components/anniversary/UpcomingAnniversaryWidget'
 import { useAnniversaryOverlay } from '@/hooks/useAnniversaryOverlay'
-import { AnniversarySettingsView } from '@/components/anniversary/AnniversarySettingsView'
-import { GoogleSyncTab } from '@/components/calendar/GoogleSyncTab'
-import InsightsClient from '@/app/insights/InsightsClient'
-import { ArchiveNotesView } from '@/components/archive/ArchiveNotesView'
-import { ArchiveAgendaView } from '@/components/archive/ArchiveAgendaView'
-import { HomeDashboard } from '@/components/home/HomeDashboard'
+import { useSyncJobSubscription } from '@/hooks/useSyncJob'
 import { BottomNavigation } from '@/components/ui/BottomNavigation'
-import { CommandPalette } from '@/components/ui/CommandPalette'
 import { MobileCategoryBar } from '@/components/calendar/MobileCategoryBar'
 import { MobileSidebar } from '@/components/ui/MobileSidebar'
-import { SchoolMealsClient } from '@/components/school-meals/SchoolMealsClient'
-import { SchoolScheduleClient } from '@/components/school-schedule/SchoolScheduleClient'
-import { AcademicDataClient } from '@/components/school-schedule/AcademicDataClient'
 import dynamic from 'next/dynamic'
+import { useCalendarMonth } from '@/hooks/useCalendarMonth'
+import { calendarSummaryToActivity, getAdjacentMonthKey, toCalendarMonthKey } from '@/lib/calendarMonth'
+import type { CalendarEventSummary } from '@/types/calendarMonth'
 
+const MonthlyView = dynamic(() => import('@/components/calendar/MonthlyView').then(module => module.MonthlyView), { ssr: false })
+const WeeklyView = dynamic(() => import('@/components/calendar/WeeklyView').then(module => module.WeeklyView), { ssr: false })
+const ListView = dynamic(() => import('@/components/calendar/ListView').then(module => module.ListView), { ssr: false })
+const SemesterView = dynamic(() => import('@/components/calendar/SemesterView').then(module => module.SemesterView), { ssr: false })
+const LinkLoungeView = dynamic(() => import('@/components/link-lounge/LinkLoungeView').then(module => module.LinkLoungeView), { ssr: false })
+const TagsView = dynamic(() => import('@/components/data-center/TagsView').then(module => module.TagsView), { ssr: false })
+const TrashView = dynamic(() => import('@/components/data-center/TrashView').then(module => module.TrashView), { ssr: false })
+const AnniversarySettingsView = dynamic(() => import('@/components/anniversary/AnniversarySettingsView').then(module => module.AnniversarySettingsView), { ssr: false })
+const GoogleSyncTab = dynamic(() => import('@/components/calendar/GoogleSyncTab').then(module => module.GoogleSyncTab), { ssr: false })
+const InsightsClient = dynamic(() => import('@/app/insights/InsightsClient'), { ssr: false })
+const ArchiveNotesView = dynamic(() => import('@/components/archive/ArchiveNotesView').then(module => module.ArchiveNotesView), { ssr: false })
+const ArchiveAgendaView = dynamic(() => import('@/components/archive/ArchiveAgendaView').then(module => module.ArchiveAgendaView), { ssr: false })
+const HomeDashboard = dynamic(() => import('@/components/home/HomeDashboard').then(module => module.HomeDashboard), { ssr: false })
+const SchoolMealsClient = dynamic(() => import('@/components/school-meals/SchoolMealsClient').then(module => module.SchoolMealsClient), { ssr: false })
+const SchoolScheduleClient = dynamic(() => import('@/components/school-schedule/SchoolScheduleClient').then(module => module.SchoolScheduleClient), { ssr: false })
+const AcademicDataClient = dynamic(() => import('@/components/school-schedule/AcademicDataClient').then(module => module.AcademicDataClient), { ssr: false })
+const AddEventDialog = dynamic(() => import('@/components/calendar/AddEventDialog').then(module => module.AddEventDialog), { ssr: false })
+const DaySummarySheet = dynamic(() => import('@/components/calendar/DaySummarySheet').then(module => module.DaySummarySheet), { ssr: false })
+const EventDetailPopover = dynamic(() => import('@/components/calendar/EventDetailPopover').then(module => module.EventDetailPopover), { ssr: false })
+const DeleteConfirmDialog = dynamic(() => import('@/components/calendar/DeleteConfirmDialog').then(module => module.DeleteConfirmDialog), { ssr: false })
+const EditCategoryDialog = dynamic(() => import('@/components/calendar/EditCategoryDialog').then(module => module.EditCategoryDialog), { ssr: false })
+const SettingsModal = dynamic(() => import('@/components/profile/SettingsModal').then(module => module.SettingsModal), { ssr: false })
+const ClearAllDataDialog = dynamic(() => import('@/components/profile/ClearAllDataDialog').then(module => module.ClearAllDataDialog), { ssr: false })
+const AnniversaryConfetti = dynamic(() => import('@/components/anniversary/AnniversaryConfetti').then(module => module.AnniversaryConfetti), { ssr: false })
+const AddAgendaTaskDialog = dynamic(() => import('@/components/archive/AddAgendaTaskDialog').then(module => module.AddAgendaTaskDialog), { ssr: false })
+const UpcomingAnniversaryWidget = dynamic(() => import('@/components/anniversary/UpcomingAnniversaryWidget').then(module => module.UpcomingAnniversaryWidget), { ssr: false })
+const SyncProgressModal = dynamic(() => import('@/components/calendar/SyncProgressModal').then(module => module.SyncProgressModal), { ssr: false })
+const SyncStatusPill = dynamic(() => import('@/components/calendar/SyncProgressModal').then(module => module.SyncStatusPill), { ssr: false })
+const CommandPalette = dynamic(() => import('@/components/ui/CommandPalette').then(module => module.CommandPalette), { ssr: false })
 const TemplateCenterTab = dynamic(() => import('@/components/insights/TemplateCenterTab'), { ssr: false })
 // xlsx·papaparse를 초기 번들에서 분리하기 위해 지연 로딩
 const NiceImportView = dynamic(() => import('@/components/calendar/NiceImportView').then(m => m.NiceImportView), { ssr: false })
 
+const CALENDAR_VIEWS = ['monthly', 'weekly', 'list', 'semester'] as const
+type CalendarViewMode = (typeof CALENDAR_VIEWS)[number]
+type MajorView = ViewMode | 'CALENDAR_GROUP'
+const MAJOR_VIEWS: readonly MajorView[] = [
+  'home', 'school_meals', 'CALENDAR_GROUP', 'school_schedule', 'academic_data',
+  'archive_agenda', 'anniversary', 'google_sync', 'archive_notes', 'link_lounge',
+  'insights', 'template_center', 'nice_import', 'tags', 'trash',
+]
+
+function isCalendarViewMode(mode: ViewMode): mode is CalendarViewMode {
+  return (CALENDAR_VIEWS as readonly ViewMode[]).includes(mode)
+}
+
 export function CalendarClient() {
-  const [mounted, setMounted] = useState(false)
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false)
   const [settingsTab, setSettingsTab] = useState<'profile' | 'calendar' | 'display'>('profile')
   const queryClient = useQueryClient()
-  const router = useRouter()
-  
+  const prefersReducedMotion = useReducedMotion()
+
+  // 구글 내보내기 작업 구독. 앱 셸에서 한 번만 호출해 중복 구독을 피한다.
+  // 멈춘(PAUSED/heartbeat 끊김) 작업을 자동으로 이어받는 것도 여기서 처리한다.
+  useSyncJobSubscription()
+
+  useEffect(() => {
+    const preload = () => { void import('@/components/calendar/MonthlyView') }
+    if (typeof window.requestIdleCallback === 'function') {
+      const idleId = window.requestIdleCallback(preload, { timeout: 1800 })
+      return () => window.cancelIdleCallback(idleId)
+    }
+    const timer = globalThis.setTimeout(preload, 900)
+    return () => globalThis.clearTimeout(timer)
+  }, [])
+
   // 필드별 셀렉터: 다이얼로그 등 일시 상태 변경 시 불필요한 전체 리렌더 방지
   const currentDate = useCalendarStore(s => s.currentDate)
   const viewMode = useCalendarStore(s => s.viewMode)
@@ -77,75 +105,43 @@ export function CalendarClient() {
   const activeCategories = useCalendarStore(s => s.activeCategories)
   const resetStore = useCalendarStore(s => s.resetStore)
   const weekStartsOn = useCalendarStore(s => s.weekStartsOn)
+  const openEventDetail = useCalendarStore(s => s.openEventDetail)
+  const openEditEvent = useCalendarStore(s => s.openEditEvent)
+  const openAddEvent = useCalendarStore(s => s.openAddEvent)
 
   // --- 스와이프 전역 모바일 뷰 전환 (Swipe Navigation) 상태 ---
-  const CALENDAR_VIEWS = ['monthly', 'weekly', 'list', 'semester'] as const;
-  const MAJOR_VIEWS = [
-    'home',
-    'school_meals',
-    'CALENDAR_GROUP',
-    'school_schedule',
-    'academic_data',
-    'archive_agenda',
-    'anniversary',
-    'google_sync',
-    'archive_notes',
-    'link_lounge',
-    'insights',
-    'template_center',
-    'nice_import',
-    'tags',
-    'trash'
-  ] as const;
-
   // 마지막으로 보던 캘린더 하위 뷰 기억
-  const lastCalendarViewRef = useRef<typeof viewMode>('monthly');
+  const lastCalendarViewRef = useRef<ViewMode>('monthly');
   useEffect(() => {
-    if (CALENDAR_VIEWS.includes(viewMode as any)) {
+    if (isCalendarViewMode(viewMode)) {
       lastCalendarViewRef.current = viewMode;
     }
   }, [viewMode]);
 
   // 현재 viewMode가 CALENDAR_VIEWS에 속하면 'CALENDAR_GROUP'으로 취급
-  const currentMajorView = CALENDAR_VIEWS.includes(viewMode as any) ? 'CALENDAR_GROUP' : viewMode;
+  const currentMajorView: MajorView = isCalendarViewMode(viewMode) ? 'CALENDAR_GROUP' : viewMode
 
-  const prevViewModeRef = useRef<typeof viewMode>(viewMode)
-  const prevViewMode = prevViewModeRef.current
-  const prevMajorView = CALENDAR_VIEWS.includes(prevViewMode as any) ? 'CALENDAR_GROUP' : prevViewMode;
-
-  useEffect(() => {
-    prevViewModeRef.current = viewMode
-  }, [viewMode])
-
-  const oldIndex = MAJOR_VIEWS.indexOf(prevMajorView as any)
-  const newIndex = MAJOR_VIEWS.indexOf(currentMajorView as any)
+  const slideDirection = 'left'
   // 동일한 그룹 내에서의 이동(예: monthly -> weekly 사이드바 클릭 등)일 경우 애니메이션 방향 계산 보완
-  let slideDirection = newIndex >= oldIndex ? 'left' : 'right'
-  if (oldIndex === newIndex) {
-     const oldSubIndex = CALENDAR_VIEWS.indexOf(prevViewMode as any);
-     const newSubIndex = CALENDAR_VIEWS.indexOf(viewMode as any);
-     slideDirection = newSubIndex >= oldSubIndex ? 'left' : 'right';
-  }
-
   const swipeHandlers = useSwipeable({
     onSwipedLeft: (e) => {
       // 스마트 스와이프 예외 로직: 가로 스크롤 영역이나 지정된 예외 요소에서의 스와이프 무시
       if ((e.event.target as HTMLElement).closest('.no-swipe, .overflow-x-auto, .overflow-x-scroll, .touch-pan-x, [data-no-swipe="true"]')) return;
 
-      const currentIndex = MAJOR_VIEWS.indexOf(currentMajorView as any)
+      const currentIndex = MAJOR_VIEWS.indexOf(currentMajorView)
       if (currentIndex !== -1 && currentIndex < MAJOR_VIEWS.length - 1) {
         const nextView = MAJOR_VIEWS[currentIndex + 1];
-        setViewMode((nextView === 'CALENDAR_GROUP' ? lastCalendarViewRef.current : nextView) as any)
+        setViewMode(nextView === 'CALENDAR_GROUP' ? lastCalendarViewRef.current : nextView)
       }
     },
     onSwipedRight: (e) => {
       // 스마트 스와이프 예외 로직
       if ((e.event.target as HTMLElement).closest('.no-swipe, .overflow-x-auto, .overflow-x-scroll, .touch-pan-x, [data-no-swipe="true"]')) return;
 
-      const currentIndex = MAJOR_VIEWS.indexOf(currentMajorView as any)
+      const currentIndex = MAJOR_VIEWS.indexOf(currentMajorView)
       if (currentIndex > 0) {
         const prevView = MAJOR_VIEWS[currentIndex - 1];
-        setViewMode((prevView === 'CALENDAR_GROUP' ? lastCalendarViewRef.current : prevView) as any)
+        setViewMode(prevView === 'CALENDAR_GROUP' ? lastCalendarViewRef.current : prevView)
       }
     },
     preventScrollOnSwipe: false, // 스크롤을 막지 않아 캘린더 세로 스크롤 허용
@@ -179,19 +175,22 @@ export function CalendarClient() {
   
   const queryStartDate = viewMode === 'semester' ? startOfWeek(semesterStartDate, { weekStartsOn }) : startDate
   const queryEndDate = viewMode === 'semester' ? endOfWeek(semesterEndDate, { weekStartsOn }) : endOfWeek(monthEnd, { weekStartsOn })
-  
-  // React Query Fetching
-  const { data: activitiesData } = useActivities(queryStartDate.toISOString(), queryEndDate.toISOString())
-  const { data: anniversaryEvents } = useAnniversaryOverlay(queryStartDate.toISOString(), queryEndDate.toISOString())
+
+  const legacyCalendarEnabled = ['weekly', 'list', 'semester'].includes(viewMode)
+  const monthKey = toCalendarMonthKey(currentDate)
+  const monthlyQuery = useCalendarMonth(monthKey, viewMode === 'monthly')
+  const { data: activitiesData } = useActivities(queryStartDate.toISOString(), queryEndDate.toISOString(), legacyCalendarEnabled)
+  const { data: anniversaryEvents } = useAnniversaryOverlay(queryStartDate.toISOString(), queryEndDate.toISOString(), legacyCalendarEnabled)
   
   // 가상 기념일 배열과 아젠다 스토어 연동 (Desktop 작업 내용과 맥북 작업 내용 호환)
   const { tasks: agendaTasksStore, fetchTasks: fetchAgendaTasks, isInitialized: isAgendaInitialized } = useAgendaStore()
 
+  const needsAgendaStore = legacyCalendarEnabled || viewMode === 'archive_agenda' || viewMode === 'home'
   useEffect(() => {
-    if (!isAgendaInitialized) {
+    if (needsAgendaStore && !isAgendaInitialized) {
       fetchAgendaTasks()
     }
-  }, [isAgendaInitialized, fetchAgendaTasks])
+  }, [fetchAgendaTasks, isAgendaInitialized, needsAgendaStore])
 
   const agendaEvents = useMemo(() => agendaTasksStore
     .filter(task => task.status !== 'trash' && task.deadline && task.is_calendar_registered === true)
@@ -214,7 +213,7 @@ export function CalendarClient() {
     }) as unknown as Activity[], [agendaTasksStore])
 
   // 참조 안정성을 유지해야 MonthlyView 등의 React.memo가 실효성을 가짐
-  const events = useMemo(() => {
+  const legacyEvents = useMemo(() => {
     const merged = [
       ...(activitiesData || []),
       ...((anniversaryEvents || []) as unknown as Activity[]),
@@ -230,9 +229,58 @@ export function CalendarClient() {
     return merged
   }, [activitiesData, anniversaryEvents, agendaEvents, activeCategories])
 
+  const monthlyEvents = useMemo(() => {
+    const snapshotEvents = monthlyQuery.data?.events ?? []
+    if (activeCategories.length === 0) return snapshotEvents
+    return snapshotEvents.filter(event => event.categories.some(category =>
+      activeCategories.includes(category.id) || category.id === 'agenda-category'))
+  }, [activeCategories, monthlyQuery.data?.events])
+
+  const monthlyActivities = useMemo(
+    () => monthlyEvents.map(calendarSummaryToActivity),
+    [monthlyEvents],
+  )
+  const events = viewMode === 'monthly' ? monthlyActivities : legacyEvents
+
+  const loadMonthlyDetail = useCallback(async (summary: CalendarEventSummary) => {
+    const detail = await getCalendarEventDetail(
+      summary.source,
+      summary.entityId,
+      summary.originalStartTime ?? summary.start,
+    )
+    if (!detail) return null
+    return {
+      ...detail,
+      id: summary.instanceId,
+      calendar_source: summary.source,
+      calendar_entity_id: summary.entityId,
+      calendar_is_summary: false,
+    } as Activity
+  }, [])
+
+  const handleMonthlyEventOpen = useCallback((summary: CalendarEventSummary) => {
+    const placeholder = calendarSummaryToActivity(summary)
+    openEventDetail(placeholder)
+    void loadMonthlyDetail(summary).then(detail => {
+      if (detail && useCalendarStore.getState().selectedEventDetail?.id === summary.instanceId) {
+        openEventDetail(detail)
+      }
+    }).catch(console.error)
+  }, [loadMonthlyDetail, openEventDetail])
+
+  const handleMonthlyEventEdit = useCallback((summary: CalendarEventSummary) => {
+    if (summary.source !== 'activity') {
+      handleMonthlyEventOpen(summary)
+      return
+    }
+    void loadMonthlyDetail(summary).then(detail => {
+      if (detail) openEditEvent(detail)
+    }).catch(console.error)
+  }, [handleMonthlyEventOpen, loadMonthlyDetail, openEditEvent])
+
   const { activeEvent, handleDragStart, handleDragEnd, handleDragCancel } = useEventDragDrop({
-    viewMode: viewMode as any,
-    events,
+    viewMode: viewMode === 'weekly' ? 'weekly' : 'monthly',
+    events: legacyEvents,
     startDateStr: queryStartDate.toISOString(),
     endDateStr: queryEndDate.toISOString()
   })
@@ -252,7 +300,6 @@ export function CalendarClient() {
   )
 
   useEffect(() => {
-    setMounted(true)
     // 아카이브 노트 렌더링 체감 속도를 0초로 만들기 위한 백그라운드 선탑재(Prefetching) 실행
     useArchiveStore.getState().prefetchArchive()
 
@@ -284,20 +331,25 @@ export function CalendarClient() {
       const channel = supabase.channel('db_realtime')
         // 캘린더 일정
         .on('postgres_changes', { event: '*', schema: 'public', table: 'activities' }, () =>
-          debounce('activities', () => invalidate([['activities'], ['pendingActivities'], ['deleted_activities']])))
+          debounce('activities', () => invalidate([['activities'], ['calendar-month'], ['pendingActivities'], ['deleted_activities']])))
         .on('postgres_changes', { event: '*', schema: 'public', table: 'activity_category_map' }, () =>
-          debounce('activities', () => invalidate([['activities']])))
+          debounce('activities', () => invalidate([['activities'], ['calendar-month']])))
         // 카테고리
         .on('postgres_changes', { event: '*', schema: 'public', table: 'categories' }, () =>
-          debounce('categories', () => invalidate([['categories'], ['activities']])))
+          debounce('categories', () => invalidate([['categories'], ['activities'], ['calendar-month']])))
         // 기념일
         .on('postgres_changes', { event: '*', schema: 'public', table: 'anniversaries' }, () =>
-          debounce('anniversaries', () => invalidate([['anniversaries'], ['anniversaries_list']])))
+          debounce('anniversaries', () => invalidate([['anniversaries'], ['anniversaries_list'], ['calendar-month']])))
         // Agenda 할일 (Zustand 스토어)
         .on('postgres_changes', { event: '*', schema: 'public', table: 'agenda_tasks' }, () =>
-          debounce('agenda', () => useAgendaStore.getState().fetchTasks()))
+          debounce('agenda', () => {
+            invalidate([['calendar-month']])
+            if (useCalendarStore.getState().viewMode !== 'monthly') useAgendaStore.getState().fetchTasks()
+          }))
         .on('postgres_changes', { event: '*', schema: 'public', table: 'agenda_subtasks' }, () =>
           debounce('agenda', () => useAgendaStore.getState().fetchTasks()))
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'academic_events' }, () =>
+          debounce('academic-events', () => invalidate([['calendar-month'], ['academic_events']])))
         // 아카이브 노트 (Zustand 스토어)
         .on('postgres_changes', { event: '*', schema: 'public', table: 'notes' }, () =>
           debounce('archive', () => useArchiveStore.getState().fetchTabs()))
@@ -348,30 +400,27 @@ export function CalendarClient() {
 
   // 인접 월(이전/다음 달) 프리패치 로직 (전략 4)
   useEffect(() => {
-    if (!mounted || viewMode !== 'monthly') return
+    if (viewMode !== 'monthly' || !monthlyQuery.data) return
 
-    const prevMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1)
-    const nextMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1)
-    
-    const prefetchMonth = async (monthDate: Date) => {
-      const start = startOfWeek(monthDate, { weekStartsOn })
-      const end = endOfWeek(new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, 0), { weekStartsOn })
-      
-      const startStr = start.toISOString()
-      const endStr = end.toISOString()
-
-      await queryClient.prefetchQuery({
-        queryKey: ['activities', startStr, endStr],
-        queryFn: async () => {
-          const rawActivities = await getActivities(startStr, endStr)
-          return expandActivities(rawActivities, startStr, endStr)
-        }
+    const prefetchAdjacent = () => {
+      ;([-1, 1] as const).forEach(delta => {
+        const adjacentMonth = getAdjacentMonthKey(monthKey, delta)
+        void queryClient.prefetchQuery({
+          queryKey: ['calendar-month', adjacentMonth],
+          queryFn: () => import('@/app/actions/calendarMonth').then(module => module.getCalendarMonthSnapshot(adjacentMonth)),
+          staleTime: 5 * 60 * 1000,
+          gcTime: 30 * 60 * 1000,
+        })
       })
     }
-    
-    prefetchMonth(prevMonth).catch(console.error)
-    prefetchMonth(nextMonth).catch(console.error)
-  }, [currentDate, weekStartsOn, mounted, queryClient, viewMode])
+
+    if ('requestIdleCallback' in window) {
+      const idleId = window.requestIdleCallback(prefetchAdjacent, { timeout: 1500 })
+      return () => window.cancelIdleCallback(idleId)
+    }
+    const timer = globalThis.setTimeout(prefetchAdjacent, 250)
+    return () => globalThis.clearTimeout(timer)
+  }, [monthKey, monthlyQuery.data, queryClient, viewMode])
 
   return (
     <div className="flex h-[100dvh] overflow-hidden bg-background">
@@ -379,7 +428,7 @@ export function CalendarClient() {
       <aside className="hidden md:flex flex-col w-64 bg-sidebar border-r border-sidebar-border h-full shrink-0 relative shadow-sm">
         <div className="p-6 pb-2 flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <img src="/icon.png" alt="Calentask Logo" className="w-8 h-8 rounded-xl object-cover shadow-sm" />
+            <Image src="/icon-192x192.png" alt="Calentask 로고" width={32} height={32} priority className="h-8 w-8 rounded-xl object-cover shadow-sm" />
             <span className="text-xl font-extrabold tracking-tight text-foreground">Calentask</span>
           </div>
           <button 
@@ -724,40 +773,44 @@ export function CalendarClient() {
           onDragEnd={handleDragEnd}
           onDragCancel={handleDragCancel}
         >
-          <div className="flex-1 overflow-y-auto overflow-x-hidden px-1 md:px-8 pb-8 flex flex-col" {...swipeHandlers}>
-            {!mounted ? (
-              <div className="flex h-full w-full items-center justify-center">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-              </div>
-            ) : (
+          <div className={`flex flex-1 flex-col overflow-y-auto overflow-x-hidden ${viewMode === 'monthly' ? 'px-1.5 pb-2 md:px-4 md:pb-4' : 'px-1 pb-8 md:px-8'}`} {...swipeHandlers}>
               <AnimatePresence mode="wait" custom={slideDirection}>
                 <motion.div
                   key={viewMode}
                   custom={slideDirection}
                   variants={{
                     enter: (direction: string) => ({
-                      x: direction === 'left' ? '20%' : '-20%',
-                      opacity: 0,
+                      x: prefersReducedMotion && viewMode === 'monthly' ? 0 : direction === 'left' ? '20%' : '-20%',
+                      opacity: prefersReducedMotion && viewMode === 'monthly' ? 1 : 0,
                     }),
                     center: {
                       x: 0,
                       opacity: 1,
                     },
                     exit: (direction: string) => ({
-                      x: direction === 'left' ? '-20%' : '20%',
-                      opacity: 0,
+                      x: prefersReducedMotion && viewMode === 'monthly' ? 0 : direction === 'left' ? '-20%' : '20%',
+                      opacity: prefersReducedMotion && viewMode === 'monthly' ? 1 : 0,
                     }),
                   }}
                   initial="enter"
                   animate="center"
                   exit="exit"
-                  transition={{ type: 'spring', stiffness: 350, damping: 35 }}
+                  transition={prefersReducedMotion && viewMode === 'monthly' ? { duration: 0 } : { type: 'spring', stiffness: 350, damping: 35 }}
                   className="w-full flex-1 flex flex-col min-h-0"
                 >
                   {/* 모바일 카테고리 필터 바 — 캘린더 뷰에서만 표시, 캘린더와 함께 스크롤 */}
                   {isMyCalendarActive && <MobileCategoryBar />}
 
-                {viewMode === 'monthly' && <MonthlyView currentDate={currentDate} events={events} />}
+                {viewMode === 'monthly' && (
+                  <MonthlyView
+                    currentDate={currentDate}
+                    events={monthlyEvents}
+                    specialDays={monthlyQuery.data?.specialDays ?? {}}
+                    isLoading={monthlyQuery.isFetching && !monthlyQuery.data}
+                    onEventOpen={handleMonthlyEventOpen}
+                    onEventEdit={handleMonthlyEventEdit}
+                  />
+                )}
                 {viewMode === 'weekly' && <WeeklyView currentDate={currentDate} events={events} />}
                 {viewMode === 'list' && <ListView currentDate={currentDate} events={events} />}
                 {viewMode === 'semester' && <SemesterView currentDate={currentDate} events={events} />}
@@ -821,7 +874,6 @@ export function CalendarClient() {
                 )}
                 </motion.div>
               </AnimatePresence>
-            )}
           </div>
           <DragOverlay>
             {activeEvent ? (
@@ -835,11 +887,14 @@ export function CalendarClient() {
 
       {/* Floating Action Button - Apple Style BIG Circle (Only in Calendar views) */}
       {isMyCalendarActive && (
-        <AddEventDialog>
-          <button className="absolute bottom-24 md:bottom-10 right-6 md:right-10 w-14 h-14 md:w-16 md:h-16 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-apple-float hover:scale-105 transition-transform flex items-center justify-center z-50">
-            <Plus className="w-6 h-6 md:w-8 md:h-8" />
-          </button>
-        </AddEventDialog>
+        <button
+          type="button"
+          aria-label="새 일정 추가"
+          onClick={() => openAddEvent(currentDate)}
+          className="absolute bottom-24 md:bottom-10 right-6 md:right-10 w-14 h-14 md:w-16 md:h-16 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-apple-float hover:scale-105 transition-transform flex items-center justify-center z-50"
+        >
+          <Plus className="w-6 h-6 md:w-8 md:h-8" />
+        </button>
       )}
 
       <BottomNavigation 
@@ -864,7 +919,14 @@ export function CalendarClient() {
         initialTab={settingsTab} 
       />
 
-      <DaySummarySheet events={events} />
+      <DaySummarySheet
+        events={events}
+        onEventOpen={viewMode === 'monthly' ? event => {
+          const summary = monthlyEvents.find(item => item.instanceId === event.id)
+          if (summary) handleMonthlyEventOpen(summary)
+          else openEventDetail(event)
+        } : undefined}
+      />
       <EventDetailPopover />
 
       {/* Delete Confirmation Dialog */}
@@ -875,6 +937,11 @@ export function CalendarClient() {
       
       {/* Confetti Animation wrapper */}
       <AnniversaryConfetti />
+
+      {/* 구글 동기화 진행 표시 — 앱 셸에 상주하므로 어떤 화면으로 이동해도 유지된다.
+          작업 자체는 서버가 진행하므로 이 UI를 닫아도 동기화는 멈추지 않는다. */}
+      <SyncProgressModal />
+      <SyncStatusPill />
 
       {/* Global Add Event Dialog - always mounted so it can be opened from any view (e.g. archive agenda "캘린더에 등록") */}
       <AddEventDialog />

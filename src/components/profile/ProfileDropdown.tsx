@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import Image from 'next/image'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Settings, LogOut, ChevronDown } from 'lucide-react'
 import { useUserProfile } from '@/hooks/useCalendarQueries'
@@ -13,6 +14,7 @@ import { useInstallAction } from '@/components/pwa/useInstallAction'
 
 export function ProfileDropdown({ onOpenSettings }: { onOpenSettings: () => void }) {
   const [isOpen, setIsOpen] = useState(false)
+  const [failedAvatarUrl, setFailedAvatarUrl] = useState<string | null>(null)
   const { data: profile, isLoading } = useUserProfile()
   const resetStore = useCalendarStore(s => s.resetStore)
   const { openShortcutsModal } = useGlobalUIStore()
@@ -39,11 +41,16 @@ export function ProfileDropdown({ onOpenSettings }: { onOpenSettings: () => void
         <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 shadow-md flex items-center justify-center text-sm font-bold text-white overflow-hidden ring-2 ring-transparent hover:ring-indigo-200 hover:scale-105 transition-all">
             {isLoading ? (
               <div className="w-full h-full animate-pulse bg-indigo-400/50" />
-            ) : avatarUrl ? (
-              <>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={`/avatars/${avatarUrl}`} alt="Avatar" className="w-full h-full object-cover" />
-              </>
+            ) : avatarUrl && failedAvatarUrl !== avatarUrl ? (
+              <Image
+                src={`/avatars/${avatarUrl}`}
+                alt="프로필 이미지"
+                width={40}
+                height={40}
+                sizes="40px"
+                className="h-full w-full object-cover"
+                onError={() => setFailedAvatarUrl(avatarUrl)}
+              />
             ) : (
               fallbackInitial
             )}

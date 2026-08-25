@@ -39,12 +39,9 @@ CREATE INDEX IF NOT EXISTS idx_activities_parent_original_start
   ON public.activities (parent_activity_id, original_start_time)
   WHERE parent_activity_id IS NOT NULL;
 
--- 기존 행 백필: 이미 구글과 연결된 일정은 현재 동기화 캘린더에 있다고 보는 것이 안전하다.
--- (틀렸더라도 push 시 404 → 스마트 복구 경로가 실제 위치를 찾아 정정한다.)
-UPDATE public.activities a
-SET google_calendar_id = u.google_sync_calendar_id
-FROM public.users u
-WHERE a.user_id = u.id
-  AND a.google_event_id IS NOT NULL
-  AND a.google_calendar_id IS NULL
-  AND u.google_sync_calendar_id IS NOT NULL;
+-- 백필하지 않는다.
+--
+-- 초안에서는 "이미 연결된 일정은 google_sync_calendar_id에 있을 것"이라고 추측해 채웠는데,
+-- 그룹 및 라우팅으로 다른 캘린더에 분배된 일정까지 전부 기본 동기화 캘린더로 표시해 버렸다.
+-- google_calendar_id는 '지금 어디에 있는가'를 나타내는 관측값이지 추측할 값이 아니다.
+-- 비워 두면 첫 push에서 실제 위치를 탐색해 정확한 값으로 채워진다.

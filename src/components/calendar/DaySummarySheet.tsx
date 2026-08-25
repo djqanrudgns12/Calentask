@@ -9,9 +9,10 @@ import { motion, AnimatePresence } from 'framer-motion'
 
 interface DaySummarySheetProps {
   events: Activity[]
+  onEventOpen?: (event: Activity) => void
 }
 
-export function DaySummarySheet({ events }: DaySummarySheetProps) {
+export function DaySummarySheet({ events, onEventOpen }: DaySummarySheetProps) {
   const selectedDaySummary = useCalendarStore(s => s.selectedDaySummary)
   const closeDaySummary = useCalendarStore(s => s.closeDaySummary)
   const openEventDetail = useCalendarStore(s => s.openEventDetail)
@@ -114,7 +115,7 @@ export function DaySummarySheet({ events }: DaySummarySheetProps) {
                 return (
                   <div 
                     key={event.id}
-                    onClick={() => openEventDetail(event)}
+                    onClick={() => (onEventOpen ?? openEventDetail)(event)}
                     className="group relative flex items-stretch p-3.5 rounded-2xl cursor-pointer transition-all hover:scale-[1.02] border border-border shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_30px_-4px_rgba(0,0,0,0.1)] bg-card overflow-hidden"
                   >
                     {/* Left Color Strip */}

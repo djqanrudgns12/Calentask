@@ -27,12 +27,20 @@ function afterGoogleSync(label: string, task: () => Promise<unknown>) {
   })
 }
 
-/** 색상/프라이버시/그룹 매핑 계산에 필요한 카테고리 객체를 조회한다. */
-async function loadCategoryObjects(supabase: any, categoryIds: string[]): Promise<any[]> {
+/**
+ * 색상/프라이버시/그룹 매핑 계산에 필요한 카테고리 객체를 조회한다.
+ *
+ * after() 안에서 실행되므로 요청 스코프 클라이언트(쿠키 기반)를 쓰면 안 된다.
+ * 응답이 끝난 뒤에는 세션이 유효하지 않을 수 있고, 그러면 RLS에 걸려 빈 배열이 돌아온다.
+ * 카테고리가 비면 그룹 라우팅이 통째로 무시되어 모든 일정이 기본 캘린더로 몰린다.
+ */
+async function loadCategoryObjects(userId: string, categoryIds: string[]): Promise<any[]> {
   if (categoryIds.length === 0) return []
-  const { data } = await supabase
+  const { createAdminClient } = await import('@/lib/supabase/server')
+  const { data } = await createAdminClient()
     .from('categories')
     .select('id, name, hex_color')
+    .eq('user_id', userId)
     .in('id', categoryIds)
   return data || []
 }
@@ -97,6 +105,9 @@ export type Activity = {
   parent_activity_id: string | null
   original_start_time: string | null
   google_event_id?: string | null
+  calendar_source?: 'activity' | 'agenda' | 'anniversary' | 'academic'
+  calendar_entity_id?: string
+  calendar_is_summary?: boolean
 }
 
 export type Category = {
@@ -401,7 +412,7 @@ export async function createActivity(
   // Google Calendar 동기화는 응답 이후에 수행 (등록 체감 속도 확보)
   const userId = userData.user.id
   afterGoogleSync('Create', async () => {
-    const categoryObjects = await loadCategoryObjects(supabase, categoryIds)
+    const categoryObjects = await loadCategoryObjects(userId, categoryIds)
     await syncActivityToGoogle(userId, activity, categoryObjects)
   })
 
@@ -454,7 +465,7 @@ export async function updateActivity(
   // Google Calendar 동기화는 응답 이후에 수행 (수정 체감 속도 확보)
   const userId = userData.user.id
   afterGoogleSync('Update', async () => {
-    const categoryObjects = await loadCategoryObjects(supabase, categoryIds)
+    const categoryObjects = await loadCategoryObjects(userId, categoryIds)
     await syncActivityToGoogle(userId, activity, categoryObjects)
   })
 
