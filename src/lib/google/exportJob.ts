@@ -238,8 +238,12 @@ export async function runExportJob(jobId: string, userId: string): Promise<void>
     // 이후 push가 "정확히 하나"를 갱신하는 상태에서 출발할 수 있다.
     if (job.mode === 'FULL' && cursor === 0) {
       try {
-        const { removed } = await reconcileGoogleDuplicates(userId)
-        if (removed > 0) console.info(`[runExportJob] removed ${removed} duplicate google events`)
+        const { removed, relinked } = await reconcileGoogleDuplicates(userId)
+        if (removed > 0 || relinked > 0) {
+          console.info(
+            `[runExportJob] reconciled google events: ${removed} duplicates removed, ${relinked} links repaired`
+          )
+        }
       } catch (err) {
         // 정리에 실패해도 내보내기 자체는 진행한다.
         console.warn('[runExportJob] duplicate reconciliation failed:', err)

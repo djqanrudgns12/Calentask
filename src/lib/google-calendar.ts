@@ -1964,7 +1964,16 @@ async function applyDelta(
         matchByKeys(event) || (isCancelled ? null : lookupFingerprint(fingerprintIndex, event, claimed))
 
       if (isCancelled) {
-        if (match && !match.deleted_at) softDeleteIds.push(match.id)
+        // ★ tombstone은 '활동의 현재 연결'을 가리킬 때만 삭제로 인정한다 ★
+        //
+        // 중복 정리(reconcile)나 캘린더 이동(events.move)으로 사라진 **옛 사본**도
+        // 같은 calentask_id 태그를 달고 있어서 matchByKeys에 그대로 걸린다.
+        // 그 tombstone을 그대로 믿으면, 다른 이벤트로 멀쩡히 살아 있는 활동을 지워버린다.
+        // (같은 실행 안에서는 upsert 목록으로 걸러지지만, 웹훅이 나중 실행으로 도착하면
+        //  걸러낼 근거가 없어 실제로 일정이 사라졌다.)
+        if (match && !match.deleted_at && isCurrentGoogleLink(match, event, calendarId)) {
+          softDeleteIds.push(match.id)
+        }
         continue
       }
 
@@ -2093,14 +2102,15 @@ async function softDeleteActivities(supabase: any, userId: string, ids: string[]
   if (ids.length === 0) return
   const deletedAt = new Date().toISOString()
   for (const part of chunk(ids, IN_FILTER_CHUNK)) {
+    // ★ 구글 연결 정보(google_event_id / calendar_id / ical_uid)는 지우지 않는다 ★
+    //
+    // 예전에는 함께 null로 비웠는데, 그러면 사용자가 휴지통에서 복구했을 때
+    // 앱이 "구글에 존재한 적 없는 일정"으로 판단해 **새 이벤트를 만들어** 중복이 생긴다.
+    // 링크를 남겨 두면 복구 시 기존 이벤트를 그대로 갱신하고,
+    // 구글 쪽이 실제로 사라졌다면 404/409 복구 경로가 알아서 다시 만든다.
     const { error } = await supabase
       .from('activities')
-      .update({
-        deleted_at: deletedAt,
-        google_event_id: null,
-        google_calendar_id: null,
-        google_ical_uid: null,
-      })
+      .update({ deleted_at: deletedAt })
       .eq('user_id', userId)
       .in('id', part)
     if (error) throw new Error(`activities soft-delete failed: ${error.message}`)
@@ -2153,6 +2163,27 @@ function buildLinkRepairRow(match: any, event: calendar_v3.Schema$Event, calenda
     google_ical_uid: event.iCalUID || match.google_ical_uid || null,
     google_synced_at: match.google_synced_at,
   }
+}
+
+/**
+ * 이 취소 이벤트가 활동이 **지금 연결하고 있는** 바로 그 이벤트인지.
+ *
+ * 아니라면 이미 대체된 옛 사본의 흔적이므로 삭제 근거가 되지 못한다.
+ * 판단이 서지 않을 때는 지우지 않는 쪽을 택한다 —
+ * 놓친 삭제는 사용자가 다시 지우면 되지만, 잘못된 삭제는 일정을 잃는 일이다.
+ */
+function isCurrentGoogleLink(
+  match: any,
+  event: calendar_v3.Schema$Event,
+  calendarId: string
+): boolean {
+  // 연결이 없는 활동은 구글 이벤트의 생사와 무관하다.
+  if (!match.google_event_id) return false
+  // 다른 이벤트 id의 tombstone → 옛 사본
+  if (match.google_event_id !== event.id) return false
+  // 이미 다른 캘린더로 옮겨간 뒤 출발지에서 온 tombstone
+  if (match.google_calendar_id && match.google_calendar_id !== calendarId) return false
+  return true
 }
 
 function needsLinkRepair(match: any, event: calendar_v3.Schema$Event, calendarId: string): boolean {
@@ -2600,7 +2631,9 @@ export async function migrateCategoryActivitiesToCalendar(
  * 실제로 걷어낸다. 활동마다 캘린더를 뒤지면 왕복이 (일정 수 × 캘린더 수)로 폭발하므로,
  * 캘린더별로 **한 번씩만** 훑어 태그 목록을 모은 뒤 메모리에서 대조한다.
  */
-export async function reconcileGoogleDuplicates(userId: string): Promise<{ removed: number }> {
+export async function reconcileGoogleDuplicates(
+  userId: string
+): Promise<{ removed: number; relinked: number }> {
   const supabase = createAdminClient()
 
   const { data: user } = await supabase
@@ -2609,13 +2642,13 @@ export async function reconcileGoogleDuplicates(userId: string): Promise<{ remov
     .eq('id', userId)
     .single()
 
-  if (!user?.google_refresh_token) return { removed: 0 }
+  if (!user?.google_refresh_token) return { removed: 0, relinked: 0 }
   const settings: GoogleSyncSettings = user.google_sync_settings || {}
 
   const auth = buildOAuthClient(user.google_refresh_token)
   const calendar = google.calendar({ version: 'v3', auth })
   const scope = await resolveSyncScope(userId, auth, supabase, settings)
-  if (!scope) return { removed: 0 }
+  if (!scope) return { removed: 0, relinked: 0 }
 
   // 1) 우리가 쓰는 캘린더들을 한 번씩 훑어 calentask_id 태그가 붙은 사본을 모은다.
   type Copy = { calendarId: string; eventId: string; updatedMs: number }
@@ -2653,16 +2686,17 @@ export async function reconcileGoogleDuplicates(userId: string): Promise<{ remov
     }
   }
 
-  const duplicated = [...copiesByActivity.entries()].filter(([, list]) => list.length > 1)
-  if (duplicated.length === 0) return { removed: 0 }
+  if (copiesByActivity.size === 0) return { removed: 0, relinked: 0 }
 
-  // 2) 각 일정이 "있어야 할" 캘린더를 카테고리 매핑으로 계산한다.
-  const activityIds = duplicated.map(([id]) => id)
+  // 2) 태그가 가리키는 활동들의 현재 링크와 목적지를 한 번에 읽는다.
+  const activityIds = [...copiesByActivity.keys()]
   const desiredById = new Map<string, string>()
+  const currentLinkById = new Map<string, { eventId: string | null; calendarId: string | null }>()
+
   for (const part of chunk(activityIds, IN_FILTER_CHUNK)) {
     const { data } = await supabase
       .from('activities')
-      .select('id, activity_category_map(categories(id))')
+      .select('id, google_event_id, google_calendar_id, activity_category_map(categories(id))')
       .eq('user_id', userId)
       .in('id', part)
     for (const row of data || []) {
@@ -2670,20 +2704,52 @@ export async function reconcileGoogleDuplicates(userId: string): Promise<{ remov
         .map((m: any) => m.categories)
         .filter(Boolean)
       desiredById.set(row.id, desiredCalendarFor(categories, settings, scope))
+      currentLinkById.set(row.id, {
+        eventId: row.google_event_id,
+        calendarId: row.google_calendar_id,
+      })
     }
   }
 
-  // 3) 목적지에 있는 사본을 남기고(없으면 가장 최근 것) 나머지를 삭제한다.
+  // 3) 구글의 실물을 기준으로 DB 링크를 맞추고(끊겼으면 복구), 여분 사본을 삭제한다.
   const limit = pLimit(5)
   let removed = 0
+  let relinked = 0
 
-  for (const [activityId, list] of duplicated) {
+  for (const [activityId, list] of copiesByActivity.entries()) {
+    // 태그가 가리키는 활동이 DB에 없으면(영구 삭제됨) 손대지 않는다.
+    if (!currentLinkById.has(activityId)) continue
     const desired = desiredById.get(activityId) || scope.writeCalendarId
     const keep =
       list.find((c) => c.calendarId === desired) ||
       [...list].sort((a, b) => b.updatedMs - a.updatedMs)[0]
 
+    // ★ 순서가 중요하다 ★
+    // DB 링크를 **먼저** 남길 사본으로 옮겨 놓아야, 곧이어 도착할 삭제 웹훅이
+    // "이미 대체된 옛 사본의 tombstone"으로 올바르게 판정되어 무시된다.
+    // 삭제를 먼저 하면 그 사이 도착한 웹훅이 활동을 지워버릴 수 있다.
+    //
+    // 링크가 끊긴 활동(google_event_id가 비어 있음)도 여기서 되살아난다.
+    // 구글에 실물이 있는데 DB가 그걸 모르면, push가 새 이벤트를 만들어 중복이 되기 때문이다.
+    const current = currentLinkById.get(activityId)
+    const linkChanged =
+      current?.eventId !== keep.eventId || current?.calendarId !== keep.calendarId
+
+    if (linkChanged) {
+      await supabase
+        .from('activities')
+        .update({
+          google_event_id: keep.eventId,
+          google_calendar_id: keep.calendarId,
+          google_content_hash: null,
+        })
+        .eq('id', activityId)
+        .eq('user_id', userId)
+      relinked++
+    }
+
     const strays = list.filter((c) => c !== keep)
+    if (strays.length === 0) continue
     await Promise.allSettled(
       strays.map((copy) =>
         limit(async () => {
@@ -2700,29 +2766,18 @@ export async function reconcileGoogleDuplicates(userId: string): Promise<{ remov
         })
       )
     )
-
-    // 남긴 사본으로 DB 링크를 정정하고, 해시를 비워 다음 push가 내용을 다시 맞추게 한다.
-    await supabase
-      .from('activities')
-      .update({
-        google_event_id: keep.eventId,
-        google_calendar_id: keep.calendarId,
-        google_content_hash: null,
-      })
-      .eq('id', activityId)
-      .eq('user_id', userId)
   }
 
-  if (removed > 0) {
+  if (removed > 0 || relinked > 0) {
     await logSyncHistory(supabase, {
       userId,
       calendarId: 'ALL',
       action: 'DELETED',
-      activityTitle: `중복 이벤트 정리 (${removed}건 제거)`,
+      activityTitle: `구글 연결 정리 (중복 ${removed}건 제거, 링크 ${relinked}건 복구)`,
     })
   }
 
-  return { removed }
+  return { removed, relinked }
 }
 
 // ─────────────────────────────────────────────────────────────
