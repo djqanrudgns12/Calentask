@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query'
 import { getActivities, getCategories, createActivity, updateActivity, deleteActivity, createCategory, updateCategory, deleteCategory, getDeletedActivities, restoreActivity, hardDeleteActivity, emptyTrash, searchActivities, getCategoryPresets, createCategoryPreset, updateCategoryPreset, deleteCategoryPreset, type Activity, type Category } from '@/app/actions/calendar'
 import { getUserProfile, updateUserProfile } from '@/app/actions/profile'
+import type { CalendarMonthSnapshot } from '@/types/calendarMonth'
 
 export const SYS_ANNIVERSARY_CATEGORY: Category = {
   id: 'sys-anniversary',
@@ -261,6 +262,7 @@ export function useDeleteActivity() {
       // 현재 캐시된 모든 activities 쿼리를 취소하고 낙관적 업데이트
       await queryClient.cancelQueries({ queryKey: ['activities'] })
       await queryClient.cancelQueries({ queryKey: ['pendingActivities'] })
+      await queryClient.cancelQueries({ queryKey: ['calendar-month'] })
       
       // 모든 ['activities', ...] 쿼리 데이터에서 삭제 대상 제거
       const queriesData = queryClient.getQueriesData<Activity[]>({ queryKey: ['activities'] })
@@ -274,14 +276,25 @@ export function useDeleteActivity() {
 
       // pendingActivities 캐시에서도 낙관적으로 즉시 제거
       const previousPending = queryClient.getQueryData<Activity[]>(['pendingActivities'])
+      const previousCalendarMonths = queryClient.getQueriesData<CalendarMonthSnapshot>({ queryKey: ['calendar-month'] })
       if (previousPending) {
         queryClient.setQueryData(
           ['pendingActivities'],
           previousPending.filter(a => a.id !== id)
         )
       }
+
+      queryClient.setQueriesData<CalendarMonthSnapshot>({ queryKey: ['calendar-month'] }, (snapshot) => {
+        if (!snapshot) return snapshot
+        return {
+          ...snapshot,
+          events: snapshot.events.filter(event => !(
+            event.source === 'activity' && (event.entityId === id || event.instanceId === id)
+          )),
+        }
+      })
       
-      return { previousQueries, previousPending }
+      return { previousQueries, previousPending, previousCalendarMonths }
     },
     onError: (_err, _id, context) => {
       // 에러 시 모든 쿼리를 이전 상태로 롤백
@@ -292,6 +305,9 @@ export function useDeleteActivity() {
       if (context?.previousPending) {
         queryClient.setQueryData(['pendingActivities'], context.previousPending)
       }
+      context?.previousCalendarMonths.forEach(([key, data]) => {
+        queryClient.setQueryData(key, data)
+      })
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['activities'] })

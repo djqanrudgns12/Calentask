@@ -47,6 +47,8 @@ interface MonthlyViewProps {
   events: CalendarEventSummary[]
   specialDays: SpecialDaysMap
   isLoading?: boolean
+  /** 일정 한 번 클릭 시 해당 일정의 상세 팝오버를 연다. 없으면 날짜 요약으로 대체. */
+  onEventOpen?: (summary: CalendarEventSummary) => void
 }
 
 const DAY_LABELS = ['일', '월', '화', '수', '목', '금', '토']
@@ -90,6 +92,7 @@ export const MonthlyView = React.memo(function MonthlyView({
   events,
   specialDays,
   isLoading = false,
+  onEventOpen,
 }: MonthlyViewProps) {
   const calendarRef = useRef<FullCalendar>(null)
   const queryClient = useQueryClient()
@@ -297,6 +300,12 @@ export const MonthlyView = React.memo(function MonthlyView({
     return { domNodes: [row] }
   }, [fontClasses.eventTitle])
 
+  // 일정을 한 번 클릭하면 상세 팝오버를 연다(부모가 핸들러를 주지 않으면 날짜 요약으로 폴백).
+  const handleEventOpen = useCallback((summary: CalendarEventSummary) => {
+    if (onEventOpen) onEventOpen(summary)
+    else openDaySummary(new Date(summary.start))
+  }, [onEventOpen, openDaySummary])
+
   const renderDayCell = useCallback((arg: DayCellContentArg) => {
     const visible = visibleSpecialDays(arg.date)
     const holiday = visible.find(day => day.type === 'holiday' && day.isHoliday)
@@ -360,7 +369,8 @@ export const MonthlyView = React.memo(function MonthlyView({
           dateClick={arg => openDaySummary(arg.date)}
           eventClick={arg => {
             const summary = arg.event.extendedProps.summary as CalendarEventSummary | undefined
-            openDaySummary(summary ? new Date(summary.start) : (arg.event.start ?? new Date()))
+            if (summary) handleEventOpen(summary)
+            else openDaySummary(arg.event.start ?? new Date())
           }}
           eventDrop={handleEventDrop}
           eventContent={renderEvent}
@@ -387,7 +397,7 @@ export const MonthlyView = React.memo(function MonthlyView({
               if (event.key === 'Enter' || event.key === ' ') {
                 event.preventDefault()
                 event.stopPropagation()
-                openDaySummary(new Date(summary.start))
+                handleEventOpen(summary)
               }
             }
           }}

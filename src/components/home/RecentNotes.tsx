@@ -7,13 +7,15 @@ import { useArchiveStore, BoardItem } from '@/store/useArchiveStore'
 import { useCalendarStore } from '@/store/useCalendarStore'
 import { formatDistanceToNow } from 'date-fns'
 import { ko } from 'date-fns/locale'
+import { useQuery } from '@tanstack/react-query'
+import { fetchRecentNotesDirect } from '@/lib/archive-queries'
 
 export function RecentNotes() {
   const { tabs, items, setActiveTabId } = useArchiveStore()
   const setViewMode = useCalendarStore(s => s.setViewMode)
 
   // 모든 탭의 아이템을 수집하여 수정일 기준 내림차순 정렬
-  const recentNotes = useMemo(() => {
+  const cachedRecentNotes = useMemo(() => {
     const allItems: (BoardItem & { tabName: string; tabId: string })[] = []
 
     for (const tab of tabs) {
@@ -31,6 +33,13 @@ export function RecentNotes() {
       .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
       .slice(0, 3)
   }, [tabs, items])
+
+  const recentNotesQuery = useQuery({
+    queryKey: ['recent-archive-notes'],
+    queryFn: fetchRecentNotesDirect,
+    staleTime: 5 * 60 * 1000,
+  })
+  const recentNotes = recentNotesQuery.data ?? cachedRecentNotes
 
   const handleNoteClick = (tabId: string) => {
     setActiveTabId(tabId)

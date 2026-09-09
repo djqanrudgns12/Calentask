@@ -1,34 +1,20 @@
 'use client'
 
-import { useEffect, useState } from 'react'
 import { Command } from 'cmdk'
 import { useArchiveStore } from '@/store/useArchiveStore'
 import { useCalendarStore } from '@/store/useCalendarStore'
 import { Calendar, Database, Search } from 'lucide-react'
-import { useRouter } from 'next/navigation'
 
-export function CommandPalette() {
-  const [open, setOpen] = useState(false)
+interface CommandPaletteProps {
+  onOpenChange: (open: boolean) => void
+}
+
+export function CommandPalette({ onOpenChange }: CommandPaletteProps) {
   const { tabs, setActiveTabId } = useArchiveStore()
   const setViewMode = useCalendarStore(s => s.setViewMode)
-  const router = useRouter()
-
-  useEffect(() => {
-    const down = (e: KeyboardEvent) => {
-      if (e.key === 'k' && (e.metaKey || e.ctrlKey)) {
-        e.preventDefault()
-        setOpen((open) => !open)
-      }
-    }
-
-    document.addEventListener('keydown', down)
-    return () => document.removeEventListener('keydown', down)
-  }, [])
-
-  if (!open) return null
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-start justify-center pt-[20vh] bg-slate-900/50 backdrop-blur-sm" onClick={() => setOpen(false)}>
+    <div className="fixed inset-0 z-[100] flex items-start justify-center pt-[20vh] bg-slate-900/50 backdrop-blur-sm" onClick={() => onOpenChange(false)}>
       <Command 
         className="w-full max-w-2xl bg-card rounded-2xl shadow-2xl overflow-hidden border border-border"
         onClick={(e) => e.stopPropagation()}
@@ -52,7 +38,7 @@ export function CommandPalette() {
             <Command.Item 
               onSelect={() => {
                 setViewMode('monthly')
-                setOpen(false)
+                onOpenChange(false)
               }}
               className="flex items-center gap-3 px-3 py-3 mt-1 rounded-xl text-foreground hover:bg-muted cursor-pointer font-medium aria-selected:bg-muted aria-selected:text-indigo-600 transition-colors"
             >
@@ -62,7 +48,7 @@ export function CommandPalette() {
             <Command.Item 
               onSelect={() => {
                 setViewMode('archive_notes')
-                setOpen(false)
+                onOpenChange(false)
               }}
               className="flex items-center gap-3 px-3 py-3 mt-1 rounded-xl text-foreground hover:bg-muted cursor-pointer font-medium aria-selected:bg-muted aria-selected:text-indigo-600 transition-colors"
             >
@@ -73,13 +59,13 @@ export function CommandPalette() {
 
           {tabs.length > 0 && (
             <Command.Group heading="아카이브 노트" className="px-2 py-1.5 text-xs font-bold text-muted-foreground uppercase tracking-wider mt-4">
-              {tabs.map((tab: any) => (
+              {tabs.map((tab) => (
                 <Command.Item 
                   key={tab.id}
                   onSelect={() => {
                     setViewMode('archive_notes')
                     setActiveTabId(tab.id)
-                    setOpen(false)
+                    onOpenChange(false)
                   }}
                   className="flex items-center gap-3 px-3 py-3 mt-1 rounded-xl text-foreground hover:bg-muted cursor-pointer font-medium aria-selected:bg-muted aria-selected:text-indigo-600 transition-colors"
                 >

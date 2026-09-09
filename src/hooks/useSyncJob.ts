@@ -6,6 +6,7 @@ import { toast } from 'sonner'
 import { createClient } from '@/lib/supabase/client'
 import { useSyncJobStore, isJobInFlight } from '@/store/useSyncJobStore'
 import type { SyncJob } from '@/lib/google/exportJob'
+import { scheduleIdleTask } from '@/lib/scheduleIdleTask'
 
 /** heartbeat가 이보다 오래 멈춰 있으면 실행 인스턴스가 죽은 것으로 보고 이어받는다. */
 const STALE_HEARTBEAT_MS = 90_000
@@ -98,7 +99,6 @@ export function useSyncJobSubscription() {
     }
 
     // 1) 초기 상태
-    fetchJob().then(apply)
 
     // 2) Realtime 구독 (RLS가 본인 행만 내려보낸다)
     const channel = supabase
@@ -108,19 +108,22 @@ export function useSyncJobSubscription() {
         { event: '*', schema: 'public', table: 'google_sync_jobs' },
         (payload) => apply(payload.new as SyncJob)
       )
-      .subscribe()
+    const cancelScheduledInit = scheduleIdleTask(() => {
+      void fetchJob().then(apply)
+      channel.subscribe()
+      pollTimer = setInterval(() => {
+        const status = useSyncJobStore.getState().job?.status
+        if (!isJobInFlight(status)) return
+        void fetchJob().then(apply)
+      }, POLL_INTERVAL_MS)
+    })
 
     // 3) Realtime이 막힌 환경을 위한 폴백. 진행 중일 때만 돈다.
-    pollTimer = setInterval(() => {
-      const status = useSyncJobStore.getState().job?.status
-      if (!isJobInFlight(status)) return
-      fetchJob().then(apply)
-    }, POLL_INTERVAL_MS)
-
     return () => {
       cancelled = true
+      cancelScheduledInit()
       if (pollTimer) clearInterval(pollTimer)
-      supabase.removeChannel(channel)
+      void supabase.removeChannel(channel)
     }
   }, [queryClient, setJob, markNotified])
 }

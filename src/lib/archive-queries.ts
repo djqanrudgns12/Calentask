@@ -60,3 +60,51 @@ export async function fetchAllNotesDirect() {
   }
   return data;
 }
+
+export interface RecentNotePreview {
+  id: string;
+  tabId: string;
+  tabName: string;
+  title: string;
+  content: string;
+  updatedAt: string;
+}
+
+/** 홈에서는 전체 아카이브 대신 화면에 표시할 최근 노트 3개만 가져온다. */
+export async function fetchRecentNotesDirect(): Promise<RecentNotePreview[]> {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from('notes')
+    .select('id, tab_id, content_data, created_at, updated_at, archive_tabs!inner(name)')
+    .is('deleted_at', null)
+    .order('updated_at', { ascending: false })
+    .limit(3);
+
+  if (error) {
+    console.error('[archive-queries] fetchRecentNotesDirect failed:', error);
+    return [];
+  }
+
+  return ((data ?? []) as unknown as Array<{
+    id: string;
+    tab_id: string;
+    content_data: unknown;
+    created_at: string | null;
+    updated_at: string | null;
+    archive_tabs: { name: string } | Array<{ name: string }> | null;
+  }>).map((note) => {
+    const contentData = note.content_data && typeof note.content_data === 'object' && !Array.isArray(note.content_data)
+      ? note.content_data as Record<string, unknown>
+      : {};
+    const tab = Array.isArray(note.archive_tabs) ? note.archive_tabs[0] : note.archive_tabs;
+
+    return {
+      id: note.id,
+      tabId: note.tab_id,
+      tabName: tab?.name ?? '아카이브',
+      title: typeof contentData.title === 'string' ? contentData.title : '무제',
+      content: typeof contentData.content === 'string' ? contentData.content : '',
+      updatedAt: note.updated_at ?? note.created_at ?? new Date(0).toISOString(),
+    };
+  });
+}

@@ -10,9 +10,9 @@ export function QueryProvider({ children }: { children: React.ReactNode }) {
         defaultOptions: {
           queries: {
             staleTime: 60 * 1000, // 1 minute
-            // 다른 기기/탭에서 작업 후 이 창으로 돌아오거나 네트워크가 복구되면
-            // (staleTime이 지난) 데이터를 자동으로 다시 가져와 수동 새로고침 부담을 줄인다.
-            refetchOnWindowFocus: true,
+            // Realtime 구독과 화면별 복귀 처리가 있으므로 포커스 시 전체 쿼리 폭주를 막는다.
+            // 네트워크가 실제로 끊겼다가 복구된 경우에는 최신 데이터를 다시 가져온다.
+            refetchOnWindowFocus: false,
             refetchOnReconnect: true,
           },
         },

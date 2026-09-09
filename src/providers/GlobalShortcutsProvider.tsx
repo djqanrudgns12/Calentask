@@ -1,12 +1,17 @@
 'use client'
 
 import { useGlobalShortcuts } from '@/hooks/useGlobalShortcuts'
-import { ShortcutsModal } from '@/components/ui/ShortcutsModal'
+import dynamic from 'next/dynamic'
+import { useGlobalUIStore } from '@/store/useGlobalUIStore'
+
+const ShortcutsModal = dynamic(
+  () => import('@/components/ui/ShortcutsModal').then(module => module.ShortcutsModal),
+  { ssr: false },
+)
 
 export function GlobalShortcutsProvider() {
-  // Mount the global shortcuts hook
   useGlobalShortcuts()
+  const isOpen = useGlobalUIStore(state => state.isShortcutsModalOpen)
 
-  // Render the modal
-  return <ShortcutsModal />
+  return isOpen ? <ShortcutsModal /> : null
 }

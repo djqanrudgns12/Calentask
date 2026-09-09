@@ -48,19 +48,19 @@ export type TimelineRange = 'yesterday' | 'today' | 'tomorrow' | 'last_month' | 
 
 export function HomeDashboard() {
   const { data: profile } = useUserProfile()
-  const { tasks, isInitialized } = useAgendaStore()
+  const { tasks, isInitialized, fetchTasks } = useAgendaStore()
   const { data: pendingActivities } = usePendingActivities()
   
   const hasPending = pendingActivities && pendingActivities.length > 0
 
-  const [selectedRange, setSelectedRange] = useState<TimelineRange>('today')
+  const [selectedRange, setSelectedRange] = useState<TimelineRange>(() => {
+    if (typeof window === 'undefined') return 'today'
+    return (localStorage.getItem('calentask_timeline_range') as TimelineRange | null) ?? 'today'
+  })
 
   useEffect(() => {
-    const saved = localStorage.getItem('calentask_timeline_range') as TimelineRange | null
-    if (saved) {
-      setSelectedRange(saved)
-    }
-  }, [])
+    if (!isInitialized) void fetchTasks()
+  }, [fetchTasks, isInitialized])
 
   const handleRangeChange = (range: TimelineRange) => {
     setSelectedRange(range)

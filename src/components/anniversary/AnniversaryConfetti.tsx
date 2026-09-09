@@ -1,8 +1,16 @@
 'use client'
 
 import { useEffect, useState } from 'react';
-import confetti from 'canvas-confetti';
+import type { Options } from 'canvas-confetti';
 import { useUpcomingAnniversary } from '@/hooks/useUpcomingAnniversary';
+
+const loadConfetti = () => import('canvas-confetti');
+let confettiModule: ReturnType<typeof loadConfetti> | undefined;
+
+function fireConfetti(options: Options) {
+  confettiModule ??= loadConfetti();
+  void confettiModule.then(({ default: confetti }) => confetti(options));
+}
 
 export function AnniversaryConfetti() {
   const { data } = useUpcomingAnniversary();
@@ -15,14 +23,14 @@ export function AnniversaryConfetti() {
       const end = Date.now() + duration;
 
       const frame = () => {
-        confetti({
+        fireConfetti({
           particleCount: 5,
           angle: 60,
           spread: 55,
           origin: { x: 0 },
           colors: [data.event.hex_color || '#F43F5E', '#ffffff', '#FDE68A']
         });
-        confetti({
+        fireConfetti({
           particleCount: 5,
           angle: 120,
           spread: 55,
