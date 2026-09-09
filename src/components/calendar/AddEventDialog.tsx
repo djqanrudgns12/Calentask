@@ -58,6 +58,9 @@ function useKeyboardAwareDialog(isOpen: boolean) {
   return { dialogRef, scrollRef, handleFocusScroll }
 }
 
+/** 시각 정보가 없을 때 사용하는 기본 시작 시각(오후 5시). 종료는 +1시간. */
+const DEFAULT_START_HOUR = 17
+
 const COLOR_SWATCHES = [
   '#ef4444', '#f97316', '#eab308', '#22c55e', '#14b8a6', '#0ea5e9', '#3b82f6', '#6366f1',
   '#a855f7', '#ec4899', '#f43f5e', '#84cc16', '#10b981', '#06b6d4', '#8b5cf6', '#d946ef',
@@ -163,14 +166,21 @@ export function AddEventDialog({ children }: { children?: React.ReactNode }) {
     } else {
       let iS: Date | null = null, iE: Date | null = null
       if (prefillEventData?.start_time) { iS = new Date(prefillEventData.start_time); iE = new Date(iS.getTime() + 3600000) }
-      else if (addEventDate) { iS = addEventDate; iE = addEventDate }
+      else if (addEventDate) {
+        // 날짜만 전달된 경우(시각 00:00) 자정 대신 기본 시간대(17:00~18:00)를 사용한다
+        const hasTime = addEventDate.getHours() !== 0 || addEventDate.getMinutes() !== 0
+        iS = new Date(addEventDate)
+        if (!hasTime) iS.setHours(DEFAULT_START_HOUR, 0, 0, 0)
+        iE = new Date(iS.getTime() + 3600000)
+      }
       if (iS && iE) {
         setStartDate(format(iS, 'yyyy-MM-dd')); setEndDate(format(iE, 'yyyy-MM-dd'))
         setStartTime(format(iS, 'HH:mm')); setEndTime(format(iE, 'HH:mm'))
       } else {
-        const now = new Date(); setStartDate(format(now, 'yyyy-MM-dd')); setEndDate(format(now, 'yyyy-MM-dd'))
-        const nh = new Date(); nh.setHours(nh.getHours() + 1, 0, 0, 0)
-        setStartTime(format(nh, 'HH:mm')); nh.setHours(nh.getHours() + 1); setEndTime(format(nh, 'HH:mm'))
+        const s = new Date(); s.setHours(DEFAULT_START_HOUR, 0, 0, 0)
+        const e = new Date(s.getTime() + 3600000)
+        setStartDate(format(s, 'yyyy-MM-dd')); setEndDate(format(e, 'yyyy-MM-dd'))
+        setStartTime(format(s, 'HH:mm')); setEndTime(format(e, 'HH:mm'))
       }
       setTitle(prefillEventData?.title || ''); setIsAllDay(false)
       setSelectedCategories((prefillEventData as any)?.category_ids || [])
