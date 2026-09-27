@@ -33,6 +33,7 @@ const TagsView = dynamic(() => import('@/components/data-center/TagsView').then(
 const TrashView = dynamic(() => import('@/components/data-center/TrashView').then(module => module.TrashView), { ssr: false, loading: viewLoading })
 const AnniversarySettingsView = dynamic(() => import('@/components/anniversary/AnniversarySettingsView').then(module => module.AnniversarySettingsView), { ssr: false, loading: viewLoading })
 const GoogleSyncTab = dynamic(() => import('@/components/calendar/GoogleSyncTab').then(module => module.GoogleSyncTab), { ssr: false, loading: viewLoading })
+const TidyStatsDashboard = dynamic(() => import('@/components/tidy-stats/TidyStatsDashboard'), { ssr: false, loading: viewLoading })
 const InsightsClient = dynamic(() => import('@/app/insights/InsightsClient'), { ssr: false, loading: viewLoading })
 const ArchiveNotesView = dynamic(() => import('@/components/archive/ArchiveNotesView').then(module => module.ArchiveNotesView), { ssr: false, loading: viewLoading })
 const ArchiveAgendaView = dynamic(() => import('@/components/archive/ArchiveAgendaView').then(module => module.ArchiveAgendaView), { ssr: false, loading: viewLoading })
@@ -63,14 +64,15 @@ type MajorView = ViewMode | 'CALENDAR_GROUP'
 const MAJOR_VIEWS: readonly MajorView[] = [
   'home', 'school_meals', 'CALENDAR_GROUP', 'school_schedule', 'academic_data',
   'archive_agenda', 'anniversary', 'google_sync', 'archive_notes', 'link_lounge',
-  'insights', 'template_center', 'nice_import', 'tags', 'trash',
+  'insights', 'template_center', 'tidy_stats', 'nice_import', 'tags', 'trash',
 ]
 
 function isCalendarViewMode(mode: ViewMode): mode is CalendarViewMode {
   return (CALENDAR_VIEWS as readonly ViewMode[]).includes(mode)
 }
 
-export function CalendarClient() {
+export function CalendarClient({ canViewTidyStats = false }: { canViewTidyStats?: boolean }) {
+  const majorViews = MAJOR_VIEWS.filter(v => v !== 'tidy_stats' || canViewTidyStats)
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false)
   const [settingsTab, setSettingsTab] = useState<'profile' | 'calendar' | 'display'>('profile')
@@ -116,9 +118,9 @@ export function CalendarClient() {
       // 스마트 스와이프 예외 로직: 가로 스크롤 영역이나 지정된 예외 요소에서의 스와이프 무시
       if ((e.event.target as HTMLElement).closest('.no-swipe, .overflow-x-auto, .overflow-x-scroll, .touch-pan-x, [data-no-swipe="true"]')) return;
 
-      const currentIndex = MAJOR_VIEWS.indexOf(currentMajorView)
-      if (currentIndex !== -1 && currentIndex < MAJOR_VIEWS.length - 1) {
-        const nextView = MAJOR_VIEWS[currentIndex + 1];
+      const currentIndex = majorViews.indexOf(currentMajorView)
+      if (currentIndex !== -1 && currentIndex < majorViews.length - 1) {
+        const nextView = majorViews[currentIndex + 1];
         setViewMode(nextView === 'CALENDAR_GROUP' ? lastCalendarViewRef.current : nextView)
       }
     },
@@ -126,9 +128,9 @@ export function CalendarClient() {
       // 스마트 스와이프 예외 로직
       if ((e.event.target as HTMLElement).closest('.no-swipe, .overflow-x-auto, .overflow-x-scroll, .touch-pan-x, [data-no-swipe="true"]')) return;
 
-      const currentIndex = MAJOR_VIEWS.indexOf(currentMajorView)
+      const currentIndex = majorViews.indexOf(currentMajorView)
       if (currentIndex > 0) {
-        const prevView = MAJOR_VIEWS[currentIndex - 1];
+        const prevView = majorViews[currentIndex - 1];
         setViewMode(prevView === 'CALENDAR_GROUP' ? lastCalendarViewRef.current : prevView)
       }
     },
@@ -143,7 +145,7 @@ export function CalendarClient() {
   const isCalendarMenuOpen = ['monthly', 'weekly', 'list', 'semester', 'archive_agenda', 'anniversary', 'google_sync', 'school_schedule', 'academic_data'].includes(viewMode)
   const isMyCalendarActive = ['monthly', 'weekly', 'list', 'semester'].includes(viewMode)
   const isArchiveMenuOpen = ['archive_notes', 'link_lounge'].includes(viewMode)
-  const isDataCenterMenuOpen = ['insights', 'nice_import', 'tags', 'trash', 'template_center'].includes(viewMode)
+  const isDataCenterMenuOpen = ['insights', 'nice_import', 'tags', 'trash', 'template_center', 'tidy_stats'].includes(viewMode)
 
   const handleLogout = async () => {
     resetStore()
@@ -605,6 +607,7 @@ export function CalendarClient() {
                         템플릿 센터
                       </button>
 
+                      {canViewTidyStats && <button onClick={() => setViewMode('tidy_stats')} className={`w-full text-left px-3 py-2 rounded-lg text-[13px] font-medium flex items-center gap-2.5 ${viewMode === 'tidy_stats' ? 'bg-teal-50/70 text-teal-800 shadow-sm' : 'text-muted-foreground hover:bg-accent hover:text-foreground'}`}><Database className="w-3.5 h-3.5" />Tidy task 통계</button>}
                       <button 
                         onClick={() => setViewMode('nice_import')}
                         className={`w-full text-left px-3 py-2 rounded-lg text-[13px] font-medium transition-all duration-300 flex items-center gap-2.5 group ${
@@ -714,6 +717,7 @@ export function CalendarClient() {
                 {(viewMode === 'weekly' || viewMode === 'list' || viewMode === 'semester') && (
                   <LegacyCalendarViews viewMode={viewMode} currentDate={currentDate} />
                 )}
+                {viewMode === 'tidy_stats' && (canViewTidyStats ? <TidyStatsDashboard /> : <p className="p-6 text-muted-foreground">이 계정에는 통계 열람 권한이 없습니다.</p>)}
                 {viewMode === 'nice_import' && <NiceImportView />}
                 {viewMode === 'anniversary' && <AnniversarySettingsView />}
                 {viewMode === 'google_sync' && <GoogleSyncTab />}
@@ -800,6 +804,7 @@ export function CalendarClient() {
       {/* Mobile Sidebar Drawer */}
       {isMobileSidebarOpen && (
         <MobileSidebar
+          canViewTidyStats={canViewTidyStats}
           open={isMobileSidebarOpen}
           onOpenChange={setIsMobileSidebarOpen}
           onOpenSettings={() => { setSettingsTab('profile'); setIsSettingsOpen(true); }}

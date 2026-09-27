@@ -17,6 +17,7 @@ import { Download } from 'lucide-react'
 import { useInstallAction } from '@/components/pwa/useInstallAction'
 
 interface MobileSidebarProps {
+  canViewTidyStats?: boolean
   open: boolean
   onOpenChange: (open: boolean) => void
   onOpenSettings: () => void
@@ -157,7 +158,7 @@ function CollapsibleGroup({
 // ═══════════════════════════════════════════════
 // MobileSidebar 본체
 // ═══════════════════════════════════════════════
-export function MobileSidebar({ open, onOpenChange, onOpenSettings }: MobileSidebarProps) {
+export function MobileSidebar({ open, onOpenChange, onOpenSettings, canViewTidyStats = false }: MobileSidebarProps) {
   const viewMode = useCalendarStore(s => s.viewMode)
   const setViewMode = useCalendarStore(s => s.setViewMode)
   const resetStore = useCalendarStore(s => s.resetStore)
@@ -167,7 +168,7 @@ export function MobileSidebar({ open, onOpenChange, onOpenSettings }: MobileSide
   // 아코디언 상태
   const isCalendarMenuOpen = ['monthly', 'weekly', 'list', 'semester', 'archive_agenda', 'anniversary', 'school_schedule', 'academic_data', 'google_sync'].includes(viewMode)
   const isArchiveMenuOpen = ['archive_notes', 'link_lounge'].includes(viewMode)
-  const isDataCenterMenuOpen = ['insights', 'nice_import', 'tags', 'trash', 'template_center'].includes(viewMode)
+  const isDataCenterMenuOpen = ['insights', 'nice_import', 'tags', 'trash', 'template_center', 'tidy_stats'].includes(viewMode)
 
   const [calendarOpen, setCalendarOpen] = useState(isCalendarMenuOpen)
   const [archiveOpen, setArchiveOpen] = useState(isArchiveMenuOpen)
@@ -376,6 +377,7 @@ export function MobileSidebar({ open, onOpenChange, onOpenSettings }: MobileSide
                   activeBg="bg-pink-50/70 text-pink-700"
                   onClick={() => navigate('template_center')}
                 />
+                {canViewTidyStats && <SubMenuItem icon={Database} label="Tidy task 통계" isActive={viewMode === 'tidy_stats'} iconColor="text-teal-600" activeBg="bg-teal-50/70 text-teal-800" onClick={() => navigate('tidy_stats')} />}
                 <SubMenuItem
                   icon={DownloadCloud}
                   label="나이스 복무 불러오기"

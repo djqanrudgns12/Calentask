@@ -166,6 +166,7 @@ export function CalendarHeader({ onOpenSettings, onOpenMobileSidebar }: Calendar
 
   // --- Slots ---
   const renderLeftSlot = () => {
+    if (viewMode === 'tidy_stats') return <div className="flex items-center gap-3 py-1"><div className="rounded-xl bg-teal-100 p-3 text-teal-800"><BrainCircuit className="h-5 w-5" /></div><div><h2 className="text-base font-bold md:text-xl">Tidy task 통계</h2><p className="hidden text-xs text-muted-foreground md:block">사용 현황과 수집 상태</p></div></div>
     if (isHome) {
       return (
         <motion.div 
@@ -590,7 +591,7 @@ export function CalendarHeader({ onOpenSettings, onOpenMobileSidebar }: Calendar
         </AnimatePresence>
 
           {/* 모든 탭에서 보이는 공용 새로고침 버튼 */}
-          <RefreshButton />
+          {viewMode !== 'tidy_stats' && <RefreshButton />}
 
           <div className="hidden sm:block ml-1">
             <ProfileDropdown onOpenSettings={onOpenSettings} />
