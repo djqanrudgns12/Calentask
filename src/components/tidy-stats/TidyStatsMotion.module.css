@@ -1,0 +1,83 @@
+/* Tidy 통계의 로딩·갱신·전환 애니메이션. 움직임 줄이기 설정에서는 이동·회전 대신 투명도 변화로 상태를 알린다. */
+
+/* 상단 진행 표시줄: 조회 중에만 보이고, 스크롤해도 화면 위에 붙어 있다. 배치에는 영향이 없다(-14 + 3 + 11 = 0). */
+.progressDock { position:sticky; top:0; z-index:6; height:3px; margin:-14px 0 11px; pointer-events:none; }
+.progress { position:absolute; inset:0; border-radius:3px; overflow:hidden; background:var(--ts-accent-soft); opacity:0; transition:opacity .4s ease .2s; }
+.progress::before { content:""; position:absolute; top:0; bottom:0; left:0; width:38%; border-radius:inherit; background:linear-gradient(90deg,transparent,var(--ts-accent) 35%,var(--ts-accent) 65%,transparent); animation:ts-progress 1.15s cubic-bezier(.45,0,.25,1) infinite; animation-play-state:paused; }
+.progress[data-active="true"] { opacity:1; transition-delay:0s; }
+.progress[data-active="true"]::before { animation-play-state:running; }
+@keyframes ts-progress { from { transform:translateX(-100%); } to { transform:translateX(265%); } }
+
+/* 회전·호흡 */
+.spin { animation:ts-rotate .9s linear infinite; }
+@keyframes ts-rotate { to { transform:rotate(360deg); } }
+@keyframes ts-breathe { 50% { opacity:.3; } }
+@keyframes ts-fade { from { opacity:0; } }
+
+/* 새로고침 버튼: 진행 → 완료(체크)·실패(흔들림) → 원래 상태 */
+.refresh { position:relative; overflow:hidden; transition:background-color .3s ease,border-color .3s ease,color .3s ease,transform .12s ease,opacity .2s ease; }
+.refresh:active:not([aria-disabled="true"]) { transform:scale(.97); }
+.refresh[data-state="running"] { cursor:progress; }
+.refresh[data-state="done"],.refresh[data-state="unchanged"] { background:var(--ts-accent); border-color:var(--ts-accent); color:var(--ts-paper); }
+.refresh[data-state="failed"] { background:var(--ts-down); border-color:var(--ts-down); color:var(--ts-paper); }
+.refresh[data-offline="true"] { opacity:.5; cursor:not-allowed; }
+.icon { display:inline-flex; flex-shrink:0; }
+.label { display:inline-block; animation:ts-label .28s cubic-bezier(.2,.7,.3,1) backwards; }
+@keyframes ts-label { from { opacity:0; transform:translateY(5px); } }
+.pop { animation:ts-pop .5s cubic-bezier(.34,1.56,.64,1) backwards; }
+@keyframes ts-pop { from { opacity:0; transform:scale(.3) rotate(-25deg); } }
+.shake { animation:ts-shake .5s ease both; }
+@keyframes ts-shake { 20%,60% { transform:translateX(-3px); } 40%,80% { transform:translateX(3px); } }
+/* 수동 갱신 제한 시간(15초)을 버튼 아래 가는 막대로 보여 준다. */
+.cooldown { position:absolute; left:0; right:0; bottom:0; height:3px; background:currentColor; opacity:.3; transform-origin:left center; animation:ts-deplete linear forwards; }
+@keyframes ts-deplete { from { transform:scaleX(1); } to { transform:scaleX(0); } }
+
+/* 자동 갱신 상태 */
+.autoLabel { font-variant-numeric:tabular-nums; }
+.liveDot { position:relative; display:inline-block; width:8px; height:8px; border-radius:50%; background:var(--ts-muted); flex-shrink:0; transition:background-color .3s ease; }
+.liveDot[data-state="live"] { background:#2e9872; }
+.liveDot[data-state="live"]::after { content:""; position:absolute; inset:0; border-radius:50%; background:#2e9872; animation:ts-ping 2.6s cubic-bezier(0,0,.2,1) infinite; }
+.liveDot[data-state="busy"] { width:12px; height:12px; margin:-2px; background:none; border:2px solid var(--ts-accent-soft); border-top-color:var(--ts-accent); animation:ts-rotate .75s linear infinite; }
+.liveDot[data-state="done"] { background:var(--ts-accent); animation:ts-pop .5s cubic-bezier(.34,1.56,.64,1) both; }
+.liveDot[data-state="error"] { background:var(--ts-warn); animation:ts-breathe 1.6s ease-in-out infinite; }
+@keyframes ts-ping { 0% { transform:scale(1); opacity:.55; } 70%,100% { transform:scale(2.8); opacity:0; } }
+
+/* 저장된 집계를 보여 주며 최신 집계를 받는 중 */
+.syncBadge { display:inline-flex; align-items:center; gap:6px; padding:2px 10px 2px 8px; border-radius:999px; font-size:12px; font-weight:600; color:var(--ts-accent); background:var(--ts-accent-soft); animation:ts-fade .3s ease backwards; }
+.syncBadge .liveDot { width:10px; height:10px; margin:0; }
+
+/* 데이터 영역: 조건 전환 중에는 이전 집계를 흐리게, 새 데이터·탭은 부드럽게 나타낸다. */
+.content { transition:opacity .3s ease,filter .3s ease; }
+.content[data-dimmed="true"] { opacity:.5; filter:saturate(.4); }
+/* backwards: 끝난 뒤에는 원래 스타일(흐림 등)이 그대로 적용된다. */
+.fadeIn { animation:ts-fade-up .4s cubic-bezier(.2,.7,.3,1) backwards; }
+@keyframes ts-fade-up { from { opacity:0; transform:translateY(8px); } }
+.notice { animation:ts-notice 4.5s ease both; }
+@keyframes ts-notice { 0% { opacity:0; transform:translateY(-4px); } 6%,88% { opacity:1; transform:none; } 100% { opacity:0; } }
+
+/* 숫자: 바뀐 값은 잠깐 강조한다. */
+.number { border-radius:6px; }
+.number[data-flash="true"] { animation:ts-flash 1.6s ease both; }
+@keyframes ts-flash { 0%,30% { background:var(--ts-accent-soft); box-shadow:0 0 0 5px var(--ts-accent-soft); } 100% { background:transparent; box-shadow:0 0 0 5px transparent; } }
+
+/* 첫 로딩 뼈대: 실제 카드·패널 치수를 그대로 쓴다. */
+.bone { display:block; position:relative; overflow:hidden; border-radius:8px; background:var(--ts-soft); }
+.bone::after { content:""; position:absolute; inset:0; transform:translateX(-100%); background:linear-gradient(90deg,transparent,var(--ts-raised),transparent); opacity:.85; animation:ts-shimmer 1.5s ease-in-out infinite; }
+@keyframes ts-shimmer { to { transform:translateX(100%); } }
+.boneStack { display:flex; flex-direction:column; gap:16px; }
+.loadingStatus { display:flex; align-items:center; flex-wrap:wrap; gap:6px 10px; margin:-6px 0 18px; color:var(--ts-sub); font-size:13px; animation:ts-fade .3s ease backwards; }
+.loadingStatus strong { color:var(--ts-ink); font-size:14px; font-weight:600; }
+.loadingStatus .liveDot { margin:0 2px 0 0; }
+.elapsed { font-variant-numeric:tabular-nums; color:var(--ts-muted); }
+
+@media (prefers-reduced-motion:reduce) {
+  .spin,.liveDot[data-state="busy"] { animation:ts-breathe 1.2s ease-in-out infinite; }
+  .progress::before { width:100%; background:var(--ts-accent); animation:ts-breathe 1.2s ease-in-out infinite; animation-play-state:paused; }
+  .progress[data-active="true"]::before { animation-play-state:running; }
+  .liveDot[data-state="live"]::after { animation:none; opacity:0; }
+  .bone::after { transform:none; animation:ts-breathe 1.6s ease-in-out infinite; }
+  .label,.pop,.shake,.fadeIn,.liveDot[data-state="done"] { animation:ts-fade .2s ease backwards; }
+  .notice { animation:ts-notice-fade 4.5s ease both; }
+  .refresh,.content { transition:none; }
+}
+@keyframes ts-notice-fade { 0% { opacity:0; } 6%,88% { opacity:1; } 100% { opacity:0; } }

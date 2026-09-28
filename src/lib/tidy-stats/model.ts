@@ -1,6 +1,15 @@
 export const PERIODS = [1, 7, 30, 90] as const;
 export type Period = typeof PERIODS[number];
-export type StatsInput = { days: Period; version: string; refresh: boolean };
+/** swr: 오래된 캐시라도 즉시 응답하고 뒤에서 재집계. fresh: 신선한 집계까지 대기. force: 캐시 무시하고 재집계. */
+export const FETCH_MODES = ['swr', 'fresh', 'force'] as const;
+export type FetchMode = typeof FETCH_MODES[number];
+export type StatsInput = { days: Period; version: string; mode: FetchMode };
+/** 이 시간 안의 집계는 최신으로 본다. 자동 갱신 주기와 같다. */
+export const FRESH_MS = 5 * 60_000;
+/** swr 조회에서 즉시 보여 줄 수 있는 가장 오래된 집계. SQL이 날짜별로 달라 실제로는 당일 집계만 해당한다. */
+export const STALE_MAX_MS = 6 * 3600_000;
+/** 도구·버전·기능·오류 통합 집계의 최대 행 수. 이 값에 닿으면 잘린 결과로 보고 실패 처리한다. */
+export const BREAKDOWN_LIMIT = 1000;
 export const TOOL_NAMES: Record<string, string> = {
   tidy_task: '할 일', tiny_note: '작은 메모', toolkit: '도구 모음', roster: '학급 명렬표',
   noticeboard: '알림판', picker: '뽑기', tournament: '토너먼트', focus_bell: '집중 신호',
@@ -22,21 +31,28 @@ export type Daily = { date: string; active: number | null; firstSeen: number | n
 export type Breakdown = { key: string; installs: number; minutes: number };
 export type StatsData = {
   days: Period; version: string; from: string; through: string;
-  queriedAt: string; calculatedAt: string; cached: boolean;
+  /** queriedAt: 서버 응답 시각. calculatedAt: 가장 오래된 부분 집계의 계산 시각. ageMs: 응답 시점의 집계 경과 시간. */
+  queriedAt: string; calculatedAt: string; ageMs: number;
+  /** cached: 일부라도 저장된 집계. stale: 최신 기준(5분)을 넘긴 집계. revalidating: 서버가 뒤에서 재집계 중. */
+  cached: boolean; stale: boolean; revalidating: boolean;
   summary: { active: number; previousActive: number; firstSeen: number; minutes: number; sessions: number; errors: number; events: number; supportedInstalls: number; lastEvent: string | null };
   daily: Daily[]; tools: Breakdown[]; versions: Breakdown[];
   actions: { event: string; count: number; items: number; installs: number }[];
   errors: { code: string; count: number; installs: number }[];
 };
+export type SnapshotMeta = Pick<StatsData, 'queriedAt' | 'calculatedAt' | 'ageMs' | 'cached' | 'stale' | 'revalidating'>;
+
 export function parseInput(value: unknown): StatsInput {
   if (!value || typeof value !== 'object' || Array.isArray(value)) throw new Error('조회 조건을 확인해 주세요.');
   const v = value as Record<string, unknown>;
   const days = v.days ?? 30;
   const version = v.version ?? 'all';
-  if (!PERIODS.includes(days as Period) || typeof version !== 'string' ||
+  const mode = v.mode ?? 'fresh';
+  if (Object.keys(v).some(k => k !== 'days' && k !== 'version' && k !== 'mode') ||
+    !PERIODS.includes(days as Period) || typeof version !== 'string' ||
     (version !== 'all' && !/^\d{1,3}\.\d{1,3}\.\d{1,3}(?:-[a-zA-Z0-9.-]{1,20})?$/.test(version)) ||
-    (v.refresh !== undefined && typeof v.refresh !== 'boolean')) throw new Error('지원하지 않는 조회 조건입니다.');
-  return { days: days as Period, version, refresh: v.refresh === true };
+    !FETCH_MODES.includes(mode as FetchMode)) throw new Error('지원하지 않는 조회 조건입니다.');
+  return { days: days as Period, version, mode: mode as FetchMode };
 }
 export function isAllowedUser(id: string, list: string | undefined) {
   return !!list?.split(',').map(s => s.trim()).filter(Boolean).includes(id);
@@ -62,4 +78,42 @@ export function numeric(value: unknown): number {
   const n = Number(value);
   if (value === null || value === undefined || !Number.isFinite(n) || n < 0) throw new Error('집계 응답 형식이 올바르지 않습니다.');
   return n;
+}
+
+const byInstalls = (a: Breakdown, b: Breakdown) => b.installs - a.installs || (a.key < b.key ? -1 : a.key > b.key ? 1 : 0);
+/**
+ * 통합 집계 행 [event, key, count, installs, items]을 패널별 목록으로 나눈다.
+ * 각 목록의 정렬·개수 상한은 분리 쿼리 시절(버전·도구 100, 기능 30, 오류 50)과 같다.
+ */
+export function splitBreakdown(rows: unknown[][]) {
+  if (rows.length >= BREAKDOWN_LIMIT) throw new Error('통합 집계가 행 상한에 닿았습니다.');
+  const tools: Breakdown[] = [], versions: Breakdown[] = [];
+  const actions: StatsData['actions'] = [], errors: StatsData['errors'] = [];
+  for (const row of rows) {
+    const event = String(row[0]), key = String(row[1]);
+    const count = numeric(row[2]), installs = numeric(row[3]);
+    if (event === 'active_minute') versions.push({ key, installs, minutes: count });
+    else if (event === 'tool_active_minute') tools.push({ key, installs, minutes: count });
+    else if (event === 'app_error') errors.push({ code: key, count, installs });
+    else actions.push({ event, count, items: numeric(row[4]), installs });
+  }
+  return {
+    versions: versions.sort(byInstalls).slice(0, 100), tools: tools.sort(byInstalls).slice(0, 100),
+    actions: actions.sort((a, b) => (a.event < b.event ? -1 : 1)).slice(0, 30),
+    errors: errors.sort((a, b) => b.count - a.count || (a.code < b.code ? -1 : 1)).slice(0, 50),
+  };
+}
+
+export function assembleStats(input: Pick<StatsInput, 'days' | 'version'>, bounds: ReturnType<typeof periodBounds>,
+  results: { summary: unknown[][]; daily: unknown[][]; breakdown: unknown[][] }, meta: SnapshotMeta): StatsData {
+  const r = results.summary[0];
+  if (!r || r.length !== 9) throw new Error('종합 집계 응답 형식이 올바르지 않습니다.');
+  const events = numeric(r[6]);
+  return {
+    days: input.days, version: input.version, from: bounds.from, through: bounds.through, ...meta,
+    summary: { active: numeric(r[0]), previousActive: numeric(r[1]), firstSeen: numeric(r[2]), minutes: numeric(r[3]),
+      sessions: numeric(r[4]), errors: numeric(r[5]), events, supportedInstalls: numeric(r[7]), lastEvent: events > 0 ? String(r[8]) : null },
+    daily: fillDays(bounds.from, input.days, results.daily),
+    ...splitBreakdown(results.breakdown),
+  };
 }

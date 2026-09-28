@@ -24,6 +24,7 @@ import { CalentaskViewLoading } from '@/components/loading/CalentaskLoadingScree
 import { isJobInFlight, useSyncJobStore } from '@/store/useSyncJobStore'
 import { scheduleIdleTask } from '@/lib/scheduleIdleTask'
 import { CommandPaletteProvider } from '@/providers/CommandPaletteProvider'
+import { tidyStatsWarmup } from '@/components/tidy-stats/useTidyStats'
 
 const viewLoading = () => <CalentaskViewLoading />
 const MonthlyView = dynamic(() => import('@/components/calendar/MonthlyView').then(module => module.MonthlyView), { ssr: false, loading: viewLoading })
@@ -78,6 +79,8 @@ export function CalendarClient({ canViewTidyStats = false }: { canViewTidyStats?
   const [settingsTab, setSettingsTab] = useState<'profile' | 'calendar' | 'display'>('profile')
   const queryClient = useQueryClient()
   const prefersReducedMotion = useReducedMotion()
+  // 통계 메뉴에 머무르면 화면 코드와 집계를 미리 받아 열자마자 보이게 한다.
+  const tidyStatsWarm = useMemo(() => tidyStatsWarmup(queryClient, () => import('@/components/tidy-stats/TidyStatsDashboard')), [queryClient])
 
   // 구글 내보내기 작업 구독. 앱 셸에서 한 번만 호출해 중복 구독을 피한다.
   // 멈춘(PAUSED/heartbeat 끊김) 작업을 자동으로 이어받는 것도 여기서 처리한다.
@@ -607,7 +610,7 @@ export function CalendarClient({ canViewTidyStats = false }: { canViewTidyStats?
                         템플릿 센터
                       </button>
 
-                      {canViewTidyStats && <button onClick={() => setViewMode('tidy_stats')} className={`w-full text-left px-3 py-2 rounded-lg text-[13px] font-medium flex items-center gap-2.5 ${viewMode === 'tidy_stats' ? 'bg-teal-50/70 text-teal-800 shadow-sm' : 'text-muted-foreground hover:bg-accent hover:text-foreground'}`}><Database className="w-3.5 h-3.5" />Tidy task 통계</button>}
+                      {canViewTidyStats && <button {...tidyStatsWarm.handlers} onClick={() => { tidyStatsWarm.warm(); setViewMode('tidy_stats') }}className={`w-full text-left px-3 py-2 rounded-lg text-[13px] font-medium flex items-center gap-2.5 ${viewMode === 'tidy_stats' ? 'bg-teal-50/70 text-teal-800 shadow-sm' : 'text-muted-foreground hover:bg-accent hover:text-foreground'}`}><Database className="w-3.5 h-3.5" />Tidy task 통계</button>}
                       <button 
                         onClick={() => setViewMode('nice_import')}
                         className={`w-full text-left px-3 py-2 rounded-lg text-[13px] font-medium transition-all duration-300 flex items-center gap-2.5 group ${

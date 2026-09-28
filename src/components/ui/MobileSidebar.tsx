@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { Button } from '@/components/ui/button'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -15,6 +15,7 @@ import { logout } from '@/app/actions/auth'
 import { useQueryClient } from '@tanstack/react-query'
 import { Download } from 'lucide-react'
 import { useInstallAction } from '@/components/pwa/useInstallAction'
+import { tidyStatsWarmup } from '@/components/tidy-stats/useTidyStats'
 
 interface MobileSidebarProps {
   canViewTidyStats?: boolean
@@ -163,6 +164,8 @@ export function MobileSidebar({ open, onOpenChange, onOpenSettings, canViewTidyS
   const setViewMode = useCalendarStore(s => s.setViewMode)
   const resetStore = useCalendarStore(s => s.resetStore)
   const queryClient = useQueryClient()
+  // 통계 메뉴를 누르면 화면 코드와 집계를 동시에 받기 시작한다.
+  const tidyStatsWarm = useMemo(() => tidyStatsWarmup(queryClient, () => import('@/components/tidy-stats/TidyStatsDashboard')), [queryClient])
   const { onInstallClick, GuideModals, isStandalone } = useInstallAction()
 
   // 아코디언 상태
@@ -377,7 +380,7 @@ export function MobileSidebar({ open, onOpenChange, onOpenSettings, canViewTidyS
                   activeBg="bg-pink-50/70 text-pink-700"
                   onClick={() => navigate('template_center')}
                 />
-                {canViewTidyStats && <SubMenuItem icon={Database} label="Tidy task 통계" isActive={viewMode === 'tidy_stats'} iconColor="text-teal-600" activeBg="bg-teal-50/70 text-teal-800" onClick={() => navigate('tidy_stats')} />}
+                {canViewTidyStats && <SubMenuItem icon={Database} label="Tidy task 통계" isActive={viewMode === 'tidy_stats'} iconColor="text-teal-600" activeBg="bg-teal-50/70 text-teal-800" onClick={() => { tidyStatsWarm.warm(); navigate('tidy_stats') }} />}
                 <SubMenuItem
                   icon={DownloadCloud}
                   label="나이스 복무 불러오기"
