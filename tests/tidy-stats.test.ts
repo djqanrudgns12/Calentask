@@ -32,9 +32,12 @@ test('모든 집계에 운영 필터와 시간 상한·하한이 있고 도구 �
     assert.match(sql, /properties.environment = 'production'/);
     assert.match(sql, /\{filters\}/);
     assert.match(sql, /timestamp >=/); assert.match(sql, /timestamp </);
+    assert.match(sql, /timestamp <= toDateTime\(now\(\)\)/);
+    assert.doesNotMatch(sql, /timestamp <= now\(\)/);
     assert.doesNotMatch(sql, /window_used/);
   }
   assert.match(queries.summary, /uniqExactIf\(distinct_id/);
+  assert.match(queries.summary, /timestamp <= toDateTime\(now\(\)\) - INTERVAL 30 DAY/);
   // 이전 기간은 active_minute만 읽는다.
   assert.match(queries.summary, /AND \(timestamp >= toDateTime\('[^']+', 'UTC'\) OR event = 'active_minute'\)$/);
   assert.match(queries.daily, /Asia\/Seoul/);

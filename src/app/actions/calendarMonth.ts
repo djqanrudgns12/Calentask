@@ -28,6 +28,9 @@ const SEOUL_DATE_FORMATTER = new Intl.DateTimeFormat('en-CA', {
   month: '2-digit',
   day: '2-digit',
 })
+const SEOUL_TIME_FORMATTER = new Intl.DateTimeFormat('en-GB', {
+  timeZone: 'Asia/Seoul', hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23',
+})
 
 type ActivitySummaryRow = Activity & {
   activity_category_map?: Array<{ categories: Category | null }>
@@ -78,13 +81,7 @@ function normalizeActivityDates(activity: Activity) {
 
   const start = dateKeyInSeoul(activity.start_time)
   const rawEnd = new Date(activity.end_time)
-  const seoulTime = new Intl.DateTimeFormat('en-GB', {
-    timeZone: 'Asia/Seoul',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-    hourCycle: 'h23',
-  }).format(rawEnd)
+  const seoulTime = SEOUL_TIME_FORMATTER.format(rawEnd)
   const endDateKey = dateKeyInSeoul(rawEnd)
   const end = seoulTime === '00:00:00' && endDateKey > start ? endDateKey : addDateKeyDays(endDateKey, 1)
   return { start, end: end > start ? end : addDateKeyDays(start, 1) }
@@ -209,12 +206,14 @@ export async function getCalendarMonthSnapshot(monthKey: CalendarMonthKey): Prom
     ;((rows ?? []) as unknown as ActivitySummaryRow[]).forEach(row => activityRows.set(row.id, row))
   })
 
+  const rangeStartMs = Date.parse(range.startIso)
+  const rangeEndMs = Date.parse(range.endIso)
   const activities = expandActivities(
     Array.from(activityRows.values()).map(toActivity),
     range.startIso,
     range.endIso,
   )
-    .filter(activity => new Date(activity.start_time) < new Date(range.endIso) && new Date(activity.end_time) > new Date(range.startIso))
+    .filter(activity => Date.parse(activity.start_time) < rangeEndMs && Date.parse(activity.end_time) > rangeStartMs)
     .map(activityToSummary)
 
   const agendaEvents: CalendarEventSummary[] = ((agenda.data ?? []) as unknown as AgendaSummaryRow[]).map(task => {

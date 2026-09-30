@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Home, Calendar as CalendarIcon, Sparkles, Gift, Archive, NotebookPen,
-  Bookmark, Database, DownloadCloud, Tags, Trash2, Settings, LogOut,
+  Database, DownloadCloud, Tags, Trash2, Settings, LogOut,
   ChevronDown, Puzzle, Globe2, Utensils, GraduationCap
 } from 'lucide-react'
 import { useCalendarStore, ViewMode } from '@/store/useCalendarStore'
@@ -170,7 +170,7 @@ export function MobileSidebar({ open, onOpenChange, onOpenSettings, canViewTidyS
 
   // 아코디언 상태
   const isCalendarMenuOpen = ['monthly', 'weekly', 'list', 'semester', 'archive_agenda', 'anniversary', 'school_schedule', 'academic_data', 'google_sync'].includes(viewMode)
-  const isArchiveMenuOpen = ['archive_notes', 'link_lounge'].includes(viewMode)
+  const isArchiveMenuOpen = viewMode === 'archive_notes'
   const isDataCenterMenuOpen = ['insights', 'nice_import', 'tags', 'trash', 'template_center', 'tidy_stats'].includes(viewMode)
 
   const [calendarOpen, setCalendarOpen] = useState(isCalendarMenuOpen)
@@ -334,14 +334,6 @@ export function MobileSidebar({ open, onOpenChange, onOpenSettings, canViewTidyS
                   isActive={viewMode === 'archive_notes'}
                   activeBg="bg-accent text-foreground"
                   onClick={() => navigate('archive_notes')}
-                />
-                <SubMenuItem
-                  icon={Bookmark}
-                  label="링크 라운지"
-                  isActive={viewMode === 'link_lounge'}
-                  iconColor="text-indigo-600"
-                  activeBg="bg-indigo-50/70 text-indigo-700"
-                  onClick={() => navigate('link_lounge')}
                 />
               </CollapsibleGroup>
             </div>

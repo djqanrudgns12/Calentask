@@ -2,13 +2,20 @@
 
 import { useInsightsFilterStore, type InsightsTab } from '@/store/useInsightsFilterStore';
 import dynamic from 'next/dynamic';
-import { LayoutDashboard, Clock, CheckSquare, Puzzle } from 'lucide-react';
-import { startTransition, useState, useEffect } from 'react';
+import { LayoutDashboard, Clock, CheckSquare } from 'lucide-react';
+import { startTransition } from 'react';
+import { CalentaskViewLoading } from '@/components/loading/CalentaskLoadingScreen';
 
-const OverviewTab = dynamic(() => import('@/components/insights/OverviewTab'), { ssr: false });
-const TimeAnalysisTab = dynamic(() => import('@/components/insights/TimeAnalysisTab'), { ssr: false });
-const ExecutionTab = dynamic(() => import('@/components/insights/ExecutionTab'), { ssr: false });
-const TemplateCenterTab = dynamic(() => import('@/components/insights/TemplateCenterTab'), { ssr: false });
+const loading = () => <CalentaskViewLoading />;
+const OverviewTab = dynamic(() => import('@/components/insights/OverviewTab'), { ssr: false, loading });
+const TimeAnalysisTab = dynamic(() => import('@/components/insights/TimeAnalysisTab'), { ssr: false, loading });
+const ExecutionTab = dynamic(() => import('@/components/insights/ExecutionTab'), { ssr: false, loading });
+
+const warmTab = (tab: InsightsTab) => {
+  const load = tab === 'overview' ? import('@/components/insights/OverviewTab')
+    : tab === 'time' ? import('@/components/insights/TimeAnalysisTab') : import('@/components/insights/ExecutionTab');
+  void load.catch(() => {});
+};
 
 const TABS: { id: InsightsTab; label: string; icon: typeof LayoutDashboard }[] = [
   { id: 'overview', label: '종합 현황', icon: LayoutDashboard },
@@ -19,13 +26,6 @@ const TABS: { id: InsightsTab; label: string; icon: typeof LayoutDashboard }[] =
 export default function InsightsClient() {
   const activeTab = useInsightsFilterStore(state => state.activeTab);
   const setActiveTab = useInsightsFilterStore(state => state.setActiveTab);
-
-  // FEAT: 탭 유지 렌더링 (지연 마운트 + display:none 토글)
-  const [mountedTabs, setMountedTabs] = useState<Set<string>>(new Set(['overview']));
-
-  useEffect(() => {
-    setMountedTabs(prev => new Set(prev).add(activeTab));
-  }, [activeTab]);
 
   return (
     <div className="mt-2 pb-24 md:pb-10 relative min-h-screen">
@@ -38,7 +38,9 @@ export default function InsightsClient() {
             return (
               <button
                 key={tab.id}
-                onClick={() => startTransition(() => setActiveTab(tab.id))}
+                onMouseEnter={() => warmTab(tab.id)}
+                onFocus={() => warmTab(tab.id)}
+                onClick={() => { warmTab(tab.id); startTransition(() => setActiveTab(tab.id)); }}
                 className={`flex items-center gap-1 md:gap-1.5 px-2 md:px-3.5 py-2 md:py-2.5 rounded-xl text-[11px] md:text-[13px] font-bold transition-all whitespace-nowrap ${
                   isActive
                     ? 'bg-gray-900 text-white shadow-md'
@@ -54,25 +56,13 @@ export default function InsightsClient() {
         </div>
 
         {/* ── 종합 현황 탭 ── */}
-        {mountedTabs.has('overview') && (
-          <div style={{ display: activeTab === 'overview' ? 'block' : 'none' }}>
-            <OverviewTab />
-          </div>
-        )}
+        {activeTab === 'overview' && <OverviewTab />}
 
         {/* ── 시간 분석 탭 ── */}
-        {mountedTabs.has('time') && (
-          <div style={{ display: activeTab === 'time' ? 'block' : 'none' }}>
-            <TimeAnalysisTab />
-          </div>
-        )}
+        {activeTab === 'time' && <TimeAnalysisTab />}
 
         {/* ── 실행력 탭 ── */}
-        {mountedTabs.has('execution') && (
-          <div style={{ display: activeTab === 'execution' ? 'block' : 'none' }}>
-            <ExecutionTab />
-          </div>
-        )}
+        {activeTab === 'execution' && <ExecutionTab />}
       </div>
     </div>
   );

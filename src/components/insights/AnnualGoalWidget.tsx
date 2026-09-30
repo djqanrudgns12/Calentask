@@ -2,14 +2,8 @@
 
 import { useMemo } from 'react';
 import { Target, Trophy } from 'lucide-react';
-import { useAnnualGoalProgress } from '@/hooks/useInsightsQueries';
-import { Activity } from '@/app/actions/calendar';
-import { startOfYear, endOfYear } from 'date-fns';
 
-export default function AnnualGoalWidget() {
-  const yearStart = startOfYear(new Date()).toISOString();
-  const yearEnd = endOfYear(new Date()).toISOString();
-  const { data: progressData } = useAnnualGoalProgress(yearStart, yearEnd);
+export default function AnnualGoalWidget({ progressData }: { progressData?: { hours: number; percent: number } }) {
 
   const GOAL_HOURS = 1000;
 

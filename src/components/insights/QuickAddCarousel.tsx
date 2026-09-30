@@ -1,8 +1,9 @@
 "use client";
 import { Settings2, Plus } from 'lucide-react';
 import { useState } from 'react';
-import { TemplateFormDialog } from './TemplateFormDialog';
-import { TemplateManagementSheet } from './TemplateManagementSheet';
+import dynamic from 'next/dynamic';
+const TemplateFormDialog = dynamic(() => import('./TemplateFormDialog').then(m => m.TemplateFormDialog), { ssr: false });
+const TemplateManagementSheet = dynamic(() => import('./TemplateManagementSheet').then(m => m.TemplateManagementSheet), { ssr: false });
 import type { ActivityTemplate } from '@/app/actions/insights';
 
 export default function QuickAddCarousel({ templates }: { templates: ActivityTemplate[] }) {
@@ -70,19 +71,19 @@ export default function QuickAddCarousel({ templates }: { templates: ActivityTem
       )}
 
       {/* 빠른 일정 템플릿 폼 (칩 클릭 시 quick-add 모드) */}
-      <TemplateFormDialog 
+      {isPopupOpen && <TemplateFormDialog
         isOpen={isPopupOpen}
         onClose={() => setIsPopupOpen(false)}
         editingTemplate={selectedTemplate}
         mode="quick-add"
         onQuickAddSuccess={handleSuccess}
-      />
+      />}
 
       {/* 관리 시트 (관리 버튼 클릭 시) */}
-      <TemplateManagementSheet 
+      {isManagementOpen && <TemplateManagementSheet
         isOpen={isManagementOpen}
         onClose={() => setIsManagementOpen(false)}
-      />
+      />}
     </div>
   );
 }

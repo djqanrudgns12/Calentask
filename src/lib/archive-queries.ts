@@ -15,7 +15,8 @@ export async function fetchTabsDirect() {
     .from('archive_tabs')
     .select('*')
     .is('deleted_at', null)
-    .order('position', { ascending: true });
+    .order('position', { ascending: true })
+    .abortSignal(AbortSignal.timeout(15_000));
 
   if (error) {
     console.error('[archive-queries] fetchTabsDirect failed:', error);
@@ -33,7 +34,8 @@ export async function fetchNotesDirect(tabId: string) {
     .from('notes')
     .select('*')
     .eq('tab_id', tabId)
-    .is('deleted_at', null);
+    .is('deleted_at', null)
+    .abortSignal(AbortSignal.timeout(15_000));
 
   if (error) {
     console.error('[archive-queries] fetchNotesDirect failed:', error);
@@ -52,7 +54,8 @@ export async function fetchAllNotesDirect() {
     .from('notes')
     .select('*')
     .is('deleted_at', null)
-    .limit(5000); // 안전한 상한선
+    .limit(5000)
+    .abortSignal(AbortSignal.timeout(15_000));
 
   if (error) {
     console.error('[archive-queries] fetchAllNotesDirect failed:', error);

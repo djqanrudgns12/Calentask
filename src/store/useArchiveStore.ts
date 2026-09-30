@@ -10,6 +10,19 @@ import { fetchTabsDirect, fetchNotesDirect, fetchAllNotesDirect } from '@/lib/ar
 // Debounce timers for updateItem and updateTab to avoid flooding the server during typing
 const updateTimers: Record<string, ReturnType<typeof setTimeout>> = {};
 const tabUpdateTimers: Record<string, ReturnType<typeof setTimeout>> = {};
+let tabsRequest: Promise<void> | undefined;
+const itemsRequests = new Map<string, Promise<boolean>>();
+
+// 서버 조회 폴백도 제한 시간을 두어 연결이 멈춰도 재시도 화면으로 복구한다.
+async function withReadTimeout<T>(request: Promise<T>): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    return await Promise.race([
+      request,
+      new Promise<never>((_, reject) => { timer = setTimeout(() => reject(new Error('노트 조회 시간 초과')), 15_000); }),
+    ]);
+  } finally { clearTimeout(timer); }
+}
 
 type ArchiveTab = Database['public']['Tables']['archive_tabs']['Row'];
 type Note = Database['public']['Tables']['notes']['Row'];
@@ -65,7 +78,9 @@ interface ArchiveState {
   boardConfigs: Record<string, any>;
   setBoardConfig: (boardId: string, config: any) => void;
   
-  fetchItems: (boardId: string) => Promise<void>;
+  fetchItems: (boardId: string) => Promise<boolean>;
+  loadError: string | null;
+  itemLoadErrors: Record<string, string | undefined>;
   addItem: (boardId: string, item: Partial<BoardItem>) => Promise<void>;
   updateItem: (boardId: string, itemId: string, updates: Partial<BoardItem>) => Promise<void>;
   deleteItem: (boardId: string, itemId: string) => Promise<void>;
@@ -124,30 +139,20 @@ export const useArchiveStore = create<ArchiveState>()(
   tabs: [],
   
   isPrefetched: false,
+  loadError: null,
+  itemLoadErrors: {},
   
   // ============================================================
   // 전략 1+2+4: 직접 호출 + 병렬 프리패칭 + 일괄 로딩
   // ============================================================
   prefetchArchive: async () => {
-    if (get().isPrefetched) return;
-    
-    // 캐시가 있으면 즉시 탭 UI를 보여주되, isPrefetched는 아직 false로 유지
-    // (isPrefetched가 true여야만 DocumentBoard가 빈 문서 자동 생성을 시도하므로,
-    //  서버에서 노트 데이터가 도착하기 전까지 빈 문서 생성을 차단하는 핵심 안전장치)
+    await get().fetchTabs();
+    if (!get().isPrefetched) return;
     
     try {
-      // 전략 1: 클라이언트에서 Supabase 직접 호출 (Server Action 우회)
-      // 실패 시 Server Action 폴백
-      let tabs = await fetchTabsDirect();
-      if (!tabs) {
-        tabs = await getArchiveTabs();
-      }
+      const tabs = get().tabs;
       
       if (tabs.length > 0) {
-        const firstTabId = get().activeTabId || tabs[0].id;
-        // 탭은 먼저 세팅하되, isPrefetched는 아직 false 유지
-        set({ tabs, activeTabId: firstTabId });
-        
         // 전략 4: 모든 노트를 한 번의 쿼리로 일괄 로딩
         const allNotes = await fetchAllNotesDirect();
         if (allNotes) {
@@ -166,63 +171,40 @@ export const useArchiveStore = create<ArchiveState>()(
           // Race condition 방어: 수정 중인 탭은 서버 데이터로 덮어쓰지 않음
           const safeItems = { ...get().items };
           for (const [tabId, items] of Object.entries(grouped)) {
-            if (!hasPendingUpdatesForBoard(tabId)) {
+            if (!hasPendingUpdatesForBoard(tabId) && !itemsRequests.has(tabId)) {
               safeItems[tabId] = items;
             }
           }
-          // 노트 데이터 로딩이 완전히 끝난 후에야 isPrefetched를 true로 전환
-          // → 이 시점부터 DocumentBoard의 빈 문서 자동 생성이 허용됨
-          set({ items: safeItems, isPrefetched: true });
-        } else {
-          // 폴백: 활성 탭만 개별 로딩 후 isPrefetched 전환
-          await get().fetchItems(firstTabId);
-          set({ isPrefetched: true });
+          set({ items: safeItems });
         }
       } else {
         set({ tabs, isPrefetched: true });
       }
     } catch (error) {
       console.error('Failed to prefetch archive:', error);
-      // 최종 폴백: 기존 Server Action 방식
-      try {
-        const tabs = await getArchiveTabs();
-        if (tabs.length > 0) {
-          const firstTabId = tabs[0].id;
-          await get().fetchItems(firstTabId);
-          set({ tabs, activeTabId: firstTabId, isPrefetched: true });
-        } else {
-          set({ tabs, isPrefetched: true });
-        }
-      } catch (e) {
-        console.error('Fallback also failed:', e);
-        set({ isPrefetched: true }); // UI가 멈추지 않도록
-      }
     }
   },
 
   fetchTabs: async () => {
-    try {
-      // 전략 1: 클라이언트 직접 호출 (폴백 포함)
-      let data = await fetchTabsDirect();
-      if (!data) {
-        data = await getArchiveTabs();
+    if (tabsRequest) return tabsRequest;
+    const task = (async () => {
+      set({ loadError: null });
+      try {
+        let data = await fetchTabsDirect();
+        if (!data) data = await withReadTimeout(getArchiveTabs());
+        let newActiveTabId = get().activeTabId;
+        if (!data.some(tab => tab.id === newActiveTabId)) newActiveTabId = data[0]?.id ?? null;
+        set({ tabs: data, activeTabId: newActiveTabId });
+        if (newActiveTabId && !await get().fetchItems(newActiveTabId)) throw new Error('노트 내용 조회 실패');
+        // 홈 사전 로딩 여부와 무관하게 직접 진입에서도 초기화를 완료한다.
+        set({ isPrefetched: true });
+      } catch (error) {
+        console.error('Failed to fetch tabs:', error);
+        set({ loadError: '노트를 불러오지 못했습니다. 연결을 확인한 뒤 다시 시도해 주세요.' });
       }
-      
-      let newActiveTabId = get().activeTabId;
-      
-      if (data.length > 0 && !newActiveTabId) {
-        newActiveTabId = data[0].id;
-      }
-      
-      // 전략 2: fetchItems 내부에서 백그라운드 최신화 처리
-      if (newActiveTabId) {
-        get().fetchItems(newActiveTabId);
-      }
-      
-      set({ tabs: data, activeTabId: newActiveTabId });
-    } catch (error) {
-      console.error('Failed to fetch tabs:', error);
-    }
+    })().finally(() => { tabsRequest = undefined; });
+    tabsRequest = task;
+    return task;
   },
 
   addTab: async (tab) => {
@@ -347,33 +329,29 @@ export const useArchiveStore = create<ArchiveState>()(
   })),
 
   fetchItems: async (boardId) => {
-    try {
-      // 전략 2: 이미 캐시에 있으면 백그라운드에서만 최신화
-      const existingItems = get().items[boardId];
-      
-      // 전략 1: 클라이언트 직접 호출 (폴백 포함)
-      let data = await fetchNotesDirect(boardId);
-      if (!data) {
-        data = await getArchiveNotes(boardId);
+    const running = itemsRequests.get(boardId);
+    if (running) return running;
+    const task = (async () => {
+      set(state => ({ itemLoadErrors: { ...state.itemLoadErrors, [boardId]: undefined } }));
+      try {
+        const existingItems = get().items[boardId];
+        let data = await fetchNotesDirect(boardId);
+        if (!data) data = await withReadTimeout(getArchiveNotes(boardId));
+        const parsedItems: BoardItem[] = data.map(parseNoteToBoardItem);
+        parsedItems.sort((a, b) => a.position - b.position);
+        // 수정 중이면 사용자 입력을 우선하고, 같은 결과는 불필요하게 다시 그리지 않는다.
+        if (hasPendingUpdatesForBoard(boardId)) return true;
+        if (existingItems && JSON.stringify(existingItems) === JSON.stringify(parsedItems)) return true;
+        set(state => ({ items: { ...state.items, [boardId]: parsedItems } }));
+        return true;
+      } catch (error) {
+        console.error('Failed to fetch items:', error);
+        set(state => ({ itemLoadErrors: { ...state.itemLoadErrors, [boardId]: '노트 내용을 불러오지 못했습니다. 다시 시도해 주세요.' } }));
+        return false;
       }
-      
-      const parsedItems: BoardItem[] = data.map(parseNoteToBoardItem);
-      parsedItems.sort((a, b) => a.position - b.position);
-      
-      // Race condition 방어: 수정 중이면 서버 데이터 적용 스킵
-      if (hasPendingUpdatesForBoard(boardId)) {
-        return; // 사용자 입력 우선
-      }
-      
-      // Stale cache flash 방지: 데이터가 동일하면 리렌더링 스킵
-      if (existingItems && JSON.stringify(existingItems) === JSON.stringify(parsedItems)) {
-        return;
-      }
-      
-      set(state => ({ items: { ...state.items, [boardId]: parsedItems } }));
-    } catch (error) {
-      console.error('Failed to fetch items:', error);
-    }
+    })().finally(() => { itemsRequests.delete(boardId); });
+    itemsRequests.set(boardId, task);
+    return task;
   },
 
   addItem: async (boardId, item) => {

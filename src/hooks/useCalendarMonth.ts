@@ -1,7 +1,7 @@
 'use client'
 
 import { queryOptions, useQuery, useQueryClient } from '@tanstack/react-query'
-import { getCalendarMonthSnapshot } from '@/app/actions/calendarMonth'
+import { loadViewData } from '@/lib/loadViewData'
 import type { CalendarMonthKey } from '@/types/calendarMonth'
 
 export const calendarMonthQueryKey = (monthKey: CalendarMonthKey) => ['calendar-month', monthKey] as const
@@ -9,7 +9,7 @@ export const calendarMonthQueryKey = (monthKey: CalendarMonthKey) => ['calendar-
 export function calendarMonthQueryOptions(monthKey: CalendarMonthKey) {
   return queryOptions({
     queryKey: calendarMonthQueryKey(monthKey),
-    queryFn: () => getCalendarMonthSnapshot(monthKey),
+    queryFn: ({ signal }) => loadViewData('month', { monthKey }, signal),
     staleTime: 5 * 60 * 1000,
     gcTime: 30 * 60 * 1000,
   })

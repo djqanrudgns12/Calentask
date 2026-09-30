@@ -9,13 +9,12 @@ import {
   getDeletedActivities, restoreActivity, hardDeleteActivity, emptyTrash
 } from '@/app/actions/calendar'
 import { createClient } from '@/lib/supabase/client'
-import { useDeletedLinkBookmarks, useDeletedLinkLoungeMutations } from '@/hooks/useLinkLoungeQueries'
 import type { Activity } from '@/app/actions/calendar'
 import type { AgendaTask } from '@/app/actions/agenda'
 
 // ─── 통합 휴지통 항목 타입 ───
 
-export type TrashItemType = 'calendar' | 'agenda' | 'archive' | 'anniversary' | 'link'
+export type TrashItemType = 'calendar' | 'agenda' | 'archive' | 'anniversary'
 
 export interface TrashItem {
   id: string
@@ -92,10 +91,6 @@ export function useDataHub() {
   const { data: deletedArchiveTabs = [], isLoading: isLoadingArchive } = useDeletedArchiveTabs()
   const { data: deletedAnniversaries = [], isLoading: isLoadingAnniversaries } = useDeletedAnniversaries()
   
-  // 링크 라운지 (React Query)
-  const { data: deletedBookmarks = [] } = useDeletedLinkBookmarks()
-  const { restoreBookmark, hardDeleteBookmark, emptyTrash: emptyLinkTrash } = useDeletedLinkLoungeMutations()
-
   const isLoading = isLoadingActivities || isLoadingAgenda || isLoadingArchive || isLoadingAnniversaries
 
   // 통합 휴지통 아이템 목록 생성
@@ -135,16 +130,6 @@ export function useDataHub() {
       deletedAt: ann.deleted_at!,
       meta: { presetType: ann.preset_type },
       originalData: ann,
-    })),
-    ...deletedBookmarks.map((b) => ({
-      id: b.id,
-      type: 'link' as TrashItemType,
-      title: b.title,
-      subtitle: b.url,
-      deletedAt: b.deletedAt!,
-      icon: b.icon,
-      meta: { category: b.category },
-      originalData: b,
     })),
   ].sort((a, b) => new Date(b.deletedAt).getTime() - new Date(a.deletedAt).getTime())
 
@@ -238,9 +223,6 @@ export function useDataHub() {
       case 'anniversary':
         restoreAnniversaryMutation.mutate(item.id)
         break
-      case 'link':
-        restoreBookmark.mutate(item.id)
-        break
     }
   }
 
@@ -259,9 +241,6 @@ export function useDataHub() {
         case 'anniversary':
           hardDeleteAnniversaryMutation.mutate(item.id)
           break
-        case 'link':
-          hardDeleteBookmark.mutate(item.id)
-          break
       }
     }
   }
@@ -269,7 +248,6 @@ export function useDataHub() {
   const handleEmptyTrash = () => {
     if (confirm('휴지통을 비우시겠습니까? 모든 항목이 영구 삭제됩니다.')) {
       emptyTrashMutation.mutate()
-      emptyLinkTrash.mutate()
       emptyArchiveTrash().then(() => {
         queryClient.invalidateQueries({ queryKey: ['deleted_archive_tabs'] })
       })
@@ -306,11 +284,6 @@ export function useDataHub() {
       hardDeleteAnniversaryMutation.mutate(a.id)
     }
 
-    // 링크 라운지
-    const expiredBookmarks = deletedBookmarks.filter(b => b.deletedAt && b.deletedAt < cutoff)
-    for (const b of expiredBookmarks) {
-      hardDeleteBookmark.mutate(b.id)
-    }
   }
 
   const isRestoring = restoreActivityMutation.isPending || restoreAgendaMutation.isPending || restoreArchiveMutation.isPending || restoreAnniversaryMutation.isPending

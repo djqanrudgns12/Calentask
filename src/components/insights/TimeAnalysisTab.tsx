@@ -61,7 +61,7 @@ export default function TimeAnalysisTab() {
 
   const [selectedSubjectId, setSelectedSubjectId] = useState<string | null>(null)
 
-  const { data: insightsData, isLoading } = useInsightsData(startDateIso, endDateIso)
+  const { data: insightsData, isLoading, error } = useInsightsData(startDateIso, endDateIso)
 
   // 최적화: 필터 및 데이터 변경으로 인한 화면 멈춤 방지 (Concurrent Mode)
   const deferredInsightsData = useDeferredValue(insightsData)
@@ -114,6 +114,8 @@ export default function TimeAnalysisTab() {
   }, [categoryBreakdown])
 
 
+
+  if (error && !insightsData) return <p role="alert" className="p-4 text-sm text-destructive">시간 분석 데이터를 불러오지 못했습니다. 새로고침을 눌러 다시 시도해 주세요.</p>
 
   if (isLoading) {
     return (

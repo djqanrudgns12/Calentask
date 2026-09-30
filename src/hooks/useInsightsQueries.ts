@@ -1,29 +1,46 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { getActivityTemplates, createActivityTemplate, updateActivityTemplate, deleteActivityTemplate, createActivityFromTemplate, getInsightsData, getSubjectDetails, getAllTemplatesSummary, getTemplateFullAnalytics, getCategoryMonthlyTrend, getOverviewKPI, getExecutionAnalytics, getTemplateLinkedActivities, linkActivityToTemplate, unlinkActivityFromTemplate, searchActivitiesForLinking, getAnnualGoalProgress } from '@/app/actions/insights'
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query'
+import { useEffect } from 'react'
+import { loadViewData } from '@/lib/loadViewData'
+import { invalidateQueryRoots } from '@/lib/queryDependencies'
+import { overviewDashboardQueryOptions, templatesSummaryQueryOptions } from '@/lib/insightsQueryOptions'
+import type { PeriodDates, PeriodPreset } from '@/store/useSharedPeriodStore'
+import { getActivityTemplates, createActivityTemplate, updateActivityTemplate, deleteActivityTemplate, createActivityFromTemplate, getSubjectDetails, getTemplateFullAnalytics, getCategoryMonthlyTrend, getOverviewKPI, getTemplateLinkedActivities, linkActivityToTemplate, unlinkActivityFromTemplate, searchActivitiesForLinking, getAnnualGoalProgress } from '@/app/actions/insights'
 import type { ActivityTemplate } from '@/app/actions/insights'
 
 export function useActivityTemplates() {
   return useQuery({
     queryKey: ['activityTemplates'],
-    queryFn: () => getActivityTemplates()
+    queryFn: () => getActivityTemplates(),
+    staleTime: 5 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
   })
+}
+
+export function useOverviewDashboard(dates: PeriodDates, preset: PeriodPreset) {
+  const queryClient = useQueryClient()
+  const query = useQuery({ ...overviewDashboardQueryOptions(dates, preset), placeholderData: keepPreviousData })
+  useEffect(() => {
+    if (!query.data || query.isPlaceholderData) return
+    const timestamp = { updatedAt: query.dataUpdatedAt }
+    // 같은 스냅샷의 원본을 시간 분석·편집 화면에서도 재사용한다.
+    queryClient.setQueryData(['insights', dates.startDate, dates.endDate], query.data.insights, timestamp)
+    queryClient.setQueryData(['activityTemplates'], query.data.templates, timestamp)
+  }, [queryClient, query.data, query.dataUpdatedAt, query.isPlaceholderData, dates.startDate, dates.endDate])
+  return query
 }
 
 export function useCreateActivityFromTemplate() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: ({ templateId, customDate, durationMinutes }: { templateId: string, customDate?: Date, durationMinutes?: number }) => createActivityFromTemplate(templateId, customDate, durationMinutes),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['activities'] })
-      queryClient.invalidateQueries({ queryKey: ['insights'] })
-    }
+    onSuccess: () => invalidateQueryRoots(queryClient, ['activities', 'calendar-month', 'templatesSummary', 'overviewDashboard', 'insights'])
   })
 }
 
 export function useInsightsData(startDate: string, endDate: string) {
   return useQuery({
     queryKey: ['insights', startDate, endDate],
-    queryFn: () => getInsightsData(startDate, endDate),
+    queryFn: ({ signal }) => loadViewData('time', { startDate, endDate }, signal),
     enabled: !!startDate && !!endDate,
     staleTime: 5 * 60 * 1000, // 5분
   })
@@ -46,10 +63,7 @@ export function useCreateTemplate() {
       return result.data
     },
     onSuccess: async () => {
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ['activityTemplates'] }),
-        queryClient.invalidateQueries({ queryKey: ['templatesSummary'] })
-      ])
+      await invalidateQueryRoots(queryClient, ['activityTemplates', 'templatesSummary'])
     }
   })
 }
@@ -63,11 +77,7 @@ export function useUpdateTemplate() {
       return result.data
     },
     onSuccess: async () => {
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ['activityTemplates'] }),
-        queryClient.invalidateQueries({ queryKey: ['templatesSummary'] }),
-        queryClient.invalidateQueries({ queryKey: ['templateLinkedActivities'] })
-      ])
+      await invalidateQueryRoots(queryClient, ['activityTemplates', 'templatesSummary', 'templateLinkedActivities', 'activities', 'calendar-month'])
     }
   })
 }
@@ -77,10 +87,7 @@ export function useDeleteTemplate() {
   return useMutation({
     mutationFn: (id: string) => deleteActivityTemplate(id),
     onSuccess: async () => {
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ['activityTemplates'] }),
-        queryClient.invalidateQueries({ queryKey: ['templatesSummary'] })
-      ])
+      await invalidateQueryRoots(queryClient, ['activityTemplates', 'templatesSummary'])
     }
   })
 }
@@ -89,11 +96,11 @@ export function useDeleteTemplate() {
 
 export function useAllTemplatesSummary(startDate: string, endDate: string, prevStartDate: string, prevEndDate: string, trendType: 'daily' | 'weekly' | 'monthly' = 'daily') {
   return useQuery({
-    queryKey: ['templatesSummary', startDate, endDate, prevStartDate, prevEndDate, trendType],
-    queryFn: () => getAllTemplatesSummary(startDate, endDate, prevStartDate, prevEndDate, trendType),
+    ...templatesSummaryQueryOptions({ startDate, endDate, prevStartDate, prevEndDate, trendType, currentLabel: '', prevLabel: '' }),
     enabled: !!startDate && !!endDate && !!prevStartDate && !!prevEndDate,
     staleTime: 5 * 60 * 1000,
-    gcTime: 15 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
+    placeholderData: keepPreviousData,
   })
 }
 
@@ -135,7 +142,8 @@ export function useOverviewKPI(startDate: string, endDate: string, periodType: s
 export function useExecutionAnalytics(startDate?: string, endDate?: string) {
   return useQuery({
     queryKey: ['executionAnalytics', startDate, endDate],
-    queryFn: () => getExecutionAnalytics(startDate, endDate),
+    queryFn: ({ signal }) => loadViewData('execution', { startDate: startDate ?? '', endDate: endDate ?? '' }, signal),
+    enabled: !!startDate && !!endDate,
     staleTime: 5 * 60 * 1000,
     gcTime: 15 * 60 * 1000,
   })

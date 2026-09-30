@@ -14,7 +14,6 @@ import { SmartAgenda } from './SmartAgenda'
 import { QuickActions } from './QuickActions'
 import { PendingClassification } from './PendingClassification'
 import { usePendingActivities } from '@/hooks/useCalendarQueries'
-import { LinkLoungeCard } from './LinkLoungeCard'
 import { RecentNotes } from './RecentNotes'
 
 const containerVariants = {
@@ -237,10 +236,7 @@ export function HomeDashboard() {
       </div>
 
       {/* Bottom Widgets Row */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-6 mt-5 md:mt-6">
-        <motion.div variants={itemVariants}>
-          <LinkLoungeCard />
-        </motion.div>
+      <div className="grid grid-cols-1 gap-5 md:gap-6 mt-5 md:mt-6">
         <motion.div variants={itemVariants}>
           <RecentNotes />
         </motion.div>

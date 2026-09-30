@@ -379,7 +379,7 @@ export function DocumentBoard() {
       // We use a small timeout to ensure Tiptap has fully initialized its schema
       setTimeout(() => {
         if (!editor.isDestroyed) {
-          editor.commands.setContent(getValidContent());
+          editor.commands.setContent(getValidContent(), { emitUpdate: false });
         }
       }, 50);
     } else {
@@ -394,7 +394,7 @@ export function DocumentBoard() {
       if (!editor.isFocused && storeJson !== editorJson && (storeJson !== '{}' || storeText !== editorText)) {
         setTimeout(() => {
           if (!editor.isDestroyed) {
-            editor.commands.setContent(getValidContent());
+            editor.commands.setContent(getValidContent(), { emitUpdate: false });
           }
         }, 10);
       }

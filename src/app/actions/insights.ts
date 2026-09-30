@@ -1,8 +1,19 @@
 'use server'
 
+import { indexTemplateActivities, type TemplateActivityRow } from '@/lib/insightsAggregation'
+import { readAllQueryRows } from '@/lib/readAllQueryRows'
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { getActivities, type Activity } from './calendar'
+
+type ReadContext = { supabase: Awaited<ReturnType<typeof createClient>>; userId: string }
+
+async function getReadContext(): Promise<ReadContext> {
+  const supabase = await createClient()
+  const { data: { user }, error } = await supabase.auth.getUser()
+  if (error || !user) throw new Error('로그인이 필요합니다.')
+  return { supabase, userId: user.id }
+}
 
 export type ActivityTemplate = {
   id: string
@@ -18,9 +29,10 @@ export type ActivityTemplate = {
 }
 
 export async function getActivityTemplates() {
-  const supabase = await createClient()
-  const { data: userData } = await supabase.auth.getUser()
-  if (!userData.user) throw new Error('Not authenticated')
+  return readActivityTemplates(await getReadContext())
+}
+
+async function readActivityTemplates({ supabase, userId }: ReadContext) {
 
   const { data, error } = await supabase
     .from('activity_templates')
@@ -36,7 +48,7 @@ export async function getActivityTemplates() {
       custom_unit_minutes,
       template_category_map ( category_id, categories ( hex_color ) )
     `)
-    .eq('user_id', userData.user.id)
+    .eq('user_id', userId)
     .order('created_at', { ascending: false })
 
   if (error) throw new Error(error.message)
@@ -269,21 +281,23 @@ export async function createActivityFromTemplate(templateId: string, customStart
 }
 
 export async function getInsightsData(startDate: string, endDate: string) {
-  const supabase = await createClient()
-  const { data: userData } = await supabase.auth.getUser()
-  if (!userData.user) throw new Error('Not authenticated')
+  return readInsightsData(startDate, endDate, await getReadContext())
+}
+
+async function readInsightsData(startDate: string, endDate: string, { supabase, userId }: ReadContext) {
 
   // FEAT: 경량 쿼리로 불필요한 필드(memo, location 등) 제외
-  const { data: activitiesData } = await supabase
+  const activitiesData = await readAllQueryRows((from, to) => supabase
     .from('activities')
     .select(`
       id, title, start_time, end_time, is_all_day, type, hex_color,
       activity_category_map(categories(id, name, hex_color))
     `)
-    .eq('user_id', userData.user.id)
+    .eq('user_id', userId)
     .gte('start_time', startDate)
     .lte('end_time', endDate)
     .is('deleted_at', null)
+    .order('id').range(from, to))
 
   const activities = (activitiesData || []).map((a: any) => ({
     ...a,
@@ -348,6 +362,7 @@ export async function getInsightsData(startDate: string, endDate: string) {
       start_time: act.start_time,
       end_time: act.end_time,
       is_all_day: act.is_all_day,
+      type: act.type,
       categories: act.categories?.map((c: any) => ({
         id: c.id,
         name: c.name,
@@ -486,58 +501,47 @@ export async function getAllTemplatesSummary(
   // 1단계: 템플릿, 직접생성 활동, 수동 연결, 카테고리 병렬 조회
   const [
     templates,
-    { data: directActivities, error: directError },
-    { data: links },
-    { data: allCategories }
+    directActivities,
+    links,
+    { data: allCategories, error: categoryError }
   ] = await Promise.all([
-    getActivityTemplates(),
-    supabase
+    readActivityTemplates({ supabase, userId: userData.user.id }),
+    readAllQueryRows((from, to) => supabase
       .from('activities')
       .select('id, template_id, start_time, end_time')
       .eq('user_id', userData.user.id)
       .not('template_id', 'is', null)
-      .is('deleted_at', null),
-    supabase
+      .is('deleted_at', null)
+      .order('id').range(from, to)),
+    readAllQueryRows((from, to) => supabase
       .from('template_activity_links')
-      .select('template_id, activity_id'),
+      .select('template_id, activity_id, activity_templates!inner(user_id), activities!inner(id, user_id, start_time, end_time, deleted_at)')
+      .eq('activity_templates.user_id', userData.user.id)
+      .eq('activities.user_id', userData.user.id)
+      .is('activities.deleted_at', null)
+      .order('id').range(from, to)),
     supabase
       .from('categories')
       .select('id, name')
       .eq('user_id', userData.user.id)
   ])
 
-  if (directError) throw new Error(directError.message)
+  if (categoryError) throw new Error(categoryError.message)
 
-  // 2단계: 수동 연결된 활동의 상세 정보 조회 (links 결과에 의존)
-  const linkedIds = (links || []).map((l: any) => l.activity_id)
-  let linkedActivities: any[] = []
-  if (linkedIds.length > 0) {
-    const { data: linkedData } = await supabase
-      .from('activities')
-      .select('id, start_time, end_time')
-      .eq('user_id', userData.user.id)
-      .in('id', linkedIds)
-      .is('deleted_at', null)
-    linkedActivities = linkedData || []
-  }
-
-  const linkedActMap = new Map(linkedActivities.map(a => [a.id, a]))
-  
-  const allActivities = [...(directActivities || [])]
-  ;(links || []).forEach((l: any) => {
-    const act = linkedActMap.get(l.activity_id)
-    if (act) {
-      allActivities.push({
-        id: act.id,
-        template_id: l.template_id,
-        start_time: act.start_time,
-        end_time: act.end_time
-      })
-    }
+  // 연결 활동도 한 번의 관계 조회로 받으므로 후속 ID 조회가 필요 없다.
+  const allActivities: TemplateActivityRow[] = [...directActivities]
+  links.forEach(link => {
+    const act = Array.isArray(link.activities) ? link.activities[0] : link.activities
+    if (!act) return
+    allActivities.push({ id: act.id, template_id: link.template_id, start_time: act.start_time, end_time: act.end_time })
   })
 
   // 시간 역순 정렬
-  allActivities.sort((a, b) => new Date(b.start_time).getTime() - new Date(a.start_time).getTime())
+  const activitiesByTemplate = indexTemplateActivities(allActivities as TemplateActivityRow[])
+  const currentStartMs = Date.parse(currentMonthStart)
+  const currentEndMs = Date.parse(currentMonthEnd)
+  const previousStartMs = Date.parse(prevMonthStart)
+  const previousEndMs = Date.parse(prevMonthEnd)
 
   // 카테고리 ID → name 매핑
   const categoryNameMap: Record<string, string> = {}
@@ -573,7 +577,7 @@ export async function getAllTemplatesSummary(
   }
 
   const summaries: TemplateSummary[] = templates.map(tmpl => {
-    const acts = allActivities.filter((a: any) => a.template_id === tmpl.id)
+    const acts = activitiesByTemplate.get(tmpl.id) ?? []
     
     let totalMinutes = 0
     let currentMonthMinutes = 0
@@ -592,21 +596,19 @@ export async function getAllTemplatesSummary(
     const customUnitEnabled = (tmpl as any).custom_unit_enabled || false
     const customUnitMinutes = (tmpl as any).custom_unit_minutes || 40
 
-    acts.forEach((a: any) => {
-      const start = new Date(a.start_time)
-      const end = new Date(a.end_time)
-      const mins = (end.getTime() - start.getTime()) / 60000
+    acts.forEach(a => {
+      const mins = a.minutes
 
       totalMinutes += mins
       const units = customUnitEnabled ? Math.floor(mins / customUnitMinutes) : 0
       totalUnits += units
 
-      if (a.start_time >= currentMonthStart && a.start_time <= currentMonthEnd) {
+      if (a.startMs >= currentStartMs && a.startMs <= currentEndMs) {
         currentMonthMinutes += mins
         currentMonthCount++
         currentMonthUnits += units
       }
-      if (a.start_time >= prevMonthStart && a.start_time <= prevMonthEnd) {
+      if (a.startMs >= previousStartMs && a.startMs <= previousEndMs) {
         prevMonthMinutes += mins
         prevMonthCount++
         prevMonthUnits += units
@@ -614,7 +616,7 @@ export async function getAllTemplatesSummary(
       if (mins > maxSession) maxSession = mins
 
       // 트렌드 데이터 (선택된 기간 내)
-      if (a.start_time >= currentMonthStart && a.start_time <= currentMonthEnd) {
+      if (a.startMs >= currentStartMs && a.startMs <= currentEndMs) {
         const actKST = getKSTDate(a.start_time)
         const key = getTrendKey(actKST)
         const bucketIndex = bucketMap.get(key)
@@ -1069,9 +1071,10 @@ export type OverviewKPI = {
  * periodType: 'week' | 'month' | 'year' | 'custom' — 비교 레이블용
  */
 export async function getOverviewKPI(startDate: string, endDate: string, periodType: string = 'week'): Promise<OverviewKPI> {
-  const supabase = await createClient()
-  const { data: userData } = await supabase.auth.getUser()
-  if (!userData.user) throw new Error('Not authenticated')
+  return readOverviewKPI(startDate, endDate, periodType, await getReadContext())
+}
+
+async function readOverviewKPI(startDate: string, endDate: string, periodType: string, { supabase, userId }: ReadContext) {
 
   // 방어 코드: startDate/endDate가 비어있거나 유효하지 않은 경우 이번 주를 기본값으로 사용
   const now = new Date()
@@ -1098,20 +1101,12 @@ export async function getOverviewKPI(startDate: string, endDate: string, periodT
   prevStart.setHours(0, 0, 0, 0)
 
   // 1단계: 독립적인 7개 쿼리를 병렬로 실행
-  const [
-    { data: currentActs },
-    { data: prevActs },
-    { data: currentDone },
-    { data: prevDone },
-    { data: currentNotes },
-    { data: prevNotes },
-    { data: streakActs }
-  ] = await Promise.all([
+  const results = await Promise.all([
     // 1) 활동 시간 (현재 기간)
     supabase
       .from('activities')
       .select('id, start_time, end_time')
-      .eq('user_id', userData.user.id)
+      .eq('user_id', userId)
       .gte('start_time', currentStart.toISOString())
       .lte('end_time', currentEnd.toISOString())
       .is('deleted_at', null),
@@ -1119,7 +1114,7 @@ export async function getOverviewKPI(startDate: string, endDate: string, periodT
     supabase
       .from('activities')
       .select('start_time, end_time')
-      .eq('user_id', userData.user.id)
+      .eq('user_id', userId)
       .gte('start_time', prevStart.toISOString())
       .lte('end_time', prevEnd.toISOString())
       .is('deleted_at', null),
@@ -1127,7 +1122,7 @@ export async function getOverviewKPI(startDate: string, endDate: string, periodT
     supabase
       .from('agenda_tasks')
       .select('id')
-      .eq('user_id', userData.user.id)
+      .eq('user_id', userId)
       .eq('status', 'done')
       .not('completed_at', 'is', null)
       .gte('completed_at', currentStart.toISOString())
@@ -1136,7 +1131,7 @@ export async function getOverviewKPI(startDate: string, endDate: string, periodT
     supabase
       .from('agenda_tasks')
       .select('id')
-      .eq('user_id', userData.user.id)
+      .eq('user_id', userId)
       .eq('status', 'done')
       .not('completed_at', 'is', null)
       .gte('completed_at', prevStart.toISOString())
@@ -1145,24 +1140,36 @@ export async function getOverviewKPI(startDate: string, endDate: string, periodT
     supabase
       .from('notes')
       .select('id')
-      .eq('user_id', userData.user.id)
+      .eq('user_id', userId)
       .gte('updated_at', currentStart.toISOString())
       .lte('updated_at', currentEnd.toISOString()),
     // 3-2) 아카이브 메모 (이전 기간)
     supabase
       .from('notes')
       .select('id')
-      .eq('user_id', userData.user.id)
+      .eq('user_id', userId)
       .gte('updated_at', prevStart.toISOString())
       .lte('updated_at', prevEnd.toISOString()),
     // 4) 스트릭 계산 (최근 90일)
     supabase
       .from('activities')
       .select('start_time')
-      .eq('user_id', userData.user.id)
+      .eq('user_id', userId)
       .gte('start_time', new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000).toISOString())
       .is('deleted_at', null)
   ])
+  const failed = results.find(result => result.error)
+  if (failed?.error) throw new Error(failed.error.message)
+  const [
+    { data: currentActs },
+    { data: prevActs },
+    { data: currentDone },
+    { data: prevDone },
+    { data: currentNotes },
+    { data: prevNotes },
+    { data: streakActs }
+  ] = results
+
 
   let currentMins = 0
   ;(currentActs || []).forEach((a: any) => {
@@ -1203,18 +1210,20 @@ export async function getOverviewKPI(startDate: string, endDate: string, periodT
   const currentActIds = (currentActs || []).map((a: any) => a.id).filter(Boolean)
   
   const [
-    { data: allCats },
-    { data: activeCats }
+    { data: allCats, error: allCatsError },
+    { data: activeCats, error: activeCatsError }
   ] = await Promise.all([
     supabase
       .from('categories')
       .select('id')
-      .eq('user_id', userData.user.id),
-    supabase
+      .eq('user_id', userId),
+    currentActIds.length ? supabase
       .from('activity_category_map')
       .select('category_id')
-      .in('activity_id', currentActIds.length > 0 ? currentActIds : ['__none__'])
+      .in('activity_id', currentActIds) : Promise.resolve({ data: [], error: null })
   ])
+
+  if (allCatsError || activeCatsError) throw new Error((allCatsError || activeCatsError)!.message)
 
   const uniqueActiveCats = new Set((activeCats || []).map((c: any) => c.category_id))
 
@@ -1283,7 +1292,8 @@ export async function getExecutionAnalytics(startDate?: string, endDate?: string
     query = query.lte('created_at', endDate)
   }
 
-  const { data: tasks } = await query
+  const { data: tasks, error: executionError } = await query
+  if (executionError) throw new Error(executionError.message)
 
   const allTasks = (tasks || []) as any[]
   const now = new Date()
@@ -1589,19 +1599,19 @@ export async function searchActivitiesForLinking(
  * 전체 일정을 반환하지 않고, 서버에서 연산 후 시간 수치만 반환합니다.
  */
 export async function getAnnualGoalProgress(startDate: string, endDate: string) {
-  const supabase = await createClient()
-  const { data: userData } = await supabase.auth.getUser()
-  if (!userData.user) throw new Error('Not authenticated')
+  return readAnnualGoalProgress(startDate, endDate, await getReadContext())
+}
 
-  const { data, error } = await supabase
+async function readAnnualGoalProgress(startDate: string, endDate: string, { supabase, userId }: ReadContext) {
+
+  const data = await readAllQueryRows((from, to) => supabase
     .from('activities')
     .select('start_time, end_time')
-    .eq('user_id', userData.user.id)
+    .eq('user_id', userId)
     .gte('start_time', startDate)
     .lte('end_time', endDate)
     .is('deleted_at', null)
-
-  if (error) throw new Error(error.message)
+    .order('id').range(from, to))
 
   let totalMins = 0
   ;(data || []).forEach((act: any) => {
@@ -1615,4 +1625,16 @@ export async function getAnnualGoalProgress(startDate: string, endDate: string) 
   const percent = Math.min(Math.round((hours / GOAL_HOURS) * 100), 100)
 
   return { hours, percent }
+}
+
+export async function getOverviewDashboardSnapshot(startDate: string, endDate: string, prevStartDate: string, prevEndDate: string, periodType: string, yearStart: string, yearEnd: string) {
+  const context = await getReadContext()
+  const [insights, previousInsights, kpi, templates, annualGoal] = await Promise.all([
+    readInsightsData(startDate, endDate, context),
+    readInsightsData(prevStartDate, prevEndDate, context),
+    readOverviewKPI(startDate, endDate, periodType, context),
+    readActivityTemplates(context),
+    readAnnualGoalProgress(yearStart, yearEnd, context),
+  ])
+  return { insights, previousInsights: { summary: previousInsights.summary, rawData: previousInsights.rawData }, kpi, templates, annualGoal }
 }

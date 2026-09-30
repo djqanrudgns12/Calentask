@@ -5,7 +5,7 @@ import Image from 'next/image'
 import { useSwipeable } from 'react-swipeable'
 import { useCalendarStore, type ViewMode } from '@/store/useCalendarStore'
 import { Button } from '@/components/ui/button'
-import { Plus, Tags, Database, LogOut, Calendar as CalendarIcon, DownloadCloud, Gift, Sparkles, ChevronDown, Archive, NotebookPen, Bookmark, Trash2, Settings, Home, Puzzle, Globe2, Utensils, GraduationCap } from 'lucide-react'
+import { Plus, Tags, Database, LogOut, Calendar as CalendarIcon, DownloadCloud, Gift, Sparkles, ChevronDown, Archive, NotebookPen, Trash2, Settings, Home, Puzzle, Globe2, Utensils, GraduationCap } from 'lucide-react'
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
 
 import { getCalendarEventDetail } from '@/app/actions/calendarMonth'
@@ -17,7 +17,7 @@ import { useSyncJobSubscription } from '@/hooks/useSyncJob'
 import { BottomNavigation } from '@/components/ui/BottomNavigation'
 import { MobileCategoryBar } from '@/components/calendar/MobileCategoryBar'
 import dynamic from 'next/dynamic'
-import { useCalendarMonth } from '@/hooks/useCalendarMonth'
+import { useCalendarMonth, calendarMonthQueryOptions } from '@/hooks/useCalendarMonth'
 import { calendarSummaryToActivity, getAdjacentMonthKey, toCalendarMonthKey } from '@/lib/calendarMonth'
 import type { CalendarEventSummary } from '@/types/calendarMonth'
 import { CalentaskViewLoading } from '@/components/loading/CalentaskLoadingScreen'
@@ -25,11 +25,15 @@ import { isJobInFlight, useSyncJobStore } from '@/store/useSyncJobStore'
 import { scheduleIdleTask } from '@/lib/scheduleIdleTask'
 import { CommandPaletteProvider } from '@/providers/CommandPaletteProvider'
 import { tidyStatsWarmup } from '@/components/tidy-stats/useTidyStats'
+import { useViewWarmup } from '@/hooks/useViewWarmup'
+import { invalidateQueryRoots } from '@/lib/queryDependencies'
+import type { SpecialDaysMap } from '@/types/calendarMonth'
 
 const viewLoading = () => <CalentaskViewLoading />
+const EMPTY_EVENTS: CalendarEventSummary[] = []
+const EMPTY_SPECIAL_DAYS: SpecialDaysMap = {}
 const MonthlyView = dynamic(() => import('@/components/calendar/MonthlyView').then(module => module.MonthlyView), { ssr: false, loading: viewLoading })
 const LegacyCalendarViews = dynamic(() => import('@/components/calendar/LegacyCalendarViews').then(module => module.LegacyCalendarViews), { ssr: false, loading: viewLoading })
-const LinkLoungeView = dynamic(() => import('@/components/link-lounge/LinkLoungeView').then(module => module.LinkLoungeView), { ssr: false, loading: viewLoading })
 const TagsView = dynamic(() => import('@/components/data-center/TagsView').then(module => module.TagsView), { ssr: false, loading: viewLoading })
 const TrashView = dynamic(() => import('@/components/data-center/TrashView').then(module => module.TrashView), { ssr: false, loading: viewLoading })
 const AnniversarySettingsView = dynamic(() => import('@/components/anniversary/AnniversarySettingsView').then(module => module.AnniversarySettingsView), { ssr: false, loading: viewLoading })
@@ -64,7 +68,7 @@ type CalendarViewMode = (typeof CALENDAR_VIEWS)[number]
 type MajorView = ViewMode | 'CALENDAR_GROUP'
 const MAJOR_VIEWS: readonly MajorView[] = [
   'home', 'school_meals', 'CALENDAR_GROUP', 'school_schedule', 'academic_data',
-  'archive_agenda', 'anniversary', 'google_sync', 'archive_notes', 'link_lounge',
+  'archive_agenda', 'anniversary', 'google_sync', 'archive_notes',
   'insights', 'template_center', 'tidy_stats', 'nice_import', 'tags', 'trash',
 ]
 
@@ -78,6 +82,7 @@ export function CalendarClient({ canViewTidyStats = false }: { canViewTidyStats?
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false)
   const [settingsTab, setSettingsTab] = useState<'profile' | 'calendar' | 'display'>('profile')
   const queryClient = useQueryClient()
+  const warmView = useViewWarmup()
   const prefersReducedMotion = useReducedMotion()
   // 통계 메뉴에 머무르면 화면 코드와 집계를 미리 받아 열자마자 보이게 한다.
   const tidyStatsWarm = useMemo(() => tidyStatsWarmup(queryClient, () => import('@/components/tidy-stats/TidyStatsDashboard')), [queryClient])
@@ -147,7 +152,7 @@ export function CalendarClient({ canViewTidyStats = false }: { canViewTidyStats?
   const isSchoolMeals = viewMode === 'school_meals'
   const isCalendarMenuOpen = ['monthly', 'weekly', 'list', 'semester', 'archive_agenda', 'anniversary', 'google_sync', 'school_schedule', 'academic_data'].includes(viewMode)
   const isMyCalendarActive = ['monthly', 'weekly', 'list', 'semester'].includes(viewMode)
-  const isArchiveMenuOpen = ['archive_notes', 'link_lounge'].includes(viewMode)
+  const isArchiveMenuOpen = viewMode === 'archive_notes'
   const isDataCenterMenuOpen = ['insights', 'nice_import', 'tags', 'trash', 'template_center', 'tidy_stats'].includes(viewMode)
 
   const handleLogout = async () => {
@@ -161,7 +166,7 @@ export function CalendarClient({ canViewTidyStats = false }: { canViewTidyStats?
   const monthlyQuery = useCalendarMonth(monthKey, viewMode === 'monthly')
 
   const monthlyEvents = useMemo(() => {
-    const snapshotEvents = monthlyQuery.data?.events ?? []
+    const snapshotEvents = monthlyQuery.data?.events ?? EMPTY_EVENTS
     if (activeCategories.length === 0) return snapshotEvents
     return snapshotEvents.filter(event => event.categories.some(category =>
       activeCategories.includes(category.id) || category.id === 'agenda-category'))
@@ -223,8 +228,9 @@ export function CalendarClient({ canViewTidyStats = false }: { canViewTidyStats?
         if (timers[key]) clearTimeout(timers[key])
         timers[key] = setTimeout(fn, delay)
       }
-      const invalidate = (keys: string[][]) =>
-        keys.forEach((key) => queryClient.invalidateQueries({ queryKey: key }))
+      const invalidate = (keys: string[][]) => {
+        void invalidateQueryRoots(queryClient, keys.map(key => key[0]))
+      }
 
       const channel = supabase.channel('db_realtime')
         // 캘린더 일정
@@ -241,13 +247,14 @@ export function CalendarClient({ canViewTidyStats = false }: { canViewTidyStats?
         // Agenda 할일 (Zustand 스토어)
         .on('postgres_changes', { event: '*', schema: 'public', table: 'agenda_tasks' }, () =>
           debounce('agenda', () => {
-            invalidate([['calendar-month']])
+            invalidate([['calendar-month'], ['overviewDashboard'], ['executionAnalytics']])
             if (useCalendarStore.getState().viewMode !== 'monthly') {
               void import('@/store/useAgendaStore').then(module => module.useAgendaStore.getState().fetchTasks())
             }
           }))
         .on('postgres_changes', { event: '*', schema: 'public', table: 'agenda_subtasks' }, () =>
           debounce('agenda', () => {
+            invalidate([['overviewDashboard'], ['executionAnalytics']])
             void import('@/store/useAgendaStore').then(module => module.useAgendaStore.getState().fetchTasks())
           }))
         .on('postgres_changes', { event: '*', schema: 'public', table: 'academic_events' }, () =>
@@ -255,17 +262,19 @@ export function CalendarClient({ canViewTidyStats = false }: { canViewTidyStats?
         // 아카이브 노트 (Zustand 스토어)
         .on('postgres_changes', { event: '*', schema: 'public', table: 'notes' }, () =>
           debounce('archive', () => {
+            invalidate([['overviewDashboard']])
             void import('@/store/useArchiveStore').then(module => module.useArchiveStore.getState().fetchTabs())
           }))
         .on('postgres_changes', { event: '*', schema: 'public', table: 'archive_tabs' }, () =>
           debounce('archive', () => {
             void import('@/store/useArchiveStore').then(module => module.useArchiveStore.getState().fetchTabs())
           }))
-        // 링크 라운지
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'link_lounge_bookmarks' }, () =>
-          debounce('link', () => invalidate([['link_lounge_bookmarks'], ['deleted_link_bookmarks']])))
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'link_lounge_categories' }, () =>
-          debounce('link', () => invalidate([['link_lounge_categories']])))
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'activity_templates' }, () =>
+          debounce('templates', () => invalidate([['activityTemplates'], ['templatesSummary'], ['overviewDashboard'], ['templateFullAnalytics']])) )
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'template_category_map' }, () =>
+          debounce('templates', () => invalidate([['activityTemplates'], ['templatesSummary'], ['overviewDashboard']])) )
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'template_activity_links' }, () =>
+          debounce('template-links', () => invalidate([['templateLinkedActivities'], ['templatesSummary'], ['templateFullAnalytics'], ['overviewDashboard']])) )
         .subscribe()
 
       return () => {
@@ -317,12 +326,7 @@ export function CalendarClient({ canViewTidyStats = false }: { canViewTidyStats?
     const prefetchAdjacent = () => {
       ;([-1, 1] as const).forEach(delta => {
         const adjacentMonth = getAdjacentMonthKey(monthKey, delta)
-        void queryClient.prefetchQuery({
-          queryKey: ['calendar-month', adjacentMonth],
-          queryFn: () => import('@/app/actions/calendarMonth').then(module => module.getCalendarMonthSnapshot(adjacentMonth)),
-          staleTime: 5 * 60 * 1000,
-          gcTime: 30 * 60 * 1000,
-        })
+        void queryClient.prefetchQuery(calendarMonthQueryOptions(adjacentMonth))
       })
     }
 
@@ -430,6 +434,8 @@ export function CalendarClient({ canViewTidyStats = false }: { canViewTidyStats?
                   >
                     <div className="flex flex-col space-y-1 mt-1 pb-1 ml-5 pl-2 border-l-2 border-border">
                       <button 
+                        onMouseEnter={() => warmView('monthly')}
+                        onFocus={() => warmView('monthly')}
                         onClick={() => setViewMode('monthly')}
                         className={`w-full text-left px-3 py-2 rounded-lg text-[13px] font-medium transition-colors flex items-center gap-2.5 ${
                           isMyCalendarActive ? 'bg-blue-50/70 text-blue-700 shadow-sm font-semibold' : 'text-muted-foreground hover:bg-accent hover:text-foreground'
@@ -540,15 +546,6 @@ export function CalendarClient({ canViewTidyStats = false }: { canViewTidyStats?
                         노트
                       </button>
 
-                      <button 
-                        onClick={() => setViewMode('link_lounge')}
-                        className={`w-full text-left px-3 py-2 rounded-lg text-[13px] font-medium transition-all duration-300 flex items-center gap-2.5 ${
-                          viewMode === 'link_lounge' ? 'bg-indigo-50/70 text-indigo-700 shadow-sm' : 'text-muted-foreground hover:bg-accent hover:text-foreground'
-                        }`}
-                      >
-                        <Bookmark className={`w-3.5 h-3.5 ${viewMode === 'link_lounge' ? 'text-indigo-600' : 'text-muted-foreground/50'}`} />
-                        링크 라운지
-                      </button>
                     </div>
                   </motion.div>
                 )}
@@ -591,6 +588,8 @@ export function CalendarClient({ canViewTidyStats = false }: { canViewTidyStats?
                   >
                     <div className="flex flex-col space-y-1 mt-1 pb-1 ml-5 pl-2 border-l-2 border-border">
                       <button 
+                        onMouseEnter={() => warmView('insights')}
+                        onFocus={() => warmView('insights')}
                         onClick={() => setViewMode('insights')}
                         className={`w-full text-left px-3 py-2 rounded-lg text-[13px] font-medium transition-all duration-300 flex items-center gap-2.5 group ${
                           viewMode === 'insights' ? 'bg-purple-50/70 text-purple-700 shadow-sm' : 'text-muted-foreground hover:bg-accent hover:text-foreground'
@@ -601,6 +600,8 @@ export function CalendarClient({ canViewTidyStats = false }: { canViewTidyStats?
                       </button>
 
                       <button 
+                        onMouseEnter={() => warmView('template_center')}
+                        onFocus={() => warmView('template_center')}
                         onClick={() => setViewMode('template_center')}
                         className={`w-full text-left px-3 py-2 rounded-lg text-[13px] font-medium transition-all duration-300 flex items-center gap-2.5 group ${
                           viewMode === 'template_center' ? 'bg-pink-50/70 text-pink-700 shadow-sm' : 'text-muted-foreground hover:bg-accent hover:text-foreground'
@@ -681,7 +682,7 @@ export function CalendarClient({ canViewTidyStats = false }: { canViewTidyStats?
 
         {/* Dynamic Views Area - Add padding for floating effect */}
         <div className={`flex flex-1 flex-col overflow-y-auto overflow-x-hidden ${viewMode === 'monthly' ? 'px-1.5 pb-2 md:px-4 md:pb-4' : 'px-1 pb-8 md:px-8'}`} {...swipeHandlers}>
-              <AnimatePresence mode="wait" custom={slideDirection}>
+              <AnimatePresence mode="popLayout" initial={false} custom={slideDirection}>
                 <motion.div
                   key={viewMode}
                   custom={slideDirection}
@@ -702,17 +703,18 @@ export function CalendarClient({ canViewTidyStats = false }: { canViewTidyStats?
                   initial="enter"
                   animate="center"
                   exit="exit"
-                  transition={prefersReducedMotion && viewMode === 'monthly' ? { duration: 0 } : { type: 'spring', stiffness: 350, damping: 35 }}
+                  transition={prefersReducedMotion ? { duration: 0 } : { duration: 0.12 }}
                   className="w-full flex-1 flex flex-col min-h-0"
                 >
                   {/* 모바일 카테고리 필터 바 — 캘린더 뷰에서만 표시, 캘린더와 함께 스크롤 */}
                   {isMyCalendarActive && <MobileCategoryBar />}
 
+                {viewMode === 'monthly' && monthlyQuery.error && <p role="alert" className="p-3 text-sm text-destructive">캘린더 데이터를 불러오지 못했습니다. 새로고침을 눌러 다시 시도해 주세요.</p>}
                 {viewMode === 'monthly' && (
                   <MonthlyView
                     currentDate={currentDate}
                     events={monthlyEvents}
-                    specialDays={monthlyQuery.data?.specialDays ?? {}}
+                    specialDays={monthlyQuery.data?.specialDays ?? EMPTY_SPECIAL_DAYS}
                     isLoading={monthlyQuery.isFetching && !monthlyQuery.data}
                     onEventOpen={handleMonthlyEventOpen}
                   />
@@ -752,11 +754,6 @@ export function CalendarClient({ canViewTidyStats = false }: { canViewTidyStats?
                 {viewMode === 'archive_notes' && (
                   <div className="flex-1 flex flex-col min-h-0 bg-background rounded-xl md:rounded-3xl overflow-hidden shadow-sm border border-border">
                     <ArchiveNotesView />
-                  </div>
-                )}
-                {viewMode === 'link_lounge' && (
-                  <div className="flex-1 flex flex-col min-h-0 bg-background rounded-xl md:rounded-3xl overflow-hidden shadow-sm border border-border">
-                    <LinkLoungeView />
                   </div>
                 )}
                 {viewMode === 'archive_agenda' && (

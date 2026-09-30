@@ -1,14 +1,15 @@
 'use client'
 
 import { useState, useMemo, useDeferredValue } from 'react'
-import { useInsightsData, useActivityTemplates, useOverviewKPI } from '@/hooks/useInsightsQueries'
+import { useOverviewDashboard } from '@/hooks/useInsightsQueries'
 import { useCategories } from '@/hooks/useCalendarQueries'
 import { useInsightsFilterStore } from '@/store/useInsightsFilterStore'
 import { RadarChart, Radar, PolarGrid, PolarAngleAxis, ResponsiveContainer } from 'recharts'
 import WeeklySummaryCard from './WeeklySummaryCard'
 import ActivityBreakdownGrid from './ActivityBreakdownGrid'
 import QuickAddCarousel from './QuickAddCarousel'
-import SubjectDetailSheet from './SubjectDetailSheet'
+import dynamic from 'next/dynamic'
+const SubjectDetailSheet = dynamic(() => import('./SubjectDetailSheet'), { ssr: false })
 import DashboardFilterBar from './DashboardFilterBar'
 import SharedPeriodDropdown from './SharedPeriodDropdown'
 import { useSharedPeriodStore, getDatesForPreset } from '@/store/useSharedPeriodStore'
@@ -17,7 +18,6 @@ import ActivityHeatmap from './ActivityHeatmap'
 import ActivityPunchCard from './ActivityPunchCard'
 import AnnualGoalWidget from './AnnualGoalWidget'
 import DDayWidget from './DDayWidget'
-import { startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear, subDays, startOfDay, endOfDay, subMonths, subYears, differenceInDays } from 'date-fns'
 import { Activity } from '@/app/actions/calendar'
 import { motion } from 'framer-motion'
 import { Clock, CheckSquare, FileText, Flame, TrendingUp, TrendingDown } from 'lucide-react'
@@ -32,17 +32,19 @@ export default function OverviewTab() {
   const selectedCategoryIds = useInsightsFilterStore(state => state.selectedCategoryIds)
   
   const { preset, customRange } = useSharedPeriodStore()
-  const { startDate: startDateIso, endDate: endDateIso, prevStartDate: prevStartIso, prevEndDate: prevEndIso, prevLabel } = getDatesForPreset(preset, customRange)
+  const dates = getDatesForPreset(preset, customRange)
+  const { startDate: startDateIso, endDate: endDateIso, prevLabel } = dates
 
   const { data: categoriesData = [] } = useCategories()
-  const { data: templates = [] } = useActivityTemplates()
-
-  const { data: kpi, isLoading: isLoadingKPI } = useOverviewKPI(startDateIso, endDateIso, preset)
+  const { data: dashboard, isLoading: isLoadingInsights, error, isFetching, isPlaceholderData } = useOverviewDashboard(dates, preset)
+  const templates = dashboard?.templates ?? []
+  const kpi = dashboard?.kpi
+  const isLoadingKPI = isLoadingInsights
 
   const [selectedSubjectId, setSelectedSubjectId] = useState<string | null>(null)
 
-  const { data: insightsData, isLoading: isLoadingInsights } = useInsightsData(startDateIso, endDateIso)
-  const { data: prevInsightsData } = useInsightsData(prevStartIso, prevEndIso)
+  const insightsData = dashboard?.insights
+  const prevInsightsData = dashboard?.previousInsights
 
   // 최적화: 필터 및 데이터 변경으로 인한 화면 멈춤 방지 (Concurrent Mode)
   const deferredInsightsData = useDeferredValue(insightsData)
@@ -144,14 +146,13 @@ export default function OverviewTab() {
     return Math.round(((current - prev) / prev) * 100)
   }
 
-  const topCategoryColor = useMemo(() => {
-    const cats = Object.values(processedData.breakdown) as any[]
-    if (cats.length === 0) return null
-    return cats.sort((a, b) => b.minutes - a.minutes)[0]?.hex_color || null
-  }, [processedData.breakdown])
+
+  if (error && !dashboard) return <p role="alert" className="p-4 text-sm text-destructive">인사이트를 불러오지 못했습니다. 새로고침을 눌러 다시 시도해 주세요.</p>
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" aria-busy={isFetching}>
+      {error && <p role="alert" className="text-sm text-destructive">인사이트를 불러오지 못했습니다. 새로고침을 눌러 다시 시도해 주세요.</p>}
+      {isPlaceholderData && <p role="status" className="text-sm text-muted-foreground">이전 기간 데이터를 표시하며 선택한 기간을 불러오는 중입니다.</p>}
       <SharedPeriodDropdown className="mb-2" />
       <DashboardFilterBar categories={categoriesData} />
 
@@ -259,7 +260,7 @@ export default function OverviewTab() {
               />
             </div>
             <div className="col-span-1 lg:col-span-4">
-              {preset === 'custom' && customRange.start && customRange.start === customRange.end ? <DDayWidget /> : <AnnualGoalWidget />}
+              {preset === 'custom' && customRange.start && customRange.start === customRange.end ? <DDayWidget /> : <AnnualGoalWidget progressData={dashboard?.annualGoal} />}
             </div>
 
             <div className="col-span-1 lg:col-span-7">
@@ -318,13 +319,13 @@ export default function OverviewTab() {
 
       <QuickAddCarousel templates={templates} />
 
-      <SubjectDetailSheet
+      {selectedSubjectId && <SubjectDetailSheet
         subjectId={selectedSubjectId}
         onClose={() => setSelectedSubjectId(null)}
         startDate={startDateIso}
         endDate={endDateIso}
         breakdownInfo={selectedSubjectId && processedData.breakdown[selectedSubjectId] ? processedData.breakdown[selectedSubjectId] : null}
-      />
+      />}
     </div>
   )
 }

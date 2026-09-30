@@ -4,14 +4,19 @@ import type { Activity } from '@/app/actions/calendar'
 /** 요청 범위 안에서 반복 마스터와 예외를 실제 캘린더 인스턴스로 전개합니다. */
 export function expandActivities(activities: Activity[], startDate: string, endDate: string): Activity[] {
   const expandedActivities: Activity[] = []
-  const exceptionsByParentId: Record<string, Activity[]> = {}
+  const exceptionsByParentId = new Map<string, Map<number, Activity>>()
   const addedExceptionIds = new Set<string>()
+  const rangeStart = new Date(startDate)
+  const rangeEnd = new Date(endDate)
 
   activities.forEach(activity => {
     if (!activity.parent_activity_id) return
-    const exceptions = exceptionsByParentId[activity.parent_activity_id] || []
-    exceptions.push(activity)
-    exceptionsByParentId[activity.parent_activity_id] = exceptions
+    if (!activity.original_start_time) return
+    const exceptions = exceptionsByParentId.get(activity.parent_activity_id) ?? new Map<number, Activity>()
+    const originalStartMs = Date.parse(activity.original_start_time)
+    // 동일 회차의 첫 예외를 사용하는 기존 동작을 보존한다.
+    if (!exceptions.has(originalStartMs)) exceptions.set(originalStartMs, activity)
+    exceptionsByParentId.set(activity.parent_activity_id, exceptions)
   })
 
   activities.forEach(activity => {
@@ -27,13 +32,10 @@ export function expandActivities(activities: Activity[], startDate: string, endD
       const durationMs = new Date(activity.end_time).getTime() - startsAt.getTime()
       const dtstart = startsAt.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z'
       const rule = rrulestr(`DTSTART:${dtstart}\nRRULE:${activity.recurrence_rule}`)
-      const occurrences = rule.between(new Date(startDate), new Date(endDate), true)
+      const occurrences = rule.between(rangeStart, rangeEnd, true)
 
       occurrences.forEach(occurrence => {
-        const exception = (exceptionsByParentId[activity.id] || []).find(candidate =>
-          candidate.original_start_time
-          && new Date(candidate.original_start_time).getTime() === occurrence.getTime()
-        )
+        const exception = exceptionsByParentId.get(activity.id)?.get(occurrence.getTime())
 
         if (exception) {
           addedExceptionIds.add(exception.id)

@@ -52,6 +52,7 @@ interface MonthlyViewProps {
 }
 
 const DAY_LABELS = ['일', '월', '화', '수', '목', '금', '토']
+const CALENDAR_PLUGINS = [dayGridPlugin, interactionPlugin]
 const SOURCE_LABELS = {
   activity: '일정',
   agenda: '아젠다',
@@ -330,7 +331,8 @@ export const MonthlyView = React.memo(function MonthlyView({
       <div className="cal-month-frame min-h-0 flex-1 overflow-hidden rounded-[18px] border border-[var(--cal-grid-line)] bg-[var(--cal-paper)]">
         <FullCalendar
           ref={calendarRef}
-          plugins={[dayGridPlugin, interactionPlugin]}
+          plugins={CALENDAR_PLUGINS}
+          rerenderDelay={16}
           initialView="dayGridMonth"
           initialDate={currentDate}
           headerToolbar={false}

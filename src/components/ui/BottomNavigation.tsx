@@ -40,7 +40,7 @@ export function BottomNavigation({ viewMode, setViewMode, onOpenSettings, onOpen
           // "더보기"는 active 상태를 갖지 않음 — 나머지 탭에 속하지 않는 뷰에서도 하이라이트 X
           const isActive = tab.id !== 'more' && (
             (tab.id === 'home' && viewMode === 'home') ||
-            (tab.id === 'archive' && ['archive_notes', 'link_lounge'].includes(viewMode)) ||
+            (tab.id === 'archive' && viewMode === 'archive_notes') ||
             (tab.id === 'agenda' && viewMode === 'archive_agenda') ||
             (tab.id === 'monthly' && ['monthly', 'weekly', 'list', 'semester', 'anniversary'].includes(viewMode))
           )

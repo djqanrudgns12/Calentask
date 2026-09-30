@@ -2,24 +2,24 @@
 
 import { useState, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { AreaChart, Area, ResponsiveContainer } from 'recharts'
-import { Plus, Pencil, Trash2, BarChart3, Clock, CalendarDays, Trophy, Medal, TrendingUp, TrendingDown, Minus, MoreVertical } from 'lucide-react'
+import { TemplateSparkline } from './TemplateSparkline'
+import { Plus, Pencil, Trash2, BarChart3, CalendarDays, Trophy, Medal, TrendingUp, TrendingDown, MoreVertical } from 'lucide-react'
 import { useAllTemplatesSummary, useDeleteTemplate } from '@/hooks/useInsightsQueries'
-import { useCategories } from '@/hooks/useCalendarQueries'
 import { useSharedPeriodStore, getDatesForPreset } from '@/store/useSharedPeriodStore'
 import SharedPeriodDropdown from './SharedPeriodDropdown'
-import { TemplateFormDialog } from './TemplateFormDialog'
-import { TemplateAnalyticsSheet } from './TemplateAnalyticsSheet'
-import { format, formatDistanceToNow } from 'date-fns'
+import { formatDistanceToNow } from 'date-fns'
 import { ko } from 'date-fns/locale'
 import type { ActivityTemplate } from '@/app/actions/insights'
+import dynamic from 'next/dynamic'
+
+const LazyTemplateFormDialog = dynamic(() => import('./TemplateFormDialog').then(m => m.TemplateFormDialog), { ssr: false })
+const LazyTemplateAnalyticsSheet = dynamic(() => import('./TemplateAnalyticsSheet').then(m => m.TemplateAnalyticsSheet), { ssr: false })
 
 export default function TemplateCenterTab() {
   const { preset, customRange, isLoaded } = useSharedPeriodStore()
   const { startDate, endDate, prevStartDate, prevEndDate, trendType, currentLabel, prevLabel } = getDatesForPreset(preset, customRange)
 
-  const { data: summaries = [], isLoading } = useAllTemplatesSummary(startDate, endDate, prevStartDate, prevEndDate, trendType)
-  const { data: categories = [] } = useCategories()
+  const { data: summaries = [], isLoading, error, isFetching, isPlaceholderData } = useAllTemplatesSummary(startDate, endDate, prevStartDate, prevEndDate, trendType)
   const { mutate: deleteTemplate } = useDeleteTemplate()
 
   const [isFormOpen, setIsFormOpen] = useState(false)
@@ -123,6 +123,7 @@ export default function TemplateCenterTab() {
   }
 
   const analyticsTemplate = summaries.find(s => s.templateId === analyticsTemplateId)
+  if (error && !summaries.length) return <p role="alert" className="p-4 text-sm text-destructive">템플릿 통계를 불러오지 못했습니다. 새로고침을 눌러 다시 시도해 주세요.</p>
 
   if (!isLoaded || isLoading) {
     return (
@@ -137,7 +138,9 @@ export default function TemplateCenterTab() {
   }
 
   return (
-    <div className="space-y-6 mt-2">
+    <div className="space-y-6 mt-2" aria-busy={isFetching}>
+      {error && <p role="alert" className="text-sm text-destructive">템플릿 통계를 불러오지 못했습니다. 새로고침을 눌러 다시 시도해 주세요.</p>}
+      {isPlaceholderData && <p role="status" className="text-sm text-muted-foreground">이전 기간 데이터를 표시하며 선택한 기간을 불러오는 중입니다.</p>}
       <SharedPeriodDropdown className="mb-[-12px]" />
 
       {/* ── 랭킹 요약 바 ── */}
@@ -154,7 +157,7 @@ export default function TemplateCenterTab() {
 
           {/* 100% 스택 바 */}
           <div className="flex h-3 rounded-full overflow-hidden mb-4">
-            {ranked.filter(s => s.currentMonthHours > 0).map((s, idx) => (
+            {ranked.filter(s => s.currentMonthHours > 0).map(s => (
               <div
                 key={s.templateId}
                 className="h-full transition-all duration-500 first:rounded-l-full last:rounded-r-full relative group"
@@ -200,16 +203,13 @@ export default function TemplateCenterTab() {
         </motion.div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {ranked.map((summary, idx) => {
+          {ranked.map(summary => {
             const changePercent = getChangePercent(summary.currentMonthHours, summary.prevMonthHours)
             const isPositive = changePercent > 0
             const isNeutral = changePercent === 0
             // BUG-07 수정: categoryNames는 이제 실제 이름 배열
             const catNames = summary.categoryNames.join(', ') || '미분류'
             // FEAT-02: 커스텀 단위 계산
-            const displayCurrentHours = summary.customUnitEnabled ? summary.currentMonthUnits : summary.currentMonthHours
-            const displayPrevHours = summary.customUnitEnabled ? summary.prevMonthUnits : summary.prevMonthHours
-            const unitLabel = summary.customUnitEnabled ? '차시' : '시간'
 
             return (
               <motion.div
@@ -319,24 +319,11 @@ export default function TemplateCenterTab() {
 
                 {/* 스파크라인 */}
                 <div className="h-[40px] w-full pl-3 mb-3">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={(summary.customUnitEnabled ? summary.dailyTrendUnits : summary.dailyTrend) as any[]} margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
-                      <defs>
-                        <linearGradient id={`spark-${summary.templateId}`} x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="0%" stopColor={summary.hexColor} stopOpacity={0.3} />
-                          <stop offset="100%" stopColor={summary.hexColor} stopOpacity={0.02} />
-                        </linearGradient>
-                      </defs>
-                      <Area
-                        type="monotone"
-                        dataKey={summary.customUnitEnabled ? "units" : "minutes"}
-                        stroke={summary.hexColor}
-                        strokeWidth={2}
-                        fill={`url(#spark-${summary.templateId})`}
-                        dot={false}
-                      />
-                    </AreaChart>
-                  </ResponsiveContainer>
+                  <TemplateSparkline
+                    id={summary.templateId}
+                    color={summary.hexColor}
+                    values={summary.customUnitEnabled ? summary.dailyTrendUnits.map(point => point.units) : summary.dailyTrend.map(point => point.minutes)}
+                  />
                 </div>
 
                 {/* 총 누적 통계 */}
@@ -394,19 +381,19 @@ export default function TemplateCenterTab() {
       </motion.button>
 
       {/* ── 폼 다이얼로그 ── */}
-      <TemplateFormDialog
+      {isFormOpen && <LazyTemplateFormDialog
         isOpen={isFormOpen}
         onClose={() => setIsFormOpen(false)}
         editingTemplate={editingTemplate}
-      />
+      />}
 
       {/* ── 상세 통계 시트 ── */}
-      <TemplateAnalyticsSheet
+      {analyticsTemplateId && <LazyTemplateAnalyticsSheet
         templateId={analyticsTemplateId}
         templateTitle={analyticsTemplate?.title || ''}
         templateColor={analyticsTemplate?.hexColor || '#4f46e5'}
         onClose={() => setAnalyticsTemplateId(null)}
-      />
+      />}
     </div>
   )
 }

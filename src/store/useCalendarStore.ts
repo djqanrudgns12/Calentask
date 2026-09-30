@@ -3,7 +3,7 @@ import { persist } from 'zustand/middleware'
 import { Activity, Category } from '@/app/actions/calendar'
 import type { CalendarFontSize } from '@/lib/calendarFontSize'
 
-export type ViewMode = 'home' | 'monthly' | 'weekly' | 'list' | 'semester' | 'nice_import' | 'anniversary' | 'google_sync' | 'school_meals' | 'school_schedule' | 'academic_data' | 'insights' | 'archive_notes' | 'archive_agenda' | 'link_lounge' | 'tags' | 'trash' | 'template_center' | 'tidy_stats'
+export type ViewMode = 'home' | 'monthly' | 'weekly' | 'list' | 'semester' | 'nice_import' | 'anniversary' | 'google_sync' | 'school_meals' | 'school_schedule' | 'academic_data' | 'insights' | 'archive_notes' | 'archive_agenda' | 'tags' | 'trash' | 'template_center' | 'tidy_stats'
 
 
 interface CalendarState {
@@ -190,6 +190,8 @@ export const useCalendarStore = create<CalendarState>()(
           ...currentState,
           ...state,
           currentDate: currentState.currentDate,
+          // 이전 버전에 저장된 폐지 탭은 홈으로 복귀한다.
+          viewMode: (state.viewMode as string) === 'link_lounge' ? 'home' : (state.viewMode ?? currentState.viewMode),
         }
       },
     }

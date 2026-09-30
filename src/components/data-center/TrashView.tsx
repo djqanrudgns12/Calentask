@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
-import { Trash2, RefreshCcw, Loader2, AlertCircle, Calendar, CheckSquare, FileText, Heart, Link2, Filter } from 'lucide-react'
+import { Trash2, RefreshCcw, Loader2, AlertCircle, Calendar, CheckSquare, FileText, Heart, Filter } from 'lucide-react'
 import { useDataHub, type TrashItem, type TrashItemType } from '@/hooks/useDataHub'
 import { formatDistanceToNow } from 'date-fns'
 import { ko } from 'date-fns/locale'
@@ -12,7 +12,6 @@ const TYPE_CONFIG: Record<TrashItemType, { label: string; icon: typeof Calendar;
   agenda: { label: '아젠다', icon: CheckSquare, color: 'text-emerald-600', bgColor: 'bg-emerald-50' },
   archive: { label: '아카이브', icon: FileText, color: 'text-violet-600', bgColor: 'bg-violet-50' },
   anniversary: { label: '기념일', icon: Heart, color: 'text-rose-600', bgColor: 'bg-rose-50' },
-  link: { label: '링크', icon: Link2, color: 'text-amber-600', bgColor: 'bg-amber-50' },
 }
 
 export function TrashView() {

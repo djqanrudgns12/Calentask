@@ -65,6 +65,17 @@ async function main() {
     const snapshot = await engine.getSnapshot(config, parseInput({ days: 7, mode }), task => void task);
     console.log(`실행기 ${mode}: ${ms(started)} (저장 ${snapshot.cached}, 오래됨 ${snapshot.stale}, 경과 ${Math.round(snapshot.ageMs / 1000)}초)`);
   }
+  // 기간 선택 및 수동 갱신에서도 날짜 비교 정밀도 오류가 재발하지 않아야 한다.
+  for (const days of [1, 30, 90] as const) {
+    started = performance.now();
+    const snapshot = await engine.getSnapshot(config, parseInput({ days, mode: 'fresh' }));
+    check(snapshot.days === days && snapshot.daily.length === days, `${days}일 조회의 날짜 범위`);
+    console.log(`실행기 ${days}일: 정상 (${ms(started)})`);
+  }
+  started = performance.now();
+  const forced = await engine.getSnapshot(config, parseInput({ days: 7, mode: 'force' }));
+  check(!forced.stale && !forced.revalidating, '수동 갱신은 완료된 최신 집계를 반환');
+  console.log(`실행기 수동 갱신: 정상 (${ms(started)})`);
   console.log('PostHog 실제 키·Query 권한·집계 3개·불변식·공유 캐시 검증 완료');
 }
 main().catch(error => { console.error(error instanceof Error ? error.message : '검증 실패'); process.exitCode = 1; });

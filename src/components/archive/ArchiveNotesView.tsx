@@ -216,7 +216,7 @@ function DraggableTab({
 }
 
 export function ArchiveNotesView() {
-  const { tabs, activeTabId, setActiveTabId, setCommandPaletteOpen, fetchTabs, fetchItems, updateTab, deleteTab, reorderTabs, isPrefetched, focusModeTabId, flushPendingUpdates } = useArchiveStore();
+  const { tabs, activeTabId, setActiveTabId, setCommandPaletteOpen, fetchTabs, fetchItems, updateTab, deleteTab, reorderTabs, isPrefetched, loadError, itemLoadErrors, items, focusModeTabId, flushPendingUpdates } = useArchiveStore();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isSynapseOpen, setIsSynapseOpen] = useState(false);
   const [editingTabId, setEditingTabId] = useState<string | null>(null);
@@ -229,15 +229,16 @@ export function ArchiveNotesView() {
 
 
   useEffect(() => {
-    fetchTabs();
-  }, []);
+    void fetchTabs();
+  }, [fetchTabs]);
 
   useEffect(() => {
+    let cancelled = false;
     if (activeTabId) {
       // 탭 전환 시: 이전 탭의 미저장 데이터를 먼저 flush한 후 새 탭 데이터 fetch
       flushPendingUpdates().then(() => {
         // 전략 2: fetchItems 내부에서 Stale cache flash 방지 및 백그라운드 동기화 처리
-        fetchItems(activeTabId);
+        if (!cancelled) void fetchItems(activeTabId);
       });
 
       // 보이지 않는 탭으로 전환 시, 해당 탭이 화면 내로 스크롤되도록 자동 이동
@@ -251,7 +252,11 @@ export function ArchiveNotesView() {
         }
       });
     }
-  }, [activeTabId]);
+    return () => { cancelled = true; };
+  }, [activeTabId, fetchItems, flushPendingUpdates]);
+
+  const boardError = activeTabId ? itemLoadErrors[activeTabId] : undefined;
+  const loadingBoard = !isPrefetched || (!!activeTabId && items[activeTabId] === undefined);
 
   const handleAddNewTab = () => {
     setIsAddDialogOpen(true);
@@ -352,7 +357,15 @@ export function ArchiveNotesView() {
               ? "bg-card rounded-none border-0 shadow-none" 
               : "bg-card rounded-2xl shadow-sm border border-border"
           )}>
-            {!isPrefetched ? (
+            {loadError || boardError ? (
+              <div role="alert" className="absolute inset-0 flex flex-col items-center justify-center gap-4 p-8 text-center">
+                <p className="text-muted-foreground">{loadError || boardError}</p>
+                <button
+                  onClick={() => { if (loadError || !isPrefetched) void fetchTabs(); else if (activeTabId) void fetchItems(activeTabId); }}
+                  className="px-5 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+                >다시 불러오기</button>
+              </div>
+            ) : loadingBoard ? (
               <div className="absolute inset-0 flex flex-col p-8">
                 {/* Skeleton UI for Board */}
                 <div className="h-10 w-1/3 bg-muted animate-pulse rounded-xl mb-8" />

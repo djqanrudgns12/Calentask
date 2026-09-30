@@ -4,12 +4,15 @@ import { ACTIONS, BREAKDOWN_LIMIT, periodBounds, type StatsInput } from './model
 export function buildQueries(input: Pick<StatsInput, 'days' | 'version'>, now = new Date()) {
   const bounds = periodBounds(input.days, now);
   const date = (s: string) => `toDateTime('${s.slice(0, 19).replace('T', ' ')}', 'UTC')`;
+  // 현재 PostHog에서는 DateTime64 컬럼과 now()를 직접 비교하면 Decimal overflow가 난다.
+  // 현재 시각만 DateTime으로 명시해 기간 인덱스와 초 단위의 기존 경계를 유지한다.
+  const queryNow = 'toDateTime(now())';
   // PostHog 프로젝트의 최신 내부/테스트 계정 필터를 서버에서 적용한다.
-  const base = `properties.environment = 'production' AND {filters} AND timestamp < ${date(bounds.until)} AND timestamp <= now()`;
+  const base = `properties.environment = 'production' AND {filters} AND timestamp < ${date(bounds.until)} AND timestamp <= ${queryNow}`;
   const version = input.version === 'all' ? '' : ` AND properties.app_version = '${input.version}'`;
   const current = `timestamp >= ${date(bounds.from)}`;
   const where = `${base} AND ${current}${version}`;
-  const previous = `timestamp < ${date(bounds.from)} AND timestamp <= now() - INTERVAL ${input.days} DAY`;
+  const previous = `timestamp < ${date(bounds.from)} AND timestamp <= ${queryNow} - INTERVAL ${input.days} DAY`;
   const actions = ACTIONS.map(a => `'${a[0]}'`).join(', ');
   const queries = {
     // 이전 기간 값은 active_minute만 쓰므로 이전 기간에서는 그 이벤트만 읽는다(현재 기간은 전체 이벤트).

@@ -76,7 +76,7 @@ export function useUpdateCategory() {
       // 카테고리 색상 변경 시 연관 일정/템플릿의 hex_color도 서버에서 변경되므로 캐시 무효화
       queryClient.invalidateQueries({ queryKey: ['activities'] })
       queryClient.invalidateQueries({ queryKey: ['calendar-month'] })
-      queryClient.invalidateQueries({ queryKey: ['activity_templates'] })
+      queryClient.invalidateQueries({ queryKey: ['activityTemplates'] })
     }
   })
 }

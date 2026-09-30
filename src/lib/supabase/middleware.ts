@@ -53,6 +53,13 @@ export async function updateSession(request: NextRequest) {
     request.nextUrl.pathname.startsWith('/api/cron')
   
   if (!user && !isAuthPage && !isPublicApi) {
+    if (request.nextUrl.pathname === '/api/view-data') {
+      const response = NextResponse.json({ error: '다시 로그인해 주세요.' }, {
+        status: 401, headers: { 'Cache-Control': 'private, no-store', Vary: 'Cookie' },
+      })
+      supabaseResponse.cookies.getAll().forEach(cookie => response.cookies.set(cookie.name, cookie.value))
+      return response
+    }
     if (request.nextUrl.pathname === '/api/tidy-stats') {
       const response = NextResponse.json(
         { code: 'UNAUTHENTICATED', error: '다시 로그인한 뒤 통계를 열어 주세요.' },
