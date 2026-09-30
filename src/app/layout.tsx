@@ -5,6 +5,7 @@ import { QueryProvider } from "@/providers/QueryProvider";
 import { Toaster } from "sonner";
 import { GlobalShortcutsProvider } from "@/providers/GlobalShortcutsProvider";
 import { ThemeProvider } from "@/providers/ThemeProvider";
+import { ServiceWorkerRegistration } from "@/components/pwa/ServiceWorkerRegistration";
 
 const customFont = localFont({
   src: "./fonts/RIDIBatang.otf",
@@ -52,15 +53,9 @@ export default function RootLayout({
               window.deferredPWAEvent = e;
               window.__pwaPromptFired = true;
             });
-            if ('serviceWorker' in navigator) {
-              window.addEventListener('load', function() {
-                navigator.serviceWorker.register('/sw.js', { scope: '/' }).catch(function(err) {
-                  console.warn('[SW] Registration failed:', err);
-                });
-              });
-            }
           `
         }} />
+        <ServiceWorkerRegistration />
         <ThemeProvider
           attribute="class"
           defaultTheme="system"

@@ -3,6 +3,7 @@
 
 import './DocumentBoardFonts.css';
 import { useEffect, useState, useRef, useCallback } from 'react';
+import { loadDocumentFonts } from '@/lib/documentFonts';
 import { 
   FileText, MoreHorizontal, Clock, AlignLeft, Bold, Italic, Type, Plus, Heading1, Heading2, Heading3, 
   List, ListOrdered, Quote, Trash2, Palette, Highlighter, AlignCenter, AlignRight, Table as TableIcon, 
@@ -88,6 +89,7 @@ const BORDER_STYLES = ['solid', 'dashed', 'dotted', 'none'];
 const BORDER_WIDTHS = ['1px', '2px', '3px', '4px'];
 
 export function DocumentBoard() {
+  useEffect(() => { loadDocumentFonts(); }, []);
   const { activeTabId, tabs, items: storeItems, updateItem, addItem, updateTab, deleteTab, tabViewModes, setTabViewMode, focusModeTabId, setFocusMode } = useArchiveStore();
   const currentTab = tabs.find(t => t.id === activeTabId);
   const items = activeTabId ? (storeItems[activeTabId] || EMPTY_ARRAY) : EMPTY_ARRAY;
