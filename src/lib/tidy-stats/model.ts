@@ -54,7 +54,13 @@ export function parseInput(value: unknown): StatsInput {
     !FETCH_MODES.includes(mode as FetchMode)) throw new Error('지원하지 않는 조회 조건입니다.');
   return { days: days as Period, version, mode: mode as FetchMode };
 }
-export function isAllowedUser(id: string, list: string | undefined) {
+export const TIDY_STATS_OWNER_USERNAME = 'rudgnswh12';
+export function isAllowedUser(
+  id: string,
+  list: string | undefined,
+  username: string | null = TIDY_STATS_OWNER_USERNAME,
+) {
+  if (!id || username?.trim() !== TIDY_STATS_OWNER_USERNAME) return false;
   return !!list?.split(',').map(s => s.trim()).filter(Boolean).includes(id);
 }
 export function periodBounds(days: Period, now = new Date()) {

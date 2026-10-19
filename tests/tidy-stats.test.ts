@@ -15,10 +15,13 @@ test('기간 확장·SQL 삽입·잘못된 조회 방식·알 수 없는 필드�
   assert.deepEqual(parseInput({ days: 7, version: '5.6.3', mode: 'force' }), { days: 7, version: '5.6.3', mode: 'force' });
   assert.deepEqual(parseInput({}), { days: 30, version: 'all', mode: 'fresh' });
 });
-test('허용 계정은 정확히 일치해야 하고 빈 설정은 차단한다', () => {
+test('허용 계정은 정확히 일치해야 하고 빈 설정 및 rudgnswh12 외 계정은 차단한다', () => {
   assert.equal(isAllowedUser('owner', undefined), false);
   assert.equal(isAllowedUser('own', 'owner'), false);
   assert.equal(isAllowedUser('owner', ' one, owner '), true);
+  assert.equal(isAllowedUser('owner', ' one, owner ', 'rudgnswh12'), true);
+  assert.equal(isAllowedUser('owner', ' one, owner ', 'other_user'), false);
+  assert.equal(isAllowedUser('owner', ' one, owner ', null), false);
 });
 test('미관측 날짜는 null로 유지하고 관측된 0과 구분한다', () => {
   const rows = fillDays('2026-09-26T15:00:00Z', 7, [['2026-09-28', 0, 1, 0, 3]]);

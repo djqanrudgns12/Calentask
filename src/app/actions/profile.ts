@@ -27,9 +27,11 @@ export async function updateUserProfile(payload: { full_name?: string; username?
   const { data: userData } = await supabase.auth.getUser()
   if (!userData.user) throw new Error('Not logged in')
 
+  const { username: _ignoredUsername, ...safePayload } = payload
+
   const { error } = await supabase
     .from('users')
-    .update(payload)
+    .update(safePayload)
     .eq('id', userData.user.id)
 
   if (error) {

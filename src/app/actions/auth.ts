@@ -217,21 +217,22 @@ export async function linkLocalAccount(formData: FormData) {
     return { success: false, error: '비밀번호가 일치하지 않습니다.' }
   }
 
-  // 중복 아이디 체크
+  const normalizedUsername = username.trim()
+  const { data: { user }, error: userError } = await supabase.auth.getUser()
+  if (userError || !user) {
+    return { success: false, error: '인증에 실패했습니다.' }
+  }
+
+  // 중복 아이디 체크 및 소유자 아이디 보호
   const adminClient = createAdminClient()
   const { data: existingUser } = await adminClient
     .from('users')
     .select('id')
-    .eq('username', username)
+    .eq('username', normalizedUsername)
     .single()
 
-  if (existingUser) {
+  if ((existingUser && existingUser.id !== user.id) || (normalizedUsername === 'rudgnswh12' && existingUser?.id !== user.id)) {
     return { success: false, error: '이미 사용 중인 아이디입니다.' }
-  }
-
-  const { data: { user }, error: userError } = await supabase.auth.getUser()
-  if (userError || !user) {
-    return { success: false, error: '인증에 실패했습니다.' }
   }
 
   // 1. Update Auth User (Only Password, preserving original email)

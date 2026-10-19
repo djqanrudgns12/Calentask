@@ -113,8 +113,10 @@ export function CalendarClient({ canViewTidyStats = false }: { canViewTidyStats?
   useEffect(() => {
     if (isCalendarViewMode(viewMode)) {
       lastCalendarViewRef.current = viewMode;
+    } else if (!canViewTidyStats && viewMode === 'tidy_stats') {
+      setViewMode('home');
     }
-  }, [viewMode]);
+  }, [canViewTidyStats, setViewMode, viewMode]);
 
   // 현재 viewMode가 CALENDAR_VIEWS에 속하면 'CALENDAR_GROUP'으로 취급
   const currentMajorView: MajorView = isCalendarViewMode(viewMode) ? 'CALENDAR_GROUP' : viewMode
@@ -153,7 +155,7 @@ export function CalendarClient({ canViewTidyStats = false }: { canViewTidyStats?
   const isCalendarMenuOpen = ['monthly', 'weekly', 'list', 'semester', 'archive_agenda', 'anniversary', 'google_sync', 'school_schedule', 'academic_data'].includes(viewMode)
   const isMyCalendarActive = ['monthly', 'weekly', 'list', 'semester'].includes(viewMode)
   const isArchiveMenuOpen = viewMode === 'archive_notes'
-  const isDataCenterMenuOpen = ['insights', 'nice_import', 'tags', 'trash', 'template_center', 'tidy_stats'].includes(viewMode)
+  const isDataCenterMenuOpen = ['insights', 'nice_import', 'tags', 'trash', 'template_center', ...(canViewTidyStats ? ['tidy_stats'] : [])].includes(viewMode)
 
   const handleLogout = async () => {
     resetStore()

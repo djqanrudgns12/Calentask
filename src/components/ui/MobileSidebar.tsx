@@ -171,13 +171,14 @@ export function MobileSidebar({ open, onOpenChange, onOpenSettings, canViewTidyS
   // 아코디언 상태
   const isCalendarMenuOpen = ['monthly', 'weekly', 'list', 'semester', 'archive_agenda', 'anniversary', 'school_schedule', 'academic_data', 'google_sync'].includes(viewMode)
   const isArchiveMenuOpen = viewMode === 'archive_notes'
-  const isDataCenterMenuOpen = ['insights', 'nice_import', 'tags', 'trash', 'template_center', 'tidy_stats'].includes(viewMode)
+  const isDataCenterMenuOpen = ['insights', 'nice_import', 'tags', 'trash', 'template_center', ...(canViewTidyStats ? ['tidy_stats'] : [])].includes(viewMode)
 
   const [calendarOpen, setCalendarOpen] = useState(isCalendarMenuOpen)
   const [archiveOpen, setArchiveOpen] = useState(isArchiveMenuOpen)
   const [dataCenterOpen, setDataCenterOpen] = useState(isDataCenterMenuOpen)
 
   const navigate = (mode: ViewMode) => {
+    if (mode === 'tidy_stats' && !canViewTidyStats) return
     setViewMode(mode)
     onOpenChange(false)
   }
