@@ -5,6 +5,7 @@ import { indexTemplateActivities, type TemplateActivityRow } from '@/lib/insight
 import { readAllQueryRows } from '@/lib/readAllQueryRows'
 import { AppQueryClient } from '@/lib/queryDependencies'
 import { isViewDataRequest } from '@/types/viewData'
+import { getDatesForPreset, type PeriodPreset } from '@/store/useSharedPeriodStore'
 
 const row = (id: string, template_id = 'template-a', start_time = '2026-09-01T00:00:00Z'): TemplateActivityRow => ({
   id, template_id, start_time, end_time: '2026-09-01T01:00:00Z',
@@ -18,6 +19,22 @@ test('조회 입력은 허용된 화면·시간대 포함 날짜·정상 기간�
   assert.equal(isViewDataRequest({ kind: 'time', startDate: '2026-09-01T00:00:00Z', endDate: '2026-08-01T00:00:00Z' }), false)
   assert.equal(isViewDataRequest({ kind: 'time', startDate: '2000-01-01T00:00:00Z', endDate: '2100-12-31T23:59:59Z' }), true)
   assert.equal(isViewDataRequest({ kind: 'time', startDate: '1900-01-01T00:00:00Z', endDate: '2199-12-31T23:59:59Z' }), false)
+})
+
+test('한국 시간대의 모든 기간 프리셋이 종합 현황·템플릿 조회 검증을 통과한다', () => {
+  const previousTimeZone = process.env.TZ
+  process.env.TZ = 'Asia/Seoul'
+  try {
+    const presets: PeriodPreset[] = ['this_month', 'semester1', 'semester2', 'this_year', 'all', 'custom']
+    for (const preset of presets) {
+      const dates = getDatesForPreset(preset, { start: '', end: '' })
+      assert.equal(isViewDataRequest({ kind: 'templates', ...dates }), true, preset)
+      assert.equal(isViewDataRequest({ kind: 'overview', ...dates, periodType: preset, yearStart: dates.startDate, yearEnd: dates.endDate }), true, preset)
+    }
+  } finally {
+    if (previousTimeZone === undefined) delete process.env.TZ
+    else process.env.TZ = previousTimeZone
+  }
 })
 
 test('직접 생성·수동 연결 중복은 템플릿 안에서만 제거한다', () => {

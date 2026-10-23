@@ -132,8 +132,9 @@ export function getDatesForPreset(preset: PeriodPreset, customRange: { start: st
     default:
       startDate = new Date(2000, 0, 1);
       endDate = new Date(2100, 11, 31, 23, 59, 59);
-      prevStartDate = new Date(1900, 0, 1); // Dummy
-      prevEndDate = new Date(1900, 11, 31, 23, 59, 59);
+      // 비교 안함용 더미. 현지 시간 1900년은 한국 표준시(LMT) 기준 UTC 1899년이 되어 조회 검증에서 거부되므로 UTC로 고정한다.
+      prevStartDate = new Date(Date.UTC(1900, 0, 1));
+      prevEndDate = new Date(Date.UTC(1900, 11, 31, 23, 59, 59));
       trendType = 'monthly';
       currentLabel = '전체 기간';
       prevLabel = '비교 안함';
